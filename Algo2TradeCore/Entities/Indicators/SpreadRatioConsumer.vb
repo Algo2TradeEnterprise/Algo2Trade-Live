@@ -3,7 +3,10 @@
         Inherits PayloadToIndicatorConsumer
         Public ReadOnly Property SpreadRatioField As Enums.TypeOfField
         Public Property HigherContract As OHLCPayload
+        Public Property HigherContractPreviousDayFirstCandle As OHLCPayload
         Public Property LowerContract As OHLCPayload
+        Public Property LowerContractPreviousDayFirstCandle As OHLCPayload
+
         Public Sub New(ByVal associatedParentConsumer As IPayloadConsumer,
                        ByVal spreadRatioField As Enums.TypeOfField)
             MyBase.New(associatedParentConsumer)

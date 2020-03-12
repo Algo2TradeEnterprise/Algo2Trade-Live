@@ -8,10 +8,6 @@ Public Class NearFarHedgingUserInputs
     Inherits StrategyUserInputs
     Public Property BollingerPeriod As Integer
     Public Property BollingerMultiplier As Integer
-    Public Property UseBothSignal As Boolean
-    Public Property TelegramAPIKey As String
-    Public Property TelegramChatID As String
-    Public Property TelegramPLChatID As String
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
     <Serializable>
@@ -21,11 +17,6 @@ Public Class NearFarHedgingUserInputs
         Public Property Pair1Quantity As Integer
         Public Property Pair2TradingSymbol As String
         Public Property Pair2Quantity As Integer
-        Public Property PLOffSet As Decimal
-        Public Property ReverseSignalExit As Boolean
-        Public Property ReverseSignalEntry As Boolean
-        Public Property MaxPairLoss As Decimal
-        Public Property MaxPairGain As Decimal
     End Class
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
@@ -37,9 +28,9 @@ Public Class NearFarHedgingUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"PAIR 1 TRADING SYMBOL", "PAIR 1 QUANTITY MULTIPLIER", "PAIR 2 TRADING SYMBOL", "PAIR 2 QUANTITY MULTIPLIER", "PL OFFSET", "REVERSE SIGNAL EXIT", "REVERSE SIGNAL ENTRY", "MAX PAIR LOSS", "MAX PAIR GAIN"}
+                        Dim excelColumnList As New List(Of String) From {"PAIR 1 TRADING SYMBOL", "PAIR 1 QUANTITY MULTIPLIER", "PAIR 2 TRADING SYMBOL", "PAIR 2 QUANTITY MULTIPLIER"}
 
-                        For colCtr = 0 To 8
+                        For colCtr = 0 To 3
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -55,11 +46,6 @@ Public Class NearFarHedgingUserInputs
                             Dim pair1Quantity As Integer = Integer.MinValue
                             Dim pair2TradingSymbol As String = Nothing
                             Dim pair2Quantity As Integer = Integer.MinValue
-                            Dim plOffset As Decimal = Decimal.MinValue
-                            Dim reverseSignalExit As Boolean = False
-                            Dim reverseSignalEntry As Boolean = False
-                            Dim maxPairLoss As Decimal = Decimal.MinValue
-                            Dim maxPairGain As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -104,61 +90,6 @@ Public Class NearFarHedgingUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Pair 2 Quantity cannot be blank for {0}", pair2Quantity))
                                     End If
-                                ElseIf columnCtr = 4 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                       Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            plOffset = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("PL Offset cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, pair1TradingSymbol))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("PL Offset cannot be blank for {0}", pair1TradingSymbol))
-                                    End If
-                                ElseIf columnCtr = 5 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                       Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "TRUE" Then
-                                            reverseSignalExit = True
-                                        ElseIf instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" Then
-                                            reverseSignalExit = False
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Reverse Signal Exit cannot be blank for {0}", pair1TradingSymbol))
-                                    End If
-                                ElseIf columnCtr = 6 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                       Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "TRUE" Then
-                                            reverseSignalEntry = True
-                                        ElseIf instrumentDetails(rowCtr, columnCtr).ToString.ToUpper = "FALSE" Then
-                                            reverseSignalEntry = False
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Reverse Signal Entry cannot be blank for {0}", pair1TradingSymbol))
-                                    End If
-                                ElseIf columnCtr = 7 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                      Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            maxPairLoss = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Max Pair Loss cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, pair1TradingSymbol))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Max Pair Loss cannot be blank for {0}", pair1TradingSymbol))
-                                    End If
-                                ElseIf columnCtr = 8 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                      Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            maxPairGain = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Max Pair Gain cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, pair1TradingSymbol))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Max Pair Gain cannot be blank for {0}", pair1TradingSymbol))
-                                    End If
                                 End If
                             Next
                             If pair1TradingSymbol IsNot Nothing AndAlso pair2TradingSymbol IsNot Nothing Then
@@ -170,12 +101,7 @@ Public Class NearFarHedgingUserInputs
                                         .Pair1TradingSymbol = pair1TradingSymbol,
                                         .Pair1Quantity = pair1Quantity,
                                         .Pair2TradingSymbol = pair2TradingSymbol,
-                                        .Pair2Quantity = pair2Quantity,
-                                        .PLOffSet = plOffset,
-                                        .ReverseSignalExit = reverseSignalExit,
-                                        .ReverseSignalEntry = reverseSignalEntry,
-                                        .MaxPairLoss = maxPairLoss,
-                                        .MaxPairGain = maxPairGain
+                                        .Pair2Quantity = pair2Quantity
                                     }
 
                                     If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)

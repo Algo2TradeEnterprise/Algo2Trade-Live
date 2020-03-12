@@ -36,19 +36,9 @@ Public Class frmNearFarHedgingSettings
             dtpckrTradeStartTime.Value = _NearFarHedgingSettings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _NearFarHedgingSettings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _NearFarHedgingSettings.EODExitTime
-            txtMaxLossPercentagePerDay.Text = _NearFarHedgingSettings.MaxLossPercentagePerDay
-            txtMaxProfitPercentagePerDay.Text = _NearFarHedgingSettings.MaxProfitPercentagePerDay
             txtBollingerPeriod.Text = _NearFarHedgingSettings.BollingerPeriod
             txtBollingerMultiplier.Text = _NearFarHedgingSettings.BollingerMultiplier
             txtInstrumentDetalis.Text = _NearFarHedgingSettings.InstrumentDetailsFilePath
-            If _NearFarHedgingSettings.UseBothSignal Then
-                rdbBoth.Checked = True
-            Else
-                rdbAnyOne.Checked = True
-            End If
-            txtTelegramAPI.Text = _NearFarHedgingSettings.TelegramAPIKey
-            txtTelegramChatID.Text = _NearFarHedgingSettings.TelegramChatID
-            txtTelegramChatIDForPL.Text = _NearFarHedgingSettings.TelegramPLChatID
         End If
     End Sub
     Private Sub SaveSettings()
@@ -56,19 +46,9 @@ Public Class frmNearFarHedgingSettings
         _NearFarHedgingSettings.TradeStartTime = dtpckrTradeStartTime.Value
         _NearFarHedgingSettings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _NearFarHedgingSettings.EODExitTime = dtpckrEODExitTime.Value
-        _NearFarHedgingSettings.MaxLossPercentagePerDay = txtMaxLossPercentagePerDay.Text
-        _NearFarHedgingSettings.MaxProfitPercentagePerDay = txtMaxProfitPercentagePerDay.Text
         _NearFarHedgingSettings.BollingerPeriod = txtBollingerPeriod.Text
         _NearFarHedgingSettings.BollingerMultiplier = txtBollingerMultiplier.Text
         _NearFarHedgingSettings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        If rdbAnyOne.Checked Then
-            _NearFarHedgingSettings.UseBothSignal = False
-        ElseIf rdbBoth.Checked Then
-            _NearFarHedgingSettings.UseBothSignal = True
-        End If
-        _NearFarHedgingSettings.TelegramAPIKey = txtTelegramAPI.Text
-        _NearFarHedgingSettings.TelegramChatID = txtTelegramChatID.Text
-        _NearFarHedgingSettings.TelegramPLChatID = txtTelegramChatIDForPL.Text
 
         Utilities.Strings.SerializeFromCollection(Of NearFarHedgingUserInputs)(_NearFarHedgingSettingsFilename, _NearFarHedgingSettings)
     End Sub
@@ -87,8 +67,6 @@ Public Class frmNearFarHedgingSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame)
-        ValidateNumbers(0, 100, txtMaxLossPercentagePerDay)
-        ValidateNumbers(0, 100, txtMaxProfitPercentagePerDay)
         ValidateNumbers(1, Integer.MaxValue, txtBollingerMultiplier)
         ValidateNumbers(1, Integer.MaxValue, txtBollingerPeriod)
         ValidateFile()

@@ -29,10 +29,6 @@ Partial Class frmNearFarHedgingSettings
         Me.lblBollingerMultiplier = New System.Windows.Forms.Label()
         Me.txtBollingerPeriod = New System.Windows.Forms.TextBox()
         Me.lblBollingerPeriod = New System.Windows.Forms.Label()
-        Me.txtMaxProfitPercentagePerDay = New System.Windows.Forms.TextBox()
-        Me.lblMaxProfitPercentagePerDay = New System.Windows.Forms.Label()
-        Me.txtMaxLossPercentagePerDay = New System.Windows.Forms.TextBox()
-        Me.lblMaxLossPercentagePerDay = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -48,20 +44,8 @@ Partial Class frmNearFarHedgingSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.btnSaveNearFarHedgingSettings = New System.Windows.Forms.Button()
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.grpSignal = New System.Windows.Forms.GroupBox()
-        Me.rdbBoth = New System.Windows.Forms.RadioButton()
-        Me.rdbAnyOne = New System.Windows.Forms.RadioButton()
-        Me.grpTelegram = New System.Windows.Forms.GroupBox()
-        Me.txtTelegramChatID = New System.Windows.Forms.TextBox()
-        Me.lblTelegramChatID = New System.Windows.Forms.Label()
-        Me.txtTelegramAPI = New System.Windows.Forms.TextBox()
-        Me.lblTelegramAPI = New System.Windows.Forms.Label()
-        Me.txtTelegramChatIDForPL = New System.Windows.Forms.TextBox()
-        Me.lblChatIDForPL = New System.Windows.Forms.Label()
         Me.grpIndicator.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
-        Me.grpSignal.SuspendLayout()
-        Me.grpTelegram.SuspendLayout()
         Me.SuspendLayout()
         '
         'grpIndicator
@@ -70,19 +54,19 @@ Partial Class frmNearFarHedgingSettings
         Me.grpIndicator.Controls.Add(Me.lblBollingerMultiplier)
         Me.grpIndicator.Controls.Add(Me.txtBollingerPeriod)
         Me.grpIndicator.Controls.Add(Me.lblBollingerPeriod)
-        Me.grpIndicator.Location = New System.Drawing.Point(464, 6)
+        Me.grpIndicator.Location = New System.Drawing.Point(5, 208)
         Me.grpIndicator.Name = "grpIndicator"
-        Me.grpIndicator.Size = New System.Drawing.Size(289, 95)
+        Me.grpIndicator.Size = New System.Drawing.Size(439, 95)
         Me.grpIndicator.TabIndex = 16
         Me.grpIndicator.TabStop = False
         Me.grpIndicator.Text = "Indicator Settings"
         '
         'txtBollingerMultiplier
         '
-        Me.txtBollingerMultiplier.Location = New System.Drawing.Point(156, 56)
+        Me.txtBollingerMultiplier.Location = New System.Drawing.Point(176, 57)
         Me.txtBollingerMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtBollingerMultiplier.Name = "txtBollingerMultiplier"
-        Me.txtBollingerMultiplier.Size = New System.Drawing.Size(119, 22)
+        Me.txtBollingerMultiplier.Size = New System.Drawing.Size(254, 22)
         Me.txtBollingerMultiplier.TabIndex = 32
         '
         'lblBollingerMultiplier
@@ -97,10 +81,10 @@ Partial Class frmNearFarHedgingSettings
         '
         'txtBollingerPeriod
         '
-        Me.txtBollingerPeriod.Location = New System.Drawing.Point(157, 24)
+        Me.txtBollingerPeriod.Location = New System.Drawing.Point(174, 24)
         Me.txtBollingerPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtBollingerPeriod.Name = "txtBollingerPeriod"
-        Me.txtBollingerPeriod.Size = New System.Drawing.Size(119, 22)
+        Me.txtBollingerPeriod.Size = New System.Drawing.Size(256, 22)
         Me.txtBollingerPeriod.TabIndex = 30
         '
         'lblBollingerPeriod
@@ -112,42 +96,6 @@ Partial Class frmNearFarHedgingSettings
         Me.lblBollingerPeriod.Size = New System.Drawing.Size(108, 17)
         Me.lblBollingerPeriod.TabIndex = 31
         Me.lblBollingerPeriod.Text = "Bollinger Period"
-        '
-        'txtMaxProfitPercentagePerDay
-        '
-        Me.txtMaxProfitPercentagePerDay.Location = New System.Drawing.Point(174, 202)
-        Me.txtMaxProfitPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxProfitPercentagePerDay.Name = "txtMaxProfitPercentagePerDay"
-        Me.txtMaxProfitPercentagePerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxProfitPercentagePerDay.TabIndex = 6
-        '
-        'lblMaxProfitPercentagePerDay
-        '
-        Me.lblMaxProfitPercentagePerDay.AutoSize = True
-        Me.lblMaxProfitPercentagePerDay.Location = New System.Drawing.Point(8, 206)
-        Me.lblMaxProfitPercentagePerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxProfitPercentagePerDay.Name = "lblMaxProfitPercentagePerDay"
-        Me.lblMaxProfitPercentagePerDay.Size = New System.Drawing.Size(141, 17)
-        Me.lblMaxProfitPercentagePerDay.TabIndex = 27
-        Me.lblMaxProfitPercentagePerDay.Text = "Max Profit % Per Day"
-        '
-        'txtMaxLossPercentagePerDay
-        '
-        Me.txtMaxLossPercentagePerDay.Location = New System.Drawing.Point(174, 167)
-        Me.txtMaxLossPercentagePerDay.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxLossPercentagePerDay.Name = "txtMaxLossPercentagePerDay"
-        Me.txtMaxLossPercentagePerDay.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxLossPercentagePerDay.TabIndex = 5
-        '
-        'lblMaxLossPercentagePerDay
-        '
-        Me.lblMaxLossPercentagePerDay.AutoSize = True
-        Me.lblMaxLossPercentagePerDay.Location = New System.Drawing.Point(8, 171)
-        Me.lblMaxLossPercentagePerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxLossPercentagePerDay.Name = "lblMaxLossPercentagePerDay"
-        Me.lblMaxLossPercentagePerDay.Size = New System.Drawing.Size(138, 17)
-        Me.lblMaxLossPercentagePerDay.TabIndex = 25
-        Me.lblMaxLossPercentagePerDay.Text = "Max Loss % Per Day"
         '
         'dtpckrEODExitTime
         '
@@ -175,7 +123,7 @@ Partial Class frmNearFarHedgingSettings
         Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(175, 59)
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
-        Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(255, 22)
+        Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(256, 22)
         Me.dtpckrTradeStartTime.TabIndex = 1
         Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
@@ -212,29 +160,25 @@ Partial Class frmNearFarHedgingSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 234)
+        Me.btnBrowse.Location = New System.Drawing.Point(397, 163)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
-        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
+        Me.btnBrowse.Size = New System.Drawing.Size(34, 23)
         Me.btnBrowse.TabIndex = 8
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 235)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 164)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(223, 22)
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(216, 22)
         Me.txtInstrumentDetalis.TabIndex = 15
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPercentagePerDay)
-        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPercentagePerDay)
-        Me.GroupBox1.Controls.Add(Me.txtMaxLossPercentagePerDay)
-        Me.GroupBox1.Controls.Add(Me.lblMaxLossPercentagePerDay)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -250,14 +194,14 @@ Partial Class frmNearFarHedgingSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 271)
+        Me.GroupBox1.Size = New System.Drawing.Size(439, 195)
         Me.GroupBox1.TabIndex = 15
         Me.GroupBox1.TabStop = False
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 238)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 167)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -269,7 +213,7 @@ Partial Class frmNearFarHedgingSettings
         Me.txtSignalTimeFrame.Location = New System.Drawing.Point(175, 21)
         Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
-        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(255, 22)
+        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(256, 22)
         Me.txtSignalTimeFrame.TabIndex = 0
         '
         'lblSignalTimeFrame
@@ -293,7 +237,7 @@ Partial Class frmNearFarHedgingSettings
         Me.btnSaveNearFarHedgingSettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSaveNearFarHedgingSettings.ImageKey = "save-icon-36533.png"
         Me.btnSaveNearFarHedgingSettings.ImageList = Me.ImageList1
-        Me.btnSaveNearFarHedgingSettings.Location = New System.Drawing.Point(761, 13)
+        Me.btnSaveNearFarHedgingSettings.Location = New System.Drawing.Point(452, 13)
         Me.btnSaveNearFarHedgingSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSaveNearFarHedgingSettings.Name = "btnSaveNearFarHedgingSettings"
         Me.btnSaveNearFarHedgingSettings.Size = New System.Drawing.Size(112, 58)
@@ -305,115 +249,11 @@ Partial Class frmNearFarHedgingSettings
         'opnFileSettings
         '
         '
-        'grpSignal
-        '
-        Me.grpSignal.Controls.Add(Me.rdbBoth)
-        Me.grpSignal.Controls.Add(Me.rdbAnyOne)
-        Me.grpSignal.Location = New System.Drawing.Point(464, 101)
-        Me.grpSignal.Name = "grpSignal"
-        Me.grpSignal.Size = New System.Drawing.Size(289, 58)
-        Me.grpSignal.TabIndex = 17
-        Me.grpSignal.TabStop = False
-        Me.grpSignal.Text = "Signal Type"
-        '
-        'rdbBoth
-        '
-        Me.rdbBoth.AutoSize = True
-        Me.rdbBoth.Location = New System.Drawing.Point(105, 29)
-        Me.rdbBoth.Name = "rdbBoth"
-        Me.rdbBoth.Size = New System.Drawing.Size(58, 21)
-        Me.rdbBoth.TabIndex = 1
-        Me.rdbBoth.TabStop = True
-        Me.rdbBoth.Text = "Both"
-        Me.rdbBoth.UseVisualStyleBackColor = True
-        '
-        'rdbAnyOne
-        '
-        Me.rdbAnyOne.AutoSize = True
-        Me.rdbAnyOne.Location = New System.Drawing.Point(13, 29)
-        Me.rdbAnyOne.Name = "rdbAnyOne"
-        Me.rdbAnyOne.Size = New System.Drawing.Size(77, 21)
-        Me.rdbAnyOne.TabIndex = 0
-        Me.rdbAnyOne.TabStop = True
-        Me.rdbAnyOne.Text = "Anyone"
-        Me.rdbAnyOne.UseVisualStyleBackColor = True
-        '
-        'grpTelegram
-        '
-        Me.grpTelegram.Controls.Add(Me.txtTelegramChatIDForPL)
-        Me.grpTelegram.Controls.Add(Me.lblChatIDForPL)
-        Me.grpTelegram.Controls.Add(Me.txtTelegramChatID)
-        Me.grpTelegram.Controls.Add(Me.lblTelegramChatID)
-        Me.grpTelegram.Controls.Add(Me.txtTelegramAPI)
-        Me.grpTelegram.Controls.Add(Me.lblTelegramAPI)
-        Me.grpTelegram.Location = New System.Drawing.Point(463, 159)
-        Me.grpTelegram.Name = "grpTelegram"
-        Me.grpTelegram.Size = New System.Drawing.Size(289, 118)
-        Me.grpTelegram.TabIndex = 18
-        Me.grpTelegram.TabStop = False
-        Me.grpTelegram.Text = "Telegram Details"
-        '
-        'txtTelegramChatID
-        '
-        Me.txtTelegramChatID.Location = New System.Drawing.Point(92, 56)
-        Me.txtTelegramChatID.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtTelegramChatID.Name = "txtTelegramChatID"
-        Me.txtTelegramChatID.Size = New System.Drawing.Size(183, 22)
-        Me.txtTelegramChatID.TabIndex = 32
-        '
-        'lblTelegramChatID
-        '
-        Me.lblTelegramChatID.AutoSize = True
-        Me.lblTelegramChatID.Location = New System.Drawing.Point(9, 60)
-        Me.lblTelegramChatID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTelegramChatID.Name = "lblTelegramChatID"
-        Me.lblTelegramChatID.Size = New System.Drawing.Size(54, 17)
-        Me.lblTelegramChatID.TabIndex = 35
-        Me.lblTelegramChatID.Text = "Chat ID"
-        '
-        'txtTelegramAPI
-        '
-        Me.txtTelegramAPI.Location = New System.Drawing.Point(92, 24)
-        Me.txtTelegramAPI.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtTelegramAPI.Name = "txtTelegramAPI"
-        Me.txtTelegramAPI.Size = New System.Drawing.Size(184, 22)
-        Me.txtTelegramAPI.TabIndex = 30
-        '
-        'lblTelegramAPI
-        '
-        Me.lblTelegramAPI.AutoSize = True
-        Me.lblTelegramAPI.Location = New System.Drawing.Point(10, 28)
-        Me.lblTelegramAPI.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTelegramAPI.Name = "lblTelegramAPI"
-        Me.lblTelegramAPI.Size = New System.Drawing.Size(57, 17)
-        Me.lblTelegramAPI.TabIndex = 31
-        Me.lblTelegramAPI.Text = "API Key"
-        '
-        'txtTelegramChatIDForPL
-        '
-        Me.txtTelegramChatIDForPL.Location = New System.Drawing.Point(92, 87)
-        Me.txtTelegramChatIDForPL.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtTelegramChatIDForPL.Name = "txtTelegramChatIDForPL"
-        Me.txtTelegramChatIDForPL.Size = New System.Drawing.Size(183, 22)
-        Me.txtTelegramChatIDForPL.TabIndex = 36
-        '
-        'lblChatIDForPL
-        '
-        Me.lblChatIDForPL.AutoSize = True
-        Me.lblChatIDForPL.Location = New System.Drawing.Point(9, 91)
-        Me.lblChatIDForPL.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblChatIDForPL.Name = "lblChatIDForPL"
-        Me.lblChatIDForPL.Size = New System.Drawing.Size(75, 17)
-        Me.lblChatIDForPL.TabIndex = 37
-        Me.lblChatIDForPL.Text = "PL Chat ID"
-        '
         'frmNearFarHedgingSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(878, 282)
-        Me.Controls.Add(Me.grpTelegram)
-        Me.Controls.Add(Me.grpSignal)
+        Me.ClientSize = New System.Drawing.Size(573, 306)
         Me.Controls.Add(Me.grpIndicator)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveNearFarHedgingSettings)
@@ -427,10 +267,6 @@ Partial Class frmNearFarHedgingSettings
         Me.grpIndicator.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
-        Me.grpSignal.ResumeLayout(False)
-        Me.grpSignal.PerformLayout()
-        Me.grpTelegram.ResumeLayout(False)
-        Me.grpTelegram.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
@@ -440,10 +276,6 @@ Partial Class frmNearFarHedgingSettings
     Friend WithEvents lblBollingerMultiplier As Label
     Friend WithEvents txtBollingerPeriod As TextBox
     Friend WithEvents lblBollingerPeriod As Label
-    Friend WithEvents txtMaxProfitPercentagePerDay As TextBox
-    Friend WithEvents lblMaxProfitPercentagePerDay As Label
-    Friend WithEvents txtMaxLossPercentagePerDay As TextBox
-    Friend WithEvents lblMaxLossPercentagePerDay As Label
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents dtpckrLastTradeEntryTime As DateTimePicker
     Friend WithEvents dtpckrTradeStartTime As DateTimePicker
@@ -459,14 +291,4 @@ Partial Class frmNearFarHedgingSettings
     Friend WithEvents ImageList1 As ImageList
     Friend WithEvents btnSaveNearFarHedgingSettings As Button
     Friend WithEvents opnFileSettings As OpenFileDialog
-    Friend WithEvents grpSignal As GroupBox
-    Friend WithEvents rdbBoth As RadioButton
-    Friend WithEvents rdbAnyOne As RadioButton
-    Friend WithEvents grpTelegram As GroupBox
-    Friend WithEvents txtTelegramChatID As TextBox
-    Friend WithEvents lblTelegramChatID As Label
-    Friend WithEvents txtTelegramAPI As TextBox
-    Friend WithEvents lblTelegramAPI As Label
-    Friend WithEvents txtTelegramChatIDForPL As TextBox
-    Friend WithEvents lblChatIDForPL As Label
 End Class

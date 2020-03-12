@@ -383,71 +383,86 @@ Namespace ChartHandler.Indicator
                     Dim currentPayload As PairPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
                     If outputConsumer.ConsumerPayloads Is Nothing Then
                         If currentPayload.Instrument1Payload IsNot Nothing AndAlso currentPayload.Instrument2Payload IsNot Nothing Then
-                            outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
-                            If currentPayload.Instrument2Payload.ClosePrice.Value > currentPayload.Instrument1Payload.ClosePrice.Value Then
-                                outputConsumer.HigherContract = currentPayload.Instrument2Payload
-                                outputConsumer.LowerContract = currentPayload.Instrument1Payload
-                            Else
-                                outputConsumer.HigherContract = currentPayload.Instrument1Payload
-                                outputConsumer.LowerContract = currentPayload.Instrument2Payload
+                            Dim previousDayFirstCandle As Date = GetPreviousTradingDayFirstCandleTime(requiredDataSet)
+                            If previousDayFirstCandle <> Date.MinValue Then
+                                outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+                                Dim previousDayFirstPayload As PairPayload = outputConsumer.ParentConsumer.ConsumerPayloads(previousDayFirstCandle)
+                                If currentPayload.Instrument2Payload.ClosePrice.Value > currentPayload.Instrument1Payload.ClosePrice.Value Then
+                                    outputConsumer.HigherContract = currentPayload.Instrument2Payload
+                                    outputConsumer.LowerContract = currentPayload.Instrument1Payload
+
+                                    outputConsumer.HigherContractPreviousDayFirstCandle = previousDayFirstPayload.Instrument2Payload
+                                    outputConsumer.LowerContractPreviousDayFirstCandle = previousDayFirstPayload.Instrument1Payload
+                                Else
+                                    outputConsumer.HigherContract = currentPayload.Instrument1Payload
+                                    outputConsumer.LowerContract = currentPayload.Instrument2Payload
+
+                                    outputConsumer.HigherContractPreviousDayFirstCandle = previousDayFirstPayload.Instrument1Payload
+                                    outputConsumer.LowerContractPreviousDayFirstCandle = previousDayFirstPayload.Instrument2Payload
+                                End If
                             End If
                         Else
                             Exit Sub
                         End If
                     End If
 
-                    Dim spreadValue As SpreadRatioConsumer.SpreadRatioPayload = Nothing
-                    If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, spreadValue) Then
-                        spreadValue = New SpreadRatioConsumer.SpreadRatioPayload
-                    End If
-
-                    Dim higher As OHLCPayload = Nothing
-                    Dim lower As OHLCPayload = Nothing
-
-                    If currentPayload.Instrument1Payload IsNot Nothing Then
-                        If currentPayload.Instrument1Payload.TradingSymbol = outputConsumer.HigherContract.TradingSymbol Then
-                            higher = currentPayload.Instrument1Payload
-                        ElseIf currentPayload.Instrument1Payload.TradingSymbol = outputConsumer.LowerContract.TradingSymbol Then
-                            lower = currentPayload.Instrument1Payload
+                    If outputConsumer.ConsumerPayloads IsNot Nothing Then
+                        Dim spreadValue As SpreadRatioConsumer.SpreadRatioPayload = Nothing
+                        If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, spreadValue) Then
+                            spreadValue = New SpreadRatioConsumer.SpreadRatioPayload
                         End If
-                    End If
 
-                    If currentPayload.Instrument2Payload IsNot Nothing Then
-                        If currentPayload.Instrument2Payload.TradingSymbol = outputConsumer.HigherContract.TradingSymbol Then
-                            higher = currentPayload.Instrument2Payload
-                        ElseIf currentPayload.Instrument2Payload.TradingSymbol = outputConsumer.LowerContract.TradingSymbol Then
-                            lower = currentPayload.Instrument2Payload
-                        End If
-                    End If
+                        Dim higher As OHLCPayload = Nothing
+                        Dim lower As OHLCPayload = Nothing
 
-                    If higher IsNot Nothing AndAlso lower IsNot Nothing Then
-                        Select Case outputConsumer.SpreadRatioField
-                            Case TypeOfField.Close
-                                spreadValue.Spread.Value = higher.ClosePrice.Value - lower.ClosePrice.Value
-                                spreadValue.Ratio.Value = higher.ClosePrice.Value / lower.ClosePrice.Value
-                        End Select
-                    ElseIf higher Is Nothing OrElse lower Is Nothing Then
-                        Dim previousSpreadValues As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
-                        Dim previousSpreadValue As SpreadRatioConsumer.SpreadRatioPayload = Nothing
-                        If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
-                            previousSpreadValues = outputConsumer.ConsumerPayloads.Where(Function(x)
-                                                                                             Return x.Key < runningInputDate
-                                                                                         End Function)
-                            If previousSpreadValues IsNot Nothing AndAlso previousSpreadValues.Count > 0 Then
-                                previousSpreadValue = previousSpreadValues.OrderBy(Function(y)
-                                                                                       Return y.Key
-                                                                                   End Function).LastOrDefault.Value
+                        If currentPayload.Instrument1Payload IsNot Nothing Then
+                            If currentPayload.Instrument1Payload.TradingSymbol = outputConsumer.HigherContract.TradingSymbol Then
+                                higher = currentPayload.Instrument1Payload
+                            ElseIf currentPayload.Instrument1Payload.TradingSymbol = outputConsumer.LowerContract.TradingSymbol Then
+                                lower = currentPayload.Instrument1Payload
                             End If
                         End If
-                        If previousSpreadValue IsNot Nothing Then
-                            spreadValue.Spread.Value = previousSpreadValue.Spread.Value
-                            spreadValue.Ratio.Value = previousSpreadValue.Ratio.Value
-                        Else
-                            spreadValue.Spread.Value = 0
-                            spreadValue.Ratio.Value = 0
+
+                        If currentPayload.Instrument2Payload IsNot Nothing Then
+                            If currentPayload.Instrument2Payload.TradingSymbol = outputConsumer.HigherContract.TradingSymbol Then
+                                higher = currentPayload.Instrument2Payload
+                            ElseIf currentPayload.Instrument2Payload.TradingSymbol = outputConsumer.LowerContract.TradingSymbol Then
+                                lower = currentPayload.Instrument2Payload
+                            End If
                         End If
+
+                        If higher IsNot Nothing AndAlso lower IsNot Nothing Then
+                            Select Case outputConsumer.SpreadRatioField
+                                Case TypeOfField.Close
+                                    Dim higherChange As Decimal = ((higher.ClosePrice.Value / outputConsumer.HigherContractPreviousDayFirstCandle.ClosePrice.Value) - 1) * 100
+                                    Dim lowerChange As Decimal = ((lower.ClosePrice.Value / outputConsumer.LowerContractPreviousDayFirstCandle.ClosePrice.Value) - 1) * 100
+
+                                    spreadValue.Spread.Value = higherChange - lowerChange
+                                    spreadValue.Ratio.Value = higher.ClosePrice.Value / lower.ClosePrice.Value
+                            End Select
+                        ElseIf higher Is Nothing OrElse lower Is Nothing Then
+                            Dim previousSpreadValues As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
+                            Dim previousSpreadValue As SpreadRatioConsumer.SpreadRatioPayload = Nothing
+                            If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                                previousSpreadValues = outputConsumer.ConsumerPayloads.Where(Function(x)
+                                                                                                 Return x.Key < runningInputDate
+                                                                                             End Function)
+                                If previousSpreadValues IsNot Nothing AndAlso previousSpreadValues.Count > 0 Then
+                                    previousSpreadValue = previousSpreadValues.OrderBy(Function(y)
+                                                                                           Return y.Key
+                                                                                       End Function).LastOrDefault.Value
+                                End If
+                            End If
+                            If previousSpreadValue IsNot Nothing Then
+                                spreadValue.Spread.Value = previousSpreadValue.Spread.Value
+                                spreadValue.Ratio.Value = previousSpreadValue.Ratio.Value
+                            Else
+                                spreadValue.Spread.Value = 0
+                                spreadValue.Ratio.Value = 0
+                            End If
+                        End If
+                        outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, spreadValue, Function(key, value) spreadValue)
                     End If
-                    outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, spreadValue, Function(key, value) spreadValue)
                 Next
             End If
         End Sub
@@ -862,6 +877,25 @@ Namespace ChartHandler.Indicator
                     ret = IsFractalLowSatisfied(candidateCandle.PreviousPayload.PreviousPayload, True)
                 ElseIf candidateCandle.PreviousPayload.PreviousPayload.LowPrice.Value < candidateCandle.LowPrice.Value Then
                     ret = False
+                End If
+            End If
+            Return ret
+        End Function
+        Private Function GetPreviousTradingDayFirstCandleTime(ByVal dateList As IEnumerable(Of Date)) As Date
+            Dim ret As Date = Date.MinValue
+            If dateList IsNot Nothing AndAlso dateList.Count > 0 Then
+                Dim previousTradingDays As IEnumerable(Of Date) = dateList.Where(Function(x)
+                                                                                     Return x.Date < Now.Date
+                                                                                 End Function)
+                If previousTradingDays IsNot Nothing AndAlso previousTradingDays.Count > 0 Then
+                    Dim previousTradingDay As Date = previousTradingDays.OrderBy(Function(x)
+                                                                                     Return x
+                                                                                 End Function).LastOrDefault.Date
+                    ret = previousTradingDays.Where(Function(x)
+                                                        Return x.Date = previousTradingDay.Date
+                                                    End Function).OrderBy(Function(y)
+                                                                              Return y
+                                                                          End Function).FirstOrDefault
                 End If
             End If
             Return ret
