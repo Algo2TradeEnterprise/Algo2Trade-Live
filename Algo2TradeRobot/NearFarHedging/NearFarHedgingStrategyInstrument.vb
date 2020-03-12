@@ -452,6 +452,22 @@ Public Class NearFarHedgingStrategyInstrument
                 spreadBollingerConsumer.ConsumerPayloads IsNot Nothing AndAlso spreadBollingerConsumer.ConsumerPayloads.Count > 0 AndAlso
                 spreadRatioConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) AndAlso
                 spreadBollingerConsumer.ConsumerPayloads.ContainsKey(currentCandle.PreviousPayload.SnapshotDateTime) Then
+
+                'For Each runningPayload In spreadRatioConsumer.ConsumerPayloads.OrderBy(Function(x)
+                '                                                                            Return x.Key
+                '                                                                        End Function)
+                '    Dim sprdPayload As SpreadRatioConsumer.SpreadRatioPayload = runningPayload.Value
+                '    Dim blngrPayload As BollingerConsumer.BollingerPayload = spreadBollingerConsumer.ConsumerPayloads(runningPayload.Key)
+
+                '    Console.WriteLine(String.Format("{0},{1},{2},{3},{4}",
+                '                                    runningPayload.Key.ToString("dd-MM-yyyy HH:mm:ss"),
+                '                                    sprdPayload.Spread.Value,
+                '                                    blngrPayload.SMABollinger.Value,
+                '                                    blngrPayload.HighBollinger.Value,
+                '                                    blngrPayload.LowBollinger.Value))
+                'Next
+
+
                 Dim signalCandleTime As Date = currentCandle.PreviousPayload.SnapshotDateTime
                 Dim potentialSignalData As Tuple(Of Boolean, IOrder.TypeOfTransaction) = Nothing
                 potentialSignalData = CheckSignal(spreadRatioConsumer.ConsumerPayloads(signalCandleTime),
