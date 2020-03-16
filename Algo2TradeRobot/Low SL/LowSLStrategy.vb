@@ -131,13 +131,28 @@ Public Class LowSLStrategy
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim userSettings As LowSLUserInputs = Me.UserSettings
+        Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
+        Dim trailingMTMLoss As Decimal = CalculateTrailingMTM(Math.Abs(userSettings.OverallMaxLossPerDay), Math.Abs(userSettings.OverallMaxLossPerDay) / 2, overallPL)
+        If trailingMTMLoss <> Decimal.MinValue AndAlso trailingMTMLoss > userSettings.OverallMaxLossPerDay Then
+            userSettings.OverallMaxLossPerDay = trailingMTMLoss
+        End If
+
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        ElseIf Me.GetTotalPLAfterBrokerage <= userSettings.OverallMaxLossPerDay Then
+        ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
             ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
-        ElseIf Me.GetTotalPLAfterBrokerage >= userSettings.OverallMaxProfitPerDay Then
+        ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
             ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
+        End If
+        Return ret
+    End Function
+
+    Public Function CalculateTrailingMTM(ByVal mtmSlab As Decimal, ByVal mvmntSlab As Decimal, ByVal pl As Decimal) As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If pl >= mtmSlab Then
+            Dim multiplier As Decimal = pl / mtmSlab
+            ret = Math.Floor(multiplier) * mvmntSlab
         End If
         Return ret
     End Function
