@@ -57,15 +57,7 @@ Public Class LowSLStrategy
                     _cts.Token.ThrowIfCancellationRequested()
 
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then
-                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                        If userInputs.AutoSelectStock AndAlso runningTradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures Then
-                            Dim cashInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                             Return x.TradingSymbol = runningTradableInstrument.RawInstrumentName
-                                                                                         End Function)
-                            If cashInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(cashInstrument)
-                        End If
-                    End If
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
                     ret = True
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -122,7 +114,6 @@ Public Class LowSLStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
-            If CType(Me.UserSettings, LowSLUserInputs).AutoSelectStock Then tasks.Add(Task.Run(AddressOf CompleteProcessAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -140,147 +131,14 @@ Public Class LowSLStrategy
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim userSettings As LowSLUserInputs = Me.UserSettings
-        If Not userSettings.AutoSelectStock Then _startExitChecking = True
         Dim currentTime As Date = Now
-        If _startExitChecking Then
-            If currentTime >= Me.UserSettings.EODExitTime Then
-                ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-                'ElseIf Me.GetTotalPLAfterBrokerage <= Math.Abs(userSettings.MaxLossPerDay) * -1 Then
-                '    ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
-                'ElseIf Me.GetTotalPLAfterBrokerage >= Math.Abs(userSettings.MaxProfitPerDay) Then
-                '    ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
-            End If
+        If currentTime >= Me.UserSettings.EODExitTime Then
+            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
+        ElseIf Me.GetTotalPLAfterBrokerage <= userSettings.OverallMaxLossPerDay Then
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
+        ElseIf Me.GetTotalPLAfterBrokerage >= userSettings.OverallMaxProfitPerDay Then
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
         End If
         Return ret
-    End Function
-
-    Private Async Function CompleteProcessAsync() As Task
-        Try
-            Dim userSettings As LowSLUserInputs = Me.UserSettings
-            Dim delayCtr As Integer = 0
-            Dim cashStrategyInstrumentList As IEnumerable(Of StrategyInstrument) = Nothing
-            If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
-                cashStrategyInstrumentList = Me.TradableStrategyInstruments.Where(Function(x)
-                                                                                      Return x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash
-                                                                                  End Function)
-            End If
-            While True
-                If Me.ParentController.OrphanException IsNot Nothing Then
-                    Throw Me.ParentController.OrphanException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                If Now > Me.UserSettings.TradeStartTime.AddSeconds(5) AndAlso cashStrategyInstrumentList.Where(Function(z)
-                                                                                                                   Return CType(z, LowSLStrategyInstrument).VolumeChangePercentage = Decimal.MinValue
-                                                                                                               End Function).Count = 0 Then
-                    If cashStrategyInstrumentList IsNot Nothing AndAlso cashStrategyInstrumentList.Count > 0 Then
-                        Dim counter As Integer = 0
-                        For Each runningCashInstrument In cashStrategyInstrumentList.OrderByDescending(Function(x)
-                                                                                                           Return CType(x, LowSLStrategyInstrument).VolumeChangePercentage
-                                                                                                       End Function)
-                            If CType(runningCashInstrument, LowSLStrategyInstrument).VolumeChangePercentage > CType(Me.UserSettings, LowSLUserInputs).MinVolumeSpikePercentage Then
-                                Dim futureIntruments As IEnumerable(Of StrategyInstrument) =
-                                Me.TradableStrategyInstruments.Where(Function(x)
-                                                                         Return x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                                                        x.TradableInstrument.RawInstrumentName = runningCashInstrument.TradableInstrument.TradingSymbol
-                                                                     End Function)
-                                If futureIntruments IsNot Nothing AndAlso futureIntruments.Count > 0 Then
-                                    Dim stockPrice As Decimal = futureIntruments.FirstOrDefault.TradableInstrument.LastTick.LastPrice
-                                    Dim quantity As Integer = futureIntruments.FirstOrDefault.CalculateQuantityFromInvestment(stockPrice, userSettings.InstrumentsData(futureIntruments.FirstOrDefault.TradableInstrument.TradingSymbol).MarginMultiplier, userSettings.MinCapital, True)
-                                    Dim capital As Decimal = stockPrice * quantity / userSettings.InstrumentsData(futureIntruments.FirstOrDefault.TradableInstrument.TradingSymbol).MarginMultiplier
-                                    If capital < userSettings.MaxCapital Then
-                                        Dim stoploss As Decimal = futureIntruments.FirstOrDefault.CalculateStplossFromPL(stockPrice, quantity, Math.Abs(userSettings.MaxStoploss) * -1)
-                                        Dim slPoint As Decimal = stockPrice - stoploss - futureIntruments.FirstOrDefault.TradableInstrument.TickSize
-                                        If slPoint > 0.2 Then
-                                            CType(futureIntruments.FirstOrDefault, LowSLStrategyInstrument).Quantity = quantity
-                                            CType(futureIntruments.FirstOrDefault, LowSLStrategyInstrument).SLPoint = slPoint
-                                            CType(futureIntruments.FirstOrDefault, LowSLStrategyInstrument).VolumeChangePercentage = CType(runningCashInstrument, LowSLStrategyInstrument).VolumeChangePercentage
-                                            CType(futureIntruments.FirstOrDefault, LowSLStrategyInstrument).EligibleToTakeTrade = True
-                                            futureIntruments.FirstOrDefault.TradableInstrument.FetchHistorical = True
-                                            counter += 1
-                                            Console.WriteLine(String.Format("{0} : {1}",
-                                                                            futureIntruments.FirstOrDefault.TradableInstrument.TradingSymbol,
-                                                                            CType(futureIntruments.FirstOrDefault, LowSLStrategyInstrument).VolumeChangePercentage))
-                                        End If
-                                    End If
-                                Else
-                                    Dim stockPrice As Decimal = runningCashInstrument.TradableInstrument.LastTick.LastPrice
-                                    Dim quantity As Integer = runningCashInstrument.CalculateQuantityFromInvestment(stockPrice, userSettings.InstrumentsData(runningCashInstrument.TradableInstrument.TradingSymbol).MarginMultiplier, userSettings.MinCapital, True)
-                                    Dim capital As Decimal = stockPrice * quantity / userSettings.InstrumentsData(runningCashInstrument.TradableInstrument.TradingSymbol).MarginMultiplier
-                                    If capital < userSettings.MaxCapital Then
-                                        Dim stoploss As Decimal = runningCashInstrument.CalculateStplossFromPL(stockPrice, quantity, Math.Abs(userSettings.MaxStoploss) * -1)
-                                        Dim slPoint As Decimal = stockPrice - stoploss - runningCashInstrument.TradableInstrument.TickSize
-                                        If slPoint > 0.2 Then
-                                            CType(runningCashInstrument, LowSLStrategyInstrument).Quantity = quantity
-                                            CType(runningCashInstrument, LowSLStrategyInstrument).SLPoint = slPoint
-                                            CType(runningCashInstrument, LowSLStrategyInstrument).EligibleToTakeTrade = True
-                                            runningCashInstrument.TradableInstrument.FetchHistorical = True
-                                            counter += 1
-                                            Console.WriteLine(String.Format("{0} : {1}",
-                                                                    runningCashInstrument.TradableInstrument.TradingSymbol,
-                                                                    CType(runningCashInstrument, LowSLStrategyInstrument).VolumeChangePercentage))
-                                        End If
-                                    End If
-                                End If
-                                If counter = CType(Me.UserSettings, LowSLUserInputs).NumberOfStock Then
-                                    WriteCSV()
-                                    _startExitChecking = True
-                                    Exit For
-                                End If
-                            End If
-                        Next
-                        For Each runningInstrument In Me.TradableStrategyInstruments
-                            If Not CType(runningInstrument, LowSLStrategyInstrument).EligibleToTakeTrade Then
-                                runningInstrument.TradableInstrument.FetchHistorical = False
-                                Await Me.ParentController.UnSubscribeTicker(runningInstrument.TradableInstrument.InstrumentIdentifier).ConfigureAwait(False)
-                                CType(runningInstrument, LowSLStrategyInstrument).StopStrategyInstrument = True
-                            End If
-                        Next
-                        Exit While
-                    End If
-                End If
-                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
-            End While
-        Catch ex As Exception
-            'To log exceptions getting created from this function as the bubble up of the exception
-            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
-            logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
-            Throw ex
-        End Try
-    End Function
-
-    Private Async Function WriteCSV() As Task
-        Await Task.Delay(0).ConfigureAwait(False)
-        Try
-            If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
-                Dim allStockData As DataTable = Nothing
-                If CType(Me.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath IsNot Nothing AndAlso
-                    File.Exists(CType(Me.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath) Then
-                    File.Delete(CType(Me.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath)
-                    Using csv As New CSVHelper(CType(Me.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath, ",", _cts)
-                        _cts.Token.ThrowIfCancellationRequested()
-                        allStockData = New DataTable
-                        allStockData.Columns.Add("Trading Symbol")
-                        allStockData.Columns.Add("Margin Multiplier")
-                        allStockData.Columns.Add("Day ATR")
-                        allStockData.Columns.Add("Quantity")
-                        allStockData.Columns.Add("SL Point")
-                        For Each runningInstrument In Me.TradableStrategyInstruments
-                            If CType(runningInstrument, LowSLStrategyInstrument).EligibleToTakeTrade Then
-                                Dim row As DataRow = allStockData.NewRow
-                                row("Trading Symbol") = runningInstrument.TradableInstrument.TradingSymbol
-                                row("Margin Multiplier") = If(runningInstrument.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash, 13, 30)
-                                row("Day ATR") = CType(runningInstrument, LowSLStrategyInstrument).DayATR
-                                row("Quantity") = CType(runningInstrument, LowSLStrategyInstrument).Quantity
-                                row("SL Point") = CType(runningInstrument, LowSLStrategyInstrument).SLPoint
-                                allStockData.Rows.Add(row)
-                            End If
-                        Next
-                        csv.GetCSVFromDataTable(allStockData)
-                    End Using
-                End If
-            End If
-        Catch ex As Exception
-            logger.Error(ex.ToString)
-        End Try
     End Function
 End Class

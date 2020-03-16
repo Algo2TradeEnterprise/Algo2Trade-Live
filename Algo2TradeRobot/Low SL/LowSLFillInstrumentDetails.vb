@@ -9,11 +9,9 @@ Imports NLog
 Public Class LowSLFillInstrumentDetails
     Implements IDisposable
 
-
 #Region "Logging and Status Progress"
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
-
 
 #Region "Events/Event handlers"
     Public Event DocumentDownloadComplete()
@@ -45,7 +43,7 @@ Public Class LowSLFillInstrumentDetails
         _cts = canceller
         _parentStrategy = parentStrategy
         _userInputs = _parentStrategy.UserSettings
-        tradingDay = Now.Date
+        tradingDay = Now
     End Sub
 
     Private Async Function GetHistoricalCandleStickAsync(ByVal instrumentToken As String, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
@@ -86,6 +84,7 @@ Public Class LowSLFillInstrumentDetails
         End Using
         Return ret
     End Function
+
     Public Async Function GetInstrumentData(ByVal allInstruments As IEnumerable(Of IInstrument), ByVal bannedStock As List(Of String)) As Task
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim nfoInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
@@ -158,23 +157,10 @@ Public Class LowSLFillInstrumentDetails
                                                                                                                                Dim lastDayClosePrice As Decimal = eodHistoricalData.LastOrDefault.Value.ClosePrice.Value
                                                                                                                                lastTradingDay = eodHistoricalData.LastOrDefault.Key
                                                                                                                                Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
-                                                                                                                               If atrPercentage >= _userInputs.ATRPercentage Then
+                                                                                                                               If atrPercentage >= _userInputs.MinATRPercentage Then
                                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                                   Dim volumePayload As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = eodHistoricalData.OrderByDescending(Function(x)
-                                                                                                                                                                                                                                                     Return x.Key
-                                                                                                                                                                                                                                                 End Function).Take(5)
-                                                                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                                   If volumePayload IsNot Nothing AndAlso volumePayload.Count > 0 Then
-                                                                                                                                       _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                                       Dim avgVolume As Decimal = volumePayload.Average(Function(x)
-                                                                                                                                                                                            Return CType(x.Value.Volume.Value, Long)
-                                                                                                                                                                                        End Function)
-                                                                                                                                       _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                                       If avgVolume >= (_userInputs.MinVolume / 100) * lastDayClosePrice Then
-                                                                                                                                           If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
-                                                                                                                                           highATRStocks.TryAdd(instrumentData.Value, {atrPercentage, ATRPayload(eodHistoricalData.LastOrDefault.Key)})
-                                                                                                                                       End If
-                                                                                                                                   End If
+                                                                                                                                   If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
+                                                                                                                                   highATRStocks.TryAdd(instrumentData.Value, {atrPercentage, lastDayClosePrice})
                                                                                                                                End If
                                                                                                                            End If
                                                                                                                        End If
@@ -285,75 +271,52 @@ Public Class LowSLFillInstrumentDetails
                         Dim stocksLessThanMaxBlankCandlePercentage As IEnumerable(Of KeyValuePair(Of String, InstrumentDetails)) =
                                     capableStocks.Where(Function(x)
                                                             Return x.Value.BlankCandlePercentage <> Decimal.MinValue AndAlso
-                                                                  x.Value.BlankCandlePercentage <= 15
+                                                                  x.Value.BlankCandlePercentage <= _userInputs.MaxBlankCandlePercentage
                                                         End Function)
                         If stocksLessThanMaxBlankCandlePercentage IsNot Nothing AndAlso stocksLessThanMaxBlankCandlePercentage.Count > 0 Then
+                            Dim stockCounter As Integer = 0
                             For Each stockData In stocksLessThanMaxBlankCandlePercentage.OrderByDescending(Function(x)
                                                                                                                Return x.Value.ATR
                                                                                                            End Function)
                                 _cts.Token.ThrowIfCancellationRequested()
                                 If todayStockList Is Nothing Then todayStockList = New List(Of String)
                                 todayStockList.Add(stockData.Key)
+                                stockCounter += 1
+                                If stockCounter = _userInputs.NumberOfStock Then Exit For
                             Next
-                            'If stockCounter < _userInputs.NumberOfStock Then
-                            '    Dim stocksLessThanHigherLimitOfMaxBlankCandlePercentage As IEnumerable(Of KeyValuePair(Of String, InstrumentDetails)) =
-                            '        capableStocks.Where(Function(x)
-                            '                                Return x.Value.BlankCandlePercentage > 8 AndAlso
-                            '                                      x.Value.BlankCandlePercentage <= 20
-                            '                            End Function)
-                            '    If stocksLessThanHigherLimitOfMaxBlankCandlePercentage IsNot Nothing AndAlso stocksLessThanHigherLimitOfMaxBlankCandlePercentage.Count > 0 Then
-                            '        For Each stockData In stocksLessThanHigherLimitOfMaxBlankCandlePercentage.OrderBy(Function(y)
-                            '                                                                                              Return y.Value.BlankCandlePercentage
-                            '                                                                                          End Function)
-                            '            _cts.Token.ThrowIfCancellationRequested()
-                            '            If todayStockList Is Nothing Then todayStockList = New List(Of String)
-                            '            todayStockList.Add(stockData.Key)
-                            '            stockCounter += 1
-                            '            If stockCounter = _userInputs.NumberOfStock Then Exit For
-                            '        Next
-                            '    End If
-                            'End If
                         End If
                         _cts.Token.ThrowIfCancellationRequested()
                         If todayStockList IsNot Nothing AndAlso todayStockList.Count > 0 Then
                             Dim allStockData As DataTable = Nothing
-                            If CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath IsNot Nothing AndAlso
-                                File.Exists(CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath) Then
-                                File.Delete(CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath)
-                                Using csv As New CSVHelper(CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath, ",", _cts)
+                            If _userInputs.InstrumentDetailsFilePath IsNot Nothing AndAlso
+                                File.Exists(_userInputs.InstrumentDetailsFilePath) Then
+                                File.Delete(_userInputs.InstrumentDetailsFilePath)
+                                Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
-                                    allStockData.Columns.Add("Trading Symbol")
-                                    allStockData.Columns.Add("Margin Multiplier")
-                                    allStockData.Columns.Add("Day ATR")
-                                    allStockData.Columns.Add("Quantity")
-                                    allStockData.Columns.Add("SL Point")
+                                    allStockData.Columns.Add("TRADING SYMBOL")
+                                    allStockData.Columns.Add("MARGIN MULTIPLIER")
                                     For Each stock In todayStockList
-                                        If CType(_parentStrategy.UserSettings, LowSLUserInputs).CashInstrument Then
-                                            Dim row As DataRow = allStockData.NewRow
-                                            row("Trading Symbol") = stock.Remove(stock.Count - 8)
-                                            row("Margin Multiplier") = 13
-                                            row("Day ATR") = highATRStocks(stock.Remove(stock.Count - 8))(1)
-                                            row("Quantity") = 0
-                                            row("SL Point") = 0
-                                            allStockData.Rows.Add(row)
+                                        Dim row As DataRow = allStockData.NewRow
+                                        Dim instrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                                       Return x.TradingSymbol = stock
+                                                                                                   End Function)
+                                        If _userInputs.CashInstrument Then
+                                            row("TRADING SYMBOL") = instrument.RawInstrumentName
+                                            row("MARGIN MULTIPLIER") = 13
+                                        Else
+                                            row("TRADING SYMBOL") = instrument.TradingSymbol
+                                            row("MARGIN MULTIPLIER") = 30
                                         End If
-                                        If CType(_parentStrategy.UserSettings, LowSLUserInputs).FutureInstrument Then
-                                            Dim row As DataRow = allStockData.NewRow
-                                            row("Trading Symbol") = stock
-                                            row("Margin Multiplier") = 30
-                                            row("Day ATR") = highATRStocks(stock.Remove(stock.Count - 8))(1)
-                                            row("Quantity") = 0
-                                            row("SL Point") = 0
-                                            allStockData.Rows.Add(row)
-                                        End If
+                                        allStockData.Rows.Add(row)
                                     Next
+
                                     csv.GetCSVFromDataTable(allStockData)
                                 End Using
-                                If CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentsData IsNot Nothing Then
-                                    CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentsData.Clear()
-                                    CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentsData = Nothing
-                                    CType(_parentStrategy.UserSettings, LowSLUserInputs).FillInstrumentDetails(CType(_parentStrategy.UserSettings, LowSLUserInputs).InstrumentDetailsFilePath, _cts)
+                                If _userInputs.InstrumentsData IsNot Nothing Then
+                                    _userInputs.InstrumentsData.Clear()
+                                    _userInputs.InstrumentsData = Nothing
+                                    _userInputs.FillInstrumentDetails(_userInputs.InstrumentDetailsFilePath, _cts)
                                 End If
                             End If
                         End If
