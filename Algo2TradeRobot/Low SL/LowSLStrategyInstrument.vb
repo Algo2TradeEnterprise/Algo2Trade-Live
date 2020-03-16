@@ -355,14 +355,69 @@ Public Class LowSLStrategyInstrument
 
     Private Function GetEntrySignal(ByVal candle As OHLCPayload, ByVal currentTick As ITick) As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = Nothing
+        Dim userSettings As LowSLUserInputs = Me.ParentStrategy.UserSettings
         If candle IsNot Nothing AndAlso candle.PreviousPayload IsNot Nothing AndAlso
             Not candle.DeadCandle AndAlso Not candle.PreviousPayload.DeadCandle Then
-            Dim userSettings As LowSLUserInputs = Me.ParentStrategy.UserSettings
+            Dim firstDirectionToCheck As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
+            If candle.CandleColor = Color.Green Then
+                firstDirectionToCheck = IOrder.TypeOfTransaction.Buy
+            ElseIf candle.CandleColor = Color.Red Then
+                firstDirectionToCheck = IOrder.TypeOfTransaction.Sell
+            Else
+                firstDirectionToCheck = IOrder.TypeOfTransaction.Buy
+            End If
+            Dim buySLPrice As Decimal = GetStoplossPrice(candle, IOrder.TypeOfTransaction.Buy)
+            Dim sellSLPrice As Decimal = GetStoplossPrice(candle, IOrder.TypeOfTransaction.Sell)
+            If firstDirectionToCheck = IOrder.TypeOfTransaction.Buy Then
+                If buySLPrice <> Decimal.MinValue AndAlso Math.Abs(buySLPrice) >= Math.Abs(userSettings.MinStoplossPerTrade) AndAlso Math.Abs(buySLPrice) <= Math.Abs(userSettings.MaxStoplossPerTrade) Then
+                    Dim minStockMaxProft As Decimal = userSettings.StockMaxProfitPerDay
+                    Dim targetPL As Decimal = Math.Max(minStockMaxProft, Math.Abs(buySLPrice) * userSettings.TargetMultiplier)
+                    Dim targetPrice As Decimal = CalculateTargetFromPL(candle.HighPrice.Value, _quantity, targetPL)
 
+                    ret = New Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)(True, targetPrice - candle.HighPrice.Value, IOrder.TypeOfTransaction.Buy)
+                ElseIf sellSLPrice <> Decimal.MinValue AndAlso Math.Abs(sellSLPrice) >= Math.Abs(userSettings.MinStoplossPerTrade) AndAlso Math.Abs(sellSLPrice) <= Math.Abs(userSettings.MaxStoplossPerTrade) Then
+                    Dim minStockMaxProft As Decimal = userSettings.StockMaxProfitPerDay
+                    Dim targetPL As Decimal = Math.Max(minStockMaxProft, Math.Abs(sellSLPrice) * userSettings.TargetMultiplier)
+                    Dim targetPrice As Decimal = CalculateTargetFromPL(candle.LowPrice.Value, _quantity, targetPL)
+
+                    ret = New Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)(True, targetPrice - candle.LowPrice.Value, IOrder.TypeOfTransaction.Sell)
+                End If
+            ElseIf firstDirectionToCheck = IOrder.TypeOfTransaction.Sell Then
+                If sellSLPrice <> Decimal.MinValue AndAlso Math.Abs(sellSLPrice) >= Math.Abs(userSettings.MinStoplossPerTrade) AndAlso Math.Abs(sellSLPrice) <= Math.Abs(userSettings.MaxStoplossPerTrade) Then
+                    Dim minStockMaxProft As Decimal = userSettings.StockMaxProfitPerDay
+                    Dim targetPL As Decimal = Math.Max(minStockMaxProft, Math.Abs(sellSLPrice) * userSettings.TargetMultiplier)
+                    Dim targetPrice As Decimal = CalculateTargetFromPL(candle.LowPrice.Value, _quantity, targetPL)
+
+                    ret = New Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)(True, targetPrice - candle.LowPrice.Value, IOrder.TypeOfTransaction.Sell)
+                ElseIf buySLPrice <> Decimal.MinValue AndAlso Math.Abs(buySLPrice) >= Math.Abs(userSettings.MinStoplossPerTrade) AndAlso Math.Abs(buySLPrice) <= Math.Abs(userSettings.MaxStoplossPerTrade) Then
+                    Dim minStockMaxProft As Decimal = userSettings.StockMaxProfitPerDay
+                    Dim targetPL As Decimal = Math.Max(minStockMaxProft, Math.Abs(buySLPrice) * userSettings.TargetMultiplier)
+                    Dim targetPrice As Decimal = CalculateTargetFromPL(candle.HighPrice.Value, _quantity, targetPL)
+
+                    ret = New Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)(True, targetPrice - candle.HighPrice.Value, IOrder.TypeOfTransaction.Buy)
+                End If
+            End If
         End If
         Return ret
     End Function
 
+    Private Function GetStoplossPrice(ByVal candle As OHLCPayload, ByVal direction As IOrder.TypeOfTransaction) As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If direction = IOrder.TypeOfTransaction.Buy Then
+            Dim buffer As Decimal = CalculateBuffer(candle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            If candle.CandleWicks.Top >= buffer Then
+                Dim slPoint As Decimal = candle.CandleWicks.Top + buffer
+                ret = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, candle.HighPrice.Value, candle.HighPrice.Value - slPoint, _quantity)
+            End If
+        ElseIf direction = IOrder.TypeOfTransaction.Sell Then
+            Dim buffer As Decimal = CalculateBuffer(candle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            If candle.CandleWicks.Bottom >= buffer Then
+                Dim slPoint As Decimal = candle.CandleWicks.Bottom + buffer
+                ret = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, candle.LowPrice.Value + slPoint, candle.LowPrice.Value, _quantity)
+            End If
+        End If
+        Return ret
+    End Function
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls
 
