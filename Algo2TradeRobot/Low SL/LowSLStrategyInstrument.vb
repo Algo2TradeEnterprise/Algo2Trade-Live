@@ -100,6 +100,31 @@ Public Class LowSLStrategyInstrument
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
 
+        Try
+            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                (Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder OrElse forcePrint) Then
+                _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
+                logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
+                GetEntrySignal(runningCandlePayload.PreviousPayload, currentTick, True)
+                logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, Last Trade Entry Time:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, Signal Candle Time:{5}, Is Active Instrument:{6}, Number Of Trade:{7}, OverAll PL:{8}, Stock PL:{9}, Current Time:{10}, Current LTP:{11}, TradingSymbol:{12}",
+                                userSettings.TradeStartTime.ToString,
+                                userSettings.LastTradeEntryTime.ToString,
+                                runningCandlePayload.SnapshotDateTime.ToString,
+                                runningCandlePayload.PayloadGeneratedBy.ToString,
+                                Me.TradableInstrument.IsHistoricalCompleted,
+                                runningCandlePayload.PreviousPayload.SnapshotDateTime.ToShortTimeString,
+                                IsActiveInstrument(),
+                                Me.GetTotalExecutedOrders(),
+                                Me.ParentStrategy.GetTotalPLAfterBrokerage(),
+                                Me.GetOverallPLAfterBrokerage(),
+                                currentTime.ToString,
+                                currentTick.LastPrice,
+                                Me.TradableInstrument.TradingSymbol)
+            End If
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+        End Try
+
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
@@ -113,7 +138,7 @@ Public Class LowSLStrategyInstrument
             If _quantity = Integer.MinValue Then
                 _quantity = CalculateQuantityFromInvestment(currentTick.LastPrice, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).MarginMultiplier, userSettings.MinInvestmentPerStock, True)
             End If
-            Dim signal As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = GetEntrySignal(runningCandlePayload.PreviousPayload, currentTick)
+            Dim signal As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = GetEntrySignal(runningCandlePayload.PreviousPayload, currentTick, forcePrint)
             If signal IsNot Nothing AndAlso signal.Item1 Then
                 Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
                 Dim signalCandle As OHLCPayload = Nothing
@@ -306,7 +331,7 @@ Public Class LowSLStrategyInstrument
             If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
                 Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
                 If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandle.PreviousPayload IsNot Nothing Then
-                    Dim signal As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = GetEntrySignal(runningCandle.PreviousPayload, Me.TradableInstrument.LastTick)
+                    Dim signal As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = GetEntrySignal(runningCandle.PreviousPayload, Me.TradableInstrument.LastTick, forcePrint)
                     If signal IsNot Nothing Then
                         For Each parentOrder In parentOrders
                             Dim parentBussinessOrder As IBusinessOrder = OrderDetails(parentOrder.OrderIdentifier)
@@ -352,7 +377,7 @@ Public Class LowSLStrategyInstrument
         End If
     End Function
 
-    Private Function GetEntrySignal(ByVal candle As OHLCPayload, ByVal currentTick As ITick) As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)
+    Private Function GetEntrySignal(ByVal candle As OHLCPayload, ByVal currentTick As ITick, ByVal print As Boolean) As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction) = Nothing
         Dim userSettings As LowSLUserInputs = Me.ParentStrategy.UserSettings
         If candle IsNot Nothing AndAlso candle.PreviousPayload IsNot Nothing AndAlso
@@ -395,6 +420,14 @@ Public Class LowSLStrategyInstrument
 
                     ret = New Tuple(Of Boolean, Decimal, IOrder.TypeOfTransaction)(True, targetPrice - candle.HighPrice.Value, IOrder.TypeOfTransaction.Buy)
                 End If
+            End If
+            If print Then
+                Try
+                    logger.Debug("Signal Details -> Top Wick:{0}, Bottom Wick:{1}, Buy SL Amount:{2}, Sell SL Amount:{3}, Trading Symbol:{4}",
+                                 candle.CandleWicks.Top, candle.CandleWicks.Bottom, buySLPrice, sellSLPrice)
+                Catch ex As Exception
+                    logger.Error(ex.ToString)
+                End Try
             End If
         End If
         Return ret

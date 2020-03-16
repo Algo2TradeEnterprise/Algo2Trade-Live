@@ -135,6 +135,11 @@ Public Class LowSLStrategy
         Dim trailingMTMLoss As Decimal = CalculateTrailingMTM(Math.Abs(userSettings.OverallMaxLossPerDay), Math.Abs(userSettings.OverallMaxLossPerDay) / 2, overallPL)
         If trailingMTMLoss <> Decimal.MinValue AndAlso trailingMTMLoss > userSettings.OverallMaxLossPerDay Then
             userSettings.OverallMaxLossPerDay = trailingMTMLoss
+            Try
+                logger.Debug("Overall loss moved to: {0}, PL: {1}", Math.Round(trailingMTMLoss, 2), Math.Round(overallPL, 2))
+            Catch ex As Exception
+                logger.Error(ex.ToString)
+            End Try
         End If
 
         Dim currentTime As Date = Now
