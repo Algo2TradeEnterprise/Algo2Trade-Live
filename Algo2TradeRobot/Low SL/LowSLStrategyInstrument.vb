@@ -424,7 +424,7 @@ Public Class LowSLStrategyInstrument
             If print Then
                 Try
                     logger.Debug("Signal Details -> Top Wick:{0}, Bottom Wick:{1}, Buy SL Amount:{2}, Sell SL Amount:{3}, Trading Symbol:{4}",
-                                 candle.CandleWicks.Top, candle.CandleWicks.Bottom, buySLPrice, sellSLPrice)
+                                 candle.CandleWicks.Top, candle.CandleWicks.Bottom, buySLPrice, sellSLPrice, Me.TradableInstrument.TradingSymbol)
                 Catch ex As Exception
                     logger.Error(ex.ToString)
                 End Try
