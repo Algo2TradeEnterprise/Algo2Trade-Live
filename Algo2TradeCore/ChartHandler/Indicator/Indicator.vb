@@ -777,6 +777,151 @@ Namespace ChartHandler.Indicator
                 Next
             End If
         End Sub
+
+        Public Sub CalculatePSAR(ByVal timeToCalculateFrom As Date, ByVal outputConsumer As PSARConsumer)
+            If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
+                outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
+                Dim requiredDataSet As IEnumerable(Of Date) =
+                    outputConsumer.ParentConsumer.ConsumerPayloads.Keys.Where(Function(x)
+                                                                                  Return x >= timeToCalculateFrom
+                                                                              End Function)
+
+                For Each runningInputDate In requiredDataSet.OrderBy(Function(x)
+                                                                         Return x
+                                                                     End Function)
+                    If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+
+                    Dim psarValue As PSARConsumer.PSARPayload = Nothing
+                    If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, psarValue) Then
+                        psarValue = New PSARConsumer.PSARPayload
+                    End If
+
+                    Dim previousPSARValues As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
+                    Dim previousPSARValue As PSARConsumer.PSARPayload = Nothing
+                    If outputConsumer.ConsumerPayloads IsNot Nothing AndAlso outputConsumer.ConsumerPayloads.Count > 0 Then
+                        previousPSARValues = outputConsumer.ConsumerPayloads.Where(Function(x)
+                                                                                       Return x.Key < runningInputDate
+                                                                                   End Function)
+                        If previousPSARValues IsNot Nothing AndAlso previousPSARValues.Count > 0 Then
+                            previousPSARValue = previousPSARValues.OrderBy(Function(y)
+                                                                               Return y.Key
+                                                                           End Function).LastOrDefault.Value
+                        End If
+                    End If
+
+                    Dim previousTrend As Integer = 0
+                    Dim previousCalculatedSAR As Decimal = 0
+                    Dim previousTentativeSAR As Decimal = 0
+                    Dim previousPSAR As Decimal = 0
+                    Dim previousEP As Decimal = 0
+                    Dim previousAF As Decimal = 0
+                    If previousPSARValue IsNot Nothing Then
+                        previousTrend = previousPSARValue.Trend
+                        previousCalculatedSAR = previousPSARValue.CalculatedSAR
+                        previousTentativeSAR = previousPSARValue.TentativeSAR
+                        previousPSAR = previousPSARValue.PSAR.Value
+                        previousEP = previousPSARValue.EP
+                        previousAF = previousPSARValue.AF
+                    End If
+
+                    Dim currentPayload As OHLCPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
+                    Dim trend As Integer = 0
+                    Dim calculatedSAR As Decimal = 0
+                    Dim tentativeSAR As Decimal = 0
+                    Dim psar As Decimal = 0
+                    Dim ep As Decimal = 0
+                    Dim af As Decimal = 0
+
+                    If currentPayload.PreviousPayload IsNot Nothing AndAlso currentPayload.PreviousPayload.PreviousPayload IsNot Nothing Then
+                        calculatedSAR = previousPSAR + previousAF * (previousEP - previousPSAR)
+                        If previousTrend < 0 Then
+                            tentativeSAR = Math.Max(calculatedSAR, Math.Max(currentPayload.PreviousPayload.HighPrice.Value, currentPayload.PreviousPayload.PreviousPayload.HighPrice.Value))
+                        Else
+                            tentativeSAR = Math.Min(calculatedSAR, Math.Min(currentPayload.PreviousPayload.LowPrice.Value, currentPayload.PreviousPayload.PreviousPayload.LowPrice.Value))
+                        End If
+                        If previousTrend < 0 Then
+                            If tentativeSAR < currentPayload.HighPrice.Value Then
+                                trend = 1
+                            Else
+                                trend = previousTrend - 1
+                            End If
+                        Else
+                            If tentativeSAR > currentPayload.LowPrice.Value Then
+                                trend = -1
+                            Else
+                                trend = previousTrend + 1
+                            End If
+                        End If
+                        If trend = -1 Then
+                            psar = Math.Max(previousEP, currentPayload.HighPrice.Value)
+                        ElseIf trend = 1 Then
+                            psar = Math.Min(previousEP, currentPayload.LowPrice.Value)
+                        Else
+                            psar = tentativeSAR
+                        End If
+                        If trend < 0 Then
+                            If trend = -1 Then
+                                ep = currentPayload.LowPrice.Value
+                            Else
+                                ep = Math.Min(currentPayload.LowPrice.Value, previousEP)
+                            End If
+                        Else
+                            If trend = 1 Then
+                                ep = currentPayload.HighPrice.Value
+                            Else
+                                ep = Math.Max(currentPayload.HighPrice.Value, previousEP)
+                            End If
+                        End If
+                        If Math.Abs(trend) = 1 Then
+                            af = outputConsumer.MinimumAF
+                        Else
+                            If ep = previousEP Then
+                                af = previousAF
+                            Else
+                                af = Math.Min(outputConsumer.MaximumAF, previousAF + outputConsumer.MinimumAF)
+                            End If
+                        End If
+                    ElseIf currentPayload.PreviousPayload IsNot Nothing Then
+                        trend = -1
+                        If trend < 0 Then
+                            psar = currentPayload.PreviousPayload.HighPrice.Value
+                        Else
+                            psar = currentPayload.PreviousPayload.LowPrice.Value
+                        End If
+                        If trend < 0 Then
+                            If trend = -1 Then
+                                ep = currentPayload.LowPrice.Value
+                            Else
+                                ep = Math.Min(currentPayload.LowPrice.Value, previousEP)
+                            End If
+                        Else
+                            If trend = 1 Then
+                                ep = currentPayload.HighPrice.Value
+                            Else
+                                ep = Math.Max(currentPayload.HighPrice.Value, previousEP)
+                            End If
+                        End If
+                        If Math.Abs(trend) = 1 Then
+                            af = outputConsumer.MinimumAF
+                        Else
+                            If ep = previousEP Then
+                                af = previousAF
+                            Else
+                                af = Math.Min(outputConsumer.MaximumAF, previousAF + outputConsumer.MinimumAF)
+                            End If
+                        End If
+                    End If
+
+                    psarValue.PSAR.Value = psar
+                    psarValue.Trend = trend
+                    psarValue.CalculatedSAR = calculatedSAR
+                    psarValue.TentativeSAR = tentativeSAR
+                    psarValue.EP = ep
+                    psarValue.AF = af
+                    outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, psarValue, Function(key, value) psarValue)
+                Next
+            End If
+        End Sub
 #End Region
 
 #Region "Private Function"

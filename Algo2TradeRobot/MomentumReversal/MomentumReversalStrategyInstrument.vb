@@ -39,9 +39,9 @@ Public Class MomentumReversalStrategyInstrument
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
                 chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
-                {New ATRConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, MomentumReversalUserInputs).ATRPeriod)}
+                {New PSARConsumer(chartConsumer, 0.02, 0.2)}
                 RawPayloadDependentConsumers.Add(chartConsumer)
-                _dummyATRConsumer = New ATRConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, MomentumReversalUserInputs).ATRPeriod)
+                '_dummyATRConsumer = New ATRConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, MomentumReversalUserInputs).ATRPeriod)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -53,7 +53,6 @@ Public Class MomentumReversalStrategyInstrument
     Public Overrides Async Function MonitorAsync() As Task
         Try
             Dim userSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
-            Dim historicalStopped As Boolean = False
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
@@ -64,30 +63,26 @@ Public Class MomentumReversalStrategyInstrument
                     Throw Me._RMSException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                If Me.TradableInstrument.IsHistoricalCompleted AndAlso
-                    Not historicalStopped AndAlso Now >= userSettings.TradeStartTime.AddSeconds(10) Then
-                    Await Me.ParentStrategy.ParentController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-                    historicalStopped = True
-                End If
-                'Place Order block start
-                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
-                    If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
-                        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
-                    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL Then
-                        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
-                    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Limit Then
-                        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitMISOrder, Nothing).ConfigureAwait(False)
-                    End If
-                End If
-                'Place Order block end
-                _cts.Token.ThrowIfCancellationRequested()
-                'Modify Order block start
-                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
-                If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
-                    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                End If
-                'Modify Order block end
+
+                ''Place Order block start
+                'Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                'If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
+                '    If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
+                '        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
+                '    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL Then
+                '        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
+                '    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Limit Then
+                '        Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitMISOrder, Nothing).ConfigureAwait(False)
+                '    End If
+                'End If
+                ''Place Order block end
+                '_cts.Token.ThrowIfCancellationRequested()
+                ''Modify Order block start
+                'Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
+                'If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                '    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                'End If
+                ''Modify Order block end
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While

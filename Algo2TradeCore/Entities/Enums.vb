@@ -31,6 +31,7 @@
             Fractal
             VWAP
             RSI
+            PSAR
         End Enum
         Enum CrossDirection
             Above = 1
