@@ -112,52 +112,22 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AmiSignal\AmiSignalStrategy.vb" />
-    <Compile Include="AmiSignal\AmiSignalStrategyInstrument.vb" />
-    <Compile Include="AmiSignal\AmiSignalUserInputs.vb" />
-    <Compile Include="AmiSignal\frmAmiSignalSettings.Designer.vb">
-      <DependentUpon>frmAmiSignalSettings.vb</DependentUpon>
+    <Compile Include="CDS\CDSStrategy.vb" />
+    <Compile Include="CDS\CDSStrategyInstrument.vb" />
+    <Compile Include="CDS\CDSUserInputs.vb" />
+    <Compile Include="CDS\frmCDSSettings.Designer.vb">
+      <DependentUpon>frmCDSSettings.vb</DependentUpon>
     </Compile>
-    <Compile Include="AmiSignal\frmAmiSignalSettings.vb">
+    <Compile Include="CDS\frmCDSSettings.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AmiSignal\frmAmiSignalTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmAmiSignalTradableInstrumentList.vb</DependentUpon>
+    <Compile Include="CDS\frmCDSTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmCDSTradableInstrumentList.vb</DependentUpon>
     </Compile>
-    <Compile Include="AmiSignal\frmAmiSignalTradableInstrumentList.vb">
+    <Compile Include="CDS\frmCDSTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Common.vb" />
-    <Compile Include="EMACrossover\EMACrossoverStrategy.vb" />
-    <Compile Include="EMACrossover\EMACrossoverStrategyInstrument.vb" />
-    <Compile Include="EMACrossover\EMACrossoverUserInputs.vb" />
-    <Compile Include="EMACrossover\frmEMACrossoverSettings.Designer.vb">
-      <DependentUpon>frmEMACrossoverSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="EMACrossover\frmEMACrossoverSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EMACrossover\frmEMACrossoverTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmEMACrossoverTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="EMACrossover\frmEMACrossoverTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EMA_Supertrend\EMA_SupertrendStrategy.vb" />
-    <Compile Include="EMA_Supertrend\EMA_SupertrendStrategyInstrument.vb" />
-    <Compile Include="EMA_Supertrend\EMA_SupertrendUserInputs.vb" />
-    <Compile Include="EMA_Supertrend\frmEMA_SupertrendSettings.Designer.vb">
-      <DependentUpon>frmEMA_SupertrendSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="EMA_Supertrend\frmEMA_SupertrendSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmEMA_SupertrendTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="frmAbout.Designer.vb">
       <DependentUpon>frmAbout.vb</DependentUpon>
     </Compile>
@@ -182,37 +152,21 @@
     <Compile Include="frmUserDetails.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Low SL\frmLowSLSettings.Designer.vb">
-      <DependentUpon>frmLowSLSettings.vb</DependentUpon>
+    <Compile Include="NFO\frmNFOSettings.Designer.vb">
+      <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </Compile>
-    <Compile Include="Low SL\frmLowSLSettings.vb">
+    <Compile Include="NFO\frmNFOSettings.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Low SL\frmLowSLTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmLowSLTradableInstrumentList.vb</DependentUpon>
+    <Compile Include="NFO\frmNFOTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmNFOTradableInstrumentList.vb</DependentUpon>
     </Compile>
-    <Compile Include="Low SL\frmLowSLTradableInstrumentList.vb">
+    <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Low SL\LowSLFillInstrumentDetails.vb" />
-    <Compile Include="Low SL\LowSLStrategy.vb" />
-    <Compile Include="Low SL\LowSLStrategyInstrument.vb" />
-    <Compile Include="Low SL\LowSLUserInputs.vb" />
-    <Compile Include="MomentumReversal\frmMomentumReversalSettings.Designer.vb">
-      <DependentUpon>frmMomentumReversalSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="MomentumReversal\frmMomentumReversalSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MomentumReversal\frmMomentumReversalTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmMomentumReversalTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="MomentumReversal\frmMomentumReversalTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MomentumReversal\MomentumReversalStrategy.vb" />
-    <Compile Include="MomentumReversal\MomentumReversalStrategyInstrument.vb" />
-    <Compile Include="MomentumReversal\MomentumReversalUserInputs.vb" />
+    <Compile Include="NFO\NFOStrategy.vb" />
+    <Compile Include="NFO\NFOStrategyInstrument.vb" />
+    <Compile Include="NFO\NFOUserInputs.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -228,102 +182,28 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="NearFarHedging\frmNearFarHedgingSettings.Designer.vb">
-      <DependentUpon>frmNearFarHedgingSettings.vb</DependentUpon>
+    <Compile Include="MCX\frmMCXSettings.Designer.vb">
+      <DependentUpon>frmMCXSettings.vb</DependentUpon>
     </Compile>
-    <Compile Include="NearFarHedging\frmNearFarHedgingSettings.vb">
+    <Compile Include="MCX\frmMCXSettings.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmNearFarHedgingTradableInstrumentList.vb</DependentUpon>
+    <Compile Include="MCX\frmMCXTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmMCXTradableInstrumentList.vb</DependentUpon>
     </Compile>
-    <Compile Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.vb">
+    <Compile Include="MCX\frmMCXTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NearFarHedging\NearFarHedgingStrategy.vb" />
-    <Compile Include="NearFarHedging\NearFarHedgingStrategyInstrument.vb" />
-    <Compile Include="NearFarHedging\NearFarHedgingUserInputs.vb" />
-    <Compile Include="OHL\frmOHLSettings.Designer.vb">
-      <DependentUpon>frmOHLSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="OHL\frmOHLSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="OHL\frmOHLTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmOHLTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="OHL\frmOHLTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="OHL\OHLStrategy.vb" />
-    <Compile Include="OHL\OHLStrategyInstrument.vb" />
-    <Compile Include="OHL\OHLUserInputs.vb" />
-    <Compile Include="PetDGandhi\frmPetDGandhiSettings.Designer.vb">
-      <DependentUpon>frmPetDGandhiSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="PetDGandhi\frmPetDGandhiSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PetDGandhi\frmPetDGandhiTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmPetDGandhiTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="PetDGandhi\frmPetDGandhiTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PetDGandhi\PetDGandhiStrategy.vb" />
-    <Compile Include="PetDGandhi\PetDGandhiStrategyInstrument.vb" />
-    <Compile Include="PetDGandhi\PetDGandhiUserInputs.vb" />
-    <Compile Include="TwoThird\frmTwoThirdSettings.Designer.vb">
-      <DependentUpon>frmTwoThirdSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="TwoThird\frmTwoThirdSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TwoThird\frmTwoThirdTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmTwoThirdTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="TwoThird\frmTwoThirdTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="TwoThird\TwoThirdFillInstrumentDetails.vb" />
-    <Compile Include="TwoThird\TwoThirdStrategy.vb" />
-    <Compile Include="TwoThird\TwoThirdStrategyInstrument.vb" />
-    <Compile Include="TwoThird\TwoThirdUserInputs.vb" />
-    <Compile Include="VolumeSpike\frmVolumeSpikeSettings.Designer.vb">
-      <DependentUpon>frmVolumeSpikeSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="VolumeSpike\frmVolumeSpikeSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="VolumeSpike\frmVolumeSpikeTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmVolumeSpikeTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="VolumeSpike\frmVolumeSpikeTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="VolumeSpike\VolumeSpikeFillInstrumentDetails.vb" />
-    <Compile Include="VolumeSpike\VolumeSpikeStrategy.vb" />
-    <Compile Include="VolumeSpike\VolumeSpikeStrategyInstrument.vb" />
-    <Compile Include="VolumeSpike\VolumeSpikeUserInputs.vb" />
+    <Compile Include="MCX\MCXStrategy.vb" />
+    <Compile Include="MCX\MCXStrategyInstrument.vb" />
+    <Compile Include="MCX\MCXUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="AmiSignal\frmAmiSignalSettings.resx">
-      <DependentUpon>frmAmiSignalSettings.vb</DependentUpon>
+    <EmbeddedResource Include="CDS\frmCDSSettings.resx">
+      <DependentUpon>frmCDSSettings.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="AmiSignal\frmAmiSignalTradableInstrumentList.resx">
-      <DependentUpon>frmAmiSignalTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EMACrossover\frmEMACrossoverSettings.resx">
-      <DependentUpon>frmEMACrossoverSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EMACrossover\frmEMACrossoverTradableInstrumentList.resx">
-      <DependentUpon>frmEMACrossoverTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EMA_Supertrend\frmEMA_SupertrendSettings.resx">
-      <DependentUpon>frmEMA_SupertrendSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="EMA_Supertrend\frmEMA_SupertrendTradableInstrumentList.resx">
-      <DependentUpon>frmEMA_SupertrendTradableInstrumentList.vb</DependentUpon>
+    <EmbeddedResource Include="CDS\frmCDSTradableInstrumentList.resx">
+      <DependentUpon>frmCDSTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmAbout.resx">
       <DependentUpon>frmAbout.vb</DependentUpon>
@@ -337,17 +217,11 @@
     <EmbeddedResource Include="frmUserDetails.resx">
       <DependentUpon>frmUserDetails.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Low SL\frmLowSLSettings.resx">
-      <DependentUpon>frmLowSLSettings.vb</DependentUpon>
+    <EmbeddedResource Include="NFO\frmNFOSettings.resx">
+      <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Low SL\frmLowSLTradableInstrumentList.resx">
-      <DependentUpon>frmLowSLTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MomentumReversal\frmMomentumReversalSettings.resx">
-      <DependentUpon>frmMomentumReversalSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MomentumReversal\frmMomentumReversalTradableInstrumentList.resx">
-      <DependentUpon>frmMomentumReversalTradableInstrumentList.vb</DependentUpon>
+    <EmbeddedResource Include="NFO\frmNFOTradableInstrumentList.resx">
+      <DependentUpon>frmNFOTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
@@ -355,35 +229,11 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="NearFarHedging\frmNearFarHedgingSettings.resx">
-      <DependentUpon>frmNearFarHedgingSettings.vb</DependentUpon>
+    <EmbeddedResource Include="MCX\frmMCXSettings.resx">
+      <DependentUpon>frmMCXSettings.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NearFarHedging\frmNearFarHedgingTradableInstrumentList.resx">
-      <DependentUpon>frmNearFarHedgingTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OHL\frmOHLSettings.resx">
-      <DependentUpon>frmOHLSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="OHL\frmOHLTradableInstrumentList.resx">
-      <DependentUpon>frmOHLTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PetDGandhi\frmPetDGandhiSettings.resx">
-      <DependentUpon>frmPetDGandhiSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="PetDGandhi\frmPetDGandhiTradableInstrumentList.resx">
-      <DependentUpon>frmPetDGandhiTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="TwoThird\frmTwoThirdSettings.resx">
-      <DependentUpon>frmTwoThirdSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="TwoThird\frmTwoThirdTradableInstrumentList.resx">
-      <DependentUpon>frmTwoThirdTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="VolumeSpike\frmVolumeSpikeSettings.resx">
-      <DependentUpon>frmVolumeSpikeSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="VolumeSpike\frmVolumeSpikeTradableInstrumentList.resx">
-      <DependentUpon>frmVolumeSpikeTradableInstrumentList.vb</DependentUpon>
+    <EmbeddedResource Include="MCX\frmMCXTradableInstrumentList.resx">
+      <DependentUpon>frmMCXTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
