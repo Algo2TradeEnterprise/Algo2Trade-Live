@@ -28,12 +28,6 @@ Partial Class frmMomentumReversalSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtCostToCostMovement = New System.Windows.Forms.TextBox()
-        Me.lblCostToCostMvmnt = New System.Windows.Forms.Label()
-        Me.txtMinTarget = New System.Windows.Forms.TextBox()
-        Me.lblMinTarget = New System.Windows.Forms.Label()
-        Me.txtMinStoploss = New System.Windows.Forms.TextBox()
-        Me.lblMinStoploss = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -45,11 +39,13 @@ Partial Class frmMomentumReversalSettings
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
-        Me.lblATRPeriod = New System.Windows.Forms.Label()
-        Me.txtATRPeriod = New System.Windows.Forms.TextBox()
-        Me.grpATR = New System.Windows.Forms.GroupBox()
+        Me.lblPSARMinAF = New System.Windows.Forms.Label()
+        Me.txtPSARMinAF = New System.Windows.Forms.TextBox()
+        Me.grpPSAR = New System.Windows.Forms.GroupBox()
+        Me.txtPSARMaxAF = New System.Windows.Forms.TextBox()
+        Me.lblPSARMaxAF = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
-        Me.grpATR.SuspendLayout()
+        Me.grpPSAR.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSaveMomentumReversalSettings
@@ -77,12 +73,6 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtCostToCostMovement)
-        Me.GroupBox1.Controls.Add(Me.lblCostToCostMvmnt)
-        Me.GroupBox1.Controls.Add(Me.txtMinTarget)
-        Me.GroupBox1.Controls.Add(Me.lblMinTarget)
-        Me.GroupBox1.Controls.Add(Me.txtMinStoploss)
-        Me.GroupBox1.Controls.Add(Me.lblMinStoploss)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -98,66 +88,9 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 286)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 194)
         Me.GroupBox1.TabIndex = 22
         Me.GroupBox1.TabStop = False
-        '
-        'txtCostToCostMovement
-        '
-        Me.txtCostToCostMovement.Location = New System.Drawing.Point(189, 219)
-        Me.txtCostToCostMovement.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtCostToCostMovement.Name = "txtCostToCostMovement"
-        Me.txtCostToCostMovement.Size = New System.Drawing.Size(241, 22)
-        Me.txtCostToCostMovement.TabIndex = 7
-        Me.txtCostToCostMovement.Tag = "Cost To Cost Movement"
-        '
-        'lblCostToCostMvmnt
-        '
-        Me.lblCostToCostMvmnt.AutoSize = True
-        Me.lblCostToCostMvmnt.Location = New System.Drawing.Point(9, 224)
-        Me.lblCostToCostMvmnt.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblCostToCostMvmnt.Name = "lblCostToCostMvmnt"
-        Me.lblCostToCostMvmnt.Size = New System.Drawing.Size(158, 17)
-        Me.lblCostToCostMvmnt.TabIndex = 41
-        Me.lblCostToCostMvmnt.Text = "Cost To Cost Movement"
-        '
-        'txtMinTarget
-        '
-        Me.txtMinTarget.Location = New System.Drawing.Point(189, 185)
-        Me.txtMinTarget.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinTarget.Name = "txtMinTarget"
-        Me.txtMinTarget.Size = New System.Drawing.Size(241, 22)
-        Me.txtMinTarget.TabIndex = 6
-        Me.txtMinTarget.Tag = "Min Target %"
-        '
-        'lblMinTarget
-        '
-        Me.lblMinTarget.AutoSize = True
-        Me.lblMinTarget.Location = New System.Drawing.Point(9, 190)
-        Me.lblMinTarget.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinTarget.Name = "lblMinTarget"
-        Me.lblMinTarget.Size = New System.Drawing.Size(92, 17)
-        Me.lblMinTarget.TabIndex = 39
-        Me.lblMinTarget.Text = "Min Target %"
-        '
-        'txtMinStoploss
-        '
-        Me.txtMinStoploss.Location = New System.Drawing.Point(189, 154)
-        Me.txtMinStoploss.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinStoploss.Name = "txtMinStoploss"
-        Me.txtMinStoploss.Size = New System.Drawing.Size(241, 22)
-        Me.txtMinStoploss.TabIndex = 5
-        Me.txtMinStoploss.Tag = "Min Stoploss %"
-        '
-        'lblMinStoploss
-        '
-        Me.lblMinStoploss.AutoSize = True
-        Me.lblMinStoploss.Location = New System.Drawing.Point(9, 159)
-        Me.lblMinStoploss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinStoploss.Name = "lblMinStoploss"
-        Me.lblMinStoploss.Size = New System.Drawing.Size(104, 17)
-        Me.lblMinStoploss.TabIndex = 37
-        Me.lblMinStoploss.Text = "Min Stoploss %"
         '
         'dtpckrEODExitTime
         '
@@ -222,27 +155,27 @@ Partial Class frmMomentumReversalSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 251)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 156)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 8
+        Me.btnBrowse.TabIndex = 5
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 252)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 157)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
-        Me.txtInstrumentDetalis.TabIndex = 8
+        Me.txtInstrumentDetalis.TabIndex = 5
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 255)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 160)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -269,42 +202,63 @@ Partial Class frmMomentumReversalSettings
         Me.lblSignalTimeFrame.Tag = ""
         Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
         '
-        'lblATRPeriod
+        'lblPSARMinAF
         '
-        Me.lblATRPeriod.AutoSize = True
-        Me.lblATRPeriod.Location = New System.Drawing.Point(9, 26)
-        Me.lblATRPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblATRPeriod.Name = "lblATRPeriod"
-        Me.lblATRPeriod.Size = New System.Drawing.Size(81, 17)
-        Me.lblATRPeriod.TabIndex = 35
-        Me.lblATRPeriod.Text = "ATR Period"
+        Me.lblPSARMinAF.AutoSize = True
+        Me.lblPSARMinAF.Location = New System.Drawing.Point(9, 26)
+        Me.lblPSARMinAF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblPSARMinAF.Name = "lblPSARMinAF"
+        Me.lblPSARMinAF.Size = New System.Drawing.Size(84, 17)
+        Me.lblPSARMinAF.TabIndex = 35
+        Me.lblPSARMinAF.Text = "Minimum AF"
         '
-        'txtATRPeriod
+        'txtPSARMinAF
         '
-        Me.txtATRPeriod.Location = New System.Drawing.Point(189, 21)
-        Me.txtATRPeriod.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtATRPeriod.Name = "txtATRPeriod"
-        Me.txtATRPeriod.Size = New System.Drawing.Size(241, 22)
-        Me.txtATRPeriod.TabIndex = 9
-        Me.txtATRPeriod.Tag = "ATR Period"
+        Me.txtPSARMinAF.Location = New System.Drawing.Point(189, 21)
+        Me.txtPSARMinAF.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtPSARMinAF.Name = "txtPSARMinAF"
+        Me.txtPSARMinAF.Size = New System.Drawing.Size(241, 22)
+        Me.txtPSARMinAF.TabIndex = 6
+        Me.txtPSARMinAF.Tag = "Minimum AF"
         '
-        'grpATR
+        'grpPSAR
         '
-        Me.grpATR.Controls.Add(Me.txtATRPeriod)
-        Me.grpATR.Controls.Add(Me.lblATRPeriod)
-        Me.grpATR.Location = New System.Drawing.Point(2, 290)
-        Me.grpATR.Name = "grpATR"
-        Me.grpATR.Size = New System.Drawing.Size(451, 59)
-        Me.grpATR.TabIndex = 23
-        Me.grpATR.TabStop = False
-        Me.grpATR.Text = "ATR Settings"
+        Me.grpPSAR.Controls.Add(Me.txtPSARMaxAF)
+        Me.grpPSAR.Controls.Add(Me.lblPSARMaxAF)
+        Me.grpPSAR.Controls.Add(Me.txtPSARMinAF)
+        Me.grpPSAR.Controls.Add(Me.lblPSARMinAF)
+        Me.grpPSAR.Location = New System.Drawing.Point(2, 204)
+        Me.grpPSAR.Name = "grpPSAR"
+        Me.grpPSAR.Size = New System.Drawing.Size(451, 90)
+        Me.grpPSAR.TabIndex = 23
+        Me.grpPSAR.TabStop = False
+        Me.grpPSAR.Text = "PSAR Settings"
+        '
+        'txtPSARMaxAF
+        '
+        Me.txtPSARMaxAF.Location = New System.Drawing.Point(189, 55)
+        Me.txtPSARMaxAF.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtPSARMaxAF.Name = "txtPSARMaxAF"
+        Me.txtPSARMaxAF.Size = New System.Drawing.Size(241, 22)
+        Me.txtPSARMaxAF.TabIndex = 7
+        Me.txtPSARMaxAF.Tag = "Maximum AF"
+        '
+        'lblPSARMaxAF
+        '
+        Me.lblPSARMaxAF.AutoSize = True
+        Me.lblPSARMaxAF.Location = New System.Drawing.Point(9, 60)
+        Me.lblPSARMaxAF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblPSARMaxAF.Name = "lblPSARMaxAF"
+        Me.lblPSARMaxAF.Size = New System.Drawing.Size(87, 17)
+        Me.lblPSARMaxAF.TabIndex = 37
+        Me.lblPSARMaxAF.Text = "Maximum AF"
         '
         'frmMomentumReversalSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(576, 356)
-        Me.Controls.Add(Me.grpATR)
+        Me.ClientSize = New System.Drawing.Size(576, 299)
+        Me.Controls.Add(Me.grpPSAR)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveMomentumReversalSettings)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -316,8 +270,8 @@ Partial Class frmMomentumReversalSettings
         Me.Text = "Settings"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
-        Me.grpATR.ResumeLayout(False)
-        Me.grpATR.PerformLayout()
+        Me.grpPSAR.ResumeLayout(False)
+        Me.grpPSAR.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
@@ -337,13 +291,9 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents lblInstrumentDetails As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblSignalTimeFrame As Label
-    Friend WithEvents lblATRPeriod As Label
-    Friend WithEvents txtATRPeriod As TextBox
-    Friend WithEvents grpATR As GroupBox
-    Friend WithEvents txtCostToCostMovement As TextBox
-    Friend WithEvents lblCostToCostMvmnt As Label
-    Friend WithEvents txtMinTarget As TextBox
-    Friend WithEvents lblMinTarget As Label
-    Friend WithEvents txtMinStoploss As TextBox
-    Friend WithEvents lblMinStoploss As Label
+    Friend WithEvents lblPSARMinAF As Label
+    Friend WithEvents txtPSARMinAF As TextBox
+    Friend WithEvents grpPSAR As GroupBox
+    Friend WithEvents txtPSARMaxAF As TextBox
+    Friend WithEvents lblPSARMaxAF As Label
 End Class

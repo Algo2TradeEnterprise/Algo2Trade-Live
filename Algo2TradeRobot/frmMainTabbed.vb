@@ -321,8 +321,8 @@ Public Class frmMainTabbed
             EnableDisableUIEx(UIMode.BlockOther, GetType(MomentumReversalStrategy))
 
             OnHeartbeat("Validating user settings")
-            If File.Exists("Algo2Trade.Strategy.a2t") Then
-                Dim fs As Stream = New FileStream("Algo2Trade.Strategy.a2t", FileMode.Open)
+            If File.Exists(MomentumReversalUserInputs.SettingsFileName) Then
+                Dim fs As Stream = New FileStream(MomentumReversalUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
                 _MRUserInputs = CType(bf.Deserialize(fs), MomentumReversalUserInputs)
                 fs.Close()

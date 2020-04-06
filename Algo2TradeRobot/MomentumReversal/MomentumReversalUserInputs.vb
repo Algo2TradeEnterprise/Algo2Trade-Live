@@ -8,19 +8,18 @@ Imports Algo2TradeCore.Entities
 Public Class MomentumReversalUserInputs
     Inherits StrategyUserInputs
 
-    Public Property MinStoplossPercentage As Decimal
-    Public Property MinTargetPercentage As Decimal
-    Public Property CostToCostMovementPercentage As Decimal
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "PSAR_NSE.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property ATRPeriod As Integer
+    Public Property MinimumAF As Decimal
+    Public Property MaximumAF As Decimal
 
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property Quantity As Integer
+        Public Property NumberOfLots As Integer
     End Class
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
@@ -32,7 +31,7 @@ Public Class MomentumReversalUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "QUANTITY"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "NUMBER OF LOTS"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -64,17 +63,17 @@ Public Class MomentumReversalUserInputs
                                             Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
                                             qty = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Quantity cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                            Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Quantity cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                        Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                     End If
                                 End If
                             Next
                             If trdngSymbl IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
                                 instrumentData.TradingSymbol = trdngSymbl.ToUpper
-                                instrumentData.Quantity = qty
+                                instrumentData.NumberOfLots = qty
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
                                     Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", instrumentData.TradingSymbol))

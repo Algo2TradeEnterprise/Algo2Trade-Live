@@ -5,7 +5,7 @@ Public Class frmMomentumReversalSettings
 
     Private _cts As CancellationTokenSource = Nothing
     Private _settings As MomentumReversalUserInputs = Nothing
-    Private _settingsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, "Algo2Trade.Strategy.a2t")
+    Private _settingsFilename As String = MomentumReversalUserInputs.SettingsFileName
 
     Public Sub New(ByRef MRUserInputs As MomentumReversalUserInputs)
         InitializeComponent()
@@ -34,12 +34,10 @@ Public Class frmMomentumReversalSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtMinStoploss.Text = _settings.MinStoplossPercentage
-            txtMinTarget.Text = _settings.MinTargetPercentage
-            txtCostToCostMovement.Text = _settings.CostToCostMovementPercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
-            txtATRPeriod.Text = _settings.ATRPeriod
+            txtPSARMinAF.Text = _settings.MinimumAF
+            txtPSARMaxAF.Text = _settings.MaximumAF
         End If
     End Sub
     Private Sub SaveSettings()
@@ -47,12 +45,10 @@ Public Class frmMomentumReversalSettings
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.MinStoplossPercentage = txtMinStoploss.Text
-        _settings.MinTargetPercentage = txtMinTarget.Text
-        _settings.CostToCostMovementPercentage = txtCostToCostMovement.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
-        _settings.ATRPeriod = txtATRPeriod.Text
+        _settings.MinimumAF = txtPSARMinAF.Text
+        _settings.MaximumAF = txtPSARMaxAF.Text
 
         Utilities.Strings.SerializeFromCollection(Of MomentumReversalUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -76,7 +72,8 @@ Public Class frmMomentumReversalSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(1, Integer.MaxValue, txtATRPeriod, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtPSARMinAF, False)
+        ValidateNumbers(0, Decimal.MaxValue, txtPSARMaxAF, False)
         ValidateFile()
     End Sub
 
