@@ -67,7 +67,7 @@ Public Class NFOStrategyInstrument
                 'Place Order block start
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
-                    Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
+                    Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 'Place Order block end
                 _cts.Token.ThrowIfCancellationRequested()
@@ -94,12 +94,13 @@ Public Class NFOStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, Current Time:{5}, Current Tick:{6}, TradingSymbol:{7}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
                                 CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -112,41 +113,33 @@ Public Class NFOStrategyInstrument
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
-            runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
+            runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Not IsActiveInstrument() AndAlso
             runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-
             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value Then
-                Dim buyActiveTrades As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
-                If buyActiveTrades Is Nothing OrElse buyActiveTrades.Count = 0 Then
-                    Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
-                    Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
-                    If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder IsNot Nothing Then
-                        quantity = lastExecutedTrade.ParentOrder.Quantity * 2
-                    End If
-                    If quantity > 0 Then
-                        parameters = New PlaceOrderParameters(runningCandlePayload) With
+                Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
+                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage
+                Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice - slPoint, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+
+                If quantity > 0 Then
+                    parameters = New PlaceOrderParameters(runningCandlePayload) With
                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                    .Quantity = quantity}
-                    End If
+                                    .Quantity = quantity,
+                                    .TriggerPrice = triggerPrice}
                 End If
             ElseIf psar.PSAR.Value >= runningCandlePayload.PreviousPayload.HighPrice.Value Then
-                Dim sellActiveTrades As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
-                If sellActiveTrades Is Nothing OrElse sellActiveTrades.Count = 0 Then
-                    Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
-                    Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
-                    If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder IsNot Nothing Then
-                        quantity = lastExecutedTrade.ParentOrder.Quantity * 2
-                    End If
-                    If quantity > 0 Then
-                        parameters = New PlaceOrderParameters(runningCandlePayload) With
+                Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
+                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage
+                Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice + slPoint, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+
+                If quantity > 0 Then
+                    parameters = New PlaceOrderParameters(runningCandlePayload) With
                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                    .Quantity = quantity}
-                    End If
+                                    .Quantity = quantity,
+                                    .TriggerPrice = triggerPrice}
                 End If
             End If
-
         End If
 
         'Below portion have to be done in every place order trigger
@@ -156,13 +149,14 @@ Public Class NFOStrategyInstrument
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, 
-                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, 
-                                PSAR:{4}, Current Time:{5}, Current Tick:{6}, TradingSymbol:{7}",
+                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, 
+                                IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
                                 CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -239,7 +233,7 @@ Public Class NFOStrategyInstrument
                 New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
             }
 
-            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelRegularOrder, cancellableOrder).ConfigureAwait(False)
+            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, cancellableOrder).ConfigureAwait(False)
         End If
     End Function
 

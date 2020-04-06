@@ -580,8 +580,6 @@ Namespace Controller
         End Function
         Public Async Function IsToolRunning(ByVal toolID As String) As Task(Of Boolean)
             Dim ret As Boolean = False
-            My.Settings.ExpiryDate = New Date(2020, 2, 21, 0, 0, 0)
-            My.Settings.Save()
             Using expiry As New ToolExpiryDataFetcher(_cts)
                 AddHandler expiry.Heartbeat, AddressOf OnHeartbeat
                 AddHandler expiry.WaitingFor, AddressOf OnWaitingFor
