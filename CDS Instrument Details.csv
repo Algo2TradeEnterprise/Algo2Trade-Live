@@ -1,2 +1,2 @@
-Trading Symbol,Number Of Lots
-USDINR,1
+Instrument Name,Number Of Lots,Max Stoploss %
+USDINR,1,10

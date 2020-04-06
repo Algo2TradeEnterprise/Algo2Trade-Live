@@ -20,6 +20,7 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
         Public Property NumberOfLots As Integer
+        Public Property MaxStoplossPercentage As Decimal
     End Class
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
@@ -31,7 +32,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "MAX STOPLOSS %"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -44,7 +45,8 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim trdngSymbl As String = Nothing
-                            Dim qty As Integer = Integer.MinValue
+                            Dim nmbrOfLots As Integer = Integer.MinValue
+                            Dim maxSlPer As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -61,19 +63,31 @@ Public Class NFOUserInputs
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
                                             Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            qty = instrumentDetails(rowCtr, columnCtr)
+                                            nmbrOfLots = instrumentDetails(rowCtr, columnCtr)
                                         Else
                                             Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                         End If
                                     Else
                                         Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                     End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            maxSlPer = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Max Stoploss % cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Max Stoploss % cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                    End If
                                 End If
                             Next
                             If trdngSymbl IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
                                 instrumentData.TradingSymbol = trdngSymbl.ToUpper
-                                instrumentData.NumberOfLots = qty
+                                instrumentData.NumberOfLots = nmbrOfLots
+                                instrumentData.MaxStoplossPercentage = maxSlPer
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
                                     Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", instrumentData.TradingSymbol))

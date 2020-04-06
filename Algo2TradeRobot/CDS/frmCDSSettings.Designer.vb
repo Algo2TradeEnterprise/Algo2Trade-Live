@@ -230,6 +230,9 @@ Partial Class frmCDSSettings
         Me.GroupBox1.TabIndex = 25
         Me.GroupBox1.TabStop = False
         '
+        'opnFileSettings
+        '
+        '
         'ImageList1
         '
         Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
@@ -261,7 +264,7 @@ Partial Class frmCDSSettings
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "frmCDSSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Settings"
+        Me.Text = "CDS Settings"
         Me.grpPSAR.ResumeLayout(False)
         Me.grpPSAR.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)

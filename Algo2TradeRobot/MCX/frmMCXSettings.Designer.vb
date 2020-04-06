@@ -230,6 +230,9 @@ Partial Class frmMCXSettings
         Me.GroupBox1.TabIndex = 25
         Me.GroupBox1.TabStop = False
         '
+        'opnFileSettings
+        '
+        '
         'ImageList1
         '
         Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
@@ -263,7 +266,7 @@ Partial Class frmMCXSettings
         Me.MinimizeBox = False
         Me.Name = "frmMCXSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Settings"
+        Me.Text = "MCX Settings"
         Me.grpPSAR.ResumeLayout(False)
         Me.grpPSAR.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)

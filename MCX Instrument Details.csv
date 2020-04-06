@@ -1,2 +1,2 @@
-Trading Symbol,Number Of Lots
-CRUDEOIL,1
+Instrument Name,Number Of Lots,Max Stoploss %
+CRUDEOIL,1,10
