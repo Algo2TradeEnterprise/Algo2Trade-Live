@@ -334,8 +334,45 @@ Public Class MomentumReversalStrategyInstrument
     Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Throw New NotImplementedException()
     End Function
-    Protected Overrides Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
-        Throw New NotImplementedException()
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        'Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+        'Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
+        'If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+        '    Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+        '                                                                      Return x.ParentOrderIdentifier Is Nothing AndAlso
+        '                                                                      x.Status = IOrder.TypeOfStatus.TriggerPending
+        '                                                                  End Function)
+        '    If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
+        '        For Each parentOrder In parentOrders
+        '            Dim parentBussinessOrder As IBusinessOrder = OrderDetails(parentOrder.OrderIdentifier)
+        '            Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+        '            If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick Then
+        '                Dim orderCancelled As Boolean = False
+        '                If Not orderCancelled AndAlso _signalCandle IsNot Nothing Then
+        '                    Dim signal As Tuple(Of Boolean, Decimal, Decimal, IOrder.TypeOfTransaction) = GetSignalCandle(runningCandlePayload.PreviousPayload, Me.TradableInstrument.LastTick)
+        '                    If signal IsNot Nothing Then
+        '                        If signal.Item2 <> parentOrder.TriggerPrice Then
+        '                            'Below portion have to be done in every cancel order trigger
+        '                            Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentOrder.Tag)
+        '                            If currentSignalActivities IsNot Nothing Then
+        '                                If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+        '                                    currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+        '                                    currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+        '                                    Continue For
+        '                                End If
+        '                            End If
+        '                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+        '                            ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, parentBussinessOrder.ParentOrder, "Opposite Direction trade"))
+        '                        End If
+        '                    End If
+        '                End If
+        '            End If
+        '        Next
+        '    End If
+        'End If
+        Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrderAsync(forcePrint As Boolean, data As Object) As Task(Of List(Of Tuple(Of ExecuteCommandAction, StrategyInstrument, PlaceOrderParameters, String)))
         Throw New NotImplementedException()
