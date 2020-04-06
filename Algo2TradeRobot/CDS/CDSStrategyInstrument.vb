@@ -100,12 +100,13 @@ Public Class CDSStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, Current Time:{5}, Current Tick:{6}, TradingSymbol:{7}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
                                 CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -120,6 +121,7 @@ Public Class CDSStrategyInstrument
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Not IsActiveInstrument() AndAlso
             runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
+            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value Then
@@ -154,13 +156,14 @@ Public Class CDSStrategyInstrument
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, 
-                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, 
-                                PSAR:{4}, Current Time:{5}, Current Tick:{6}, TradingSymbol:{7}",
+                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, 
+                                IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
                                 CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -222,6 +225,7 @@ Public Class CDSStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then

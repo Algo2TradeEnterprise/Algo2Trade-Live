@@ -121,6 +121,7 @@ Public Class NFOStrategyInstrument
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Not IsActiveInstrument() AndAlso
             runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
+            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value Then
@@ -224,6 +225,7 @@ Public Class NFOStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
