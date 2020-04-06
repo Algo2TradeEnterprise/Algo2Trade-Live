@@ -28,8 +28,6 @@ Partial Class frmMomentumReversalSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtNumberOfTradePerStock = New System.Windows.Forms.TextBox()
-        Me.lblNumberOfTradePerStock = New System.Windows.Forms.Label()
         Me.txtCostToCostMovement = New System.Windows.Forms.TextBox()
         Me.lblCostToCostMvmnt = New System.Windows.Forms.Label()
         Me.txtMinTarget = New System.Windows.Forms.TextBox()
@@ -79,8 +77,6 @@ Partial Class frmMomentumReversalSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtNumberOfTradePerStock)
-        Me.GroupBox1.Controls.Add(Me.lblNumberOfTradePerStock)
         Me.GroupBox1.Controls.Add(Me.txtCostToCostMovement)
         Me.GroupBox1.Controls.Add(Me.lblCostToCostMvmnt)
         Me.GroupBox1.Controls.Add(Me.txtMinTarget)
@@ -102,42 +98,23 @@ Partial Class frmMomentumReversalSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 321)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 286)
         Me.GroupBox1.TabIndex = 22
         Me.GroupBox1.TabStop = False
         '
-        'txtNumberOfTradePerStock
-        '
-        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(189, 152)
-        Me.txtNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtNumberOfTradePerStock.Name = "txtNumberOfTradePerStock"
-        Me.txtNumberOfTradePerStock.Size = New System.Drawing.Size(241, 22)
-        Me.txtNumberOfTradePerStock.TabIndex = 5
-        Me.txtNumberOfTradePerStock.Tag = "Number Of Trade Per Stock"
-        '
-        'lblNumberOfTradePerStock
-        '
-        Me.lblNumberOfTradePerStock.AutoSize = True
-        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(9, 155)
-        Me.lblNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblNumberOfTradePerStock.Name = "lblNumberOfTradePerStock"
-        Me.lblNumberOfTradePerStock.Size = New System.Drawing.Size(152, 17)
-        Me.lblNumberOfTradePerStock.TabIndex = 43
-        Me.lblNumberOfTradePerStock.Text = "No Of Trade Per Stock"
-        '
         'txtCostToCostMovement
         '
-        Me.txtCostToCostMovement.Location = New System.Drawing.Point(189, 249)
+        Me.txtCostToCostMovement.Location = New System.Drawing.Point(189, 219)
         Me.txtCostToCostMovement.Margin = New System.Windows.Forms.Padding(4)
         Me.txtCostToCostMovement.Name = "txtCostToCostMovement"
         Me.txtCostToCostMovement.Size = New System.Drawing.Size(241, 22)
-        Me.txtCostToCostMovement.TabIndex = 8
+        Me.txtCostToCostMovement.TabIndex = 7
         Me.txtCostToCostMovement.Tag = "Cost To Cost Movement"
         '
         'lblCostToCostMvmnt
         '
         Me.lblCostToCostMvmnt.AutoSize = True
-        Me.lblCostToCostMvmnt.Location = New System.Drawing.Point(9, 254)
+        Me.lblCostToCostMvmnt.Location = New System.Drawing.Point(9, 224)
         Me.lblCostToCostMvmnt.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblCostToCostMvmnt.Name = "lblCostToCostMvmnt"
         Me.lblCostToCostMvmnt.Size = New System.Drawing.Size(158, 17)
@@ -146,17 +123,17 @@ Partial Class frmMomentumReversalSettings
         '
         'txtMinTarget
         '
-        Me.txtMinTarget.Location = New System.Drawing.Point(189, 215)
+        Me.txtMinTarget.Location = New System.Drawing.Point(189, 185)
         Me.txtMinTarget.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinTarget.Name = "txtMinTarget"
         Me.txtMinTarget.Size = New System.Drawing.Size(241, 22)
-        Me.txtMinTarget.TabIndex = 7
+        Me.txtMinTarget.TabIndex = 6
         Me.txtMinTarget.Tag = "Min Target %"
         '
         'lblMinTarget
         '
         Me.lblMinTarget.AutoSize = True
-        Me.lblMinTarget.Location = New System.Drawing.Point(9, 220)
+        Me.lblMinTarget.Location = New System.Drawing.Point(9, 190)
         Me.lblMinTarget.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMinTarget.Name = "lblMinTarget"
         Me.lblMinTarget.Size = New System.Drawing.Size(92, 17)
@@ -165,17 +142,17 @@ Partial Class frmMomentumReversalSettings
         '
         'txtMinStoploss
         '
-        Me.txtMinStoploss.Location = New System.Drawing.Point(189, 184)
+        Me.txtMinStoploss.Location = New System.Drawing.Point(189, 154)
         Me.txtMinStoploss.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinStoploss.Name = "txtMinStoploss"
         Me.txtMinStoploss.Size = New System.Drawing.Size(241, 22)
-        Me.txtMinStoploss.TabIndex = 6
+        Me.txtMinStoploss.TabIndex = 5
         Me.txtMinStoploss.Tag = "Min Stoploss %"
         '
         'lblMinStoploss
         '
         Me.lblMinStoploss.AutoSize = True
-        Me.lblMinStoploss.Location = New System.Drawing.Point(9, 189)
+        Me.lblMinStoploss.Location = New System.Drawing.Point(9, 159)
         Me.lblMinStoploss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMinStoploss.Name = "lblMinStoploss"
         Me.lblMinStoploss.Size = New System.Drawing.Size(104, 17)
@@ -245,27 +222,27 @@ Partial Class frmMomentumReversalSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 281)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 251)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 9
+        Me.btnBrowse.TabIndex = 8
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 282)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 252)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
-        Me.txtInstrumentDetalis.TabIndex = 9
+        Me.txtInstrumentDetalis.TabIndex = 8
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 285)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 255)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -308,14 +285,14 @@ Partial Class frmMomentumReversalSettings
         Me.txtATRPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtATRPeriod.Name = "txtATRPeriod"
         Me.txtATRPeriod.Size = New System.Drawing.Size(241, 22)
-        Me.txtATRPeriod.TabIndex = 10
+        Me.txtATRPeriod.TabIndex = 9
         Me.txtATRPeriod.Tag = "ATR Period"
         '
         'grpATR
         '
         Me.grpATR.Controls.Add(Me.txtATRPeriod)
         Me.grpATR.Controls.Add(Me.lblATRPeriod)
-        Me.grpATR.Location = New System.Drawing.Point(2, 325)
+        Me.grpATR.Location = New System.Drawing.Point(2, 290)
         Me.grpATR.Name = "grpATR"
         Me.grpATR.Size = New System.Drawing.Size(451, 59)
         Me.grpATR.TabIndex = 23
@@ -326,7 +303,7 @@ Partial Class frmMomentumReversalSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(576, 389)
+        Me.ClientSize = New System.Drawing.Size(576, 356)
         Me.Controls.Add(Me.grpATR)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveMomentumReversalSettings)
@@ -369,6 +346,4 @@ Partial Class frmMomentumReversalSettings
     Friend WithEvents lblMinTarget As Label
     Friend WithEvents txtMinStoploss As TextBox
     Friend WithEvents lblMinStoploss As Label
-    Friend WithEvents txtNumberOfTradePerStock As TextBox
-    Friend WithEvents lblNumberOfTradePerStock As Label
 End Class

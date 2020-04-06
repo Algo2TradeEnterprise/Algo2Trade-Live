@@ -34,7 +34,6 @@ Public Class frmMomentumReversalSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
             txtMinStoploss.Text = _settings.MinStoplossPercentage
             txtMinTarget.Text = _settings.MinTargetPercentage
             txtCostToCostMovement.Text = _settings.CostToCostMovementPercentage
@@ -48,7 +47,6 @@ Public Class frmMomentumReversalSettings
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
         _settings.MinStoplossPercentage = txtMinStoploss.Text
         _settings.MinTargetPercentage = txtMinTarget.Text
         _settings.CostToCostMovementPercentage = txtCostToCostMovement.Text

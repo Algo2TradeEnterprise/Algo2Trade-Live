@@ -8,8 +8,6 @@ Imports Algo2TradeCore.Entities
 Public Class MomentumReversalUserInputs
     Inherits StrategyUserInputs
 
-    Public Property NumberOfTradePerStock As Integer
-
     Public Property MinStoplossPercentage As Decimal
     Public Property MinTargetPercentage As Decimal
     Public Property CostToCostMovementPercentage As Decimal
