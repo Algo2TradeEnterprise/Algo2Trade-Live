@@ -300,6 +300,16 @@ Public Class OHLFillInstrumentDetails
                         End If
                         _cts.Token.ThrowIfCancellationRequested()
                         If todayStockList IsNot Nothing AndAlso todayStockList.Count > 0 Then
+                            Dim niftyStock As IInstrument = currentNFOInstruments.Find(Function(x)
+                                                                                           Return x.RawInstrumentName = "NIFTY"
+                                                                                       End Function)
+                            If niftyStock IsNot Nothing Then todayStockList.Add(niftyStock.TradingSymbol)
+
+                            Dim bankNiftyStock As IInstrument = currentNFOInstruments.Find(Function(x)
+                                                                                               Return x.RawInstrumentName = "BANKNIFTY"
+                                                                                           End Function)
+                            If bankNiftyStock IsNot Nothing Then todayStockList.Add(bankNiftyStock.TradingSymbol)
+
                             Dim allStockData As DataTable = Nothing
                             If CType(_parentStrategy.UserSettings, OHLUserInputs).InstrumentDetailsFilePath IsNot Nothing AndAlso
                                 File.Exists(CType(_parentStrategy.UserSettings, OHLUserInputs).InstrumentDetailsFilePath) Then
