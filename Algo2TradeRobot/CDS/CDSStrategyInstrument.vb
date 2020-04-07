@@ -126,7 +126,7 @@ Public Class CDSStrategyInstrument
             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
-                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage
+                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice - slPoint, Me.TradableInstrument.TickSize, RoundOfType.Floor)
 
                 If quantity > 0 Then
@@ -137,7 +137,7 @@ Public Class CDSStrategyInstrument
                 End If
             ElseIf psar.PSAR.Value >= runningCandlePayload.PreviousPayload.HighPrice.Value Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
-                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage
+                Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice + slPoint, Me.TradableInstrument.TickSize, RoundOfType.Celing)
 
                 If quantity > 0 Then
