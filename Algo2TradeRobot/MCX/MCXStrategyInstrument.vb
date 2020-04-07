@@ -225,6 +225,7 @@ Public Class MCXStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso
             psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
