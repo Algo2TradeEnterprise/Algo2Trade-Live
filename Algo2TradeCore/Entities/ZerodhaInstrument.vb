@@ -113,6 +113,8 @@ Namespace Entities
 
         Public Property BrokerageCategory As String Implements IInstrument.BrokerageCategory
 
+        Public Property BrokerageGroupCategory As String Implements IInstrument.BrokerageGroupCategory
+
         Public Property ExchangeDetails As Exchange Implements IInstrument.ExchangeDetails
 
         Public Property FetchHistorical As Boolean Implements IInstrument.FetchHistorical

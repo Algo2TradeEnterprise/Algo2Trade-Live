@@ -11,6 +11,7 @@
         ReadOnly Property RawInstrumentName As String
         Property QuantityMultiplier As Long
         Property BrokerageCategory As String
+        Property BrokerageGroupCategory As String
         ReadOnly Property Broker As APISource
         Property LastTick As ITick
         Property RawPayloads As Concurrent.ConcurrentDictionary(Of Date, OHLCPayload)
