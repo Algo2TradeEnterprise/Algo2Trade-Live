@@ -46,7 +46,7 @@ Namespace Entities
         End Function
 
         Private _StrategyOverAllPLAfterBrokerage As Decimal
-        <Display(Name:="Strategy PL After Brokerage", Order:=2)>
+        <Display(Name:="Strategy PL", Order:=2)>
         Public ReadOnly Property StrategyOverAllPLAfterBrokerage As Decimal
             Get
                 _StrategyOverAllPLAfterBrokerage = ParentStrategyInstrument.ParentStrategy.GetTotalPLAfterBrokerage
@@ -106,7 +106,7 @@ Namespace Entities
         End Function
 
         Private _OverallPL As Decimal
-        <Display(Name:="Overall PL", Order:=7)>
+        <Display(Name:="Stock Overall PL", Order:=7)>
         Public ReadOnly Property OverallPL As Decimal
             Get
                 _OverallPL = Math.Round(ParentStrategyInstrument.GetOverallPLAfterBrokerage(), 2)
@@ -196,19 +196,19 @@ Namespace Entities
 
         <System.ComponentModel.Browsable(False)>
         Public Property StoplossModifyActivity As Activity
-        <Display(Name:="Stoploss Modify Request Time", Order:=17)>
+        <Display(Name:="Stoploss Modify Request Time", Order:=17, AutoGenerateField:=False)>
         Public ReadOnly Property StoplossModifyRequestTime As Date
             Get
                 Return StoplossModifyActivity.RequestTime
             End Get
         End Property
-        <Display(Name:="Stoploss Modify Request Status", Order:=18)>
+        <Display(Name:="Stoploss Modify Request Status", Order:=18, AutoGenerateField:=False)>
         Public ReadOnly Property StoplossModifyRequestStatus As SignalStatusType
             Get
                 Return StoplossModifyActivity.RequestStatus
             End Get
         End Property
-        <Display(Name:="Stoploss Modify Remarks", Order:=19)>
+        <Display(Name:="Stoploss Modify Remarks", Order:=19, AutoGenerateField:=False)>
         Public ReadOnly Property StoplossModifyRemarks As String
             Get
                 Return StoplossModifyActivity.RequestRemarks
