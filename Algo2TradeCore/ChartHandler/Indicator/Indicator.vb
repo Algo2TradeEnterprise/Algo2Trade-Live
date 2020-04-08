@@ -809,115 +809,105 @@ Namespace ChartHandler.Indicator
                         End If
                     End If
 
-                    Dim previousTrend As Integer = 0
-                    Dim previousCalculatedSAR As Decimal = 0
-                    Dim previousTentativeSAR As Decimal = 0
-                    Dim previousPSAR As Decimal = 0
-                    Dim previousEP As Decimal = 0
-                    Dim previousAF As Decimal = 0
+                    Dim uptrend As Boolean = False
+                    Dim EP As Decimal = 0
+                    Dim SAR As Decimal = 0
+                    Dim AF As Decimal = outputConsumer.MinimumAF
+                    Dim nextBarSAR As Decimal = 0
                     If previousPSARValue IsNot Nothing Then
-                        previousTrend = previousPSARValue.Trend
-                        previousCalculatedSAR = previousPSARValue.CalculatedSAR
-                        previousTentativeSAR = previousPSARValue.TentativeSAR
-                        previousPSAR = previousPSARValue.PSAR.Value
-                        previousEP = previousPSARValue.EP
-                        previousAF = previousPSARValue.AF
+                        uptrend = If(previousPSARValue.Trend = Color.Green, True, False)
+                        EP = previousPSARValue.EP
+                        SAR = previousPSARValue.PSAR.Value
+                        AF = previousPSARValue.AF
+                        nextBarSAR = previousPSARValue.NextBarSAR
                     End If
 
                     Dim currentPayload As OHLCPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
-                    Dim trend As Integer = 0
-                    Dim calculatedSAR As Decimal = 0
-                    Dim tentativeSAR As Decimal = 0
-                    Dim psar As Decimal = 0
-                    Dim ep As Decimal = 0
-                    Dim af As Decimal = 0
-
-                    If currentPayload.PreviousPayload IsNot Nothing AndAlso currentPayload.PreviousPayload.PreviousPayload IsNot Nothing Then
-                        calculatedSAR = previousPSAR + previousAF * (previousEP - previousPSAR)
-                        If previousTrend < 0 Then
-                            tentativeSAR = Math.Max(calculatedSAR, Math.Max(currentPayload.PreviousPayload.HighPrice.Value, currentPayload.PreviousPayload.PreviousPayload.HighPrice.Value))
-                        Else
-                            tentativeSAR = Math.Min(calculatedSAR, Math.Min(currentPayload.PreviousPayload.LowPrice.Value, currentPayload.PreviousPayload.PreviousPayload.LowPrice.Value))
-                        End If
-                        If previousTrend < 0 Then
-                            If tentativeSAR < currentPayload.HighPrice.Value Then
-                                trend = 1
-                            Else
-                                trend = previousTrend - 1
-                            End If
-                        Else
-                            If tentativeSAR > currentPayload.LowPrice.Value Then
-                                trend = -1
-                            Else
-                                trend = previousTrend + 1
-                            End If
-                        End If
-                        If trend = -1 Then
-                            psar = Math.Max(previousEP, currentPayload.HighPrice.Value)
-                        ElseIf trend = 1 Then
-                            psar = Math.Min(previousEP, currentPayload.LowPrice.Value)
-                        Else
-                            psar = tentativeSAR
-                        End If
-                        If trend < 0 Then
-                            If trend = -1 Then
-                                ep = currentPayload.LowPrice.Value
-                            Else
-                                ep = Math.Min(currentPayload.LowPrice.Value, previousEP)
-                            End If
-                        Else
-                            If trend = 1 Then
-                                ep = currentPayload.HighPrice.Value
-                            Else
-                                ep = Math.Max(currentPayload.HighPrice.Value, previousEP)
-                            End If
-                        End If
-                        If Math.Abs(trend) = 1 Then
-                            af = outputConsumer.MinimumAF
-                        Else
-                            If ep = previousEP Then
-                                af = previousAF
-                            Else
-                                af = Math.Min(outputConsumer.MaximumAF, previousAF + outputConsumer.MinimumAF)
-                            End If
-                        End If
-                    ElseIf currentPayload.PreviousPayload IsNot Nothing Then
-                        trend = -1
-                        If trend < 0 Then
-                            psar = currentPayload.PreviousPayload.HighPrice.Value
-                        Else
-                            psar = currentPayload.PreviousPayload.LowPrice.Value
-                        End If
-                        If trend < 0 Then
-                            If trend = -1 Then
-                                ep = currentPayload.LowPrice.Value
-                            Else
-                                ep = Math.Min(currentPayload.LowPrice.Value, previousEP)
-                            End If
-                        Else
-                            If trend = 1 Then
-                                ep = currentPayload.HighPrice.Value
-                            Else
-                                ep = Math.Max(currentPayload.HighPrice.Value, previousEP)
-                            End If
-                        End If
-                        If Math.Abs(trend) = 1 Then
-                            af = outputConsumer.MinimumAF
-                        Else
-                            If ep = previousEP Then
-                                af = previousAF
-                            Else
-                                af = Math.Min(outputConsumer.MaximumAF, previousAF + outputConsumer.MinimumAF)
-                            End If
-                        End If
+                    Dim bar_index As Integer = 0
+                    If currentPayload.PreviousPayload IsNot Nothing AndAlso currentPayload.PreviousPayload.PreviousPayload Is Nothing Then
+                        bar_index = 1
+                    ElseIf currentPayload.PreviousPayload IsNot Nothing AndAlso currentPayload.PreviousPayload.PreviousPayload IsNot Nothing Then
+                        bar_index = 2
                     End If
 
-                    psarValue.PSAR.Value = psar
-                    psarValue.Trend = trend
-                    psarValue.CalculatedSAR = calculatedSAR
-                    psarValue.TentativeSAR = tentativeSAR
-                    psarValue.EP = ep
-                    psarValue.AF = af
+                    If bar_index > 0 Then
+                        Dim firstTrendBar As Boolean = False
+                        SAR = nextBarSAR
+                        If bar_index = 1 Then
+                            Dim prevSAR As Decimal = 0
+                            Dim prevEP As Decimal = 0
+                            Dim lowPrev As Decimal = currentPayload.PreviousPayload.LowPrice.Value
+                            Dim highPrev As Decimal = currentPayload.PreviousPayload.HighPrice.Value
+                            Dim closeCur As Decimal = currentPayload.ClosePrice.Value
+                            Dim closePrev As Decimal = currentPayload.PreviousPayload.ClosePrice.Value
+                            If closeCur > closePrev Then
+                                uptrend = True
+                                EP = currentPayload.HighPrice.Value
+                                prevSAR = lowPrev
+                                prevEP = currentPayload.HighPrice.Value
+                            Else
+                                uptrend = False
+                                EP = currentPayload.LowPrice.Value
+                                prevSAR = highPrev
+                                prevEP = currentPayload.LowPrice.Value
+                            End If
+                            firstTrendBar = True
+                            SAR = prevSAR + outputConsumer.MinimumAF * (prevEP - prevSAR)
+                        End If
+
+                        If uptrend Then
+                            If SAR > currentPayload.LowPrice.Value Then
+                                firstTrendBar = True
+                                uptrend = False
+                                SAR = Math.Max(EP, currentPayload.HighPrice.Value)
+                                EP = currentPayload.LowPrice.Value
+                                AF = outputConsumer.MinimumAF
+                            End If
+                        Else
+                            If SAR < currentPayload.HighPrice.Value Then
+                                firstTrendBar = True
+                                uptrend = True
+                                SAR = Math.Min(EP, currentPayload.LowPrice.Value)
+                                EP = currentPayload.HighPrice.Value
+                                AF = outputConsumer.MinimumAF
+                            End If
+                        End If
+
+                        If Not firstTrendBar Then
+                            If uptrend Then
+                                If currentPayload.HighPrice.Value > EP Then
+                                    EP = currentPayload.HighPrice.Value
+                                    AF = Math.Min(AF + outputConsumer.MinimumAF, outputConsumer.MaximumAF)
+                                End If
+                            Else
+                                If currentPayload.LowPrice.Value < EP Then
+                                    EP = currentPayload.LowPrice.Value
+                                    AF = Math.Min(AF + outputConsumer.MinimumAF, outputConsumer.MaximumAF)
+                                End If
+                            End If
+                        End If
+
+                        If uptrend Then
+                            SAR = Math.Min(SAR, currentPayload.PreviousPayload.LowPrice.Value)
+                            If bar_index > 1 Then
+                                SAR = Math.Min(SAR, currentPayload.PreviousPayload.PreviousPayload.LowPrice.Value)
+                            End If
+                        Else
+                            SAR = Math.Max(SAR, currentPayload.PreviousPayload.HighPrice.Value)
+                            If bar_index > 1 Then
+                                SAR = Math.Max(SAR, currentPayload.PreviousPayload.PreviousPayload.HighPrice.Value)
+                            End If
+                        End If
+
+                        nextBarSAR = SAR + AF * (EP - SAR)
+                    End If
+
+
+                    psarValue.PSAR.Value = SAR
+                    psarValue.Trend = If(uptrend, Color.Green, Color.Red)
+                    psarValue.EP = EP
+                    psarValue.AF = AF
+                    psarValue.NextBarSAR = nextBarSAR
                     outputConsumer.ConsumerPayloads.AddOrUpdate(runningInputDate, psarValue, Function(key, value) psarValue)
                 Next
             End If

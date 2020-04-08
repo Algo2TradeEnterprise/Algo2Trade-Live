@@ -100,12 +100,12 @@ Public Class CDSStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                 IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
@@ -124,7 +124,7 @@ Public Class CDSStrategyInstrument
             psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
             psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-            If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value Then
+            If psar.Trend = Color.Green Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
                 Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice - slPoint, Me.TradableInstrument.TickSize, RoundOfType.Floor)
@@ -135,7 +135,7 @@ Public Class CDSStrategyInstrument
                                     .Quantity = quantity,
                                     .TriggerPrice = triggerPrice}
                 End If
-            ElseIf psar.PSAR.Value >= runningCandlePayload.PreviousPayload.HighPrice.Value Then
+            ElseIf psar.Trend = Color.Red Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
                 Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice + slPoint, Me.TradableInstrument.TickSize, RoundOfType.Celing)
@@ -156,13 +156,13 @@ Public Class CDSStrategyInstrument
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, 
-                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, PSAR:{4}, 
+                                IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, 
                                 IsActiveInstrument:{5}, Current Time:{6}, Current Tick:{7}, TradingSymbol:{8}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                CType(psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), PSARConsumer.PSARPayload).PSAR.Value,
+                                psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                 IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
@@ -242,10 +242,10 @@ Public Class CDSStrategyInstrument
                             Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
                             Dim exitTrade As Boolean = False
                             Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                            If psar.PSAR.Value <= runningCandlePayload.PreviousPayload.LowPrice.Value AndAlso
+                            If psar.Trend = Color.Green AndAlso
                                 bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                 exitTrade = True
-                            ElseIf psar.PSAR.Value >= runningCandlePayload.PreviousPayload.HighPrice.Value AndAlso
+                            ElseIf psar.Trend = Color.Red AndAlso
                                 bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
                                 exitTrade = True
                             End If
@@ -268,9 +268,16 @@ Public Class CDSStrategyInstrument
             End If
         End If
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
-            For Each runningOrder In ret
-                logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol)
-            Next
+            Try
+                For Each runningOrder In ret
+                    logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}, {3}",
+                                 runningOrder.Item2.OrderIdentifier, runningOrder.Item3,
+                                 psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                 Me.TradableInstrument.TradingSymbol)
+                Next
+            Catch ex As Exception
+                logger.Error(ex)
+            End Try
         End If
         Return ret
     End Function

@@ -1,4 +1,5 @@
-﻿Namespace Entities.Indicators
+﻿Imports System.Drawing
+Namespace Entities.Indicators
     Public Class PSARConsumer
         Inherits PayloadToIndicatorConsumer
         Public ReadOnly Property MinimumAF As Decimal
@@ -22,15 +23,14 @@
 
             Public Property TradingSymbol As String Implements IPayload.TradingSymbol
             Public Property PSAR As Field
+            Public Property Trend As Color
 
-            Public Property Trend As Integer
-            Public Property CalculatedSAR As Decimal
-            Public Property TentativeSAR As Decimal
             Public Property EP As Decimal
             Public Property AF As Decimal
+            Public Property NextBarSAR As Decimal
 
             Public Overrides Function ToString() As String
-                Return String.Format("PSAR:{0}", Math.Round(Me.PSAR.Value, 4))
+                Return String.Format("PSAR:{0}, Trend:{1}", Math.Round(Me.PSAR.Value, 4), Me.Trend.Name)
             End Function
         End Class
     End Class
