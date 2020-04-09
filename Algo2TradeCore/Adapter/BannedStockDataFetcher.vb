@@ -44,7 +44,7 @@ Namespace Adapter
 
         Private Function GetBannedStockURL() As String
             Dim ret As String = Nothing
-            Dim bannedStockURL As String = "https://www.nseindia.com/archives/fo/sec_ban/fo_secban_{0}.csv"
+            Dim bannedStockURL As String = "https://www1.nseindia.com/archives/fo/sec_ban/fo_secban_{0}.csv"
             ret = String.Format(bannedStockURL, Now.ToString("ddMMyyyy"))
             Return ret
         End Function
@@ -67,7 +67,7 @@ Namespace Adapter
 
                     browser.KeepAlive = True
                     Dim headersToBeSent As New Dictionary(Of String, String)
-                    headersToBeSent.Add("Host", "www.nseindia.com")
+                    headersToBeSent.Add("Host", "www1.nseindia.com")
                     headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
                     headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
                     headersToBeSent.Add("Sec-Fetch-Site", "none")

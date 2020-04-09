@@ -1590,7 +1590,7 @@ Namespace Adapter
                     logger.Debug(String.Format("Fetched {0} instruments from Zerodha", count))
                     If instruments IsNot Nothing AndAlso instruments.Count > 0 Then
                         instruments.RemoveAll(Function(x)
-                                                  Return x.Exchange = "BFO" Or x.Exchange = "BSE"
+                                                  Return x.Exchange = "BFO" Or x.Exchange = "BSE" Or x.Exchange = "BCD"
                                               End Function)
                         instruments.RemoveAll(Function(x)
                                                   Dim pattern As String = "([0-9][0-9]JAN)|([0-9][0-9]FEB)|([0-9][0-9]MAR)|([0-9][0-9]APR)|([0-9][0-9]MAY)|([0-9][0-9]JUN)|([0-9][0-9]JUL)|([0-9][0-9]AUG)|([0-9][0-9]SEP)|([0-9][0-9]OCT)|([0-9][0-9]NOV)|([0-9][0-9]DEC)"

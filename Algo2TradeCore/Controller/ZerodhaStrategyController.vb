@@ -662,9 +662,17 @@ Namespace Controller
 
         Protected Overrides Async Function FillQuantityMultiplierMapAsync() As Task
             Dim commodityMultiplierMap As Dictionary(Of String, Object) = Nothing
+            Dim commodityGroupMap As Dictionary(Of String, Object) = Nothing
+
+            ServicePointManager.Expect100Continue = False
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
+            ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
+                                                                          Return True
+                                                                      End Function
+
             Dim proxyToBeUsed As HttpProxy = Nothing
             Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync("https://zerodha.com/static/app.js",
+                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync("https://zerodha.com/static/js/brokerage.min.js",
                                                                                      HttpMethod.Get,
                                                                                      Nothing,
                                                                                      True,
@@ -672,20 +680,28 @@ Namespace Controller
                                                                                      False,
                                                                                      Nothing).ConfigureAwait(False)
                 If l Is Nothing OrElse l.Item2 Is Nothing Then
-                    Throw New ApplicationException(String.Format("No response in the additional site's historical race results landing page: {0}", "https://zerodha.com/static/app.js"))
+                    Throw New ApplicationException(String.Format("No response in the additional site's to fetch commodity multiplier and group map: {0}",
+                                                                 "https://zerodha.com/static/js/brokerage.min.js"))
                 End If
                 If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
                     Dim jString As String = l.Item2
                     If jString IsNot Nothing Then
-                        Dim map As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "},", jString)
-                        If map IsNot Nothing Then
-                            map = map & "}"
-                            commodityMultiplierMap = Utilities.Strings.JsonDeserialize(map)
+                        Dim multiplierMap As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "}", jString)
+                        If multiplierMap IsNot Nothing Then
+                            multiplierMap = multiplierMap & "}"
+                            commodityMultiplierMap = Utilities.Strings.JsonDeserialize(multiplierMap)
+                        End If
+
+                        Dim groupMap As String = Utilities.Strings.GetTextBetween("COMMODITY_GROUP_MAP=", "}", jString)
+                        If groupMap IsNot Nothing Then
+                            groupMap = groupMap & "}"
+                            commodityGroupMap = Utilities.Strings.JsonDeserialize(groupMap)
                         End If
                     End If
                 End If
             End Using
-            If commodityMultiplierMap IsNot Nothing AndAlso commodityMultiplierMap.Count > 0 Then
+            If commodityMultiplierMap IsNot Nothing AndAlso commodityMultiplierMap.Count > 0 AndAlso
+                commodityGroupMap IsNot Nothing AndAlso commodityGroupMap.Count > 0 Then
                 If _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0 Then
                     For Each instrument In _AllInstruments
                         If Me.UserInputs.ExchangeDetails.ContainsKey(instrument.RawExchange) Then
@@ -700,19 +716,26 @@ Namespace Controller
                                 Else
                                     logger.Warn(String.Format("Commodity Multiplier Map doesn't have this MCX stock - {0}", stockName))
                                 End If
+                                If commodityGroupMap.ContainsKey(stockName) Then
+                                    instrument.BrokerageGroupCategory = commodityGroupMap(stockName).ToString.Substring(commodityGroupMap(stockName).ToString.Length - 1)
+                                Else
+                                    logger.Warn(String.Format("Commodity Group Map doesn't have this MCX stock - {0}", stockName))
+                                End If
                             ElseIf instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                    instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.CDS Then
+                                instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.CDS Then
                                 instrument.QuantityMultiplier = 1000
                                 instrument.BrokerageCategory = Nothing
+                                instrument.BrokerageGroupCategory = Nothing
                             Else
                                 instrument.QuantityMultiplier = 1
                                 instrument.BrokerageCategory = Nothing
+                                instrument.BrokerageGroupCategory = Nothing
                             End If
                         End If
                     Next
                 End If
             Else
-                Throw New ApplicationException("Unable to fetch quantity multiplier")
+                Throw New ApplicationException("Unable to fetch quantity/group multiplier")
             End If
         End Function
 

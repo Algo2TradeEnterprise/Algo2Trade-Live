@@ -117,6 +117,8 @@ Namespace Entities
 
         Public Property FetchHistorical As Boolean Implements IInstrument.FetchHistorical
 
+        Public Property BrokerageGroupCategory As String Implements IInstrument.BrokerageGroupCategory
+
         Public Overrides Function ToString() As String
             Return String.Format("{0}_{1}", Me.TradingSymbol, Me.InstrumentIdentifier)
         End Function
