@@ -45,14 +45,13 @@ Namespace Adapter
 
         Private Function GetBannedStockURL() As String
             Dim ret As String = Nothing
-            Dim bannedStockURL As String = "https://www.nseindia.com/archives/fo/sec_ban/fo_secban_{0}.csv"
+            Dim bannedStockURL As String = "https://www1.nseindia.com/archives/fo/sec_ban/fo_secban_{0}.csv"
             ret = String.Format(bannedStockURL, Now.ToString("ddMMyyyy"))
             Return ret
         End Function
 
         Private Async Function GetBannedStockFileAsync() As Task(Of Boolean)
             Dim ret As Boolean = False
-            OnHeartbeat("Fetching Banned stock data")
             If File.Exists(_bannedStockFileName) Then
                 If File.ReadAllText(_bannedStockFileName).ToUpper.Contains("Not Found".ToUpper) Then
                     ret = False
@@ -60,22 +59,22 @@ Namespace Adapter
                     ret = True
                 End If
             Else
-
-                ServicePointManager.Expect100Continue = False
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
-                ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
-                                                                              Return True
-                                                                          End Function
-
                 Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, TimeSpan.FromSeconds(30), _cts)
                     AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                     AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                     AddHandler browser.WaitingFor, AddressOf OnWaitingFor
                     AddHandler browser.Heartbeat, AddressOf OnHeartbeat
 
+                    browser.KeepAlive = True
+                    Dim headersToBeSent As New Dictionary(Of String, String)
+                    headersToBeSent.Add("Host", "www1.nseindia.com")
+                    headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
+                    headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
+                    headersToBeSent.Add("Sec-Fetch-Site", "none")
+
                     Dim targetURL As String = GetBannedStockURL()
                     If targetURL IsNot Nothing Then
-                        Dim innerRet As Boolean = Await browser.GetFileAsync(targetURL, _bannedStockFileName, True, Nothing).ConfigureAwait(False)
+                        Dim innerRet As Boolean = Await browser.GetFileAsync(targetURL, _bannedStockFileName, False, headersToBeSent).ConfigureAwait(False)
                         If innerRet AndAlso File.ReadAllText(_bannedStockFileName).ToUpper.Contains("Not Found".ToUpper) Then
                             ret = False
                         ElseIf innerRet Then
