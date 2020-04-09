@@ -216,6 +216,15 @@ Public Class NearFarHedgingStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
 
         If _placeOrderParameter IsNot Nothing Then
+            Dim currentTick As ITick = Me.TradableInstrument.LastTick
+            Dim slPoint As Decimal = ConvertFloorCeling(currentTick.LastPrice * 9 / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            If _placeOrderParameter.EntryDirection = IOrder.TypeOfTransaction.Buy Then
+                _placeOrderParameter.TriggerPrice = currentTick.LastPrice - slPoint
+            ElseIf _placeOrderParameter.EntryDirection = IOrder.TypeOfTransaction.Sell Then
+                _placeOrderParameter.TriggerPrice = currentTick.LastPrice + slPoint
+            End If
+
+
             Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(_placeOrderParameter.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
             If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
                 Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
