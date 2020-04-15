@@ -1347,6 +1347,8 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
+
+        tabMain.TabPages.Remove(tabCDS)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
