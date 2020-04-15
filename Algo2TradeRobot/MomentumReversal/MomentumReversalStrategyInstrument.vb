@@ -113,6 +113,7 @@ Public Class MomentumReversalStrategyInstrument
         Dim atrConsumer As ATRConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyATRConsumer)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
+        Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
 
         Try
             If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
@@ -124,7 +125,7 @@ Public Class MomentumReversalStrategyInstrument
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", signal.Item3.ToString)
                     atr = Math.Round(CType(atrConsumer.ConsumerPayloads(signal.Item3.SnapshotDateTime), ATRConsumer.ATRPayload).ATR.Value, 3)
                 End If
-                logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, Last Trade Entry Time:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, Is Active Instrument:{5}, Number Of Trade:{6}, Signal Candle Time:{7}, Signal Candle Color:{8}, Signal Direction:{9}, ATR:{10}, Day Open:{11}, Current Time:{12}, Current LTP:{13}, TradingSymbol:{14}",
+                logger.Debug("PlaceOrder-> Rest all parameters: Trade Start Time:{0}, Last Trade Entry Time:{1}, RunningCandlePayloadSnapshotDateTime:{2}, PayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, Is Active Instrument:{5}, Number Of Trade:{6}, Signal Candle Time:{7}, Signal Candle Color:{8}, Signal Direction:{9}, ATR:{10}, Day Open:{11}, Active trade count:{12}, Current Time:{13}, Current LTP:{14}, TradingSymbol:{15}",
                             userSettings.TradeStartTime.ToString,
                             userSettings.LastTradeEntryTime.ToString,
                             runningCandlePayload.SnapshotDateTime,
@@ -133,10 +134,11 @@ Public Class MomentumReversalStrategyInstrument
                             IsActiveInstrument(),
                             GetTotalExecutedOrders(),
                             If(signal IsNot Nothing, signal.Item3.SnapshotDateTime, "Nothing"),
-                            If(signal IsNot Nothing, signal.Item3.CandleColor, "Nothing"),
+                            If(signal IsNot Nothing, signal.Item3.CandleColor.Name, "Nothing"),
                             If(signal IsNot Nothing, signal.Item2, "Nothing"),
                             If(atr <> Decimal.MinValue, atr, "Nothing"),
                             currentTick.Open,
+                            If(allActiveOrders IsNot Nothing, allActiveOrders.Count, 0),
                             currentTime.ToString,
                             currentTick.LastPrice,
                             Me.TradableInstrument.TradingSymbol)
@@ -167,7 +169,6 @@ Public Class MomentumReversalStrategyInstrument
                     End If
                 End If
             ElseIf IsActiveInstrument() AndAlso GetTotalExecutedOrders() < 2 Then
-                Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
                 If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 AndAlso allActiveOrders.Count < 3 Then
                     Dim activeOrder As IOrder = allActiveOrders.Find(Function(x)
                                                                          Return x.Status = IOrder.TypeOfStatus.Complete
@@ -233,10 +234,10 @@ Public Class MomentumReversalStrategyInstrument
 
             Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
             If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
-                'Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
-                '                                                                                              Return x.EntryActivity.RequestRemarks = parameters.ToString
-                '                                                                                          End Function)
-                Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
+                Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
+                                                                                                              Return x.EntryActivity.RequestRemarks = parameters.ToString
+                                                                                                          End Function)
+                'Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
                 If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
                     Dim lastPlacedActivity As ActivityDashboard = placedActivities.OrderBy(Function(x)
                                                                                                Return x.EntryActivity.RequestTime
@@ -275,6 +276,7 @@ Public Class MomentumReversalStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As MomentumReversalUserInputs = Me.ParentStrategy.UserSettings
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
+        Dim currentTime As Date = Now()
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             Dim activeTrades As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
             Dim slOrder As IOrder = activeTrades.Find(Function(x)
@@ -300,6 +302,9 @@ Public Class MomentumReversalStrategyInstrument
                                     triggerPrice = entryPrice + brkevnPoint
                                     reason = "Cost to cost movement"
                                 End If
+                            ElseIf currentTime >= userSettings.EODExitTime Then
+                                triggerPrice = currentTick.LastPrice
+                                reason = "EOD Exit"
                             End If
                         ElseIf parentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                             Dim gain As Decimal = entryPrice - currentTick.LastPrice
@@ -308,6 +313,9 @@ Public Class MomentumReversalStrategyInstrument
                                 If entryPrice - brkevnPoint < slOrder.TriggerPrice Then
                                     triggerPrice = entryPrice - brkevnPoint
                                     reason = "Cost to cost movement"
+                                ElseIf currentTime >= userSettings.EODExitTime Then
+                                    triggerPrice = currentTick.LastPrice
+                                    reason = "EOD Exit"
                                 End If
                             End If
                         End If
@@ -332,9 +340,13 @@ Public Class MomentumReversalStrategyInstrument
             End If
         End If
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
-            For Each runningOrder In ret
-                logger.Debug("***** Modify Stoploss ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
-            Next
+            Try
+                For Each runningOrder In ret
+                    logger.Debug("***** Modify Stoploss ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
+                Next
+            Catch ex As Exception
+                logger.Error(ex.ToString)
+            End Try
         End If
         Return ret
     End Function
@@ -406,34 +418,34 @@ Public Class MomentumReversalStrategyInstrument
 
     Private Function GetFirstCandleOfTheDay() As OHLCPayload
         Dim ret As OHLCPayload = Nothing
-        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-        If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-            ret = runningCandlePayload.PreviousPayload
-        End If
-        'Dim timeframe As Integer = Me.ParentStrategy.UserSettings.SignalTimeFrame
-        'If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
-        '    Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
-        '                                                                                                 If x.GetType Is GetType(PayloadToChartConsumer) Then
-        '                                                                                                     Return CType(x, PayloadToChartConsumer).Timeframe = timeframe
-        '                                                                                                 Else
-        '                                                                                                     Return Nothing
-        '                                                                                                 End If
-        '                                                                                             End Function)
-
-        '    If XMinutePayloadConsumer IsNot Nothing AndAlso
-        '            XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
-        '        Dim existingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
-        '            XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
-        '                                                              Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key.Date, Now.Date)
-        '                                                          End Function)
-
-        '        If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then
-        '            ret = existingPayloads.OrderBy(Function(x)
-        '                                               Return x.Key
-        '                                           End Function).FirstOrDefault.Value
-        '        End If
-        '    End If
+        'Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+        'If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
+        '    ret = runningCandlePayload.PreviousPayload
         'End If
+        Dim timeframe As Integer = Me.ParentStrategy.UserSettings.SignalTimeFrame
+        If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
+            Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
+                                                                                                         If x.GetType Is GetType(PayloadToChartConsumer) Then
+                                                                                                             Return CType(x, PayloadToChartConsumer).Timeframe = timeframe
+                                                                                                         Else
+                                                                                                             Return Nothing
+                                                                                                         End If
+                                                                                                     End Function)
+
+            If XMinutePayloadConsumer IsNot Nothing AndAlso
+                    XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
+                Dim existingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                    XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
+                                                                      Return Utilities.Time.IsDateTimeEqualTillMinutes(y.Key.Date, Now.Date)
+                                                                  End Function)
+
+                If existingPayloads IsNot Nothing AndAlso existingPayloads.Count > 0 Then
+                    ret = existingPayloads.OrderBy(Function(x)
+                                                       Return x.Key
+                                                   End Function).FirstOrDefault.Value
+                End If
+            End If
+        End If
         Return ret
     End Function
 

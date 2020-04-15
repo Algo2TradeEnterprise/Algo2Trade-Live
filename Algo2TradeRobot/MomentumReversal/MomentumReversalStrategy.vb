@@ -124,9 +124,9 @@ Public Class MomentumReversalStrategy
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim currentTime As Date = Now
-        If currentTime >= Me.UserSettings.EODExitTime Then
-            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        End If
+        'If currentTime >= Me.UserSettings.EODExitTime Then
+        '    ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
+        'End If
         Return ret
     End Function
 End Class
