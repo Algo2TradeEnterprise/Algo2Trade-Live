@@ -751,7 +751,7 @@ Namespace Strategies
                             Dim c As Integer = 1
                             If runningRawPayloadConsumer.OnwardLevelConsumers IsNot Nothing AndAlso runningRawPayloadConsumer.OnwardLevelConsumers.Count > 0 Then
                                 For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
-                                    candleCreator.IndicatorCreator.CalculatePSAR(currentXMinute, consumer)
+                                    candleCreator.IndicatorCreator.CalculateSupertrend(currentXMinute, consumer)
                                 Next
                             End If
 
