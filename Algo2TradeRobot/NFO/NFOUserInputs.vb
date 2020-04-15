@@ -13,8 +13,8 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property MinimumAF As Decimal
-    Public Property MaximumAF As Decimal
+    Public Property Period As Decimal
+    Public Property Multiplier As Decimal
 
     <Serializable>
     Public Class InstrumentDetails

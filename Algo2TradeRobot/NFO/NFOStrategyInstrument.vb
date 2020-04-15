@@ -15,7 +15,7 @@ Public Class NFOStrategyInstrument
 #End Region
 
     Private _lastPrevPayloadPlaceOrder As String = ""
-    Private ReadOnly _dummyPSARConsumer As PSARConsumer
+    Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -39,9 +39,9 @@ Public Class NFOStrategyInstrument
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
                 chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
-                {New PSARConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).MinimumAF, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).MaximumAF)}
+                {New SupertrendConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)}
                 RawPayloadDependentConsumers.Add(chartConsumer)
-                _dummyPSARConsumer = New PSARConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).MinimumAF, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).MaximumAF)
+                _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -91,7 +91,7 @@ Public Class NFOStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
-        Dim psarConsumer As PSARConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyPSARConsumer)
+        Dim supertrendConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
 
@@ -105,7 +105,7 @@ Public Class NFOStrategyInstrument
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                 IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
@@ -121,10 +121,10 @@ Public Class NFOStrategyInstrument
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Not IsActiveInstrument() AndAlso
             runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
-            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
-            psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-            Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-            If psar.Trend = Color.Green Then
+            supertrendConsumer.ConsumerPayloads IsNot Nothing AndAlso supertrendConsumer.ConsumerPayloads.Count > 0 AndAlso
+            supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            Dim supertrend As SupertrendConsumer.SupertrendPayload = supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+            If supertrend.SupertrendColor = Color.Green Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
                 Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice - slPoint, Me.TradableInstrument.TickSize, RoundOfType.Floor)
@@ -135,7 +135,7 @@ Public Class NFOStrategyInstrument
                                     .Quantity = quantity,
                                     .TriggerPrice = triggerPrice}
                 End If
-            ElseIf psar.Trend = Color.Red Then
+            ElseIf supertrend.SupertrendColor = Color.Red Then
                 Dim quantity As Integer = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).NumberOfLots * Me.TradableInstrument.LotSize
                 Dim slPoint As Decimal = currentTick.LastPrice * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).MaxStoplossPercentage / 100
                 Dim triggerPrice As Decimal = ConvertFloorCeling(currentTick.LastPrice + slPoint, Me.TradableInstrument.TickSize, RoundOfType.Celing)
@@ -162,7 +162,7 @@ Public Class NFOStrategyInstrument
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                 IsActiveInstrument(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
@@ -221,13 +221,13 @@ Public Class NFOStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim psarConsumer As PSARConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyPSARConsumer)
+        Dim supertrendConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso
-            psarConsumer.ConsumerPayloads IsNot Nothing AndAlso psarConsumer.ConsumerPayloads.Count > 0 AndAlso
-            psarConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            supertrendConsumer.ConsumerPayloads IsNot Nothing AndAlso supertrendConsumer.ConsumerPayloads.Count > 0 AndAlso
+            supertrendConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
                 Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
@@ -241,11 +241,11 @@ Public Class NFOStrategyInstrument
                         runningSLOrder.Status = IOrder.TypeOfStatus.Open Then
                             Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
                             Dim exitTrade As Boolean = False
-                            Dim psar As PSARConsumer.PSARPayload = psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                            If psar.Trend = Color.Green AndAlso
+                            Dim supertrend As SupertrendConsumer.SupertrendPayload = supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+                            If supertrend.SupertrendColor = Color.Green AndAlso
                                 bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                 exitTrade = True
-                            ElseIf psar.Trend = Color.Red AndAlso
+                            ElseIf supertrend.SupertrendColor = Color.Red AndAlso
                                 bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
                                 exitTrade = True
                             End If
@@ -272,7 +272,7 @@ Public Class NFOStrategyInstrument
                 For Each runningOrder In ret
                     logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}, {3}",
                                  runningOrder.Item2.OrderIdentifier, runningOrder.Item3,
-                                 psarConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                 supertrendConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                  Me.TradableInstrument.TradingSymbol)
                 Next
             Catch ex As Exception

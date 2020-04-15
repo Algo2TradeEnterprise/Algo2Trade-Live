@@ -36,8 +36,8 @@ Public Class frmNFOSettings
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
-            txtPSARMinAF.Text = _settings.MinimumAF
-            txtPSARMaxAF.Text = _settings.MaximumAF
+            txtSupertrendPeriod.Text = _settings.Period
+            txtSupertrendMultiplier.Text = _settings.Multiplier
         End If
     End Sub
     Private Sub SaveSettings()
@@ -47,8 +47,8 @@ Public Class frmNFOSettings
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
-        _settings.MinimumAF = txtPSARMinAF.Text
-        _settings.MaximumAF = txtPSARMaxAF.Text
+        _settings.Period = txtSupertrendPeriod.Text
+        _settings.Multiplier = txtSupertrendMultiplier.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -72,8 +72,8 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtPSARMinAF, False)
-        ValidateNumbers(0, Decimal.MaxValue, txtPSARMaxAF, False)
+        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendPeriod, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
         ValidateFile()
     End Sub
 

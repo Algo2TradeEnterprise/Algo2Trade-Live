@@ -26,7 +26,7 @@ Namespace Entities.Indicators
             Public Property Supertrend As Field
             Public Property SupertrendColor As Color
             Public Overrides Function ToString() As String
-                Return String.Format("Supertrend:{0}, Color:{1}", Me.Supertrend.Value, Me.SupertrendColor.ToString)
+                Return String.Format("Supertrend:{0}, Color:{1}", Math.Round(Me.Supertrend.Value, 4), Me.SupertrendColor.Name)
             End Function
         End Class
     End Class
