@@ -219,7 +219,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
         Me.txtSupertrendPeriod.Size = New System.Drawing.Size(241, 22)
         Me.txtSupertrendPeriod.TabIndex = 6
-        Me.txtSupertrendPeriod.Tag = "Minimum AF"
+        Me.txtSupertrendPeriod.Tag = "Period"
         '
         'grpSupertrend
         '
@@ -241,7 +241,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
         Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(241, 22)
         Me.txtSupertrendMultiplier.TabIndex = 7
-        Me.txtSupertrendMultiplier.Tag = "Maximum AF"
+        Me.txtSupertrendMultiplier.Tag = "Multiplier"
         '
         'lblSupertrendMultiplier
         '

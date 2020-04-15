@@ -24,11 +24,11 @@ Partial Class frmMCXSettings
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmMCXSettings))
-        Me.lblPSARMaxAF = New System.Windows.Forms.Label()
-        Me.grpPSAR = New System.Windows.Forms.GroupBox()
-        Me.txtPSARMaxAF = New System.Windows.Forms.TextBox()
-        Me.txtPSARMinAF = New System.Windows.Forms.TextBox()
-        Me.lblPSARMinAF = New System.Windows.Forms.Label()
+        Me.lblSupertrendMultiplier = New System.Windows.Forms.Label()
+        Me.grpSupertrend = New System.Windows.Forms.GroupBox()
+        Me.txtSupertrendMultiplier = New System.Windows.Forms.TextBox()
+        Me.txtSupertrendPeriod = New System.Windows.Forms.TextBox()
+        Me.lblSupertrendPeriod = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -44,60 +44,60 @@ Partial Class frmMCXSettings
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.btnSave = New System.Windows.Forms.Button()
-        Me.grpPSAR.SuspendLayout()
+        Me.grpSupertrend.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
-        'lblPSARMaxAF
+        'lblSupertrendMultiplier
         '
-        Me.lblPSARMaxAF.AutoSize = True
-        Me.lblPSARMaxAF.Location = New System.Drawing.Point(9, 60)
-        Me.lblPSARMaxAF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblPSARMaxAF.Name = "lblPSARMaxAF"
-        Me.lblPSARMaxAF.Size = New System.Drawing.Size(87, 17)
-        Me.lblPSARMaxAF.TabIndex = 37
-        Me.lblPSARMaxAF.Text = "Maximum AF"
+        Me.lblSupertrendMultiplier.AutoSize = True
+        Me.lblSupertrendMultiplier.Location = New System.Drawing.Point(9, 60)
+        Me.lblSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSupertrendMultiplier.Name = "lblSupertrendMultiplier"
+        Me.lblSupertrendMultiplier.Size = New System.Drawing.Size(64, 17)
+        Me.lblSupertrendMultiplier.TabIndex = 37
+        Me.lblSupertrendMultiplier.Text = "Multiplier"
         '
-        'grpPSAR
+        'grpSupertrend
         '
-        Me.grpPSAR.Controls.Add(Me.txtPSARMaxAF)
-        Me.grpPSAR.Controls.Add(Me.lblPSARMaxAF)
-        Me.grpPSAR.Controls.Add(Me.txtPSARMinAF)
-        Me.grpPSAR.Controls.Add(Me.lblPSARMinAF)
-        Me.grpPSAR.Location = New System.Drawing.Point(4, 205)
-        Me.grpPSAR.Name = "grpPSAR"
-        Me.grpPSAR.Size = New System.Drawing.Size(451, 90)
-        Me.grpPSAR.TabIndex = 26
-        Me.grpPSAR.TabStop = False
-        Me.grpPSAR.Text = "PSAR Settings"
+        Me.grpSupertrend.Controls.Add(Me.txtSupertrendMultiplier)
+        Me.grpSupertrend.Controls.Add(Me.lblSupertrendMultiplier)
+        Me.grpSupertrend.Controls.Add(Me.txtSupertrendPeriod)
+        Me.grpSupertrend.Controls.Add(Me.lblSupertrendPeriod)
+        Me.grpSupertrend.Location = New System.Drawing.Point(4, 205)
+        Me.grpSupertrend.Name = "grpSupertrend"
+        Me.grpSupertrend.Size = New System.Drawing.Size(451, 90)
+        Me.grpSupertrend.TabIndex = 26
+        Me.grpSupertrend.TabStop = False
+        Me.grpSupertrend.Text = "Supertrend Settings"
         '
-        'txtPSARMaxAF
+        'txtSupertrendMultiplier
         '
-        Me.txtPSARMaxAF.Location = New System.Drawing.Point(189, 55)
-        Me.txtPSARMaxAF.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtPSARMaxAF.Name = "txtPSARMaxAF"
-        Me.txtPSARMaxAF.Size = New System.Drawing.Size(241, 22)
-        Me.txtPSARMaxAF.TabIndex = 7
-        Me.txtPSARMaxAF.Tag = "Maximum AF"
+        Me.txtSupertrendMultiplier.Location = New System.Drawing.Point(189, 55)
+        Me.txtSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
+        Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(241, 22)
+        Me.txtSupertrendMultiplier.TabIndex = 7
+        Me.txtSupertrendMultiplier.Tag = "Multiplier"
         '
-        'txtPSARMinAF
+        'txtSupertrendPeriod
         '
-        Me.txtPSARMinAF.Location = New System.Drawing.Point(189, 21)
-        Me.txtPSARMinAF.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtPSARMinAF.Name = "txtPSARMinAF"
-        Me.txtPSARMinAF.Size = New System.Drawing.Size(241, 22)
-        Me.txtPSARMinAF.TabIndex = 6
-        Me.txtPSARMinAF.Tag = "Minimum AF"
+        Me.txtSupertrendPeriod.Location = New System.Drawing.Point(189, 21)
+        Me.txtSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
+        Me.txtSupertrendPeriod.Size = New System.Drawing.Size(241, 22)
+        Me.txtSupertrendPeriod.TabIndex = 6
+        Me.txtSupertrendPeriod.Tag = "Period"
         '
-        'lblPSARMinAF
+        'lblSupertrendPeriod
         '
-        Me.lblPSARMinAF.AutoSize = True
-        Me.lblPSARMinAF.Location = New System.Drawing.Point(9, 26)
-        Me.lblPSARMinAF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblPSARMinAF.Name = "lblPSARMinAF"
-        Me.lblPSARMinAF.Size = New System.Drawing.Size(84, 17)
-        Me.lblPSARMinAF.TabIndex = 35
-        Me.lblPSARMinAF.Text = "Minimum AF"
+        Me.lblSupertrendPeriod.AutoSize = True
+        Me.lblSupertrendPeriod.Location = New System.Drawing.Point(9, 26)
+        Me.lblSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSupertrendPeriod.Name = "lblSupertrendPeriod"
+        Me.lblSupertrendPeriod.Size = New System.Drawing.Size(49, 17)
+        Me.lblSupertrendPeriod.TabIndex = 35
+        Me.lblSupertrendPeriod.Text = "Period"
         '
         'dtpckrEODExitTime
         '
@@ -258,7 +258,7 @@ Partial Class frmMCXSettings
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(576, 299)
-        Me.Controls.Add(Me.grpPSAR)
+        Me.Controls.Add(Me.grpSupertrend)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -267,19 +267,19 @@ Partial Class frmMCXSettings
         Me.Name = "frmMCXSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "MCX Settings"
-        Me.grpPSAR.ResumeLayout(False)
-        Me.grpPSAR.PerformLayout()
+        Me.grpSupertrend.ResumeLayout(False)
+        Me.grpSupertrend.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
 
-    Friend WithEvents lblPSARMaxAF As Label
-    Friend WithEvents grpPSAR As GroupBox
-    Friend WithEvents txtPSARMaxAF As TextBox
-    Friend WithEvents txtPSARMinAF As TextBox
-    Friend WithEvents lblPSARMinAF As Label
+    Friend WithEvents lblSupertrendMultiplier As Label
+    Friend WithEvents grpSupertrend As GroupBox
+    Friend WithEvents txtSupertrendMultiplier As TextBox
+    Friend WithEvents txtSupertrendPeriod As TextBox
+    Friend WithEvents lblSupertrendPeriod As Label
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents dtpckrLastTradeEntryTime As DateTimePicker
     Friend WithEvents dtpckrTradeStartTime As DateTimePicker

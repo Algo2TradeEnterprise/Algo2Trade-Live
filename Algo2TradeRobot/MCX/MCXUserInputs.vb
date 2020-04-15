@@ -8,13 +8,13 @@ Imports Algo2TradeCore.Entities
 Public Class MCXUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "PSAR_MCX.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Supertrend_MCX.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property MinimumAF As Decimal
-    Public Property MaximumAF As Decimal
+    Public Property Period As Decimal
+    Public Property Multiplier As Decimal
 
     <Serializable>
     Public Class InstrumentDetails
