@@ -28,8 +28,8 @@ Namespace Adapter
         End Sub
 #End Region
 
-        'Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
-        Private ZERODHA_HISTORICAL_URL = "https://kite.zerodha.com/oms/instruments/historical/{0}/minute?oi=1&from={1}&to={2}"
+        Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
+        'Private ZERODHA_HISTORICAL_URL = "https://kite.zerodha.com/oms/instruments/historical/{0}/minute?oi=1&from={1}&to={2}"
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
