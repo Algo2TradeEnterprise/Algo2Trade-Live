@@ -319,10 +319,10 @@ Public Class MomentumReversalStrategyInstrument
                                 If entryPrice - brkevnPoint < slOrder.TriggerPrice Then
                                     triggerPrice = entryPrice - brkevnPoint
                                     reason = "Cost to cost movement"
-                                ElseIf currentTime >= userSettings.EODExitTime Then
-                                    triggerPrice = currentTick.LastPrice
-                                    reason = "EOD Exit"
                                 End If
+                            ElseIf currentTime >= userSettings.EODExitTime Then
+                                triggerPrice = currentTick.LastPrice
+                                reason = "EOD Exit"
                             End If
                         End If
                         If triggerPrice <> Decimal.MinValue AndAlso triggerPrice <> slOrder.TriggerPrice Then
