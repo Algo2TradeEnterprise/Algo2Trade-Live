@@ -71,10 +71,11 @@ Public Class MomentumReversalStrategyInstrument
                 End If
                 'Place Order block start
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
+                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                    (placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take OrElse placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.WaitAndTake) Then
                     If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
                         Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
-                    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL Then
+                    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL_M Then
                         Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
                     ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Limit Then
                         Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitMISOrder, Nothing).ConfigureAwait(False)
@@ -189,14 +190,14 @@ Public Class MomentumReversalStrategyInstrument
                                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                                         .TriggerPrice = triggerPrice,
                                                         .Quantity = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity,
-                                                        .OrderType = IOrder.TypeOfOrder.SL}
+                                                        .OrderType = IOrder.TypeOfOrder.SL_M}
                                     ElseIf activeBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                         Dim triggerPrice As Decimal = firstCandle.ClosePrice.Value + stoplossPoint
                                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                                     {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                                      .TriggerPrice = triggerPrice,
                                                      .Quantity = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).Quantity,
-                                                     .OrderType = IOrder.TypeOfOrder.SL}
+                                                     .OrderType = IOrder.TypeOfOrder.SL_M}
                                     End If
                                 ElseIf allActiveOrders.Count = 2 Then
                                     Dim minTgt As Decimal = firstCandle.ClosePrice.Value * userSettings.MinTargetPercentage / 100
@@ -227,7 +228,9 @@ Public Class MomentumReversalStrategyInstrument
         'Below portion have to be done in every place order trigger
         If parameters IsNot Nothing Then
             Try
-                If forcePrint Then logger.Debug("***** Place Order Parameter ***** {0}, {1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                If forcePrint Then
+                    logger.Debug("***** Place Order Parameter ***** {0}, {1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                End If
             Catch ex As Exception
                 logger.Error(ex.ToString)
             End Try
@@ -254,6 +257,9 @@ Public Class MomentumReversalStrategyInstrument
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
                         ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
                     ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
+                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
+                    ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
                         ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
                     Else
@@ -407,9 +413,9 @@ Public Class MomentumReversalStrategyInstrument
         Dim ret As Tuple(Of Boolean, IOrder.TypeOfTransaction, OHLCPayload) = Nothing
         Dim firstCandle As OHLCPayload = GetFirstCandleOfTheDay()
         If firstCandle IsNot Nothing Then
-            If Me.TradableInstrument.LastTick.Open < firstCandle.ClosePrice.Value Then
+            If firstCandle.CandleColor = Color.Green Then
                 ret = New Tuple(Of Boolean, IOrder.TypeOfTransaction, OHLCPayload)(True, IOrder.TypeOfTransaction.Buy, firstCandle)
-            ElseIf Me.TradableInstrument.LastTick.Open > firstCandle.ClosePrice.Value Then
+            ElseIf firstCandle.CandleColor = Color.Red Then
                 ret = New Tuple(Of Boolean, IOrder.TypeOfTransaction, OHLCPayload)(True, IOrder.TypeOfTransaction.Sell, firstCandle)
             End If
         End If

@@ -19,7 +19,7 @@ Namespace Entities
         Public Property GenerateDifferentTag As Boolean = False
         Public Property Tag As String = Nothing
         Public Overrides Function ToString() As String
-            Return String.Format("{0},{1},{2},{3},{4},{5}", EntryDirection.ToString(), Price, TriggerPrice, SquareOffValue, StoplossValue, If(SignalCandle Is Nothing, "Nothing", SignalCandle.SnapshotDateTime.ToString()))
+            Return String.Format("{0},{1},{2},{3},{4}", EntryDirection.ToString(), OrderType.ToString(), Price, TriggerPrice, If(SignalCandle Is Nothing, "Nothing", SignalCandle.SnapshotDateTime.ToString()))
         End Function
     End Class
 End Namespace

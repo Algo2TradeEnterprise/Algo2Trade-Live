@@ -1728,7 +1728,7 @@ Namespace Strategies
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                  If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                  If (x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake) AndAlso x.Item2.OrderType = IOrder.TypeOfOrder.Market Then
                                                                                       If x.Item1 = ExecuteCommandAction.WaitAndTake Then
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
@@ -1780,7 +1780,7 @@ Namespace Strategies
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                  If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                  If (x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake) AndAlso x.Item2.OrderType = IOrder.TypeOfOrder.Limit Then
                                                                                       If x.Item1 = ExecuteCommandAction.WaitAndTake Then
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
@@ -1833,7 +1833,7 @@ Namespace Strategies
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                  If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                  If (x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake) AndAlso x.Item2.OrderType = IOrder.TypeOfOrder.SL_M Then
                                                                                       If x.Item1 = ExecuteCommandAction.WaitAndTake Then
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
@@ -1886,7 +1886,7 @@ Namespace Strategies
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                  If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                  If (x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake) AndAlso x.Item2.OrderType = IOrder.TypeOfOrder.Market Then
                                                                                       If x.Item1 = ExecuteCommandAction.WaitAndTake Then
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
