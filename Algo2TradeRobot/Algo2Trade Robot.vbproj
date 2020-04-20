@@ -112,21 +112,6 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CDS\CDSStrategy.vb" />
-    <Compile Include="CDS\CDSStrategyInstrument.vb" />
-    <Compile Include="CDS\CDSUserInputs.vb" />
-    <Compile Include="CDS\frmCDSSettings.Designer.vb">
-      <DependentUpon>frmCDSSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="CDS\frmCDSSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CDS\frmCDSTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmCDSTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="CDS\frmCDSTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Common.vb" />
     <Compile Include="frmAbout.Designer.vb">
       <DependentUpon>frmAbout.vb</DependentUpon>
@@ -152,21 +137,21 @@
     <Compile Include="frmUserDetails.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\frmNFOSettings.Designer.vb">
+    <Compile Include="BidAsk\frmNFOSettings.Designer.vb">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </Compile>
-    <Compile Include="NFO\frmNFOSettings.vb">
+    <Compile Include="BidAsk\frmNFOSettings.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\frmNFOTradableInstrumentList.Designer.vb">
+    <Compile Include="BidAsk\frmNFOTradableInstrumentList.Designer.vb">
       <DependentUpon>frmNFOTradableInstrumentList.vb</DependentUpon>
     </Compile>
-    <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
+    <Compile Include="BidAsk\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\NFOStrategy.vb" />
-    <Compile Include="NFO\NFOStrategyInstrument.vb" />
-    <Compile Include="NFO\NFOUserInputs.vb" />
+    <Compile Include="BidAsk\NFOStrategy.vb" />
+    <Compile Include="BidAsk\NFOStrategyInstrument.vb" />
+    <Compile Include="BidAsk\NFOUserInputs.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -182,29 +167,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="MCX\frmMCXSettings.Designer.vb">
-      <DependentUpon>frmMCXSettings.vb</DependentUpon>
-    </Compile>
-    <Compile Include="MCX\frmMCXSettings.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MCX\frmMCXTradableInstrumentList.Designer.vb">
-      <DependentUpon>frmMCXTradableInstrumentList.vb</DependentUpon>
-    </Compile>
-    <Compile Include="MCX\frmMCXTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MCX\MCXStrategy.vb" />
-    <Compile Include="MCX\MCXStrategyInstrument.vb" />
-    <Compile Include="MCX\MCXUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="CDS\frmCDSSettings.resx">
-      <DependentUpon>frmCDSSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CDS\frmCDSTradableInstrumentList.resx">
-      <DependentUpon>frmCDSTradableInstrumentList.vb</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="frmAbout.resx">
       <DependentUpon>frmAbout.vb</DependentUpon>
     </EmbeddedResource>
@@ -217,10 +181,10 @@
     <EmbeddedResource Include="frmUserDetails.resx">
       <DependentUpon>frmUserDetails.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmNFOSettings.resx">
+    <EmbeddedResource Include="BidAsk\frmNFOSettings.resx">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmNFOTradableInstrumentList.resx">
+    <EmbeddedResource Include="BidAsk\frmNFOTradableInstrumentList.resx">
       <DependentUpon>frmNFOTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
@@ -228,12 +192,6 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MCX\frmMCXSettings.resx">
-      <DependentUpon>frmMCXSettings.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MCX\frmMCXTradableInstrumentList.resx">
-      <DependentUpon>frmMCXTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
