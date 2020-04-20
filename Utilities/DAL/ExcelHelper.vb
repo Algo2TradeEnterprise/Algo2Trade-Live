@@ -189,6 +189,11 @@ Namespace DAL
             logger.Debug("Setting column format")
             _wSheetInstance.Columns(GetColumnName(columnNumber)).NumberFormat = numberFormat
         End Sub
+        Public Sub CopyPasteData(ByVal copyRange As String, ByVal insertRange As String)
+            Dim cpyRng As Excel.Range = _wSheetInstance.Range(copyRange)
+            Dim insrtRng As Excel.Range = _wSheetInstance.Range(insertRange)
+            insrtRng.Insert(Excel.XlInsertShiftDirection.xlShiftToRight, cpyRng.Copy)
+        End Sub
         Public Sub SetColumnsBlank(ByVal columnNumbersToBeSetBlank As List(Of Integer))
             logger.Debug("Setting columns blank")
             If _excelInstance IsNot Nothing AndAlso _wBookInstance IsNot Nothing AndAlso _wSheetInstance IsNot Nothing Then

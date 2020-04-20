@@ -46,6 +46,7 @@ Partial Class frmMainTabbed
         Me.lstNFOLog = New System.Windows.Forms.ListBox()
         Me.sfdgvNFOMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.btnGenerate = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -158,6 +159,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstrument, 10, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnGenerate, 7, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -296,10 +298,10 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstNFOLog.FormattingEnabled = True
         Me.lstNFOLog.ItemHeight = 16
-        Me.lstNFOLog.Location = New System.Drawing.Point(4, 11)
+        Me.lstNFOLog.Location = New System.Drawing.Point(4, 12)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstNFOLog.Name = "lstNFOLog"
-        Me.lstNFOLog.Size = New System.Drawing.Size(926, 607)
+        Me.lstNFOLog.Size = New System.Drawing.Size(926, 606)
         Me.lstNFOLog.TabIndex = 9
         '
         'sfdgvNFOMainDashboard
@@ -322,6 +324,16 @@ Partial Class frmMainTabbed
         'tmrNFOTickerStatus
         '
         Me.tmrNFOTickerStatus.Enabled = True
+        '
+        'btnGenerate
+        '
+        Me.btnGenerate.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnGenerate.Location = New System.Drawing.Point(626, 3)
+        Me.btnGenerate.Name = "btnGenerate"
+        Me.btnGenerate.Size = New System.Drawing.Size(83, 33)
+        Me.btnGenerate.TabIndex = 13
+        Me.btnGenerate.Text = "Generate"
+        Me.btnGenerate.UseVisualStyleBackColor = True
         '
         'frmMainTabbed
         '
@@ -376,4 +388,5 @@ Partial Class frmMainTabbed
     Friend WithEvents miAdvancedOptions As ToolStripMenuItem
     Friend WithEvents linklblNFOTradableInstrument As LinkLabel
     Friend WithEvents PictureBox2 As PictureBox
+    Friend WithEvents btnGenerate As Button
 End Class
