@@ -48,7 +48,8 @@ Public Class NFOUserInputs
         Public Property RawInstrumentName As String
         Public Property ContractType As TypeOfContract
     End Class
-    Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
+    Public Async Function FillInstrumentDetailsAsync(ByVal filePath As String, ByVal canceller As CancellationTokenSource) As Task
+        Await Task.Delay(1).ConfigureAwait(False)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
                 Dim extension As String = Path.GetExtension(filePath)
@@ -90,6 +91,6 @@ Public Class NFOUserInputs
         Else
             Throw New ApplicationException("No valid 'Instruments' file path exists")
         End If
-    End Sub
+    End Function
 
 End Class

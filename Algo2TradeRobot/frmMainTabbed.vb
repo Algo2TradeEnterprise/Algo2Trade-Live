@@ -327,7 +327,7 @@ Public Class frmMainTabbed
                 _nfoUserInputs = CType(bf.Deserialize(fs), NFOUserInputs)
                 fs.Close()
                 _nfoUserInputs.InstrumentsData = Nothing
-                _nfoUserInputs.FillInstrumentDetails(_nfoUserInputs.InstrumentDetailsFilePath, _cts)
+                Await _nfoUserInputs.FillInstrumentDetailsAsync(_nfoUserInputs.InstrumentDetailsFilePath, _cts).ConfigureAwait(False)
             Else
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
@@ -496,7 +496,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        Dim authenticationUserId As String = "SE1516"
+        Dim authenticationUserId As String = "ZU7178"
         If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
             (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
