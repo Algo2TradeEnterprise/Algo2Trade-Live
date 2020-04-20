@@ -7,6 +7,7 @@
         ReadOnly Property LotSize As UInteger
         ReadOnly Property Segment As String
         ReadOnly Property TickSize As Decimal
+        ReadOnly Property Strike As Decimal
         ReadOnly Property TradingSymbol As String
         ReadOnly Property RawInstrumentName As String
         Property QuantityMultiplier As Long

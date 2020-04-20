@@ -1,10 +1,9 @@
-﻿Imports System.Threading
+﻿Imports System.IO
+Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Utilities.Numbers
 Imports NLog
-Imports Algo2TradeCore.Entities.Indicators
 
 Public Class NFOStrategyInstrument
     Inherits StrategyInstrument
@@ -13,10 +12,17 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Private ReadOnly _folderPath As String
+    Private ReadOnly _userSettings As NFOUserInputs
+    Public BidAskCollection As Concurrent.ConcurrentDictionary(Of Date, BidAsk)
+    Public ReadOnly SheetName As String
+
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
                    ByVal isPairInstrumnet As Boolean,
-                   ByVal canceller As CancellationTokenSource)
+                   ByVal canceller As CancellationTokenSource,
+                   ByVal folderpath As String,
+                   ByVal sheetName As String)
         MyBase.New(associatedInstrument, associatedParentStrategy, isPairInstrumnet, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
@@ -39,16 +45,34 @@ Public Class NFOStrategyInstrument
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
         End If
+        _userSettings = Me.ParentStrategy.UserSettings
+        _folderPath = folderpath
+        Me.SheetName = sheetName
+        Me.BidAskCollection = New Concurrent.ConcurrentDictionary(Of Date, BidAsk)
     End Sub
 
     Public Overrides Async Function MonitorAsync() As Task
         Try
+            Dim filename As String = Path.Combine(_folderPath, String.Format("{0}.a2t", Me.ToString))
+            If File.Exists(filename) Then
+                'DeSerialization
+                BidAskCollection = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename)
+            End If
+
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
+                If _userSettings.MinuteBased Then
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Await StoreBidAskAsync().ConfigureAwait(False)
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                'Serialization
+                Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename, BidAskCollection)
 
-                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -59,11 +83,42 @@ Public Class NFOStrategyInstrument
     End Function
 
     Public Overrides Function HandleTickTriggerToUIETCAsync() As Task
-
-
+        If _userSettings.TickBased Then
+            _cts.Token.ThrowIfCancellationRequested()
+            StoreBidAskAsync()
+        End If
         Return MyBase.HandleTickTriggerToUIETCAsync()
     End Function
 
+    Private Async Function StoreBidAskAsync() As Task
+        _cts.Token.ThrowIfCancellationRequested()
+        Dim lastTick As ITick = Me.TradableInstrument.LastTick
+        If lastTick Is Nothing OrElse lastTick.Timestamp Is Nothing OrElse lastTick.Timestamp.Value = Date.MinValue OrElse lastTick.Timestamp.Value = New Date(1970, 1, 1, 5, 30, 0) Then
+            Exit Function
+        End If
+        _cts.Token.ThrowIfCancellationRequested()
+        If lastTick.Timestamp >= _userSettings.StartTime AndAlso lastTick.Timestamp <= _userSettings.EndTime Then
+            Dim bidAskData As BidAsk = New BidAsk With {
+                .SnapshotDateTime = lastTick.Timestamp.Value,
+                .Bid = lastTick.FirstBidPrice,
+                .Ask = lastTick.FirstOfferPrice
+            }
+            _cts.Token.ThrowIfCancellationRequested()
+            BidAskCollection.AddOrUpdate(bidAskData.SnapshotDateTime, bidAskData, Function(key, value) bidAskData)
+            _cts.Token.ThrowIfCancellationRequested()
+        End If
+    End Function
+
+#Region "Class"
+    <Serializable>
+    Public Class BidAsk
+        Public SnapshotDateTime As Date
+        Public Bid As Decimal
+        Public Ask As Decimal
+    End Class
+#End Region
+
+#Region "Not Needed"
     Public Overrides Function MonitorAsync(command As ExecuteCommands, data As Object) As Task
         Throw New NotImplementedException()
     End Function
@@ -95,4 +150,5 @@ Public Class NFOStrategyInstrument
     Protected Overrides Function ForceExitSpecificTradeAsync(order As IOrder, reason As String) As Task
         Throw New NotImplementedException()
     End Function
+#End Region
 End Class

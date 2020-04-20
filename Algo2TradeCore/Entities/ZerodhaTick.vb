@@ -4,6 +4,7 @@ Namespace Entities
     <Serializable>
     Public Class ZerodhaTick
         Implements ITick
+
         Public ReadOnly Property InstrumentToken As String Implements ITick.InstrumentToken
             Get
                 Return WrappedTick.InstrumentToken
@@ -72,6 +73,26 @@ Namespace Entities
         Public ReadOnly Property LastTradeTime As Date? Implements ITick.LastTradeTime
             Get
                 Return WrappedTick.LastTradeTime
+            End Get
+        End Property
+
+        Public ReadOnly Property FirstBidPrice As Decimal Implements ITick.FirstBidPrice
+            Get
+                If WrappedTick.Bids.Count > 0 Then
+                    Return WrappedTick.Bids(0).Price
+                Else
+                    Return Decimal.MinValue
+                End If
+            End Get
+        End Property
+
+        Public ReadOnly Property FirstOfferPrice As Decimal Implements ITick.FirstOfferPrice
+            Get
+                If WrappedTick.Offers.Count > 0 Then
+                    Return WrappedTick.Offers(0).Price
+                Else
+                    Return Decimal.MinValue
+                End If
             End Get
         End Property
 

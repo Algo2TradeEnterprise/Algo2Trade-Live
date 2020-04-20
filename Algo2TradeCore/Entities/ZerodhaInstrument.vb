@@ -51,6 +51,12 @@ Namespace Entities
             End Get
         End Property
 
+        Public ReadOnly Property Strike As Decimal Implements IInstrument.Strike
+            Get
+                Return WrappedInstrument.Strike
+            End Get
+        End Property
+
         Public ReadOnly Property TradingSymbol As String Implements IInstrument.TradingSymbol
             Get
                 Return WrappedInstrument.TradingSymbol

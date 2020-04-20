@@ -1,4 +1,5 @@
-﻿Imports System.Text.RegularExpressions
+﻿Imports System.IO
+Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
@@ -16,7 +17,7 @@ Public Class NFOStrategy
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller, True)
+        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller, False)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -36,6 +37,7 @@ Public Class NFOStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
         Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
+        Dim sheetForToken As Dictionary(Of String, String) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
@@ -59,6 +61,8 @@ Public Class NFOStrategy
                                 _cts.Token.ThrowIfCancellationRequested()
                                 If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                                 retTradableInstrumentsAsPerStrategy.Add(runningExpiryInstrument)
+                                If sheetForToken Is Nothing Then sheetForToken = New Dictionary(Of String, String)
+                                sheetForToken.Add(runningExpiryInstrument.InstrumentIdentifier, instrument.Value.SheetName)
                                 ret = True
 
                                 Dim optionName As String = String.Format("{0}{1}*", runningExpiryInstrument.RawInstrumentName, runningExpiryInstrument.Expiry.Value.ToString("yyMMM")).ToUpper
@@ -71,6 +75,7 @@ Public Class NFOStrategy
                                     For Each runningOptionInstrument In allOptionTradableInstruments
                                         If runningOptionInstrument.TradingSymbol <> runningExpiryInstrument.TradingSymbol Then
                                             retTradableInstrumentsAsPerStrategy.Add(runningOptionInstrument)
+                                            sheetForToken.Add(runningOptionInstrument.InstrumentIdentifier, instrument.Value.SheetName)
                                         End If
                                     Next
                                 End If
@@ -98,11 +103,14 @@ Public Class NFOStrategy
                 TradableStrategyInstruments = Nothing
             End If
 
+            Dim folderPath As String = Path.Combine(My.Application.Info.DirectoryPath, Now.ToString("yyyyMMdd"))
+            If Not Directory.Exists(folderPath) Then Directory.CreateDirectory(folderPath)
+
             'Now create the fresh handlers
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, _cts)
+                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, _cts, folderPath, sheetForToken(runningTradableInstrument.InstrumentIdentifier))
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
@@ -130,7 +138,6 @@ Public Class NFOStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -148,10 +155,6 @@ Public Class NFOStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
-        Dim currentTime As Date = Now
-        If currentTime >= Me.UserSettings.EODExitTime Then
-            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        End If
         Return ret
     End Function
 End Class

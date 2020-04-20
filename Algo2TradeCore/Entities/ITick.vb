@@ -15,6 +15,9 @@
         ReadOnly Property Timestamp As Date?
         ReadOnly Property LastTradeTime As Date?
 
+        ReadOnly Property FirstBidPrice As Decimal
+        ReadOnly Property FirstOfferPrice As Decimal
+
         ReadOnly Property Broker As APISource
     End Interface
 End Namespace
