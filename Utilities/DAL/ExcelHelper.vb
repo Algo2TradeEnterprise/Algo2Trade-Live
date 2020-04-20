@@ -515,10 +515,11 @@ Namespace DAL
         End Sub
         Public Sub DeleteColumn(ByVal columnCtr As Integer)
             logger.Debug("Deleting column")
-            Dim rg As Excel.Range = _wSheetInstance.Columns(String.Format("{0}:{1}", GetColumnName(columnCtr), GetColumnName(columnCtr))) ' delete the specific row
-            rg.Select()
-            rg.Delete()
-            rg = Nothing
+            Dim rg As Excel.Range = _wSheetInstance.Columns(String.Format("{0}", GetColumnName(columnCtr))) ' delete the specific column
+            'rg.Select()
+            'rg.Delete()
+            rg.EntireColumn.Delete(Excel.XlInsertShiftDirection.xlShiftToRight)
+            'rg = Nothing
         End Sub
         Public Function GetColumnName(ByVal colNum As Integer) As String
             logger.Debug("Getting column name")

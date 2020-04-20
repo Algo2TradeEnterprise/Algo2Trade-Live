@@ -190,7 +190,9 @@ Public Class NFOStrategy
                                 If mainInstrument.BidAskCollection IsNot Nothing AndAlso mainInstrument.BidAskCollection.Count > 0 Then
                                     Dim mainRawData(mainInstrument.BidAskCollection.Count - 1, 3) As Object
                                     Dim rowCtr As Integer = 0
-                                    For Each runningData In mainInstrument.BidAskCollection
+                                    For Each runningData In mainInstrument.BidAskCollection.OrderBy(Function(x)
+                                                                                                        Return x.Value.SnapshotDateTime
+                                                                                                    End Function)
                                         Dim colCtr As Integer = 0
                                         mainRawData(rowCtr, colCtr) = mainInstrument.TradableInstrument.Expiry.Value.ToString("dd-MMM-yyyy")
                                         colCtr += 1
@@ -206,13 +208,70 @@ Public Class NFOStrategy
                                 End If
                             End If
 
-                            Dim copyRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(5), xlHlpr.GetColumnName(11))
+                            Dim strikePriceList As List(Of Decimal) = Nothing
+                            For Each runningStrategyInstrument In instrumentsOfThisSheet.OrderBy(Function(x)
+                                                                                                     Return x.TradableInstrument.Strike
+                                                                                                 End Function)
+                                If runningStrategyInstrument.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
+                                    runningStrategyInstrument.TradableInstrument.Strike <> 0 Then
+                                    If strikePriceList Is Nothing Then strikePriceList = New List(Of Decimal)
+                                    If Not strikePriceList.Contains(runningStrategyInstrument.TradableInstrument.Strike) Then
+                                        strikePriceList.Add(runningStrategyInstrument.TradableInstrument.Strike)
+                                    End If
+                                End If
+                            Next
+                            If strikePriceList IsNot Nothing AndAlso strikePriceList.Count > 0 Then
+                                Dim initialStartColumn As Integer = 5
+                                Dim initialEndColumn As Integer = 11
+                                Dim startColumn As Integer = initialStartColumn
+                                Dim endColumn As Integer = initialEndColumn
+                                Dim copyRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(5), xlHlpr.GetColumnName(endColumn))
+                                Dim strikeCounter As Integer = 0
+                                For Each runningStrikePrice In strikePriceList
+                                    strikeCounter += 1
+                                    OnHeartbeat(String.Format("Trying to export data for {0} #{1}/{2} #{3}/{4}",
+                                                              runningSheet, counter, allSheets.Count, strikeCounter, strikePriceList.Count))
+                                    If strikeCounter > 1 Then
+                                        startColumn = endColumn + 1
+                                        endColumn = startColumn + 6
+                                        Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(startColumn), xlHlpr.GetColumnName(endColumn))
+                                        xlHlpr.CopyPasteData(copyRng, insrtRng)
+                                    End If
+                                    xlHlpr.SetData(1, startColumn, runningStrikePrice)
 
+                                    Dim strikeInstruments As IEnumerable(Of StrategyInstrument) = instrumentsOfThisSheet.Where(Function(x)
+                                                                                                                                   Return x.TradableInstrument.Strike = runningStrikePrice
+                                                                                                                               End Function)
+                                    For Each runningStrategyInstruments As NFOStrategyInstrument In strikeInstruments
+                                        If runningStrategyInstruments.BidAskCollection IsNot Nothing AndAlso runningStrategyInstruments.BidAskCollection.Count > 0 Then
+                                            Dim rawData(runningStrategyInstruments.BidAskCollection.Count - 1, 2) As Object
+                                            Dim rowCtr As Integer = 0
+                                            For Each runningData In runningStrategyInstruments.BidAskCollection.OrderBy(Function(x)
+                                                                                                                            Return x.Value.SnapshotDateTime
+                                                                                                                        End Function)
+                                                Dim colCtr As Integer = 0
+                                                rawData(rowCtr, colCtr) = runningData.Value.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss")
+                                                colCtr += 1
+                                                rawData(rowCtr, colCtr) = runningData.Value.Bid
+                                                colCtr += 1
+                                                rawData(rowCtr, colCtr) = runningData.Value.Ask
+                                                rowCtr += 1
+                                            Next
+
+                                            If runningStrategyInstruments.TradableInstrument.RawInstrumentType = "CE" Then
+                                                Dim range As String = xlHlpr.GetNamedRange(4, rawData.GetLength(0) - 1, startColumn, rawData.GetLength(1) - 1)
+                                                xlHlpr.WriteArrayToExcel(rawData, range)
+                                            ElseIf runningStrategyInstruments.TradableInstrument.RawInstrumentType = "PE" Then
+                                                Dim range As String = xlHlpr.GetNamedRange(4, rawData.GetLength(0) - 1, startColumn + 3, rawData.GetLength(1) - 1)
+                                                xlHlpr.WriteArrayToExcel(rawData, range)
+                                            End If
+                                        End If
+                                    Next
+                                Next
+                            End If
                         End If
-
-                        'Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(12), xlHlpr.GetColumnName(18))
-                        'xlHlpr.CopyPasteData(copyRng, insrtRng)
                     Next
+                    OnHeartbeat("Export successful")
                 End If
             End Using
         End If

@@ -548,7 +548,11 @@ Public Class frmMainTabbed
         If _nfoStrategyToExecute IsNot Nothing Then
             SetObjectText_ThreadSafe(btnGenerate, "Generating")
             SetObjectEnableDisable_ThreadSafe(btnGenerate, False)
-            Await _nfoStrategyToExecute.ExportDataAsync().ConfigureAwait(False)
+            Try
+                Await _nfoStrategyToExecute.ExportDataAsync().ConfigureAwait(False)
+            Catch ex As Exception
+                MsgBox(ex.Message)
+            End Try
             SetObjectText_ThreadSafe(btnGenerate, "Generate")
             SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
         End If
