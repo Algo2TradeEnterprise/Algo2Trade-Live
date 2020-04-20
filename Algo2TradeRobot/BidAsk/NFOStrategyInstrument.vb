@@ -16,6 +16,7 @@ Public Class NFOStrategyInstrument
     Private ReadOnly _userSettings As NFOUserInputs
     Public BidAskCollection As Concurrent.ConcurrentDictionary(Of Date, BidAsk)
     Public ReadOnly SheetName As String
+    Public ReadyToExport As Boolean = False
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -60,6 +61,7 @@ Public Class NFOStrategyInstrument
             End If
 
             While True
+                Me.ReadyToExport = True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If

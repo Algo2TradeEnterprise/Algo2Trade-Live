@@ -162,8 +162,15 @@ Public Class NFOStrategy
 
     Public Async Function ExportDataAsync() As Task
         OnHeartbeat("Trying to export data to excel")
-        Await Task.Delay(1000).ConfigureAwait(False)
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
+            While True
+                Dim allInstrumentsReadyToExport As Boolean = True
+                For Each runningInstrument As NFOStrategyInstrument In Me.TradableStrategyInstruments
+                    allInstrumentsReadyToExport = allInstrumentsReadyToExport AndAlso runningInstrument.ReadyToExport
+                Next
+                If allInstrumentsReadyToExport Then Exit While
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
             Dim userInputs As NFOUserInputs = Me.UserSettings
             OnHeartbeat("Opening excel")
             Using xlHlpr As New Utilities.DAL.ExcelHelper(userInputs.InstrumentDetailsFilePath, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
@@ -237,7 +244,7 @@ Public Class NFOStrategy
                                         Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(startColumn), xlHlpr.GetColumnName(endColumn))
                                         xlHlpr.CopyPasteData(copyRng, insrtRng)
                                     End If
-                                    xlHlpr.SetData(1, startColumn, runningStrikePrice)
+                                    xlHlpr.SetData(1, startColumn, String.Format("{0}", runningStrikePrice), Utilities.DAL.ExcelHelper.XLAlign.Center)
 
                                     Dim strikeInstruments As IEnumerable(Of StrategyInstrument) = instrumentsOfThisSheet.Where(Function(x)
                                                                                                                                    Return x.TradableInstrument.Strike = runningStrikePrice
@@ -268,6 +275,7 @@ Public Class NFOStrategy
                                         End If
                                     Next
                                 Next
+                                xlHlpr.DeleteColumn(initialStartColumn)
                             End If
                         End If
                     Next
