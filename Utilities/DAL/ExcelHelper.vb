@@ -515,11 +515,23 @@ Namespace DAL
         End Sub
         Public Sub DeleteColumn(ByVal columnCtr As Integer)
             logger.Debug("Deleting column")
-            Dim rg As Excel.Range = _wSheetInstance.Columns(String.Format("{0}", GetColumnName(columnCtr))) ' delete the specific column
+            Dim rg As Excel.Range = _wSheetInstance.Columns(String.Format("{0}:{1}", GetColumnName(columnCtr), GetColumnName(columnCtr))) ' delete the specific column
+            rg.Select()
+            rg.Delete()
+            rg = Nothing
+        End Sub
+        Public Sub DeleteColumn(ByVal range As String)
+            logger.Debug("Deleting column")
+            Dim rg As Excel.Range = _wSheetInstance.Columns(range) ' delete the specific column
             'rg.Select()
-            'rg.Delete()
-            rg.EntireColumn.Delete(Excel.XlInsertShiftDirection.xlShiftToRight)
-            'rg = Nothing
+            _wSheetInstance.Application.Goto(rg, True)
+            rg.Delete()
+            rg = Nothing
+        End Sub
+        Public Sub Unmerge(ByVal range As String)
+            logger.Debug("Unmerging cells")
+            Dim rg As Excel.Range = _wSheetInstance.Range(range)
+            rg.UnMerge()
         End Sub
         Public Function GetColumnName(ByVal colNum As Integer) As String
             logger.Debug("Getting column name")
