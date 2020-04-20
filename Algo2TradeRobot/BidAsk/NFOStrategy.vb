@@ -238,12 +238,12 @@ Public Class NFOStrategy
                                     strikeCounter += 1
                                     OnHeartbeat(String.Format("Trying to export data for {0} #{1}/{2} #{3}/{4}",
                                                               runningSheet, counter, allSheets.Count, strikeCounter, strikePriceList.Count))
-                                    If strikeCounter > 1 Then
-                                        startColumn = endColumn + 1
-                                        endColumn = startColumn + 6
-                                        Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(startColumn), xlHlpr.GetColumnName(endColumn))
-                                        xlHlpr.CopyPasteData(copyRng, insrtRng)
-                                    End If
+                                    'If strikeCounter > 1 Then
+                                    startColumn = endColumn + 1
+                                    endColumn = startColumn + 6
+                                    Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(startColumn), xlHlpr.GetColumnName(endColumn))
+                                    xlHlpr.CopyPasteData(copyRng, insrtRng)
+                                    'End If
                                     xlHlpr.SetData(1, startColumn, String.Format("{0}", runningStrikePrice), Utilities.DAL.ExcelHelper.XLAlign.Center)
 
                                     Dim strikeInstruments As IEnumerable(Of StrategyInstrument) = instrumentsOfThisSheet.Where(Function(x)
