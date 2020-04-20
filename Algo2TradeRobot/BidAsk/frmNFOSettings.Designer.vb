@@ -27,10 +27,6 @@ Partial Class frmNFOSettings
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.dtpckEndTime = New System.Windows.Forms.DateTimePicker()
-        Me.dtpckrStartTime = New System.Windows.Forms.DateTimePicker()
-        Me.lblLastTradeEntryTime = New System.Windows.Forms.Label()
-        Me.lblTradeStartTime = New System.Windows.Forms.Label()
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
@@ -62,46 +58,6 @@ Partial Class frmNFOSettings
         '
         'opnFileSettings
         '
-        '
-        'dtpckEndTime
-        '
-        Me.dtpckEndTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckEndTime.Location = New System.Drawing.Point(142, 94)
-        Me.dtpckEndTime.Name = "dtpckEndTime"
-        Me.dtpckEndTime.ShowUpDown = True
-        Me.dtpckEndTime.Size = New System.Drawing.Size(116, 22)
-        Me.dtpckEndTime.TabIndex = 3
-        Me.dtpckEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'dtpckrStartTime
-        '
-        Me.dtpckrStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrStartTime.Location = New System.Drawing.Point(142, 57)
-        Me.dtpckrStartTime.Name = "dtpckrStartTime"
-        Me.dtpckrStartTime.ShowUpDown = True
-        Me.dtpckrStartTime.Size = New System.Drawing.Size(116, 22)
-        Me.dtpckrStartTime.TabIndex = 2
-        Me.dtpckrStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'lblLastTradeEntryTime
-        '
-        Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(13, 95)
-        Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
-        Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(68, 17)
-        Me.lblLastTradeEntryTime.TabIndex = 28
-        Me.lblLastTradeEntryTime.Text = "End Time"
-        '
-        'lblTradeStartTime
-        '
-        Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(13, 58)
-        Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTradeStartTime.Name = "lblTradeStartTime"
-        Me.lblTradeStartTime.Size = New System.Drawing.Size(73, 17)
-        Me.lblTradeStartTime.TabIndex = 27
-        Me.lblTradeStartTime.Text = "Start Time"
         '
         'btnBrowse
         '
@@ -137,9 +93,9 @@ Partial Class frmNFOSettings
         '
         Me.GroupBox1.Controls.Add(Me.rdbMinuteBased)
         Me.GroupBox1.Controls.Add(Me.rdbTickBased)
-        Me.GroupBox1.Location = New System.Drawing.Point(273, 46)
+        Me.GroupBox1.Location = New System.Drawing.Point(16, 48)
         Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(151, 73)
+        Me.GroupBox1.Size = New System.Drawing.Size(355, 73)
         Me.GroupBox1.TabIndex = 4
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "Store Type"
@@ -172,10 +128,6 @@ Partial Class frmNFOSettings
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(576, 132)
         Me.Controls.Add(Me.GroupBox1)
-        Me.Controls.Add(Me.dtpckEndTime)
-        Me.Controls.Add(Me.dtpckrStartTime)
-        Me.Controls.Add(Me.lblLastTradeEntryTime)
-        Me.Controls.Add(Me.lblTradeStartTime)
         Me.Controls.Add(Me.btnBrowse)
         Me.Controls.Add(Me.txtInstrumentDetalis)
         Me.Controls.Add(Me.lblInstrumentDetails)
@@ -197,10 +149,6 @@ Partial Class frmNFOSettings
     Friend WithEvents btnSave As Button
     Friend WithEvents ImageList1 As ImageList
     Friend WithEvents opnFileSettings As OpenFileDialog
-    Friend WithEvents dtpckEndTime As DateTimePicker
-    Friend WithEvents dtpckrStartTime As DateTimePicker
-    Friend WithEvents lblLastTradeEntryTime As Label
-    Friend WithEvents lblTradeStartTime As Label
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label

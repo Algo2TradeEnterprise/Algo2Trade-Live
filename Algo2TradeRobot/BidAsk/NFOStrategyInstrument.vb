@@ -69,7 +69,10 @@ Public Class NFOStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'Serialization
-                Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename, BidAskCollection)
+                If Me.TradableInstrument.LastTick.Timestamp >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
+                    Me.TradableInstrument.LastTick.Timestamp <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+                    Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename, BidAskCollection)
+                End If
 
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
@@ -97,7 +100,8 @@ Public Class NFOStrategyInstrument
             Exit Function
         End If
         _cts.Token.ThrowIfCancellationRequested()
-        If lastTick.Timestamp >= _userSettings.StartTime AndAlso lastTick.Timestamp <= _userSettings.EndTime Then
+        If lastTick.Timestamp >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
+            lastTick.Timestamp <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
             Dim bidAskData As BidAsk = New BidAsk With {
                 .SnapshotDateTime = lastTick.Timestamp.Value,
                 .Bid = lastTick.FirstBidPrice,

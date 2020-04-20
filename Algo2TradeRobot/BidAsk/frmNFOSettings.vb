@@ -96,8 +96,6 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            dtpckrStartTime.Value = _settings.StartTime
-            dtpckEndTime.Value = _settings.EndTime
             rdbTickBased.Checked = _settings.TickBased
             rdbMinuteBased.Checked = _settings.MinuteBased
         End If
@@ -105,8 +103,6 @@ Public Class frmNFOSettings
     Private Async Function SaveSettingsAsync() As Task
         Await ValidateFileAsync().ConfigureAwait(False)
         _settings.InstrumentDetailsFilePath = GetObjectText_ThreadSafe(txtInstrumentDetalis)
-        _settings.StartTime = GetDateTimePickerValue_ThreadSafe(dtpckrStartTime)
-        _settings.EndTime = GetDateTimePickerValue_ThreadSafe(dtpckEndTime)
         _settings.TickBased = GetRadioButtonChecked_ThreadSafe(rdbTickBased)
         _settings.MinuteBased = GetRadioButtonChecked_ThreadSafe(rdbMinuteBased)
 

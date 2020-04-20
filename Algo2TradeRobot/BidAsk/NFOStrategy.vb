@@ -47,7 +47,8 @@ Public Class NFOStrategy
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                         Return x.RawInstrumentName = instrument.Value.RawInstrumentName
+                                                                                                         Return x.RawInstrumentName = instrument.Value.RawInstrumentName AndAlso
+                                                                                                         x.InstrumentType = IInstrument.TypeOfInstrument.Futures
                                                                                                      End Function)
                     If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
                         Dim counter As Integer = 0
@@ -69,7 +70,8 @@ Public Class NFOStrategy
                                 Dim allOptionTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
                                                                                                                            Return Regex.Match(x.TradingSymbol, optionName).Success AndAlso
                                                                                                                            Regex.Match(x.TradingSymbol, optionName).Index = 0 AndAlso
-                                                                                                                           x.Expiry IsNot Nothing AndAlso x.Expiry.Value = runningExpiryInstrument.Expiry.Value
+                                                                                                                           x.Expiry IsNot Nothing AndAlso x.Expiry.Value = runningExpiryInstrument.Expiry.Value AndAlso
+                                                                                                                           x.InstrumentType = IInstrument.TypeOfInstrument.Options
                                                                                                                        End Function)
                                 If allOptionTradableInstruments IsNot Nothing AndAlso allOptionTradableInstruments.Count > 0 Then
                                     For Each runningOptionInstrument In allOptionTradableInstruments
@@ -157,4 +159,63 @@ Public Class NFOStrategy
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Return ret
     End Function
+
+    Public Async Function ExportDataAsync() As Task
+        OnHeartbeat("Trying to export data to excel")
+        Await Task.Delay(1000).ConfigureAwait(False)
+        If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
+            Dim userInputs As NFOUserInputs = Me.UserSettings
+            OnHeartbeat("Opening excel")
+            Using xlHlpr As New Utilities.DAL.ExcelHelper(userInputs.InstrumentDetailsFilePath, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
+                'AddHandler xlHlpr.Heartbeat, AddressOf OnHeartbeat
+
+                Dim allSheets As List(Of String) = xlHlpr.GetExcelSheetsName()
+                If allSheets IsNot Nothing AndAlso allSheets.Count > 0 Then
+                    Dim counter As Integer = 0
+                    For Each runningSheet In allSheets
+                        counter += 1
+                        OnHeartbeat(String.Format("Trying to export data for {0} #{1}/{2}", runningSheet, counter, allSheets.Count))
+                        xlHlpr.SetActiveSheet(runningSheet)
+
+                        Dim instrumentsOfThisSheet As IEnumerable(Of StrategyInstrument) = Me.TradableStrategyInstruments.Where(Function(x)
+                                                                                                                                    Return CType(x, NFOStrategyInstrument).SheetName = runningSheet
+                                                                                                                                End Function)
+                        If instrumentsOfThisSheet IsNot Nothing AndAlso instrumentsOfThisSheet.Count > 0 Then
+                            Dim mainInstruments As IEnumerable(Of StrategyInstrument) = instrumentsOfThisSheet.Where(Function(x)
+                                                                                                                         Return x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
+                                                                                                                         x.TradableInstrument.Strike = 0
+                                                                                                                     End Function)
+                            If mainInstruments IsNot Nothing AndAlso mainInstruments.Count > 0 Then
+                                Dim mainInstrument As NFOStrategyInstrument = mainInstruments.FirstOrDefault
+                                If mainInstrument.BidAskCollection IsNot Nothing AndAlso mainInstrument.BidAskCollection.Count > 0 Then
+                                    Dim mainRawData(mainInstrument.BidAskCollection.Count - 1, 3) As Object
+                                    Dim rowCtr As Integer = 0
+                                    For Each runningData In mainInstrument.BidAskCollection
+                                        Dim colCtr As Integer = 0
+                                        mainRawData(rowCtr, colCtr) = mainInstrument.TradableInstrument.Expiry.Value.ToString("dd-MMM-yyyy")
+                                        colCtr += 1
+                                        mainRawData(rowCtr, colCtr) = runningData.Value.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss")
+                                        colCtr += 1
+                                        mainRawData(rowCtr, colCtr) = runningData.Value.Bid
+                                        colCtr += 1
+                                        mainRawData(rowCtr, colCtr) = runningData.Value.Ask
+                                        rowCtr += 1
+                                    Next
+                                    Dim range As String = xlHlpr.GetNamedRange(4, mainRawData.GetLength(0) - 1, 1, mainRawData.GetLength(1) - 1)
+                                    xlHlpr.WriteArrayToExcel(mainRawData, range)
+                                End If
+                            End If
+
+                            Dim copyRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(5), xlHlpr.GetColumnName(11))
+
+                        End If
+
+                        'Dim insrtRng As String = String.Format("{0}:{1}", xlHlpr.GetColumnName(12), xlHlpr.GetColumnName(18))
+                        'xlHlpr.CopyPasteData(copyRng, insrtRng)
+                    Next
+                End If
+            End Using
+        End If
+    End Function
+
 End Class

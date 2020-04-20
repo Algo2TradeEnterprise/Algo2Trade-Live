@@ -12,26 +12,6 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Private _StartTime As Date
-    Public Property StartTime As Date
-        Get
-            Return New Date(Now.Year, Now.Month, Now.Day, _StartTime.Hour, _StartTime.Minute, _StartTime.Second)
-        End Get
-        Set(value As Date)
-            _StartTime = value
-        End Set
-    End Property
-
-    Private _EndTime As Date
-    Public Property EndTime As Date
-        Get
-            Return New Date(Now.Year, Now.Month, Now.Day, _EndTime.Hour, _EndTime.Minute, _EndTime.Second)
-        End Get
-        Set(value As Date)
-            _EndTime = value
-        End Set
-    End Property
-
     Public Property TickBased As Boolean
     Public Property MinuteBased As Boolean
 

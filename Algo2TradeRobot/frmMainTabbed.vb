@@ -457,6 +457,8 @@ Public Class frmMainTabbed
             SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, _nfoDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
+            SetObjectText_ThreadSafe(btnGenerate, "Generate")
+            SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
 
             Await _nfoStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch aex As AdapterBusinessException
@@ -540,6 +542,16 @@ Public Class frmMainTabbed
     Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstrument.LinkClicked
         Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
         newForm.ShowDialog()
+    End Sub
+
+    Private Async Sub btnGenerate_Click(sender As Object, e As EventArgs) Handles btnGenerate.Click
+        If _nfoStrategyToExecute IsNot Nothing Then
+            SetObjectText_ThreadSafe(btnGenerate, "Generating")
+            SetObjectEnableDisable_ThreadSafe(btnGenerate, False)
+            Await _nfoStrategyToExecute.ExportDataAsync().ConfigureAwait(False)
+            SetObjectText_ThreadSafe(btnGenerate, "Generate")
+            SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
+        End If
     End Sub
 #End Region
 
@@ -850,8 +862,50 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "Export Grid"
-    Private Sub btnGenerate_Click(sender As Object, e As EventArgs) Handles btnGenerate.Click
-
+    Private Sub ExportDataToCSV(ByVal runningStrategy As Strategy, ByVal fileName As String)
+        'If runningStrategy IsNot Nothing AndAlso runningStrategy.SignalManager IsNot Nothing AndAlso
+        '    runningStrategy.SignalManager.ActivityDetails IsNot Nothing AndAlso runningStrategy.SignalManager.ActivityDetails.Count > 0 Then
+        '    OnHeartbeat("Exoprting data to csv")
+        '    Dim dt As DataTable = Nothing
+        '    For Each rowData In runningStrategy.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+        '                                                                                         Return x.SignalGeneratedTime
+        '                                                                                     End Function).ToList
+        '        If dt Is Nothing Then
+        '            dt = New DataTable
+        '            dt.Columns.Add("Trading Date")
+        '            dt.Columns.Add("Trading Symbol")
+        '            dt.Columns.Add("Entry Direction")
+        '            dt.Columns.Add("Entry Time")
+        '            dt.Columns.Add("Exit Condition")
+        '            dt.Columns.Add("Exit Time")
+        '            dt.Columns.Add("Signal PL")
+        '            dt.Columns.Add("Strategy Overall PL after brokerage")
+        '            dt.Columns.Add("Strategy Max Drawup")
+        '            dt.Columns.Add("Strategy Max Drawup Time")
+        '            dt.Columns.Add("Strategy Max Drawdown")
+        '            dt.Columns.Add("Strategy Max Drawdown Time")
+        '        End If
+        '        Dim row As System.Data.DataRow = dt.NewRow
+        '        row("Trading Date") = Now.Date.ToString("dd-MM-yyyy")
+        '        row("Trading Symbol") = rowData.TradingSymbol
+        '        row("Strategy Overall PL after brokerage") = rowData.StrategyOverAllPLAfterBrokerage
+        '        row("Strategy Max Drawup") = rowData.StrategyMaxDrawUp
+        '        row("Strategy Max Drawup Time") = rowData.StrategyMaxDrawUpTime.ToString("HH:mm:ss")
+        '        row("Strategy Max Drawdown") = rowData.StrategyMaxDrawDown
+        '        row("Strategy Max Drawdown Time") = rowData.StrategyMaxDrawDownTime.ToString("HH:mm:ss")
+        '        row("Signal PL") = rowData.SignalPL
+        '        row("Entry Direction") = rowData.SignalDirection.ToString
+        '        row("Entry Time") = rowData.EntryRequestTime.ToString("HH:mm:ss")
+        '        row("Exit Time") = rowData.CancelRequestTime.ToString("HH:mm:ss")
+        '        row("Exit Condition") = rowData.CancelRequestRemarks
+        '        dt.Rows.Add(row)
+        '    Next
+        '    If dt IsNot Nothing Then
+        '        Using csvCreator As New Utilities.DAL.CSVHelper(fileName, ",", _cts)
+        '            csvCreator.GetCSVFromDataTable(dt)
+        '        End Using
+        '    End If
+        'End If
     End Sub
 #End Region
 

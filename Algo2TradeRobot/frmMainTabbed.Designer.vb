@@ -40,13 +40,13 @@ Partial Class frmMainTabbed
         Me.lblNFOTickerStatus = New System.Windows.Forms.Label()
         Me.btnNFOSettings = New System.Windows.Forms.Button()
         Me.linklblNFOTradableInstrument = New System.Windows.Forms.LinkLabel()
+        Me.btnGenerate = New System.Windows.Forms.Button()
         Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox2 = New System.Windows.Forms.PictureBox()
         Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstNFOLog = New System.Windows.Forms.ListBox()
         Me.sfdgvNFOMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.btnGenerate = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -247,6 +247,17 @@ Partial Class frmMainTabbed
         Me.linklblNFOTradableInstrument.Text = "Tradable Instruments: 0"
         Me.linklblNFOTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
+        'btnGenerate
+        '
+        Me.btnGenerate.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnGenerate.Enabled = False
+        Me.btnGenerate.Location = New System.Drawing.Point(626, 3)
+        Me.btnGenerate.Name = "btnGenerate"
+        Me.btnGenerate.Size = New System.Drawing.Size(83, 33)
+        Me.btnGenerate.TabIndex = 13
+        Me.btnGenerate.Text = "Generate"
+        Me.btnGenerate.UseVisualStyleBackColor = True
+        '
         'pnlMomentumReversalBodyVerticalSplitter
         '
         Me.pnlMomentumReversalBodyVerticalSplitter.ColumnCount = 2
@@ -324,16 +335,6 @@ Partial Class frmMainTabbed
         'tmrNFOTickerStatus
         '
         Me.tmrNFOTickerStatus.Enabled = True
-        '
-        'btnGenerate
-        '
-        Me.btnGenerate.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnGenerate.Location = New System.Drawing.Point(626, 3)
-        Me.btnGenerate.Name = "btnGenerate"
-        Me.btnGenerate.Size = New System.Drawing.Size(83, 33)
-        Me.btnGenerate.TabIndex = 13
-        Me.btnGenerate.Text = "Generate"
-        Me.btnGenerate.UseVisualStyleBackColor = True
         '
         'frmMainTabbed
         '
