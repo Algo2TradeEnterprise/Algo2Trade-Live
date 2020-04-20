@@ -61,12 +61,19 @@ Public Class NFOStrategy
                                 retTradableInstrumentsAsPerStrategy.Add(runningExpiryInstrument)
                                 ret = True
 
+                                Dim optionName As String = String.Format("{0}{1}*", runningExpiryInstrument.RawInstrumentName, runningExpiryInstrument.Expiry.Value.ToString("yyMMM")).ToUpper
                                 Dim allOptionTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                                           Return x.TradingSymbol.Contains(runningExpiryInstrument.RawInstrumentName) AndAlso
+                                                                                                                           Return Regex.Match(x.TradingSymbol, optionName).Success AndAlso
+                                                                                                                           Regex.Match(x.TradingSymbol, optionName).Index = 0 AndAlso
                                                                                                                            x.Expiry IsNot Nothing AndAlso x.Expiry.Value = runningExpiryInstrument.Expiry.Value
                                                                                                                        End Function)
-                                Console.WriteLine("")
-
+                                If allOptionTradableInstruments IsNot Nothing AndAlso allOptionTradableInstruments.Count > 0 Then
+                                    For Each runningOptionInstrument In allOptionTradableInstruments
+                                        If runningOptionInstrument.TradingSymbol <> runningExpiryInstrument.TradingSymbol Then
+                                            retTradableInstrumentsAsPerStrategy.Add(runningOptionInstrument)
+                                        End If
+                                    Next
+                                End If
                             End If
                         Next
                     End If
