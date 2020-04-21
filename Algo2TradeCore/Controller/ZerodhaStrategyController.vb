@@ -824,8 +824,8 @@ Namespace Controller
                     End If
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-                If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 999 Then
-                    Throw New ApplicationException("Can not subscribe more than 999 instruments")
+                If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 1000 Then
+                    Throw New ApplicationException("Can not subscribe more than 1000 instruments")
                 End If
 
                 _cts.Token.ThrowIfCancellationRequested()

@@ -282,9 +282,7 @@ Public Class NFOStrategy
                                             End If
                                         Next
                                     Next
-                                    xlHlpr.SaveExcel()
                                     xlHlpr.DeleteColumn(copyRng)
-                                    xlHlpr.SaveExcel()
                                 End If
                             End If
                         Next
