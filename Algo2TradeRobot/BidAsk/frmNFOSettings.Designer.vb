@@ -30,10 +30,6 @@ Partial Class frmNFOSettings
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.rdbMinuteBased = New System.Windows.Forms.RadioButton()
-        Me.rdbTickBased = New System.Windows.Forms.RadioButton()
-        Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -41,10 +37,10 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(431, 58)
+        Me.btnSave.Location = New System.Drawing.Point(470, 58)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
-        Me.btnSave.Size = New System.Drawing.Size(138, 58)
+        Me.btnSave.Size = New System.Drawing.Size(99, 58)
         Me.btnSave.TabIndex = 0
         Me.btnSave.Text = "&Save"
         Me.btnSave.TextAlign = System.Drawing.ContentAlignment.MiddleRight
@@ -89,45 +85,11 @@ Partial Class frmNFOSettings
         Me.lblInstrumentDetails.TabIndex = 26
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
-        'GroupBox1
-        '
-        Me.GroupBox1.Controls.Add(Me.rdbMinuteBased)
-        Me.GroupBox1.Controls.Add(Me.rdbTickBased)
-        Me.GroupBox1.Location = New System.Drawing.Point(16, 48)
-        Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Size = New System.Drawing.Size(355, 73)
-        Me.GroupBox1.TabIndex = 4
-        Me.GroupBox1.TabStop = False
-        Me.GroupBox1.Text = "Store Type"
-        '
-        'rdbMinuteBased
-        '
-        Me.rdbMinuteBased.AutoSize = True
-        Me.rdbMinuteBased.Location = New System.Drawing.Point(7, 47)
-        Me.rdbMinuteBased.Name = "rdbMinuteBased"
-        Me.rdbMinuteBased.Size = New System.Drawing.Size(128, 21)
-        Me.rdbMinuteBased.TabIndex = 1
-        Me.rdbMinuteBased.Text = "At Every Minute"
-        Me.rdbMinuteBased.UseVisualStyleBackColor = True
-        '
-        'rdbTickBased
-        '
-        Me.rdbTickBased.AutoSize = True
-        Me.rdbTickBased.Checked = True
-        Me.rdbTickBased.Location = New System.Drawing.Point(7, 22)
-        Me.rdbTickBased.Name = "rdbTickBased"
-        Me.rdbTickBased.Size = New System.Drawing.Size(112, 21)
-        Me.rdbTickBased.TabIndex = 0
-        Me.rdbTickBased.TabStop = True
-        Me.rdbTickBased.Text = "At Every Tick"
-        Me.rdbTickBased.UseVisualStyleBackColor = True
-        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(576, 132)
-        Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnBrowse)
         Me.Controls.Add(Me.txtInstrumentDetalis)
         Me.Controls.Add(Me.lblInstrumentDetails)
@@ -139,8 +101,6 @@ Partial Class frmNFOSettings
         Me.Name = "frmNFOSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Settings"
-        Me.GroupBox1.ResumeLayout(False)
-        Me.GroupBox1.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -152,7 +112,4 @@ Partial Class frmNFOSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
-    Friend WithEvents GroupBox1 As GroupBox
-    Friend WithEvents rdbMinuteBased As RadioButton
-    Friend WithEvents rdbTickBased As RadioButton
 End Class

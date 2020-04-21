@@ -65,10 +65,6 @@ Public Class NFOStrategyInstrument
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
-                If _userSettings.MinuteBased Then
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Await StoreBidAskAsync().ConfigureAwait(False)
-                End If
                 _cts.Token.ThrowIfCancellationRequested()
                 'Serialization
                 If Me.TradableInstrument.LastTick.Timestamp >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
@@ -87,12 +83,9 @@ Public Class NFOStrategyInstrument
         End Try
     End Function
 
-    Public Overrides Function HandleTickTriggerToUIETCAsync() As Task
-        If _userSettings.TickBased Then
-            _cts.Token.ThrowIfCancellationRequested()
-            StoreBidAskAsync()
-        End If
-        Return MyBase.HandleTickTriggerToUIETCAsync()
+    Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
+        _cts.Token.ThrowIfCancellationRequested()
+        StoreBidAskAsync()
     End Function
 
     Private Async Function StoreBidAskAsync() As Task

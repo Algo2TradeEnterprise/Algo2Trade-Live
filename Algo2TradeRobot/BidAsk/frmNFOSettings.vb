@@ -92,14 +92,10 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            rdbTickBased.Checked = _settings.TickBased
-            rdbMinuteBased.Checked = _settings.MinuteBased
         End If
     End Sub
     Private Sub SaveSettings()
         _settings.InstrumentDetailsFilePath = GetObjectText_ThreadSafe(txtInstrumentDetalis)
-        _settings.TickBased = GetRadioButtonChecked_ThreadSafe(rdbTickBased)
-        _settings.MinuteBased = GetRadioButtonChecked_ThreadSafe(rdbMinuteBased)
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub

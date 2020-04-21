@@ -12,9 +12,6 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property TickBased As Boolean
-    Public Property MinuteBased As Boolean
-
     <Serializable>
     Public Class InstrumentDetails
         Enum TypeOfContract
