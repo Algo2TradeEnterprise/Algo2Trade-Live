@@ -242,9 +242,9 @@ Public Class NFOStrategy
                                                     colCtr += 1
                                                     mainRawData(rowCtr, colCtr) = mainInstrument.BidAskCollection(runningData).Ask
                                                 Else
-                                                    'mainRawData(rowCtr, colCtr) = ""
-                                                    'colCtr += 1
-                                                    'mainRawData(rowCtr, colCtr) = ""
+                                                    mainRawData(rowCtr, colCtr) = 0
+                                                    colCtr += 1
+                                                    mainRawData(rowCtr, colCtr) = 0
                                                 End If
                                                 rowCtr += 1
                                             Next
@@ -298,9 +298,9 @@ Public Class NFOStrategy
                                                             colCtr += 1
                                                             rawData(rowCtr, colCtr) = runningStrategyInstruments.BidAskCollection(runningData).Ask
                                                         Else
-                                                            'rawData(rowCtr, colCtr) = ""
-                                                            'colCtr += 1
-                                                            'rawData(rowCtr, colCtr) = ""
+                                                            rawData(rowCtr, colCtr) = 0
+                                                            colCtr += 1
+                                                            rawData(rowCtr, colCtr) = 0
                                                         End If
                                                         rowCtr += 1
                                                     Next
