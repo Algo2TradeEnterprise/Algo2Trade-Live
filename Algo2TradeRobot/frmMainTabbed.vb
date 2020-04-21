@@ -551,7 +551,7 @@ Public Class frmMainTabbed
             Try
                 Await _nfoStrategyToExecute.ExportDataAsync().ConfigureAwait(False)
             Catch ex As Exception
-                MsgBox(ex.Message)
+                OnHeartbeat(ex.Message)
             End Try
             SetObjectText_ThreadSafe(btnGenerate, "Generate")
             SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
@@ -718,6 +718,14 @@ Public Class frmMainTabbed
                     File.Delete(runningFile)
                 Else
                     If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+                End If
+            Next
+            Dim folderPath As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("Bid Ask Data {0}", Now.ToString("yyyyMMdd")))
+            For Each runningFolder In Directory.GetDirectories(My.Application.Info.DirectoryPath, "Bid Ask Data *")
+                If deleteAll Then
+                    Directory.Delete(runningFolder, True)
+                Else
+                    If Not runningFolder = folderPath Then Directory.Delete(runningFolder, True)
                 End If
             Next
         Catch ex As Exception
