@@ -309,7 +309,7 @@ Public Class NFOStrategy
                                                         Dim range As String = xlHlpr.GetNamedRange(4, rawData.GetLength(0) - 1, startColumn, rawData.GetLength(1) - 1)
                                                         xlHlpr.WriteArrayToExcel(rawData, range)
                                                     ElseIf runningStrategyInstruments.TradableInstrument.RawInstrumentType = "PE" Then
-                                                        Dim range As String = xlHlpr.GetNamedRange(4, rawData.GetLength(0) - 1, startColumn + 3, rawData.GetLength(1) - 1)
+                                                        Dim range As String = xlHlpr.GetNamedRange(4, rawData.GetLength(0) - 1, startColumn + (initialEndColumn - initialStartColumn) / 2, rawData.GetLength(1) - 1)
                                                         xlHlpr.WriteArrayToExcel(rawData, range)
                                                     End If
                                                 End If
