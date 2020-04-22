@@ -161,9 +161,11 @@ Public Class NFOStrategy
     End Function
 
     Public Async Function ExportDataAsync() As Task
-        OnHeartbeat("Trying to export data to excel")
+        OnHeartbeat("Trying to export data to excel. Loading data ....")
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
+            logger.Debug("Waiting for data load from a2t if required")
             While True
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim allInstrumentsReadyToExport As Boolean = True
                 For Each runningInstrument As NFOStrategyInstrument In Me.TradableStrategyInstruments
                     allInstrumentsReadyToExport = allInstrumentsReadyToExport AndAlso runningInstrument.ReadyToExport
@@ -172,15 +174,19 @@ Public Class NFOStrategy
                 Await Task.Delay(1000).ConfigureAwait(False)
             End While
 
+            logger.Debug("Checking if data is available to write or not")
             Dim dataAvailableToExport As Boolean = False
             For Each runningInstrument As NFOStrategyInstrument In Me.TradableStrategyInstruments
+                _cts.Token.ThrowIfCancellationRequested()
                 dataAvailableToExport = dataAvailableToExport OrElse (runningInstrument.BidAskCollection IsNot Nothing AndAlso runningInstrument.BidAskCollection.Count > 0)
             Next
 
             If dataAvailableToExport Then
+                logger.Debug("Data available to write excel")
                 Dim minTime As Date = Date.MaxValue
                 Dim maxTime As Date = Date.MinValue
                 For Each runningInstrument As NFOStrategyInstrument In Me.TradableStrategyInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
                     If runningInstrument.BidAskCollection IsNot Nothing AndAlso runningInstrument.BidAskCollection.Count > 0 Then
                         Dim lowestTime As Date = runningInstrument.BidAskCollection.Min(Function(x)
                                                                                             Return x.Value.SnapshotDateTime
@@ -198,6 +204,7 @@ Public Class NFOStrategy
                     timeList = New List(Of Date)
                     Dim startTime As Date = minTime
                     While startTime <= maxTime
+                        _cts.Token.ThrowIfCancellationRequested()
                         timeList.Add(startTime)
                         startTime = startTime.AddSeconds(1)
                     End While
@@ -213,6 +220,7 @@ Public Class NFOStrategy
                         If allSheets IsNot Nothing AndAlso allSheets.Count > 0 Then
                             Dim counter As Integer = 0
                             For Each runningSheet In allSheets
+                                _cts.Token.ThrowIfCancellationRequested()
                                 counter += 1
                                 OnHeartbeat(String.Format("Trying to export data for {0} #{1}/{2}", runningSheet, counter, allSheets.Count))
                                 xlHlpr.SetActiveSheet(runningSheet)
@@ -322,6 +330,8 @@ Public Class NFOStrategy
                             OnHeartbeat("Export successful")
                         End If
                     End Using
+                Else
+                    logger.Debug("Unable to create time collection. Min Time:{0}, Max Time:{0}", minTime, maxTime)
                 End If
             Else
                 OnHeartbeat("No data available to export")
