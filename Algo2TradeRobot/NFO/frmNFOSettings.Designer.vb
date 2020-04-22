@@ -28,6 +28,8 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtHigherTimeframe = New System.Windows.Forms.TextBox()
+        Me.lblHigherTF = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -44,8 +46,6 @@ Partial Class frmNFOSettings
         Me.grpSupertrend = New System.Windows.Forms.GroupBox()
         Me.txtSupertrendMultiplier = New System.Windows.Forms.TextBox()
         Me.lblSupertrendMultiplier = New System.Windows.Forms.Label()
-        Me.txtHigherTimeframe = New System.Windows.Forms.TextBox()
-        Me.lblHigherTF = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpSupertrend.SuspendLayout()
         Me.SuspendLayout()
@@ -96,6 +96,26 @@ Partial Class frmNFOSettings
         Me.GroupBox1.TabIndex = 22
         Me.GroupBox1.TabStop = False
         '
+        'txtHigherTimeframe
+        '
+        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 49)
+        Me.txtHigherTimeframe.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtHigherTimeframe.Name = "txtHigherTimeframe"
+        Me.txtHigherTimeframe.Size = New System.Drawing.Size(241, 22)
+        Me.txtHigherTimeframe.TabIndex = 2
+        Me.txtHigherTimeframe.Tag = "Higher Timeframe"
+        '
+        'lblHigherTF
+        '
+        Me.lblHigherTF.AutoSize = True
+        Me.lblHigherTF.Location = New System.Drawing.Point(9, 52)
+        Me.lblHigherTF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblHigherTF.Name = "lblHigherTF"
+        Me.lblHigherTF.Size = New System.Drawing.Size(161, 17)
+        Me.lblHigherTF.TabIndex = 25
+        Me.lblHigherTF.Tag = ""
+        Me.lblHigherTF.Text = "Higher Time Frame(min)"
+        '
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
@@ -103,7 +123,7 @@ Partial Class frmNFOSettings
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(241, 22)
-        Me.dtpckrEODExitTime.TabIndex = 4
+        Me.dtpckrEODExitTime.TabIndex = 5
         Me.dtpckrEODExitTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrLastTradeEntryTime
@@ -113,7 +133,7 @@ Partial Class frmNFOSettings
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 3
+        Me.dtpckrLastTradeEntryTime.TabIndex = 4
         Me.dtpckrLastTradeEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrTradeStartTime
@@ -123,7 +143,7 @@ Partial Class frmNFOSettings
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(241, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 2
+        Me.dtpckrTradeStartTime.TabIndex = 3
         Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblEODExitTime
@@ -163,7 +183,7 @@ Partial Class frmNFOSettings
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 5
+        Me.btnBrowse.TabIndex = 6
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
@@ -174,7 +194,7 @@ Partial Class frmNFOSettings
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
-        Me.txtInstrumentDetalis.TabIndex = 5
+        Me.txtInstrumentDetalis.TabIndex = 6
         '
         'lblInstrumentDetails
         '
@@ -222,7 +242,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
         Me.txtSupertrendPeriod.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendPeriod.TabIndex = 6
+        Me.txtSupertrendPeriod.TabIndex = 7
         Me.txtSupertrendPeriod.Tag = "Period"
         '
         'grpSupertrend
@@ -244,7 +264,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
         Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendMultiplier.TabIndex = 7
+        Me.txtSupertrendMultiplier.TabIndex = 8
         Me.txtSupertrendMultiplier.Tag = "Multiplier"
         '
         'lblSupertrendMultiplier
@@ -256,26 +276,6 @@ Partial Class frmNFOSettings
         Me.lblSupertrendMultiplier.Size = New System.Drawing.Size(64, 17)
         Me.lblSupertrendMultiplier.TabIndex = 37
         Me.lblSupertrendMultiplier.Text = "Multiplier"
-        '
-        'txtHigherTimeframe
-        '
-        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 49)
-        Me.txtHigherTimeframe.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtHigherTimeframe.Name = "txtHigherTimeframe"
-        Me.txtHigherTimeframe.Size = New System.Drawing.Size(241, 22)
-        Me.txtHigherTimeframe.TabIndex = 24
-        Me.txtHigherTimeframe.Tag = "Higher Timeframe"
-        '
-        'lblHigherTF
-        '
-        Me.lblHigherTF.AutoSize = True
-        Me.lblHigherTF.Location = New System.Drawing.Point(9, 52)
-        Me.lblHigherTF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblHigherTF.Name = "lblHigherTF"
-        Me.lblHigherTF.Size = New System.Drawing.Size(161, 17)
-        Me.lblHigherTF.TabIndex = 25
-        Me.lblHigherTF.Tag = ""
-        Me.lblHigherTF.Text = "Higher Time Frame(min)"
         '
         'frmNFOSettings
         '

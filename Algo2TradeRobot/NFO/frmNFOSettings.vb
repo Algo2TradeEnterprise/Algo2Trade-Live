@@ -75,7 +75,7 @@ Public Class frmNFOSettings
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
         ValidateNumbers(1, 180, txtHigherTimeframe, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendPeriod, True)
+        ValidateNumbers(0, Integer.MaxValue, txtSupertrendPeriod, True)
         ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
 
         If Val(txtHigherTimeframe.Text) <= Val(txtSignalTimeFrame.Text) Then

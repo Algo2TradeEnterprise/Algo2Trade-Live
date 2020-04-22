@@ -31,6 +31,7 @@ Public Class frmMCXSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of MCXUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
+            txtHigherTimeframe.Text = _settings.HigherTimeframe
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
@@ -42,6 +43,7 @@ Public Class frmMCXSettings
     End Sub
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
+        _settings.HigherTimeframe = txtHigherTimeframe.Text
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
@@ -72,12 +74,18 @@ Public Class frmMCXSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendPeriod, True)
+        ValidateNumbers(1, 180, txtHigherTimeframe, True)
+        ValidateNumbers(0, Integer.MaxValue, txtSupertrendPeriod, True)
         ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
+
+        If Val(txtHigherTimeframe.Text) <= Val(txtSignalTimeFrame.Text) Then
+            Throw New ApplicationException("Higher timeframe can not be lower than or equal to Signal timeframe")
+        End If
+
         ValidateFile()
     End Sub
 
-    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs)
         opnFileSettings.Filter = "|*.csv"
         opnFileSettings.ShowDialog()
     End Sub
