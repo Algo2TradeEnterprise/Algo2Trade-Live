@@ -10,6 +10,7 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Supertrend_NFO.Strategy.a2t")
 
+    Public Property HigherTimeframe As Integer
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 

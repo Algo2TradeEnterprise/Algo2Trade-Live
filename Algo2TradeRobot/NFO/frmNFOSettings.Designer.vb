@@ -44,6 +44,8 @@ Partial Class frmNFOSettings
         Me.grpSupertrend = New System.Windows.Forms.GroupBox()
         Me.txtSupertrendMultiplier = New System.Windows.Forms.TextBox()
         Me.lblSupertrendMultiplier = New System.Windows.Forms.Label()
+        Me.txtHigherTimeframe = New System.Windows.Forms.TextBox()
+        Me.lblHigherTF = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpSupertrend.SuspendLayout()
         Me.SuspendLayout()
@@ -73,6 +75,8 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtHigherTimeframe)
+        Me.GroupBox1.Controls.Add(Me.lblHigherTF)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -88,14 +92,14 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 194)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 231)
         Me.GroupBox1.TabIndex = 22
         Me.GroupBox1.TabStop = False
         '
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(189, 119)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(189, 153)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(241, 22)
@@ -105,7 +109,7 @@ Partial Class frmNFOSettings
         'dtpckrLastTradeEntryTime
         '
         Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(189, 84)
+        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(189, 118)
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
@@ -115,7 +119,7 @@ Partial Class frmNFOSettings
         'dtpckrTradeStartTime
         '
         Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(189, 49)
+        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(189, 83)
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(241, 22)
@@ -125,7 +129,7 @@ Partial Class frmNFOSettings
         'lblEODExitTime
         '
         Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 120)
+        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 154)
         Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODExitTime.Name = "lblEODExitTime"
         Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
@@ -135,7 +139,7 @@ Partial Class frmNFOSettings
         'lblLastTradeEntryTime
         '
         Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 85)
+        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 119)
         Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
         Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(149, 17)
@@ -145,7 +149,7 @@ Partial Class frmNFOSettings
         'lblTradeStartTime
         '
         Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 51)
+        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 85)
         Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTradeStartTime.Name = "lblTradeStartTime"
         Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
@@ -155,7 +159,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 156)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 190)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
@@ -165,7 +169,7 @@ Partial Class frmNFOSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 157)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 191)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -175,7 +179,7 @@ Partial Class frmNFOSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 160)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 194)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -227,7 +231,7 @@ Partial Class frmNFOSettings
         Me.grpSupertrend.Controls.Add(Me.lblSupertrendMultiplier)
         Me.grpSupertrend.Controls.Add(Me.txtSupertrendPeriod)
         Me.grpSupertrend.Controls.Add(Me.lblSupertrendPeriod)
-        Me.grpSupertrend.Location = New System.Drawing.Point(2, 204)
+        Me.grpSupertrend.Location = New System.Drawing.Point(2, 241)
         Me.grpSupertrend.Name = "grpSupertrend"
         Me.grpSupertrend.Size = New System.Drawing.Size(451, 90)
         Me.grpSupertrend.TabIndex = 23
@@ -253,11 +257,31 @@ Partial Class frmNFOSettings
         Me.lblSupertrendMultiplier.TabIndex = 37
         Me.lblSupertrendMultiplier.Text = "Multiplier"
         '
+        'txtHigherTimeframe
+        '
+        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 49)
+        Me.txtHigherTimeframe.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtHigherTimeframe.Name = "txtHigherTimeframe"
+        Me.txtHigherTimeframe.Size = New System.Drawing.Size(241, 22)
+        Me.txtHigherTimeframe.TabIndex = 24
+        Me.txtHigherTimeframe.Tag = "Higher Timeframe"
+        '
+        'lblHigherTF
+        '
+        Me.lblHigherTF.AutoSize = True
+        Me.lblHigherTF.Location = New System.Drawing.Point(9, 52)
+        Me.lblHigherTF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblHigherTF.Name = "lblHigherTF"
+        Me.lblHigherTF.Size = New System.Drawing.Size(161, 17)
+        Me.lblHigherTF.TabIndex = 25
+        Me.lblHigherTF.Tag = ""
+        Me.lblHigherTF.Text = "Higher Time Frame(min)"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(576, 299)
+        Me.ClientSize = New System.Drawing.Size(576, 334)
         Me.Controls.Add(Me.grpSupertrend)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
@@ -296,4 +320,6 @@ Partial Class frmNFOSettings
     Friend WithEvents grpSupertrend As GroupBox
     Friend WithEvents txtSupertrendMultiplier As TextBox
     Friend WithEvents lblSupertrendMultiplier As Label
+    Friend WithEvents txtHigherTimeframe As TextBox
+    Friend WithEvents lblHigherTF As Label
 End Class
