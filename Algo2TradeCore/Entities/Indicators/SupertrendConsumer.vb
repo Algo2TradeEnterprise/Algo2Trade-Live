@@ -4,9 +4,9 @@ Namespace Entities.Indicators
     Public Class SupertrendConsumer
         Inherits PayloadToIndicatorConsumer
         Public ReadOnly Property SupertrendPeriod As Integer
-        Public ReadOnly Property SupertrendMultiplier As Integer
+        Public ReadOnly Property SupertrendMultiplier As Decimal
         Public ReadOnly Property SupportingATRConsumer As ATRConsumer
-        Public Sub New(ByVal associatedParentConsumer As IPayloadConsumer, ByVal supertrendPeriod As Integer, ByVal supertrendMultiplier As Integer)
+        Public Sub New(ByVal associatedParentConsumer As IPayloadConsumer, ByVal supertrendPeriod As Integer, ByVal supertrendMultiplier As Decimal)
             MyBase.New(associatedParentConsumer)
             Me.SupertrendPeriod = supertrendPeriod
             Me.SupertrendMultiplier = supertrendMultiplier
