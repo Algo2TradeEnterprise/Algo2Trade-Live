@@ -28,7 +28,8 @@ Namespace Adapter
         End Sub
 #End Region
 
-        Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
+        Private ZERODHA_HISTORICAL_URL = "https://api.kite.trade/instruments/historical/{0}/minute?from={1}&to={2}"
+        'Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
         'Private ZERODHA_HISTORICAL_URL = "https://kite.zerodha.com/oms/instruments/historical/{0}/minute?oi=1&from={1}&to={2}"
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
@@ -92,17 +93,46 @@ Namespace Adapter
         '        Throw ex
         '    End Try
         'End Function
+        'Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
+        '    Try
+        '        'If Not _isPollRunning Then Exit Function
+        '        _cts.Token.ThrowIfCancellationRequested()
+        '        Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
+        '                                                            _instrumentIdentifer,
+        '                                                            Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
+        '                                                            Now.ToString("yyyy-MM-dd"))
+
+        '        Console.WriteLine(historicalDataURL)
+        '        Using sr = New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
+        '            Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
+        '            Dim retDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
+
+        '            Return retDictionary
+        '        End Using
+        '    Catch ex As Exception
+        '        Throw ex
+        '    End Try
+        'End Function
         Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
             Try
-                'If Not _isPollRunning Then Exit Function
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
                                                                     _instrumentIdentifer,
                                                                     Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
                                                                     Now.ToString("yyyy-MM-dd"))
 
+                ServicePointManager.Expect100Continue = False
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
+                ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
+                                                                              Return True
+                                                                          End Function
+
                 Console.WriteLine(historicalDataURL)
-                Using sr = New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
+                Dim request As HttpWebRequest = HttpWebRequest.Create(historicalDataURL)
+                request.Headers.Add("Authorization", String.Format("token {0}:{1}", Me.ParentController.APIConnection.APIUser.APIKey, Me.ParentController.APIConnection.AccessToken))
+                request.Headers.Add("X-Kite-Version", "3")
+
+                Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
                     Dim retDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
 
