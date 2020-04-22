@@ -18,6 +18,8 @@ Public Class NFOStrategyInstrument
     Public ReadOnly SheetName As String
     Public ReadyToExport As Boolean = False
 
+    Private ReadOnly _filename As String = Nothing
+
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
                    ByVal isPairInstrumnet As Boolean,
@@ -50,25 +52,49 @@ Public Class NFOStrategyInstrument
         _folderPath = folderpath
         Me.SheetName = sheetName
         Me.BidAskCollection = New Concurrent.ConcurrentDictionary(Of Date, BidAsk)
+        _filename = Path.Combine(_folderPath, String.Format("{0}.a2t", Me.ToString))
     End Sub
 
-    Public Overrides Async Function MonitorAsync() As Task
+    Public Async Function LoadDataAsync() As Task
         Try
-            Dim filename As String = Path.Combine(_folderPath, String.Format("{0}.a2t", Me.ToString))
-            If File.Exists(filename) Then
+            Await Task.Delay(1).ConfigureAwait(False)
+            If File.Exists(_filename) Then
                 'DeSerialization
                 Try
-                    BidAskCollection = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename)
+                    BidAskCollection = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(_filename)
                 Catch ex As Exception
                     OnHeartbeat(String.Format("{0} -> Unable to fetch old data from file.", Me.ToString))
                     logger.Debug("{0} -> Unable to fetch old data from file. File may be corrupted. File will be deleted and will create a new file to store data.", Me.ToString)
                     logger.Warn("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
-                    File.Delete(filename)
+                    File.Delete(_filename)
                 End Try
             End If
+        Catch ex As Exception
+            'To log exceptions getting created from this function as the bubble up of the exception
+            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
+            logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+            Throw ex
+        Finally
+            Me.ReadyToExport = True
+        End Try
+    End Function
+
+    Public Overrides Async Function MonitorAsync() As Task
+        Try
+            'If File.Exists(_filename) Then
+            '    'DeSerialization
+            '    Try
+            '        BidAskCollection = Utilities.Strings.DeserializeToCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(_filename)
+            '    Catch ex As Exception
+            '        OnHeartbeat(String.Format("{0} -> Unable to fetch old data from file.", Me.ToString))
+            '        logger.Debug("{0} -> Unable to fetch old data from file. File may be corrupted. File will be deleted and will create a new file to store data.", Me.ToString)
+            '        logger.Warn("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+            '        File.Delete(_filename)
+            '    End Try
+            'End If
 
             While True
-                Me.ReadyToExport = True
+                'Me.ReadyToExport = True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
@@ -76,7 +102,7 @@ Public Class NFOStrategyInstrument
                 'Serialization
                 If Me.TradableInstrument.LastTick.Timestamp >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
                     Me.TradableInstrument.LastTick.Timestamp <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
-                    Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(filename, BidAskCollection)
+                    Utilities.Strings.SerializeFromCollection(Of Concurrent.ConcurrentDictionary(Of Date, BidAsk))(_filename, BidAskCollection)
                 End If
 
                 _cts.Token.ThrowIfCancellationRequested()

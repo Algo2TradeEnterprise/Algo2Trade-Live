@@ -250,7 +250,6 @@ Partial Class frmMainTabbed
         'btnGenerate
         '
         Me.btnGenerate.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnGenerate.Enabled = False
         Me.btnGenerate.Location = New System.Drawing.Point(588, 3)
         Me.btnGenerate.Name = "btnGenerate"
         Me.btnGenerate.Size = New System.Drawing.Size(121, 33)

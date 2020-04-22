@@ -457,9 +457,13 @@ Public Class frmMainTabbed
             SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, _nfoDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
-            SetObjectText_ThreadSafe(btnGenerate, "Generate")
+
+            OnHeartbeat("Loading data ...")
+            Await _nfoStrategyToExecute.LoadDataAsync().ConfigureAwait(False)
+
             SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
 
+            OnHeartbeat("Running strategy ...")
             Await _nfoStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch aex As AdapterBusinessException
             logger.Error(aex)
@@ -546,14 +550,12 @@ Public Class frmMainTabbed
 
     Private Async Sub btnGenerate_Click(sender As Object, e As EventArgs) Handles btnGenerate.Click
         If _nfoStrategyToExecute IsNot Nothing Then
-            SetObjectText_ThreadSafe(btnGenerate, "Generating")
             SetObjectEnableDisable_ThreadSafe(btnGenerate, False)
             Try
                 Await _nfoStrategyToExecute.ExportDataAsync().ConfigureAwait(False)
             Catch ex As Exception
                 OnHeartbeat(ex.Message)
             End Try
-            SetObjectText_ThreadSafe(btnGenerate, "Generate")
             SetObjectEnableDisable_ThreadSafe(btnGenerate, True)
         End If
     End Sub
@@ -584,6 +586,7 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnNFOStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnNFOSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnNFOStop, False)
+                    SetObjectEnableDisable_ThreadSafe(btnGenerate, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, Nothing)
             End Select
         End If

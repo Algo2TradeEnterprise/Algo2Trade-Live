@@ -130,6 +130,29 @@ Public Class NFOStrategy
         Return ret
     End Function
 
+    Public Async Function LoadDataAsync() As Task
+        Dim lastException As Exception = Nothing
+
+        Try
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tasks As New List(Of Task)()
+            For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
+                _cts.Token.ThrowIfCancellationRequested()
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.LoadDataAsync, _cts.Token))
+            Next
+            Await Task.WhenAll(tasks).ConfigureAwait(False)
+        Catch ex As Exception
+            lastException = ex
+            logger.Error(ex)
+        End Try
+        If lastException IsNot Nothing Then
+            Await ParentController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+            Await ParentController.CloseFetcherIfConnectedAsync(False).ConfigureAwait(False)
+            Await ParentController.CloseCollectorIfConnectedAsync(False).ConfigureAwait(False)
+            Throw lastException
+        End If
+    End Function
+
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 
@@ -161,7 +184,7 @@ Public Class NFOStrategy
     End Function
 
     Public Async Function ExportDataAsync() As Task
-        OnHeartbeat("Trying to export data to excel. Loading data ....")
+        OnHeartbeat("Trying to export data to excel.")
         If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
             logger.Debug("Waiting for data load from a2t if required")
             While True
@@ -211,6 +234,7 @@ Public Class NFOStrategy
                 End If
 
                 If timeList IsNot Nothing AndAlso timeList.Count > 0 Then
+                    Dim exportDone As Boolean = False
                     Dim userInputs As NFOUserInputs = Me.UserSettings
                     OnHeartbeat("Opening excel")
                     Using xlHlpr As New Utilities.DAL.ExcelHelper(userInputs.InstrumentDetailsFilePath, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
@@ -327,9 +351,11 @@ Public Class NFOStrategy
                                     End If
                                 End If
                             Next
-                            OnHeartbeat("Export successful")
+                            exportDone = True
                         End If
+                        OnHeartbeat("Saving excel")
                     End Using
+                    If exportDone Then OnHeartbeat("Export successful")
                 Else
                     logger.Debug("Unable to create time collection. Min Time:{0}, Max Time:{0}", minTime, maxTime)
                 End If
