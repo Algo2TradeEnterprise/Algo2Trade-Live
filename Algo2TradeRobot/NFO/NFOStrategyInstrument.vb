@@ -72,7 +72,8 @@ Public Class NFOStrategyInstrument
 
                 'Place Order block start
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
+                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
                     Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
                 End If
                 'Place Order block end
