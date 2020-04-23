@@ -110,4 +110,21 @@ Public Class CDSUserInputs
         End If
     End Sub
 
+    Public Overrides Function ToString() As String
+        Dim stockList As String = Nothing
+        If Me.InstrumentsData IsNot Nothing AndAlso Me.InstrumentsData.Count > 0 Then
+            For Each runningInstrument In Me.InstrumentsData
+                stockList = String.Format("{0},{1}", stockList, runningInstrument.Value.TradingSymbol)
+            Next
+        End If
+        If stockList IsNot Nothing Then
+            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
+                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, stockList.Substring(1),
+                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
+        Else
+            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
+                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, "Nothing",
+                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
+        End If
+    End Function
 End Class
