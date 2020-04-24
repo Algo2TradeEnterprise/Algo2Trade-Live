@@ -254,12 +254,12 @@ Public Class NFOStrategyInstrument
                             Dim triggerPrice As Decimal = Decimal.MinValue
                             Dim reason As String = Nothing
                             If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                If currentTick.Open >= slOrder.TriggerPrice + buffer + 2 * slab Then
+                                If currentTick.LastPrice >= slOrder.TriggerPrice + buffer + 2 * slab Then
                                     triggerPrice = slOrder.TriggerPrice + slab
                                     reason = "Target Perservation"
                                 End If
                             ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                If currentTick.Open <= slOrder.TriggerPrice - buffer - 2 * slab Then
+                                If currentTick.LastPrice <= slOrder.TriggerPrice - buffer - 2 * slab Then
                                     triggerPrice = slOrder.TriggerPrice - slab
                                     reason = "Target Perservation"
                                 End If
