@@ -53,7 +53,11 @@ Public Class MCXStrategy
                                                                                                      End Function)
                     If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
                         Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
-                                                                               Return x.Expiry.Value
+                                                                               If x.Expiry.Value.Date > Now.Date Then
+                                                                                   Return x.Expiry.Value
+                                                                               Else
+                                                                                   Return Date.MaxValue
+                                                                               End If
                                                                            End Function)
 
                         runningTradableInstrument = allTradableInstruments.Find(Function(x)
