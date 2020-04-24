@@ -28,8 +28,8 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtHigherTimeframe = New System.Windows.Forms.TextBox()
-        Me.lblHigherTF = New System.Windows.Forms.Label()
+        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
@@ -41,13 +41,7 @@ Partial Class frmNFOSettings
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
-        Me.lblSupertrendPeriod = New System.Windows.Forms.Label()
-        Me.txtSupertrendPeriod = New System.Windows.Forms.TextBox()
-        Me.grpSupertrend = New System.Windows.Forms.GroupBox()
-        Me.txtSupertrendMultiplier = New System.Windows.Forms.TextBox()
-        Me.lblSupertrendMultiplier = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
-        Me.grpSupertrend.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -75,8 +69,8 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtHigherTimeframe)
-        Me.GroupBox1.Controls.Add(Me.lblHigherTF)
+        Me.GroupBox1.Controls.Add(Me.txtMaxLossPerTrade)
+        Me.GroupBox1.Controls.Add(Me.lblMaxLossPerTrade)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
@@ -96,25 +90,25 @@ Partial Class frmNFOSettings
         Me.GroupBox1.TabIndex = 22
         Me.GroupBox1.TabStop = False
         '
-        'txtHigherTimeframe
+        'txtMaxLossPerTrade
         '
-        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 49)
-        Me.txtHigherTimeframe.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtHigherTimeframe.Name = "txtHigherTimeframe"
-        Me.txtHigherTimeframe.Size = New System.Drawing.Size(241, 22)
-        Me.txtHigherTimeframe.TabIndex = 2
-        Me.txtHigherTimeframe.Tag = "Higher Timeframe"
+        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(189, 49)
+        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
+        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(241, 22)
+        Me.txtMaxLossPerTrade.TabIndex = 2
+        Me.txtMaxLossPerTrade.Tag = "Max Loss Per Trade"
         '
-        'lblHigherTF
+        'lblMaxLossPerTrade
         '
-        Me.lblHigherTF.AutoSize = True
-        Me.lblHigherTF.Location = New System.Drawing.Point(9, 52)
-        Me.lblHigherTF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblHigherTF.Name = "lblHigherTF"
-        Me.lblHigherTF.Size = New System.Drawing.Size(161, 17)
-        Me.lblHigherTF.TabIndex = 25
-        Me.lblHigherTF.Tag = ""
-        Me.lblHigherTF.Text = "Higher Time Frame(min)"
+        Me.lblMaxLossPerTrade.AutoSize = True
+        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(9, 52)
+        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
+        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
+        Me.lblMaxLossPerTrade.TabIndex = 25
+        Me.lblMaxLossPerTrade.Tag = ""
+        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
         '
         'dtpckrEODExitTime
         '
@@ -226,63 +220,11 @@ Partial Class frmNFOSettings
         Me.lblSignalTimeFrame.Tag = ""
         Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
         '
-        'lblSupertrendPeriod
-        '
-        Me.lblSupertrendPeriod.AutoSize = True
-        Me.lblSupertrendPeriod.Location = New System.Drawing.Point(9, 26)
-        Me.lblSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblSupertrendPeriod.Name = "lblSupertrendPeriod"
-        Me.lblSupertrendPeriod.Size = New System.Drawing.Size(49, 17)
-        Me.lblSupertrendPeriod.TabIndex = 35
-        Me.lblSupertrendPeriod.Text = "Period"
-        '
-        'txtSupertrendPeriod
-        '
-        Me.txtSupertrendPeriod.Location = New System.Drawing.Point(189, 21)
-        Me.txtSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
-        Me.txtSupertrendPeriod.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendPeriod.TabIndex = 7
-        Me.txtSupertrendPeriod.Tag = "Period"
-        '
-        'grpSupertrend
-        '
-        Me.grpSupertrend.Controls.Add(Me.txtSupertrendMultiplier)
-        Me.grpSupertrend.Controls.Add(Me.lblSupertrendMultiplier)
-        Me.grpSupertrend.Controls.Add(Me.txtSupertrendPeriod)
-        Me.grpSupertrend.Controls.Add(Me.lblSupertrendPeriod)
-        Me.grpSupertrend.Location = New System.Drawing.Point(2, 241)
-        Me.grpSupertrend.Name = "grpSupertrend"
-        Me.grpSupertrend.Size = New System.Drawing.Size(451, 90)
-        Me.grpSupertrend.TabIndex = 23
-        Me.grpSupertrend.TabStop = False
-        Me.grpSupertrend.Text = "Supertrend Settings"
-        '
-        'txtSupertrendMultiplier
-        '
-        Me.txtSupertrendMultiplier.Location = New System.Drawing.Point(189, 55)
-        Me.txtSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
-        Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendMultiplier.TabIndex = 8
-        Me.txtSupertrendMultiplier.Tag = "Multiplier"
-        '
-        'lblSupertrendMultiplier
-        '
-        Me.lblSupertrendMultiplier.AutoSize = True
-        Me.lblSupertrendMultiplier.Location = New System.Drawing.Point(9, 60)
-        Me.lblSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblSupertrendMultiplier.Name = "lblSupertrendMultiplier"
-        Me.lblSupertrendMultiplier.Size = New System.Drawing.Size(64, 17)
-        Me.lblSupertrendMultiplier.TabIndex = 37
-        Me.lblSupertrendMultiplier.Text = "Multiplier"
-        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(576, 334)
-        Me.Controls.Add(Me.grpSupertrend)
+        Me.ClientSize = New System.Drawing.Size(576, 236)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -294,8 +236,6 @@ Partial Class frmNFOSettings
         Me.Text = "NFO Settings"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
-        Me.grpSupertrend.ResumeLayout(False)
-        Me.grpSupertrend.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
@@ -315,11 +255,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblInstrumentDetails As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblSignalTimeFrame As Label
-    Friend WithEvents lblSupertrendPeriod As Label
-    Friend WithEvents txtSupertrendPeriod As TextBox
-    Friend WithEvents grpSupertrend As GroupBox
-    Friend WithEvents txtSupertrendMultiplier As TextBox
-    Friend WithEvents lblSupertrendMultiplier As Label
-    Friend WithEvents txtHigherTimeframe As TextBox
-    Friend WithEvents lblHigherTF As Label
+    Friend WithEvents txtMaxLossPerTrade As TextBox
+    Friend WithEvents lblMaxLossPerTrade As Label
 End Class

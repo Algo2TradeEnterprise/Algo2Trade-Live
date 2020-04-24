@@ -8,20 +8,17 @@ Imports Algo2TradeCore.Entities
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Supertrend_NFO.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "VWAP_NFO.Strategy.a2t")
 
-    Public Property HigherTimeframe As Integer
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property Period As Decimal
-    Public Property Multiplier As Decimal
+    Public Property MaxLossPerTrade As Decimal
 
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property NumberOfLots As Integer
-        Public Property MaxStoplossPercentage As Decimal
+        Public Property Slab As Decimal
     End Class
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
@@ -33,7 +30,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "MAX STOPLOSS %"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "SLAB"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -46,8 +43,7 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim trdngSymbl As String = Nothing
-                            Dim nmbrOfLots As Integer = Integer.MinValue
-                            Dim maxSlPer As Decimal = Decimal.MinValue
+                            Dim slab As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -62,33 +58,20 @@ Public Class NFOUserInputs
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            nmbrOfLots = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
-                                    End If
-                                ElseIf columnCtr = 2 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            maxSlPer = instrumentDetails(rowCtr, columnCtr)
+                                            slab = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Max Stoploss % cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                            Throw New ApplicationException(String.Format("Slab cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Max Stoploss % cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                        Throw New ApplicationException(String.Format("Slab cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                     End If
                                 End If
                             Next
                             If trdngSymbl IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
                                 instrumentData.TradingSymbol = trdngSymbl.ToUpper
-                                instrumentData.NumberOfLots = nmbrOfLots
-                                instrumentData.MaxStoplossPercentage = maxSlPer
+                                instrumentData.Slab = slab
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
                                     Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", instrumentData.TradingSymbol))
@@ -109,22 +92,4 @@ Public Class NFOUserInputs
             Throw New ApplicationException("No valid 'Instruments' file path exists")
         End If
     End Sub
-
-    Public Overrides Function ToString() As String
-        Dim stockList As String = Nothing
-        If Me.InstrumentsData IsNot Nothing AndAlso Me.InstrumentsData.Count > 0 Then
-            For Each runningInstrument In Me.InstrumentsData
-                stockList = String.Format("{0},{1}", stockList, runningInstrument.Value.TradingSymbol)
-            Next
-        End If
-        If stockList IsNot Nothing Then
-            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
-                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, stockList.Substring(1),
-                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
-        Else
-            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
-                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, "Nothing",
-                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
-        End If
-    End Function
 End Class

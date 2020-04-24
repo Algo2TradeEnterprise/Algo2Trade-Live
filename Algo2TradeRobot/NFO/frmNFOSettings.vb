@@ -31,26 +31,20 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
-            txtHigherTimeframe.Text = _settings.HigherTimeframe
+            txtMaxLossPerTrade.Text = _settings.MaxLossPerTrade
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtSupertrendPeriod.Text = _settings.Period
-            txtSupertrendMultiplier.Text = _settings.Multiplier
         End If
     End Sub
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
-        _settings.HigherTimeframe = txtHigherTimeframe.Text
+        _settings.MaxLossPerTrade = Math.Abs(CDec(txtMaxLossPerTrade.Text)) * -1
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.Period = txtSupertrendPeriod.Text
-        _settings.Multiplier = txtSupertrendMultiplier.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -74,13 +68,7 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(1, 180, txtHigherTimeframe, True)
-        ValidateNumbers(0, Integer.MaxValue, txtSupertrendPeriod, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
-
-        If Val(txtHigherTimeframe.Text) <= Val(txtSignalTimeFrame.Text) Then
-            Throw New ApplicationException("Higher timeframe can not be lower than or equal to Signal timeframe")
-        End If
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerTrade)
 
         ValidateFile()
     End Sub

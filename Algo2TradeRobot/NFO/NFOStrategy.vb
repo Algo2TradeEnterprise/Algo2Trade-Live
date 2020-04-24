@@ -42,45 +42,18 @@ Public Class NFOStrategy
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                Dim ignoredStocklist As List(Of String) = Nothing
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = Nothing
-                    Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                         Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                                                                                             x.RawExchange = "NFO"
-                                                                                                     End Function)
-                    If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
-                        Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
-                                                                               If x.Expiry.Value.Date > Now.Date Then
-                                                                                   Return x.Expiry.Value
-                                                                               Else
-                                                                                   Return Date.MaxValue
-                                                                               End If
-                                                                           End Function)
+                    runningTradableInstrument = dummyAllInstruments.Find(Function(x)
+                                                                             Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                         End Function)
 
-                        runningTradableInstrument = allTradableInstruments.Find(Function(x)
-                                                                                    Return x.Expiry = minExpiry
-                                                                                End Function)
-
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                        ret = True
-                    Else
-                        If ignoredStocklist Is Nothing Then ignoredStocklist = New List(Of String)
-                        ignoredStocklist.Add(instrument.Key)
-                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                    ret = True
                 Next
-                If ignoredStocklist IsNot Nothing AndAlso ignoredStocklist.Count > 0 Then
-                    Dim stocksName As String = Nothing
-                    For Each runningStock In ignoredStocklist
-                        stocksName = String.Format("{0},{1}", stocksName, runningStock)
-                    Next
-
-                    MessageBox.Show(String.Format("Unable to fetch '{0}' these stocks in 'NFO' segment", stocksName.Substring(1).ToUpper), "Stock Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                End If
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
