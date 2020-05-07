@@ -1,10 +1,10 @@
-﻿Imports KiteConnect
+﻿Imports AliceBlueClient
 Imports Algo2TradeCore.Controller
 Imports System.Web.Script.Serialization
 
 Namespace Entities
     <Serializable>
-    Public Class ZerodhaInstrument
+    Public Class AliceInstrument
         Implements IInstrument
 
         Public Sub New(ByVal associatedParentController As APIStrategyController, ByVal associatedIdentifer As String)
@@ -68,7 +68,7 @@ Namespace Entities
 
         Public ReadOnly Property Broker As APISource Implements IInstrument.Broker
             Get
-                Return APISource.Zerodha
+                Return APISource.AliceBlue
             End Get
         End Property
 

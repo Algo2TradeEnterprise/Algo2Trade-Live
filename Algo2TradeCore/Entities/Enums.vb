@@ -3,6 +3,7 @@
         Enum APISource
             Zerodha = 1
             Upstox
+            AliceBlue
             None
         End Enum
         Enum TypeOfExchage

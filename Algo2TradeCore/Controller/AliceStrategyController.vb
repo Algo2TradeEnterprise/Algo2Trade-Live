@@ -6,7 +6,7 @@ Imports System.Web
 Imports Algo2TradeCore.Entities
 Imports NLog
 Imports Utilities.Network
-Imports KiteConnect
+Imports AliceBlueClient
 Imports Algo2TradeCore.Adapter
 Imports Utilities
 Imports System.Net.Http
@@ -15,28 +15,30 @@ Imports Algo2TradeCore.Adapter.APIAdapter
 Imports Algo2TradeCore.Entities.UserSettings
 Imports System.IO
 Imports System.Collections.Concurrent
+Imports HtmlAgilityPack
 
 Namespace Controller
-    Public Class ZerodhaStrategyController
+    Public Class AliceStrategyController
         Inherits APIStrategyController
 
 #Region "Logging and Status Progress"
         Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-        Public Sub New(ByVal validatedUser As ZerodhaUser,
+        Public Sub New(ByVal validatedUser As AliceUser,
                        ByVal associatedUserInputs As ControllerUserInputs,
                        ByVal canceller As CancellationTokenSource)
-            MyBase.New(validatedUser, APISource.Zerodha, associatedUserInputs, canceller)
-            _LoginURL = "https://kite.trade/connect/login"
+            MyBase.New(validatedUser, APISource.AliceBlue, associatedUserInputs, canceller)
+            _LoginURL = "https://ant.aliceblueonline.com/oauth2/auth"
         End Sub
 
 #Region "Login"
         Protected Overrides Function GetLoginURL() As String
             logger.Debug("GetLoginURL, parameters:Nothing")
-            Return String.Format("{0}?api_key={1}&v={2}", _LoginURL, _currentUser.APIKey, _currentUser.APIVersion)
+            Return String.Format("{0}?response_type=code&state=test_state&client_id={1}&redirect_uri=https://ant.aliceblueonline.com/plugin/callback", _LoginURL, _currentUser.UserId)
         End Function
-        Public Overrides Function GetErrorResponse(ByVal response As Object) As String
+
+        Public Overrides Function GetErrorResponse(response As Object) As String
             'logger.Debug("GetErrorResponse, response:{0}", Utils.JsonSerialize(response))
             _cts.Token.ThrowIfCancellationRequested()
             Dim ret As String = Nothing
@@ -46,22 +48,20 @@ Namespace Controller
                CType(response, Dictionary(Of String, Object)).ContainsKey("status") AndAlso
                CType(response, Dictionary(Of String, Object))("status") = "error" AndAlso
                CType(response, Dictionary(Of String, Object)).ContainsKey("message") Then
-                ret = String.Format("Zerodha reported error, message:{0}", CType(response, Dictionary(Of String, Object))("message"))
+                ret = String.Format("Alice reported error, message:{0}", CType(response, Dictionary(Of String, Object))("message"))
             End If
             Return ret
         End Function
+
         Public Overrides Async Function LoginAsync() As Task(Of IConnection)
             logger.Debug("LoginAsync, parameters:Nothing")
             While True
                 _cts.Token.ThrowIfCancellationRequested()
                 Try
                     Dim requestToken As String = Nothing
-                    Dim encToken As String = Nothing
+                    'Dim encToken As String = Nothing
 
-                    Dim postContent As New Dictionary(Of String, String)
-                    postContent.Add("user_id", _currentUser.UserId)
-                    postContent.Add("password", _currentUser.Password)
-                    postContent.Add("login", "")
+                    Dim postContent As Dictionary(Of String, String) = Nothing
 
                     ServicePointManager.Expect100Continue = False
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
@@ -72,214 +72,105 @@ Namespace Controller
                     HttpBrowser.KillCookies()
                     _cts.Token.ThrowIfCancellationRequested()
 
-                    Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip, TimeSpan.FromMinutes(1), _cts)
+                    Using browser As New HttpBrowser(Nothing, DecompressionMethods.GZip Or DecompressionMethods.Deflate Or DecompressionMethods.None, New TimeSpan(0, 1, 0), _cts)
                         AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                         AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                         AddHandler browser.Heartbeat, AddressOf OnHeartbeat
                         AddHandler browser.WaitingFor, AddressOf OnWaitingFor
 
-                        'Keep the below headers constant for all login browser operations
-                        browser.UserAgent = GetRandomUserAgent()
-                        browser.KeepAlive = True
-
-                        Dim redirectedURI As Uri = Nothing
-
                         'Now launch the authentication page
-                        Dim headers As New Dictionary(Of String, String)
-                        headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
-                        'headers.Add("Accept-Encoding", "gzip, deflate, br")
-                        headers.Add("Accept-Encoding", "*")
-                        headers.Add("Accept-Language", "en-US,en;q=0.8")
-                        headers.Add("Host", "kite.trade")
-                        headers.Add("X-Kite-version", _currentUser.APIVersion)
+                        Dim headers As Dictionary(Of String, String) = Nothing
 
                         OnHeartbeat("Opening login page")
                         logger.Debug("Opening login page, GetLoginURL:{0}, headers:{1}", GetLoginURL, Utils.JsonSerialize(headers))
 
                         _cts.Token.ThrowIfCancellationRequested()
-                        Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(GetLoginURL,
-                                                                                              Http.HttpMethod.Get,
-                                                                                              Nothing,
-                                                                                              False,
-                                                                                              headers,
-                                                                                              False,
-                                                                                              Nothing).ConfigureAwait(False)
+                        Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(GetLoginURL, Http.HttpMethod.Get, Nothing, False, Nothing, False, Nothing).ConfigureAwait(False)
 
                         _cts.Token.ThrowIfCancellationRequested()
                         'Should be getting back the redirected URL in Item1 and the htmldocument response in Item2
                         Dim finalURLToCall As Uri = Nothing
-                        If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("sess_id") Then
-                            logger.Debug("Login page returned, sess_id string:{0}", tempRet.Item1.ToString)
-                            finalURLToCall = tempRet.Item1
-                            redirectedURI = tempRet.Item1
+                        If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing Then
+                            Dim doc As HtmlDocument = TryCast(tempRet.Item2, HtmlDocument)
+                            If doc IsNot Nothing Then
+                                If doc.Text.Contains("OAuth 2.0 Error") Then
+                                    Throw New ApplicationException("OAuth 2.0 Error occurred. Please verify your api_secret")
+                                End If
+                                If doc.DocumentNode.SelectNodes("//input[@name='login_challenge']") IsNot Nothing AndAlso
+                                    doc.DocumentNode.SelectNodes("//input[@name='_csrf_token']") IsNot Nothing Then
+                                    Dim loginChallenge As String = doc.DocumentNode.SelectSingleNode("//input[@name='login_challenge']").Attributes("value").Value
+                                    Dim csrfToken As String = doc.DocumentNode.SelectSingleNode("//input[@name='_csrf_token']").Attributes("value").Value
 
-                            postContent = New Dictionary(Of String, String)
-                            postContent.Add("user_id", _currentUser.UserId)
-                            postContent.Add("password", _currentUser.Password)
-                            'postContent.Add("login", "")
+                                    OnHeartbeat("Submitting Id/pass")
 
-                            'Now prepare the step 1 authentication
-                            headers = New Dictionary(Of String, String)
-                            headers.Add("Accept", "application/json, text/plain, */*")
-                            headers.Add("Accept-Language", "en-US")
-                            'headers.Add("Accept-Encoding", "gzip, deflate, br")
-                            headers.Add("Content-Type", "application/x-www-form-urlencoded")
-                            headers.Add("Host", "kite.zerodha.com")
-                            headers.Add("Origin", "https://kite.zerodha.com")
-                            headers.Add("X-Kite-version", _currentUser.APIVersion)
+                                    Dim url2 As String = tempRet.Item1.ToString
+                                    postContent = New Dictionary(Of String, String)
+                                    postContent.Add("client_id", _currentUser.UserId)
+                                    postContent.Add("password", _currentUser.Password)
+                                    postContent.Add("login_challenge", loginChallenge)
+                                    postContent.Add("_csrf_token", csrfToken)
 
-                            tempRet = Nothing
-                            OnHeartbeat("Submitting Id/pass")
-                            logger.Debug("Submitting Id/pass, redirectedURI:{0}, postContent:{1}, headers:{2}", redirectedURI.ToString, Utils.JsonSerialize(postContent), Utils.JsonSerialize(headers))
-                            _cts.Token.ThrowIfCancellationRequested()
-                            tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/login",
-                                                     redirectedURI.ToString,
-                                                     postContent,
-                                                     False,
-                                                     headers,
-                                                     False).ConfigureAwait(False)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            'Should come back as redirected url in Item1 and htmldocument in Item2
-                            Dim twoFAUserId As String = Nothing
-                            Dim twoFARequestId As String = Nothing
-                            Dim twoFAPIN As String = Nothing
-
-                            If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
-                                tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" AndAlso
-                                tempRet.Item2.containskey("data") AndAlso tempRet.Item2("data").containskey("user_id") AndAlso
-                                tempRet.Item2("data").containskey("request_id") Then
-
-
-                                'user_id=DK4056&request_id=Ypnc3WNKh1ulM8jP5QsmZmCUdSBI8EqT0aS9uhiHYrBNgodDla1y7VhTZE8z4Ia9&twofa_value=111111
-                                twoFAUserId = tempRet.Item2("data")("user_id")
-                                twoFARequestId = tempRet.Item2("data")("request_id")
-                                twoFAPIN = _currentUser.API2FAPin
-                                If twoFAUserId IsNot Nothing AndAlso twoFARequestId IsNot Nothing Then
-                                    logger.Debug("Id/pass submission returned, twoFAUserId:{0}, twoFARequestId:{1}", twoFAUserId, twoFARequestId)
-                                    'Now preprate the 2 step authentication
-                                    Dim stringPostContent As New Http.StringContent(String.Format("user_id={0}&request_id={1}&twofa_value={2}",
-                                                                                      Uri.EscapeDataString(twoFAUserId),
-                                                                                      Uri.EscapeDataString(twoFARequestId),
-                                                                                      Uri.EscapeDataString(twoFAPIN)),
-                                                                        Text.Encoding.UTF8, "application/x-www-form-urlencoded")
-
-                                    headers = New Dictionary(Of String, String)
-                                    headers.Add("Accept", "application/json, text/plain, */*")
-                                    headers.Add("Accept-Language", "en-US,en;q=0.5")
-                                    'headers.Add("Accept-Encoding", "gzip, deflate, br")
-                                    headers.Add("Content-Type", "application/x-www-form-urlencoded")
-                                    headers.Add("Host", "kite.zerodha.com")
-                                    headers.Add("Origin", "https://kite.zerodha.com")
-                                    headers.Add("X-Kite-version", _currentUser.APIVersion)
-
-                                    tempRet = Nothing
-                                    OnHeartbeat("Submitting 2FA")
-                                    logger.Debug("Submitting 2FA, redirectedURI:{0}, stringPostContent:{1}, headers:{2}", redirectedURI.ToString, Await stringPostContent.ReadAsStringAsync().ConfigureAwait(False), Utils.JsonSerialize(headers))
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    tempRet = Await browser.POSTRequestAsync("https://kite.zerodha.com/api/twofa",
-                                                                 redirectedURI.ToString,
-                                                                 stringPostContent,
-                                                                 False,
-                                                                 headers,
-                                                                 False).ConfigureAwait(False)
-                                    _cts.Token.ThrowIfCancellationRequested()
-
-                                    'Should come back as redirect url in Item1 and htmldocument response in Item2
-                                    If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("request_token") Then
-                                        redirectedURI = tempRet.Item1
-                                        Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
-                                        requestToken = queryStrings("request_token")
-
-                                        For Each cookie As Cookie In HttpBrowser.AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
-                                            Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
-                                                      cookie.Domain)
-                                            If cookie.Name = "enctoken" Then
-                                                encToken = cookie.Value
-                                            End If
-                                        Next
-
-                                        logger.Debug("2FA submission returned, requestToken:{0}", requestToken)
-                                        logger.Debug("Authentication complete, requestToken:{0}", requestToken)
-                                    ElseIf tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) AndAlso
-                                        tempRet.Item2.containskey("status") AndAlso tempRet.Item2("status") = "success" Then
-                                        logger.Debug("2FA submission returned, redirection:true")
-
-                                        headers = New Dictionary(Of String, String)
-                                        headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                                        headers.Add("Accept-Encoding", "gzip, deflate, br")
-                                        headers.Add("Accept-Language", "en-US,en;q=0.5")
-                                        headers.Add("Host", "kite.zerodha.com")
-                                        headers.Add("X-Kite-version", _currentUser.APIVersion)
-                                        tempRet = Nothing
-
-                                        OnHeartbeat("Addressing redirection")
-                                        logger.Debug("Redirecting, finalURLToCall:{0}, headers:{1}", finalURLToCall.ToString, Utils.JsonSerialize(headers))
-                                        _cts.Token.ThrowIfCancellationRequested()
-                                        tempRet = Await browser.NonPOSTRequestAsync(String.Format("{0}&skip_session=true", finalURLToCall.ToString),
-                                                                        Http.HttpMethod.Get,
-                                                                        finalURLToCall.ToString,
-                                                                        False,
-                                                                        headers,
-                                                                        True,
-                                                                        Nothing).ConfigureAwait(False)
-                                        _cts.Token.ThrowIfCancellationRequested()
-                                        If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item1.ToString.Contains("request_token") Then
-                                            redirectedURI = tempRet.Item1
-                                            Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
-                                            requestToken = queryStrings("request_token")
-
-                                            For Each cookie As Cookie In HttpBrowser.AllCookies.GetCookies(New Uri("http://kite.zerodha.com"))
-                                                Console.WriteLine("Name = {0} ; Value = {1} ; Domain = {2}", cookie.Name, cookie.Value,
-                                                      cookie.Domain)
-                                                If cookie.Name = "enctoken" Then
-                                                    encToken = cookie.Value
-                                                End If
+                                    tempRet = Await browser.POSTRequestAsync(url2, Nothing, postContent, False, Nothing, False).ConfigureAwait(False)
+                                    If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing Then
+                                        doc = TryCast(tempRet.Item2, HtmlDocument)
+                                        If doc.Text.Contains("Please Enter Valid Password") Then
+                                            Throw New ApplicationException("Please Enter Valid Password")
+                                        End If
+                                        If doc.Text.Contains("Internal server error") Then
+                                            Throw New ApplicationException("Internal server error")
+                                        End If
+                                        If doc.DocumentNode.SelectSingleNode("//p[@class='error']") IsNot Nothing AndAlso
+                                            doc.DocumentNode.SelectSingleNode("//p[@class='error']").InnerText <> "" Then
+                                            Throw New ApplicationException("Login error. Please check.")
+                                        End If
+                                        If doc.DocumentNode.SelectNodes("//input[@name='question_id1']") IsNot Nothing Then
+                                            Dim questionIds(0) As String
+                                            Dim questionCounter As Integer = 0
+                                            For Each questionID As HtmlNode In doc.DocumentNode.SelectNodes("//input[@name='question_id1']")
+                                                ReDim Preserve questionIds(questionCounter)
+                                                questionIds(questionCounter) = questionID.Attributes("value").Value
+                                                questionCounter += 1
                                             Next
 
-                                            logger.Debug("Redirection returned, requestToken:{0}", requestToken)
-                                            logger.Debug("Authentication complete, requestToken:{0}", requestToken)
-                                        Else
-                                            If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                                Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
-                                            Else
-                                                Throw New AuthenticationException("Step 2 authentication did not produce any request_token after redirection",
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
+                                            OnHeartbeat("Submitting 2FA")
+
+                                            Dim url3 As String = tempRet.Item1.ToString
+                                            postContent = New Dictionary(Of String, String)
+                                            postContent.Add("answer1", _currentUser.API2FAPin)
+                                            postContent.Add("question_id1", String.Format("{0},{1}", questionIds(0), questionIds(1)))
+                                            postContent.Add("answer2", _currentUser.API2FAPin)
+                                            postContent.Add("login_challenge", loginChallenge)
+                                            postContent.Add("_csrf_token", csrfToken)
+                                            tempRet = Await browser.POSTRequestAsync(url3, Nothing, postContent, False, Nothing, False).ConfigureAwait(False)
+                                            If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing Then
+                                                If tempRet.Item1.ToString.Contains("consent_challenge") Then
+                                                    doc = TryCast(tempRet.Item2, HtmlDocument)
+                                                    If doc.DocumentNode.SelectNodes("//input[@name='_csrf_token']") IsNot Nothing Then
+                                                        Dim firstTimeAuthorizationCsrfToken As String = doc.DocumentNode.SelectSingleNode("//input[@name='_csrf_token']").Attributes("value").Value
+
+                                                        OnHeartbeat("User first time authorization")
+
+                                                        Dim firstTimeAuthorizationUrl As String = tempRet.Item1.ToString
+                                                        postContent = New Dictionary(Of String, String)
+                                                        postContent.Add("_csrf_token", firstTimeAuthorizationCsrfToken)
+                                                        postContent.Add("consent", "Authorize")
+                                                        postContent.Add("scopes", "")
+                                                        tempRet = Await browser.POSTRequestAsync(firstTimeAuthorizationUrl, Nothing, postContent, False, Nothing, False).ConfigureAwait(False)
+                                                    Else
+                                                        Throw New ApplicationException("First time authorization failed")
+                                                    End If
+                                                End If
+                                                If tempRet.Item1.ToString.Contains("code") Then
+                                                    Dim redirectedURI As Uri = tempRet.Item1
+                                                    Dim queryStrings As NameValueCollection = HttpUtility.ParseQueryString(redirectedURI.Query)
+                                                    requestToken = queryStrings("code")
+                                                End If
                                             End If
                                         End If
                                     Else
-                                        If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                            Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
-                                        Else
-                                            Throw New AuthenticationException("Step 2 authentication did not produce any request_token",
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
-                                        End If
-                                    End If
-                                Else
-                                    If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                        Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
-                                    Else
-                                        Throw New AuthenticationException("Step 2 authentication did not produce first or second questions",
-                                                                   AuthenticationException.TypeOfException.SecondLevelFailure)
+
                                     End If
                                 End If
-                            Else
-                                If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                    Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
-                                Else
-                                    Throw New AuthenticationException("Step 1 authentication did not produce any questions in the response", AuthenticationException.TypeOfException.FirstLevelFailure)
-                                End If
-                            End If
-                        Else
-                            If tempRet IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing AndAlso tempRet.Item2.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                Throw New AuthenticationException(GetErrorResponse(tempRet.Item2),
-                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
-                            Else
-                                Throw New AuthenticationException("Step 1 authentication prepration to get to the login page failed",
-                                                                   AuthenticationException.TypeOfException.FirstLevelFailure)
                             End If
                         End If
                         RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
@@ -290,7 +181,7 @@ Namespace Controller
                     If requestToken IsNot Nothing Then
                         _cts.Token.ThrowIfCancellationRequested()
                         APIConnection = Await RequestAccessTokenAsync(requestToken).ConfigureAwait(False)
-                        APIConnection.ENCToken = encToken
+                        'APIConnection.ENCToken = encToken
                         _cts.Token.ThrowIfCancellationRequested()
 
                         'Now open the ticker
@@ -305,7 +196,7 @@ Namespace Controller
                             RemoveHandler _APITicker.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                             'Else
                         End If
-                        _APITicker = New ZerodhaTicker(Me, _cts)
+                        _APITicker = New AliceTicker(Me, _cts)
                         'End If
 
                         AddHandler _APITicker.Heartbeat, AddressOf OnHeartbeat
@@ -329,7 +220,7 @@ Namespace Controller
                             RemoveHandler _APIHistoricalDataFetcher.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                             'Else
                         End If
-                        _APIHistoricalDataFetcher = New ZerodhaHistoricalDataFetcher(Me, 0, _cts)
+                        _APIHistoricalDataFetcher = New AliceHistoricalDataFetcher(Me, 0, _cts)
                         'End If
 
                         AddHandler _APIHistoricalDataFetcher.Heartbeat, AddressOf OnHeartbeat
@@ -351,13 +242,13 @@ Namespace Controller
             End While
             Return APIConnection
         End Function
-        Private Async Function RequestAccessTokenAsync(ByVal requestToken As String) As Task(Of ZerodhaConnection)
+        Private Async Function RequestAccessTokenAsync(ByVal requestToken As String) As Task(Of AliceConnection)
             logger.Debug("RequestAccessTokenAsync, requestToken:{0}", requestToken)
 
             _cts.Token.ThrowIfCancellationRequested()
-            Dim ret As ZerodhaConnection = Nothing
+            Dim ret As AliceConnection = Nothing
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-            Dim kiteConnector As New Kite(_currentUser.APIKey, Debug:=True)
+            Dim aliceConnector As New AliceBlue(_currentUser.UserId, _currentUser.APISecret)
 
             Dim lastException As Exception = Nothing
             Dim allOKWithoutException As Boolean = False
@@ -375,25 +266,25 @@ Namespace Controller
                     OnDocumentRetryStatus(retryCtr, _MaxReTries)
                     Try
                         _cts.Token.ThrowIfCancellationRequested()
-                        Dim user As User = kiteConnector.GenerateSession(requestToken, _currentUser.APISecret)
-                        CType(_currentUser, ZerodhaUser).WrappedUser = user
+                        Dim user As User = aliceConnector.GenerateSession(requestToken)
+                        CType(_currentUser, AliceUser).WrappedUser = user
                         _cts.Token.ThrowIfCancellationRequested()
                         Console.WriteLine(Utils.JsonSerialize(user))
                         logger.Debug("Processing response")
 
                         If user.AccessToken IsNot Nothing Then
-                            kiteConnector.SetAccessToken(user.AccessToken)
+                            aliceConnector.SetAccessToken(user.AccessToken)
                             logger.Debug("Session generated, user.AccessToken:{0}", user.AccessToken)
 
-                            ret = New ZerodhaConnection
+                            ret = New AliceConnection
                             With ret
-                                .ZerodhaUser = New ZerodhaUser() With {.UserId = _currentUser.UserId,
-                                                                        .Password = _currentUser.Password,
-                                                                        .APIKey = _currentUser.APIKey,
-                                                                        .API2FAPin = _currentUser.API2FAPin,
-                                                                        .APISecret = _currentUser.APISecret,
-                                                                        .APIVersion = _currentUser.APIVersion,
-                                                                        .WrappedUser = user}
+                                .AliceUser = New AliceUser() With {.UserId = _currentUser.UserId,
+                                                                    .Password = _currentUser.Password,
+                                                                    .APIKey = _currentUser.APIKey,
+                                                                    .API2FAPin = _currentUser.API2FAPin,
+                                                                    .APISecret = _currentUser.APISecret,
+                                                                    .APIVersion = _currentUser.APIVersion,
+                                                                    .WrappedUser = user}
                                 .RequestToken = requestToken
                             End With
                             lastException = Nothing
@@ -403,7 +294,7 @@ Namespace Controller
                             Throw New ApplicationException(String.Format("Generating session did not succeed, command:{0}", "GenerateSession"))
                         End If
                         _cts.Token.ThrowIfCancellationRequested()
-                    Catch tex As KiteConnect.TokenException
+                    Catch tex As TokenException
                         logger.Error(tex)
                         lastException = tex
                         Exit For
@@ -523,6 +414,7 @@ Namespace Controller
             '_Kite.SetSessionExpiryHook(AddressOf OnSessionExpireAsync)
             Return ret
         End Function
+
         Public Async Sub OnSessionExpireAsync()
             Try
                 OrphanException = Nothing
@@ -537,7 +429,7 @@ Namespace Controller
                     Exit Sub
                 End If
                 OnHeartbeat("********** Need to login again **********")
-                Dim tempConn As ZerodhaConnection = Nothing
+                Dim tempConn As AliceConnection = Nothing
                 Try
                     _cts.Token.ThrowIfCancellationRequested()
                     Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
@@ -547,7 +439,7 @@ Namespace Controller
                         loginMessage = Nothing
                         tempConn = Nothing
                         Try
-                            OnHeartbeat("Attempting to get connection to Zerodha API")
+                            OnHeartbeat("Attempting to get connection to Alice API")
                             _cts.Token.ThrowIfCancellationRequested()
                             tempConn = Await LoginAsync().ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
@@ -578,7 +470,7 @@ Namespace Controller
                                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                 'Else
                             End If
-                            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
+                            _APIInformationCollector = New AliceInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
                             'End If
                             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
                             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -607,9 +499,9 @@ Namespace Controller
                     End While
                     If tempConn Is Nothing Then
                         If loginMessage IsNot Nothing Then
-                            Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
+                            Throw New ApplicationException(String.Format("No connection to Alice API could be established | Details:{0}", loginMessage))
                         Else
-                            Throw New ApplicationException("No connection to Zerodha API could be established")
+                            Throw New ApplicationException("No connection to Alice API could be established")
                         End If
                     End If
                 Finally
@@ -640,7 +532,7 @@ Namespace Controller
                 RemoveHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
                 RemoveHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
             End If
-            _APIAdapter = New ZerodhaAdapter(Me, _cts)
+            _APIAdapter = New AliceAdapter(Me, _cts)
             AddHandler _APIAdapter.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
             AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
@@ -657,7 +549,7 @@ Namespace Controller
                 RemoveHandler _APIInformationCollector.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                 'Else
             End If
-            _APIInformationCollector = New ZerodhaInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
+            _APIInformationCollector = New AliceInformationCollector(Me, Me.UserInputs.GetInformationDelay, _cts)
             'End If
             AddHandler _APIInformationCollector.Heartbeat, AddressOf OnHeartbeat
             AddHandler _APIInformationCollector.WaitingFor, AddressOf OnWaitingFor
@@ -686,91 +578,11 @@ Namespace Controller
                 Me._currentUser.DaysStartingCapitals IsNot Nothing AndAlso Me._currentUser.DaysStartingCapitals.Count > 0
         End Function
 
-        Protected Overrides Async Function FillQuantityMultiplierMapAsync() As Task
-            Dim commodityMultiplierMap As Dictionary(Of String, Object) = Nothing
-            Dim commodityGroupMap As Dictionary(Of String, Object) = Nothing
-
-            ServicePointManager.Expect100Continue = False
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
-            ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
-                                                                          Return True
-                                                                      End Function
-
-            Dim proxyToBeUsed As HttpProxy = Nothing
-            Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-                Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync("https://zerodha.com/static/js/brokerage.min.js",
-                                                                                     HttpMethod.Get,
-                                                                                     Nothing,
-                                                                                     True,
-                                                                                     Nothing,
-                                                                                     False,
-                                                                                     Nothing).ConfigureAwait(False)
-                If l Is Nothing OrElse l.Item2 Is Nothing Then
-                    Throw New ApplicationException(String.Format("No response in the additional site's to fetch commodity multiplier and group map: {0}",
-                                                                 "https://zerodha.com/static/js/brokerage.min.js"))
-                End If
-                If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                    Dim jString As String = l.Item2
-                    If jString IsNot Nothing Then
-                        Dim multiplierMap As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "}", jString)
-                        If multiplierMap IsNot Nothing Then
-                            multiplierMap = multiplierMap & "}"
-                            commodityMultiplierMap = Utilities.Strings.JsonDeserialize(multiplierMap)
-                        End If
-
-                        Dim groupMap As String = Utilities.Strings.GetTextBetween("COMMODITY_GROUP_MAP=", "}", jString)
-                        If groupMap IsNot Nothing Then
-                            groupMap = groupMap & "}"
-                            commodityGroupMap = Utilities.Strings.JsonDeserialize(groupMap)
-                        End If
-                    End If
-                End If
-            End Using
-            If commodityMultiplierMap IsNot Nothing AndAlso commodityMultiplierMap.Count > 0 AndAlso
-                commodityGroupMap IsNot Nothing AndAlso commodityGroupMap.Count > 0 Then
-                If _AllInstruments IsNot Nothing AndAlso _AllInstruments.Count > 0 Then
-                    For Each instrument In _AllInstruments
-                        If Me.UserInputs.ExchangeDetails.ContainsKey(instrument.RawExchange) Then
-                            instrument.ExchangeDetails = Me.UserInputs.ExchangeDetails(instrument.RawExchange)
-
-                            If instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.MCX Then
-                                Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
-                                If commodityMultiplierMap.ContainsKey(stockName) Then
-                                    instrument.QuantityMultiplier = Val(commodityMultiplierMap(stockName).ToString.Substring(0, commodityMultiplierMap(stockName).ToString.Length - 1))
-                                    instrument.BrokerageCategory = commodityMultiplierMap(stockName).ToString.Substring(commodityMultiplierMap(stockName).ToString.Length - 1)
-                                Else
-                                    logger.Warn(String.Format("Commodity Multiplier Map doesn't have this MCX stock - {0}", stockName))
-                                End If
-                                If commodityGroupMap.ContainsKey(stockName) Then
-                                    instrument.BrokerageGroupCategory = commodityGroupMap(stockName).ToString.Substring(commodityGroupMap(stockName).ToString.Length - 1)
-                                Else
-                                    logger.Warn(String.Format("Commodity Group Map doesn't have this MCX stock - {0}", stockName))
-                                End If
-                            ElseIf instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.CDS Then
-                                instrument.QuantityMultiplier = 1000
-                                instrument.BrokerageCategory = Nothing
-                                instrument.BrokerageGroupCategory = Nothing
-                            Else
-                                instrument.QuantityMultiplier = 1
-                                instrument.BrokerageCategory = Nothing
-                                instrument.BrokerageGroupCategory = Nothing
-                            End If
-                        End If
-                    Next
-                End If
-            Else
-                Throw New ApplicationException("Unable to fetch quantity/group multiplier")
-            End If
+        Protected Overrides Function FillQuantityMultiplierMapAsync() As Task
+            Throw New NotImplementedException()
         End Function
 
-        ''' <summary>
-        ''' This will help find all tradable instruments as per the passed strategy and then create the strategy workers for each of these instruments
-        ''' </summary>
-        ''' <param name="strategyToRun"></param>
-        ''' <returns></returns>
-        Public Overrides Async Function SubscribeStrategyAsync(ByVal strategyToRun As Strategy) As Task
+        Public Overrides Async Function SubscribeStrategyAsync(strategyToRun As Strategy) As Task
             logger.Debug("ExecuteStrategyAsync, strategyToRun:{0}", strategyToRun.ToString)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -875,34 +687,34 @@ Namespace Controller
                 'Create the candlecreator object - one each for each unique instrument
                 FillCandlestickCreator()
 
-                'Create dummy tick so as to trigger an UI response
-                Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
-                Dim allQuotes As IEnumerable(Of IQuote) = Await ExecuteCommandAsync(execCommand, strategyToRun.TradableInstrumentsAsPerStrategy).ConfigureAwait(False)
-                If allQuotes IsNot Nothing AndAlso allQuotes.Count > 0 Then
-                    For Each runningQuote As ZerodhaQuote In allQuotes
+                ''Create dummy tick so as to trigger an UI response
+                'Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
+                'Dim allQuotes As IEnumerable(Of IQuote) = Await ExecuteCommandAsync(execCommand, strategyToRun.TradableInstrumentsAsPerStrategy).ConfigureAwait(False)
+                'If allQuotes IsNot Nothing AndAlso allQuotes.Count > 0 Then
+                '    For Each runningQuote As AliceQuote In allQuotes
 
-                        OnTickerTickAsync(New Tick() With {.AveragePrice = runningQuote.AveragePrice,
-                                          .Bids = If(runningQuote.WrappedQuote.Bids IsNot Nothing, runningQuote.WrappedQuote.Bids.ToArray, Nothing),
-                                          .BuyQuantity = runningQuote.WrappedQuote.BuyQuantity,
-                                          .Change = runningQuote.WrappedQuote.Change,
-                                          .Close = runningQuote.Close,
-                                          .High = runningQuote.High,
-                                          .InstrumentToken = runningQuote.InstrumentToken,
-                                          .LastPrice = runningQuote.LastPrice,
-                                          .LastQuantity = runningQuote.WrappedQuote.LastQuantity,
-                                          .LastTradeTime = runningQuote.WrappedQuote.LastTradeTime,
-                                          .Low = runningQuote.Low,
-                                          .Offers = If(runningQuote.WrappedQuote.Offers IsNot Nothing, runningQuote.WrappedQuote.Offers.ToArray, Nothing),
-                                          .OI = runningQuote.WrappedQuote.OI,
-                                          .OIDayHigh = runningQuote.WrappedQuote.OIDayHigh,
-                                          .OIDayLow = runningQuote.WrappedQuote.OIDayLow,
-                                          .Open = runningQuote.Open,
-                                          .SellQuantity = runningQuote.WrappedQuote.SellQuantity,
-                                          .Timestamp = runningQuote.Timestamp,
-                                          .Tradable = True,
-                                          .Volume = runningQuote.Volume})
-                    Next
-                End If
+                '        OnTickerTickAsync(New Tick() With {.AveragePrice = runningQuote.AveragePrice,
+                '                          .Bids = If(runningQuote.WrappedQuote.Bids IsNot Nothing, runningQuote.WrappedQuote.Bids.ToArray, Nothing),
+                '                          .BuyQuantity = runningQuote.WrappedQuote.BuyQuantity,
+                '                          .Change = runningQuote.WrappedQuote.Change,
+                '                          .Close = runningQuote.Close,
+                '                          .High = runningQuote.High,
+                '                          .InstrumentToken = runningQuote.InstrumentToken,
+                '                          .LastPrice = runningQuote.LastPrice,
+                '                          .LastQuantity = runningQuote.WrappedQuote.LastQuantity,
+                '                          .LastTradeTime = runningQuote.WrappedQuote.LastTradeTime,
+                '                          .Low = runningQuote.Low,
+                '                          .Offers = If(runningQuote.WrappedQuote.Offers IsNot Nothing, runningQuote.WrappedQuote.Offers.ToArray, Nothing),
+                '                          .OI = runningQuote.WrappedQuote.OI,
+                '                          .OIDayHigh = runningQuote.WrappedQuote.OIDayHigh,
+                '                          .OIDayLow = runningQuote.WrappedQuote.OIDayLow,
+                '                          .Open = runningQuote.Open,
+                '                          .SellQuantity = runningQuote.WrappedQuote.SellQuantity,
+                '                          .Timestamp = runningQuote.Timestamp,
+                '                          .Tradable = True,
+                '                          .Volume = runningQuote.Volume})
+                '    Next
+                'End If
 
                 'Now subscribe to the actual ticker
                 _cts.Token.ThrowIfCancellationRequested()
@@ -914,31 +726,16 @@ Namespace Controller
                 _cts.Token.ThrowIfCancellationRequested()
             End If
         End Function
-        'Public Overrides Async Function MonitorAsync(ByVal strategyToRun As Strategy) As Task
-        '    If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
-        '        Dim tasks As List(Of Task) = Nothing
-        '        For Each runningStrategy In _AllStrategies
-        '            If tasks Is Nothing Then tasks = New List(Of Task)
-        '            tasks.Add(Task.Run(Async Function()
-        '                                   Await runningStrategy.MonitorAsync().ConfigureAwait(False)
-        '                               End Function))
-        '        Next
-        '        Try
-        '            Await Task.WhenAll(tasks)
-        '        Catch ex As Exception
-        '            Console.WriteLine(ex)
-        '        End Try
-        '    End If
 
-        'End Function
-        Public Overrides Function CreateDummySingleInstrument(supportedTradingSymbol As String, ByVal instrumentToken As UInteger, ByVal sampleInstrument As IInstrument) As IInstrument
+        Public Overrides Function CreateDummySingleInstrument(supportedTradingSymbol As String, instrumentToken As UInteger, sampleInstrument As IInstrument) As IInstrument
             If supportedTradingSymbol IsNot Nothing AndAlso _APIAdapter IsNot Nothing Then
                 Return _APIAdapter.CreateSingleInstrument(supportedTradingSymbol, instrumentToken, sampleInstrument)
             Else
                 Return Nothing
             End If
         End Function
-        Public Overrides Async Function GetOrderDetailsAsync() As Task(Of Concurrent.ConcurrentBag(Of IBusinessOrder))
+
+        Public Overrides Async Function GetOrderDetailsAsync() As Task(Of ConcurrentBag(Of IBusinessOrder))
             Dim ret As Concurrent.ConcurrentBag(Of IBusinessOrder) = Nothing
             _cts.Token.ThrowIfCancellationRequested()
             Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
@@ -948,12 +745,12 @@ Namespace Controller
             _cts.Token.ThrowIfCancellationRequested()
             If allOrders IsNot Nothing AndAlso allOrders.Count > 0 Then
                 Dim parentOrders As IEnumerable(Of IOrder) = allOrders.Where(Function(x)
-                                                                                 Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                                 Dim y As AliceOrder = CType(x, AliceOrder)
                                                                                  Return y.WrappedOrder.ParentOrderId Is Nothing
                                                                              End Function)
                 For Each parentOrder In parentOrders
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim wrappedParentOrder As ZerodhaOrder = CType(parentOrder, ZerodhaOrder)
+                    Dim wrappedParentOrder As AliceOrder = CType(parentOrder, AliceOrder)
                     wrappedParentOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Parent
                     Dim targetOrder As IEnumerable(Of IOrder) = Nothing
                     Dim slOrder As IEnumerable(Of IOrder) = Nothing
@@ -961,7 +758,7 @@ Namespace Controller
                     If wrappedParentOrder.WrappedOrder.TransactionType = "BUY" Then
                         _cts.Token.ThrowIfCancellationRequested()
                         slOrder = allOrders.ToList.FindAll(Function(x)
-                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                               Dim y As AliceOrder = CType(x, AliceOrder)
                                                                If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                    y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                    y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -974,7 +771,7 @@ Namespace Controller
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
                         targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                   Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                   Dim y As AliceOrder = CType(x, AliceOrder)
                                                                    If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                        y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                        y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -987,7 +784,7 @@ Namespace Controller
                                                                End Function)
                         _cts.Token.ThrowIfCancellationRequested()
                         allOrder = allOrders.ToList.FindAll(Function(x)
-                                                                Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                Dim y As AliceOrder = CType(x, AliceOrder)
                                                                 If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                     y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                     y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -999,7 +796,7 @@ Namespace Controller
                     ElseIf wrappedParentOrder.WrappedOrder.TransactionType = "SELL" Then
                         _cts.Token.ThrowIfCancellationRequested()
                         slOrder = allOrders.ToList.FindAll(Function(x)
-                                                               Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                               Dim y As AliceOrder = CType(x, AliceOrder)
                                                                If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                    y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                    y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -1012,7 +809,7 @@ Namespace Controller
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
                         targetOrder = allOrders.ToList.FindAll(Function(x)
-                                                                   Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                   Dim y As AliceOrder = CType(x, AliceOrder)
                                                                    If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                        y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                        y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -1025,7 +822,7 @@ Namespace Controller
                                                                End Function)
                         _cts.Token.ThrowIfCancellationRequested()
                         allOrder = allOrders.ToList.FindAll(Function(x)
-                                                                Dim y As ZerodhaOrder = CType(x, ZerodhaOrder)
+                                                                Dim y As AliceOrder = CType(x, AliceOrder)
                                                                 If y.Status = IOrder.TypeOfStatus.Cancelled OrElse
                                                                     y.Status = IOrder.TypeOfStatus.Complete OrElse
                                                                     y.Status = IOrder.TypeOfStatus.Rejected Then
@@ -1064,28 +861,12 @@ Namespace Controller
 
                     If ret Is Nothing Then ret = New Concurrent.ConcurrentBag(Of IBusinessOrder)
                     ret.Add(businessOrder)
-
-
-                    ''This for loop needs to be after the order is published
-                    'If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
-                    '_subscribedStrategyInstruments.ContainsKey(parentOrder.InstrumentIdentifier) Then
-                    '    For Each runningStrategyInstrument In _subscribedStrategyInstruments(parentOrder.InstrumentIdentifier)
-                    '        If parentOrder.Tag IsNot Nothing AndAlso parentOrder.Tag.Contains(runningStrategyInstrument.GenerateTag()) Then
-                    '            Dim unionOfAllOrders As IEnumerable(Of IOrder) = businessOrder.SLOrder.Union(businessOrder.AllOrder.Union(businessOrder.TargetOrder))
-                    '            unionOfAllOrders = Utilities.Collections.ConcatSingle(Of IOrder)(unionOfAllOrders, businessOrder.ParentOrder)
-                    '            If unionOfAllOrders IsNot Nothing AndAlso unionOfAllOrders.Count > 0 Then
-                    '                For Each runningOrder In unionOfAllOrders
-                    '                    runningStrategyInstrument.ProcessOrderAsync(runningOrder)
-                    '                Next
-                    '            End If
-                    '        End If
-                    '    Next
-                    'End If
                 Next
             End If
             logger.Debug("Normal Order update")
             Return ret
         End Function
+
         Public Overrides Async Function GetHoldingDetailsAsync() As Task(Of ConcurrentBag(Of IHolding))
             Dim ret As Concurrent.ConcurrentBag(Of IHolding) = Nothing
             _cts.Token.ThrowIfCancellationRequested()
@@ -1102,6 +883,7 @@ Namespace Controller
             End If
             Return ret
         End Function
+
         Public Overrides Async Function GetPositionDetailsAsync() As Task(Of ConcurrentBag(Of IPosition))
             Dim ret As Concurrent.ConcurrentBag(Of IPosition) = Nothing
             _cts.Token.ThrowIfCancellationRequested()
@@ -1121,7 +903,7 @@ Namespace Controller
 #End Region
 
 #Region "Fetcher Events"
-        Public Overrides Async Function CloseFetcherIfConnectedAsync(ByVal forceClose As Boolean) As Task
+        Public Overrides Async Function CloseFetcherIfConnectedAsync(forceClose As Boolean) As Task
             If _APIHistoricalDataFetcher IsNot Nothing Then Await _APIHistoricalDataFetcher.CloseFetcherIfConnectedAsync(forceClose).ConfigureAwait(False)
         End Function
 
@@ -1136,120 +918,6 @@ Namespace Controller
         Public Overrides Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMessage As String)
             logger.Debug("OnFetcherError, errorMessage:{0} ,instrumentIdentifier:{1}", errorMessage, instrumentIdentifier)
             MyBase.OnFetcherError(instrumentIdentifier, errorMessage)
-            'If errorMessage.Contains("403") Then OnSessionExpireAsync()
-        End Sub
-#End Region
-
-#Region "Ticker Events"
-        Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
-            If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        End Function
-
-        Public Overrides Sub OnTickerConnect()
-            logger.Debug("OnTickerConnect, parameters:Nothing", Me.ToString)
-            MyBase.OnTickerConnect()
-        End Sub
-        Public Overrides Sub OnTickerClose()
-            logger.Debug("OnTickerClose, parameters:Nothing", Me.ToString)
-            MyBase.OnTickerClose()
-        End Sub
-        Public Overrides Sub OnTickerError(ByVal errorMessage As String)
-            logger.Debug("OnTickerError, errorMessage:{0}", errorMessage)
-            If _APITicker IsNot Nothing Then
-                OnTickerErrorWithStatus(_APITicker.IsConnected, errorMessage)
-            Else
-                OnTickerErrorWithStatus(False, errorMessage)
-            End If
-            MyBase.OnTickerError(errorMessage)
-            If errorMessage.Contains("403") Then OnSessionExpireAsync()
-        End Sub
-        Public Overrides Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMessage As String)
-            logger.Debug("OnTickerErrorWithStatus, isConnected:{0}, errorMessage:{1}", isConnected, errorMessage)
-            MyBase.OnTickerErrorWithStatus(isConnected, errorMessage)
-        End Sub
-        Public Overrides Sub OnTickerNoReconnect()
-            logger.Debug("OnTickerNoReconnect, parameters:Nothing", Me.ToString)
-            'OnHeartbeat("Ticker, not Reconnecting")
-            MyBase.OnTickerNoReconnect()
-        End Sub
-        Public Overrides Sub OnTickerReconnect()
-            logger.Debug("OnTickerReconnect, parameters:Nothing", Me.ToString)
-            MyBase.OnTickerReconnect()
-        End Sub
-        Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
-            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-            'Try
-            '    logger.Fatal("TickData, Tkn,{0},Dt,{1},Tm,{2},LTP,{3},BQn,{4},SQn,{5},%,{6},Bid,{7},Off,{8},OIH,{9},OIL,{10},OI,{11}",
-            '                 tickData.InstrumentToken,
-            '                 tickData.Timestamp.Value.ToShortDateString,
-            '                 tickData.Timestamp.Value.ToShortTimeString,
-            '                 tickData.LastPrice,
-            '                 tickData.BuyQuantity,
-            '                 tickData.SellQuantity,
-            '                 If(tickData.BuyQuantity > tickData.SellQuantity, ((tickData.BuyQuantity / tickData.SellQuantity) - 1) * 100, ((tickData.SellQuantity / tickData.BuyQuantity) - 1) * -100),
-            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Bids), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
-            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Offers), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
-            '                 tickData.OIDayHigh,
-            '                 tickData.OIDayLow,
-            '                 tickData.OI)
-            'Catch ex As Exception
-            '    logger.Error("Tick log error:{0}", ex.ToString)
-            'End Try
-            Dim runningTick As New ZerodhaTick() With {.WrappedTick = tickData}
-            Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
-                                                                                                            Return x.InstrumentIdentifier = tickData.InstrumentToken
-                                                                                                        End Function)
-
-            Dim change As Boolean = False
-            If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
-                change = runningInstruments.FirstOrDefault.LastTick IsNot Nothing AndAlso
-                        (runningTick.OI <> runningInstruments.FirstOrDefault.LastTick.OI OrElse
-                        runningTick.Volume <> runningInstruments.FirstOrDefault.LastTick.Volume OrElse
-                        runningTick.LastPrice <> runningInstruments.FirstOrDefault.LastTick.LastPrice)
-
-                runningInstruments.FirstOrDefault.LastTick = runningTick
-            End If
-
-            'If change Then
-            '    logger.Fatal("TickData, Token,{0},Date,{1},Time,{2},LastPrice,{3},Volume,{4},OI,{5}",
-            '             tickData.InstrumentToken, tickData.Timestamp.Value.ToShortDateString, tickData.Timestamp.Value.ToLongTimeString,
-            '             tickData.LastPrice, tickData.Volume, tickData.OI)
-            'End If
-
-            If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
-                _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
-            End If
-            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
-                _subscribedStrategyInstruments.ContainsKey(tickData.InstrumentToken) Then
-                'This loop is for population of ticks payload. As ticks payload depends on instrument so loop should exit after 1 iteration.
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    If runningStrategyInstrument.ParentStrategy.IsTickPopulationNeeded Then
-                        runningStrategyInstrument.TradableInstrument.TickPayloads.Add(runningTick)
-                    End If
-                    Exit For
-                Next
-
-                'This for loop needs to be after the tick is published
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
-                Next
-            End If
-        End Sub
-        Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
-            'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
-            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-            If orderData.Status = "COMPLETE" OrElse
-                orderData.Status = "MODIFIED" OrElse
-                orderData.Status = "CANCELLED" OrElse
-                orderData.Status = "OPEN" OrElse
-                orderData.Status = "TRIGGER PENDING" Then
-                'Try
-                '    logger.Fatal("Order Update: {0}", Utilities.Strings.JsonSerialize(orderData))
-                'Catch ex As Exception
-                '    'Do nothing
-                'End Try
-                ProcessTickOrderUpdateAsync(New ZerodhaOrder With {.WrappedOrder = orderData})
-            End If
         End Sub
 #End Region
 
@@ -1308,6 +976,125 @@ Namespace Controller
             logger.Debug("OnCollectorError, errorMessage:{0}", errorMessage)
             MyBase.OnCollectorError(errorMessage)
             'If errorMessage.Contains("403") Then OnSessionExpireAsync()
+        End Sub
+#End Region
+
+#Region "Ticker Events"
+        Public Overrides Async Function CloseTickerIfConnectedAsync() As Task
+            If _APITicker IsNot Nothing Then Await _APITicker.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        End Function
+
+        Public Overrides Sub OnTickerConnect()
+            logger.Debug("OnTickerConnect, parameters:Nothing", Me.ToString)
+            MyBase.OnTickerConnect()
+        End Sub
+
+        Public Overrides Sub OnTickerClose()
+            logger.Debug("OnTickerClose, parameters:Nothing", Me.ToString)
+            MyBase.OnTickerClose()
+        End Sub
+
+        Public Overrides Sub OnTickerError(ByVal errorMessage As String)
+            logger.Debug("OnTickerError, errorMessage:{0}", errorMessage)
+            If _APITicker IsNot Nothing Then
+                OnTickerErrorWithStatus(_APITicker.IsConnected, errorMessage)
+            Else
+                OnTickerErrorWithStatus(False, errorMessage)
+            End If
+            MyBase.OnTickerError(errorMessage)
+            If errorMessage.Contains("403") Then OnSessionExpireAsync()
+        End Sub
+
+        Public Overrides Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMessage As String)
+            logger.Debug("OnTickerErrorWithStatus, isConnected:{0}, errorMessage:{1}", isConnected, errorMessage)
+            MyBase.OnTickerErrorWithStatus(isConnected, errorMessage)
+        End Sub
+
+        Public Overrides Sub OnTickerNoReconnect()
+            logger.Debug("OnTickerNoReconnect, parameters:Nothing", Me.ToString)
+            'OnHeartbeat("Ticker, not Reconnecting")
+            MyBase.OnTickerNoReconnect()
+        End Sub
+
+        Public Overrides Sub OnTickerReconnect()
+            logger.Debug("OnTickerReconnect, parameters:Nothing", Me.ToString)
+            MyBase.OnTickerReconnect()
+        End Sub
+
+        Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            'Try
+            '    logger.Fatal("TickData, Tkn,{0},Dt,{1},Tm,{2},LTP,{3},BQn,{4},SQn,{5},%,{6},Bid,{7},Off,{8},OIH,{9},OIL,{10},OI,{11}",
+            '                 tickData.InstrumentToken,
+            '                 tickData.Timestamp.Value.ToShortDateString,
+            '                 tickData.Timestamp.Value.ToShortTimeString,
+            '                 tickData.LastPrice,
+            '                 tickData.BuyQuantity,
+            '                 tickData.SellQuantity,
+            '                 If(tickData.BuyQuantity > tickData.SellQuantity, ((tickData.BuyQuantity / tickData.SellQuantity) - 1) * 100, ((tickData.SellQuantity / tickData.BuyQuantity) - 1) * -100),
+            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Bids), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
+            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Offers), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
+            '                 tickData.OIDayHigh,
+            '                 tickData.OIDayLow,
+            '                 tickData.OI)
+            'Catch ex As Exception
+            '    logger.Error("Tick log error:{0}", ex.ToString)
+            'End Try
+            Dim runningTick As New AliceTick() With {.WrappedTick = tickData}
+            Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
+                                                                                                            Return x.InstrumentIdentifier = tickData.InstrumentToken
+                                                                                                        End Function)
+
+            Dim change As Boolean = False
+            If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                change = runningInstruments.FirstOrDefault.LastTick IsNot Nothing AndAlso
+                        (runningTick.OI <> runningInstruments.FirstOrDefault.LastTick.OI OrElse
+                        runningTick.Volume <> runningInstruments.FirstOrDefault.LastTick.Volume OrElse
+                        runningTick.LastPrice <> runningInstruments.FirstOrDefault.LastTick.LastPrice)
+
+                runningInstruments.FirstOrDefault.LastTick = runningTick
+            End If
+
+            'If change Then
+            '    logger.Fatal("TickData, Token,{0},Date,{1},Time,{2},LastPrice,{3},Volume,{4},OI,{5}",
+            '             tickData.InstrumentToken, tickData.Timestamp.Value.ToShortDateString, tickData.Timestamp.Value.ToLongTimeString,
+            '             tickData.LastPrice, tickData.Volume, tickData.OI)
+            'End If
+
+            If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
+                _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
+            End If
+            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
+                _subscribedStrategyInstruments.ContainsKey(tickData.InstrumentToken) Then
+                'This loop is for population of ticks payload. As ticks payload depends on instrument so loop should exit after 1 iteration.
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                    If runningStrategyInstrument.ParentStrategy.IsTickPopulationNeeded Then
+                        runningStrategyInstrument.TradableInstrument.TickPayloads.Add(runningTick)
+                    End If
+                    Exit For
+                Next
+
+                'This for loop needs to be after the tick is published
+                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
+                Next
+            End If
+        End Sub
+        Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
+            'logger.Debug("OnTickerOrderUpdateAsync, orderData:{0}", Utils.JsonSerialize(orderData))
+            Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+            If orderData.Status = "COMPLETE" OrElse
+                orderData.Status = "MODIFIED" OrElse
+                orderData.Status = "CANCELLED" OrElse
+                orderData.Status = "OPEN" OrElse
+                orderData.Status = "TRIGGER PENDING" Then
+                'Try
+                '    logger.Fatal("Order Update: {0}", Utilities.Strings.JsonSerialize(orderData))
+                'Catch ex As Exception
+                '    'Do nothing
+                'End Try
+                ProcessTickOrderUpdateAsync(New AliceOrder With {.WrappedOrder = orderData})
+            End If
         End Sub
 #End Region
 

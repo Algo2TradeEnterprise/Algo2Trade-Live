@@ -44,6 +44,12 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AliceBlueClient">
+      <HintPath>..\..\..\Alice Blue Client\Alice Blue Client\bin\Debug\AliceBlueClient.dll</HintPath>
+    </Reference>
+    <Reference Include="HtmlAgilityPack, Version=1.11.23.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.23\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="KiteConnect">
       <HintPath>..\..\dotnetkiteconnect-kite3 Nov 2018\dotnetkiteconnect-kite3 Nov 2018\KiteConnect\bin\Release\KiteConnect.dll</HintPath>
     </Reference>
@@ -75,6 +81,10 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapter\AliceAdapter.vb" />
+    <Compile Include="Adapter\AliceHistoricalDataFetcher.vb" />
+    <Compile Include="Adapter\AliceInformationCollector.vb" />
+    <Compile Include="Adapter\AliceTicker.vb" />
     <Compile Include="Adapter\APIAdapter.vb" />
     <Compile Include="Adapter\APIInformationCollector.vb" />
     <Compile Include="Adapter\APIHistoricalDataFetcher.vb" />
@@ -86,6 +96,17 @@
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
     <Compile Include="ChartHandler\Indicator\Indicator.vb" />
+    <Compile Include="Controller\AliceStrategyController.vb" />
+    <Compile Include="Entities\AliceConnection.vb" />
+    <Compile Include="Entities\AliceHolding.vb" />
+    <Compile Include="Entities\AliceInstrument.vb" />
+    <Compile Include="Entities\AliceOrder.vb" />
+    <Compile Include="Entities\AlicePosition.vb" />
+    <Compile Include="Entities\AliceQuote.vb" />
+    <Compile Include="Entities\AliceTick.vb" />
+    <Compile Include="Entities\AliceTrade.vb" />
+    <Compile Include="Entities\AliceUser.vb" />
+    <Compile Include="Entities\AliceUserMargin.vb" />
     <Compile Include="Entities\Exchange.vb" />
     <Compile Include="Entities\Field.vb" />
     <Compile Include="Entities\IHolding.vb" />
@@ -143,6 +164,7 @@
     <Compile Include="Entities\ZerodhaTrade.vb" />
     <Compile Include="Entities\ZerodhaUser.vb" />
     <Compile Include="Exceptions\AdapterBusinessException.vb" />
+    <Compile Include="Exceptions\AliceBusinessException.vb" />
     <Compile Include="Exceptions\ForceExitException.vb" />
     <Compile Include="Exceptions\ZerodhaBusinessException.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -186,6 +208,7 @@
       <CustomToolNamespace>My</CustomToolNamespace>
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Utilities\Utilities.vbproj">
