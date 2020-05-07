@@ -924,6 +924,9 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
+    'Private Sub frmMainTabbed_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+    '    If _cts IsNot Nothing Then _cts.Cancel()
+    'End Sub
 #End Region
 
 End Class

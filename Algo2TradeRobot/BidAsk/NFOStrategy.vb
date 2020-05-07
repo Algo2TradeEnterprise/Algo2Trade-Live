@@ -236,8 +236,11 @@ Public Class NFOStrategy
                 If timeList IsNot Nothing AndAlso timeList.Count > 0 Then
                     Dim exportDone As Boolean = False
                     Dim userInputs As NFOUserInputs = Me.UserSettings
+                    OnHeartbeat("Coying File")
+                    Dim newFileName As String = Path.Combine(Path.GetDirectoryName(userInputs.InstrumentDetailsFilePath), String.Format("{0} {1}.xlsx", Path.GetFileNameWithoutExtension(userInputs.InstrumentDetailsFilePath), Now.ToString("HH_mm_ss")))
+                    File.Copy(userInputs.InstrumentDetailsFilePath, newFileName)
                     OnHeartbeat("Opening excel")
-                    Using xlHlpr As New Utilities.DAL.ExcelHelper(userInputs.InstrumentDetailsFilePath, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
+                    Using xlHlpr As New Utilities.DAL.ExcelHelper(newFileName, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
                         'AddHandler xlHlpr.Heartbeat, AddressOf OnHeartbeat
 
                         Dim allSheets As List(Of String) = xlHlpr.GetExcelSheetsName()
