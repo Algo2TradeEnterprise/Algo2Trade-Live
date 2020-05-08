@@ -165,13 +165,27 @@ Namespace Strategies
             _cts.Token.ThrowIfCancellationRequested()
             If TradableStrategyInstruments IsNot Nothing AndAlso TradableStrategyInstruments.Count > 0 Then
                 Dim runningInstrumentIdentifiers As List(Of String) = Nothing
-                For Each runningTradableStrategyInstruments In TradableStrategyInstruments
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If Not runningTradableStrategyInstruments.IsPairInstrument Then
-                        If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
-                        runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
+                If Me.ParentController.BrokerSource = APISource.AliceBlue Then
+                    Dim runningInstrumentExchangeIdentifiers As Dictionary(Of String, String) = Nothing
+                    For Each runningTradableStrategyInstruments In TradableStrategyInstruments
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If Not runningTradableStrategyInstruments.IsPairInstrument Then
+                            If runningInstrumentExchangeIdentifiers Is Nothing Then runningInstrumentExchangeIdentifiers = New Dictionary(Of String, String)
+                            runningInstrumentExchangeIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier, runningTradableStrategyInstruments.TradableInstrument.RawExchange)
+                        End If
+                    Next
+                    If runningInstrumentExchangeIdentifiers IsNot Nothing Then
+                        runningInstrumentIdentifiers = CType(usableTicker, AliceTicker).GetTickerSubscriptionString(runningInstrumentExchangeIdentifiers)
                     End If
-                Next
+                Else
+                    For Each runningTradableStrategyInstruments In TradableStrategyInstruments
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If Not runningTradableStrategyInstruments.IsPairInstrument Then
+                            If runningInstrumentIdentifiers Is Nothing Then runningInstrumentIdentifiers = New List(Of String)
+                            runningInstrumentIdentifiers.Add(runningTradableStrategyInstruments.TradableInstrument.InstrumentIdentifier)
+                        End If
+                    Next
+                End If
                 _cts.Token.ThrowIfCancellationRequested()
                 Await usableTicker.SubscribeAsync(runningInstrumentIdentifiers).ConfigureAwait(False)
                 If Me.IsStrategyCandleStickBased Then

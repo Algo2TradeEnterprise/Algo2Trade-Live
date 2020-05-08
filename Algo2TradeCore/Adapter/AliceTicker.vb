@@ -110,13 +110,28 @@ Namespace Adapter
             End If
         End Function
 
-        Public Function GetTickerSubscriptionString(ByVal instrumentDetails As Dictionary(Of String, TypesOfExchange)) As List(Of String)
+        Public Function GetTickerSubscriptionString(ByVal instrumentDetails As Dictionary(Of String, String)) As List(Of String)
             Dim ret As List(Of String) = Nothing
             If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Count > 0 Then
                 For Each runningInstrument In instrumentDetails
                     Dim token As UInteger = runningInstrument.Key
-                    Dim exchange As Integer = runningInstrument.Value
-                    Dim dataString As String = String.Format("{0},{1}", token, exchange)
+                    Dim exchange As TypesOfExchange = TypesOfExchange.None
+                    Select Case runningInstrument.Value
+                        Case "NSE"
+                            exchange = TypesOfExchange.NSE
+                        Case "NFO"
+                            exchange = TypesOfExchange.NFO
+                        Case "CDS"
+                            exchange = TypesOfExchange.CDS
+                        Case "MCX"
+                            exchange = TypesOfExchange.MCX
+                        Case "BSE"
+                            exchange = TypesOfExchange.BSE
+                        Case "BFO"
+                            exchange = TypesOfExchange.BFO
+                    End Select
+                    Dim exchangeNumber As Integer = exchange
+                    Dim dataString As String = String.Format("{0},{1}", token, exchangeNumber)
                     If ret Is Nothing Then ret = New List(Of String)
                     ret.Add(dataString)
                 Next

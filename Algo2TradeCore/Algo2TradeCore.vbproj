@@ -95,8 +95,10 @@
     <Compile Include="Adapter\ZerodhaInformationCollector.vb" />
     <Compile Include="Adapter\ZerodhaHistoricalDataFetcher.vb" />
     <Compile Include="Adapter\ZerodhaTicker.vb" />
+    <Compile Include="Calculator\AliceBrokerageCalculator.vb" />
     <Compile Include="ChartHandler\Indicator\Indicator.vb" />
     <Compile Include="Controller\AliceStrategyController.vb" />
+    <Compile Include="Entities\AliceBrokerageAttributes.vb" />
     <Compile Include="Entities\AliceConnection.vb" />
     <Compile Include="Entities\AliceHolding.vb" />
     <Compile Include="Entities\AliceInstrument.vb" />

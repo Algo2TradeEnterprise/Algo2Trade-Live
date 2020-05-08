@@ -733,8 +733,7 @@ Namespace Controller
                         If Me.UserInputs.ExchangeDetails.ContainsKey(instrument.RawExchange) Then
                             instrument.ExchangeDetails = Me.UserInputs.ExchangeDetails(instrument.RawExchange)
 
-                            If instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.MCX Then
+                            If instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.MCX Then
                                 Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
                                 If commodityMultiplierMap.ContainsKey(stockName) Then
                                     instrument.QuantityMultiplier = Val(commodityMultiplierMap(stockName).ToString.Substring(0, commodityMultiplierMap(stockName).ToString.Length - 1))
@@ -747,8 +746,7 @@ Namespace Controller
                                 Else
                                     logger.Warn(String.Format("Commodity Group Map doesn't have this MCX stock - {0}", stockName))
                                 End If
-                            ElseIf instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.CDS Then
+                            ElseIf instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.CDS Then
                                 instrument.QuantityMultiplier = 1000
                                 instrument.BrokerageCategory = Nothing
                                 instrument.BrokerageGroupCategory = Nothing

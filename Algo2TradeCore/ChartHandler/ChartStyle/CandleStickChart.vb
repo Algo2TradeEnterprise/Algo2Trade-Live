@@ -55,7 +55,12 @@ Namespace ChartHandler.ChartStyle
                         Dim onwardCandleUpdate As Boolean = False
                         Dim consumerToCallFromThisTime As Date = Date.MaxValue
                         For Each historicalCandle In historicalCandles
-                            Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+                            Dim runningSnapshotTime As Date = Date.MinValue
+                            If IsNumeric(historicalCandle(0)) Then
+                                runningSnapshotTime = Utilities.Time.UnixToDateTime(historicalCandle(0))
+                            Else
+                                runningSnapshotTime = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+                            End If
                             Dim dummy As OHLCPayload = Nothing
                             Dim existingOrAddedPayload As OHLCPayload = Nothing
                             Dim freshCandleAdded As Boolean = False

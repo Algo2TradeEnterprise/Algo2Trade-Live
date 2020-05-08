@@ -335,7 +335,7 @@ Public Class frmMainTabbed
             SendNotificationAsync(_nfoUserInputs.ToString)
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
             logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
 
             If _commonController IsNot Nothing Then

@@ -26,6 +26,8 @@ Public Class NFOStrategyInstrument
         Select Case Me.ParentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
                 _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
+            Case APISource.AliceBlue
+                _APIAdapter = New AliceAdapter(ParentStrategy.ParentController, _cts)
             Case APISource.Upstox
                 Throw New NotImplementedException
             Case APISource.None
@@ -70,20 +72,20 @@ Public Class NFOStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
 
-                'Place Order block start
-                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
-                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                    Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
-                End If
-                'Place Order block end
-                _cts.Token.ThrowIfCancellationRequested()
-                'Exit Order block start
-                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
-                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
-                    Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
-                End If
-                'Exit Order block end
+                ''Place Order block start
+                'Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                'If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                '    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                '    Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
+                'End If
+                ''Place Order block end
+                '_cts.Token.ThrowIfCancellationRequested()
+                ''Exit Order block start
+                'Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                'If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                '    Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
+                'End If
+                ''Exit Order block end
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While

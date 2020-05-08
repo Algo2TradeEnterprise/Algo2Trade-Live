@@ -29,4 +29,27 @@ Module Common
             Return Nothing
         End If
     End Function
+    Public Function GetAliceCredentialsFromSettings(ByVal userInputs As ControllerUserInputs) As AliceUser
+        If userInputs IsNot Nothing AndAlso userInputs.UserDetails IsNot Nothing Then
+            Return New AliceUser With
+               {.UserId = userInputs.UserDetails.UserId,
+                .Password = Decrypt(userInputs.UserDetails.Password, MASTER_KEY),
+                .APIVersion = "3",
+                .APIKey = Decrypt(userInputs.UserDetails.APIKey, MASTER_KEY),
+                .APISecret = Decrypt(userInputs.UserDetails.APISecret, MASTER_KEY),
+                .API2FAPin = Decrypt(userInputs.UserDetails.API2FAPin, MASTER_KEY)}
+        Else
+            Return Nothing
+        End If
+    End Function
+    Public Function IsAliceUserDetailsPopulated(ByVal userInputs As ControllerUserInputs) As Boolean
+        If userInputs IsNot Nothing AndAlso userInputs.UserDetails IsNot Nothing Then
+            Return userInputs.UserDetails.UserId IsNot Nothing AndAlso userInputs.UserDetails.UserId.Trim.Count > 0 AndAlso
+                userInputs.UserDetails.Password IsNot Nothing AndAlso userInputs.UserDetails.Password.Trim.Count > 0 AndAlso
+                userInputs.UserDetails.APISecret IsNot Nothing AndAlso userInputs.UserDetails.APISecret.Trim.Count > 0 AndAlso
+                userInputs.UserDetails.API2FAPin IsNot Nothing AndAlso userInputs.UserDetails.API2FAPin.Trim.Count > 0
+        Else
+            Return False
+        End If
+    End Function
 End Module

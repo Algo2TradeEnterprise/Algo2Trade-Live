@@ -23,7 +23,7 @@ Namespace Adapter
                                     APISecret:=CType(associatedParentController.APIConnection, AliceConnection).AliceUser.APISecret,
                                     AccessToken:=CType(associatedParentController.APIConnection, AliceConnection).AccessToken)
             _Alice.SetSessionExpiryHook(AddressOf associatedParentController.OnSessionExpireAsync)
-            Calculator = New ZerodhaBrokerageCalculator(Me.ParentController, canceller)
+            Calculator = New AliceBrokerageCalculator(Me.ParentController, canceller)
         End Sub
 
 #Region "Access Token"
@@ -53,89 +53,1120 @@ Namespace Adapter
         End Function
 #End Region
 
-        Public Overrides Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
-            Throw New NotImplementedException()
-        End Function
+#Region "All Instruments"
+        Public Overrides Async Function GetAllInstrumentsAsync() As Task(Of IEnumerable(Of IInstrument))
+            logger.Debug("GetAllInstrumentsAsync, parameters:Nothing")
+            Dim ret As List(Of AliceInstrument) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetInstruments
 
-        Public Overrides Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
-            Throw New NotImplementedException()
-        End Function
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
-            Throw New NotImplementedException()
-        End Function
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
 
-        Public Overrides Function GetAllHoldingsAsync() As Task(Of IEnumerable(Of IHolding))
-            Throw New NotImplementedException()
-        End Function
-
-        Public Overrides Function GetAllPositionsAsync() As Task(Of IPositionResponse)
-            Throw New NotImplementedException()
-        End Function
-
-        Public Overrides Function GetUserMarginsAsync() As Task(Of Dictionary(Of TypeOfExchage, IUserMargin))
-            Throw New NotImplementedException()
-        End Function
-
-        Public Overrides Function GetAllQuotesAsync(instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
-            Throw New NotImplementedException()
+            If tempRet.GetType = GetType(List(Of Instrument)) Then
+                OnHeartbeat(String.Format("Creating Alice instrument collection from API instruments, count:{0}", tempRet.count))
+                Dim aliceReturedInstruments As List(Of Instrument) = CType(tempRet, List(Of Instrument))
+                For Each runningInstrument As Instrument In aliceReturedInstruments
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If ret Is Nothing Then ret = New List(Of AliceInstrument)
+                    ret.Add(New AliceInstrument(Me.ParentController, runningInstrument.InstrumentToken) With {.WrappedInstrument = runningInstrument})
+                Next
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any list of instrument, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
 
         Public Overrides Function CreateSingleInstrument(supportedTradingSymbol As String, instrumentToken As UInteger, sampleInstrument As IInstrument) As IInstrument
-            Throw New NotImplementedException()
+            Dim ret As AliceInstrument = Nothing
+            If supportedTradingSymbol IsNot Nothing Then
+                Dim dummyInstrument As Instrument = New Instrument With
+                    {
+                    .TradingSymbol = supportedTradingSymbol,
+                    .Exchange = sampleInstrument.RawExchange,
+                    .Expiry = Nothing,
+                    .ExchangeToken = instrumentToken,
+                    .InstrumentToken = instrumentToken,
+                    .InstrumentType = Nothing,
+                    .LotSize = 0,
+                    .Name = supportedTradingSymbol,
+                    .Segment = Nothing,
+                    .TickSize = sampleInstrument.TickSize
+                    }
+
+                ret = New AliceInstrument(Me.ParentController, dummyInstrument.InstrumentToken) With {.WrappedInstrument = dummyInstrument}
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Quotes"
+        Public Overrides Async Function GetAllQuotesAsync(instruments As IEnumerable(Of IInstrument)) As Task(Of IEnumerable(Of IQuote))
+            'logger.Debug("GetAllQuotes, parameters:{0}", Utils.JsonSerialize(instruments))
+            Dim ret As List(Of AliceQuote) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetQuotes
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, New Dictionary(Of String, Object) From {{"instruments", instruments}}).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Quote)) Then
+                OnHeartbeat(String.Format("Creating Alice quote collection from API quotes, count:{0}", tempRet.count))
+                Dim AliceReturedQuotes As Dictionary(Of String, Quote) = CType(tempRet, Dictionary(Of String, Quote))
+                For Each runningQuote In AliceReturedQuotes
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If ret Is Nothing Then ret = New List(Of AliceQuote)
+                    ret.Add(New AliceQuote() With {.WrappedQuote = runningQuote.Value})
+                Next
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any list of quotes, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Trades"
+        Public Overrides Async Function GetAllTradesAsync() As Task(Of IEnumerable(Of ITrade))
+            'logger.Debug("GetAllTradesAsync, parameters:Nothing")
+            Dim ret As List(Of AliceTrade) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrderTrades
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Trade)) Then
+                If tempRet.count > 0 Then
+                    OnHeartbeat(String.Format("Creating Alice trade collection from API trades, count:{0}", tempRet.count))
+                    Dim AliceReturedTrades As List(Of Trade) = CType(tempRet, List(Of Trade))
+                    For Each runningTrade As Trade In AliceReturedTrades
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New List(Of AliceTrade)
+                        ret.Add(New AliceTrade With {.WrappedTrade = runningTrade})
+                    Next
+                Else
+                    OnHeartbeat(String.Format("Alice command execution did not return any list of trade, command:{0}", execCommand.ToString))
+                    If ret Is Nothing Then ret = New List(Of AliceTrade)
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any list of trade, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Orders"
+        Public Overrides Async Function GetAllOrdersAsync() As Task(Of IEnumerable(Of IOrder))
+            'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            Dim ret As List(Of AliceOrder) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetOrders
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Order)) Then
+                If tempRet.count > 0 Then
+                    'OnHeartbeat(String.Format("Creating Alice order collection from API orders, count:{0}", tempRet.count))
+                    'logger.Debug(String.Format("Creating Alice order collection from API orders, count:{0}", tempRet.count))
+                    Dim AliceReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
+                    For Each runningOrder As Order In AliceReturedOrders
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New List(Of AliceOrder)
+                        ret.Add(New AliceOrder With {.WrappedOrder = runningOrder})
+                    Next
+                    'Else
+                    'OnHeartbeat(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+                    'logger.Debug(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
 
         Public Overrides Function CreateSimilarOrderWithTag(tag As String, orderData As IOrder) As IOrder
-            Throw New NotImplementedException()
+            Dim ret As AliceOrder = Nothing
+            If orderData IsNot Nothing Then
+                Dim similarOrder As Order = CType(orderData, AliceOrder).WrappedOrder
+                similarOrder.Tag = tag
+                ret = New AliceOrder With {.WrappedOrder = similarOrder}
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Holdings"
+        Public Overrides Async Function GetAllHoldingsAsync() As Task(Of IEnumerable(Of IHolding))
+            'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            Dim ret As List(Of AliceHolding) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetHoldings
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(List(Of Holding)) Then
+                If tempRet.count > 0 Then
+                    'OnHeartbeat(String.Format("Creating Alice order collection from API orders, count:{0}", tempRet.count))
+                    'logger.Debug(String.Format("Creating Alice order collection from API orders, count:{0}", tempRet.count))
+                    Dim AliceReturedHoldings As List(Of Holding) = CType(tempRet, List(Of Holding))
+                    For Each runningOrder As Holding In AliceReturedHoldings
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New List(Of AliceHolding)
+                        ret.Add(New AliceHolding With {.WrappedHolding = runningOrder})
+                    Next
+                    'Else
+                    'OnHeartbeat(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+                    'logger.Debug(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any list of holding, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Positions"
+        Public Overrides Async Function GetAllPositionsAsync() As Task(Of IPositionResponse)
+            'logger.Debug("GetAllPositionsAsync, parameters:Nothing")
+            Dim ret As BusinessPositionResponse = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetPositions
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(PositionResponse) Then
+                'OnHeartbeat(String.Format("Creating Alice position collection from API position, count:{0}", tempRet.count))
+                'logger.Debug(String.Format("Creating Alice position collection from API position, count:{0}", tempRet.count))
+                Dim AliceReturedPositions As PositionResponse = CType(tempRet, PositionResponse)
+
+                If ret Is Nothing Then ret = New BusinessPositionResponse
+
+                If AliceReturedPositions.Day IsNot Nothing AndAlso AliceReturedPositions.Day.Count > 0 Then
+                    For Each runningPosition As Position In AliceReturedPositions.Day
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret.Day Is Nothing Then ret.Day = New List(Of IPosition)
+                        ret.Day.Add(New AlicePosition With {.WrappedPosition = runningPosition})
+                    Next
+                End If
+
+                If AliceReturedPositions.Net IsNot Nothing AndAlso AliceReturedPositions.Net.Count > 0 Then
+                    For Each runningPosition As Position In AliceReturedPositions.Net
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret.Net Is Nothing Then ret.Net = New List(Of IPosition)
+                        ret.Net.Add(New AlicePosition With {.WrappedPosition = runningPosition})
+                    Next
+                End If
+                'Else
+                'OnHeartbeat(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+                'logger.Debug(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any position response, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Margin"
+        Public Overrides Async Function GetUserMarginsAsync() As Task(Of Dictionary(Of TypeOfExchage, IUserMargin))
+            'logger.Debug("GetAllOrdersAsync, parameters:Nothing")
+            Dim ret As Dictionary(Of Enums.TypeOfExchage, IUserMargin) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.GetUserMargins
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(UserMarginsResponse) Then
+                'OnHeartbeat(String.Format("Creating Alice order collection from API orders, count:{0}", tempRet.count))
+                logger.Debug(String.Format("Creating IBussinessUserMargin from API User Margin", Utils.JsonSerialize(tempRet)))
+                Dim AliceReturedUserMarginResponse As UserMarginsResponse = CType(tempRet, UserMarginsResponse)
+                logger.Debug(Utilities.Strings.JsonSerialize(AliceReturedUserMarginResponse))
+                Dim equityMargin As New AliceUserMargin With
+                    {.WrappedUserMargin = AliceReturedUserMarginResponse.Equity}
+                Dim commodityMargin As New AliceUserMargin With
+                    {.WrappedUserMargin = AliceReturedUserMarginResponse.Commodity}
+                If ret Is Nothing Then ret = New Dictionary(Of Enums.TypeOfExchage, IUserMargin)
+                ret.Add(Enums.TypeOfExchage.NSE, equityMargin)
+                ret.Add(Enums.TypeOfExchage.MCX, commodityMargin)
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return any User margin, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Modify Order"
+        Public Overrides Async Function ModifyStoplossOrderAsync(orderId As String, triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.ModifySLOrderPrice
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {{"OrderId", orderId}, {"TriggerPrice", triggerPrice}}
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Modify Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
 
-        Public Overrides Function ModifyStoplossOrderAsync(orderId As String, triggerPrice As Decimal) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+        Public Overrides Async Function ModifyTargetOrderAsync(orderId As String, price As Decimal) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.ModifyTargetOrderPrice
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {{"OrderId", orderId}, {"Price", price}}
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function ModifyTargetOrderAsync(orderId As String, price As Decimal) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
 
-        Public Overrides Function CancelBOOrderAsync(orderId As String, parentOrderID As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Modify Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
+#End Region
 
-        Public Overrides Function CancelCOOrderAsync(orderId As String, parentOrderID As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+#Region "Cancel Order"
+        Public Overrides Async Function CancelBOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"OrderId", orderId},
+                {"ParentOrderId", parentOrderID},
+                {"Variety", TypesOfVariety.BO}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function CancelRegularOrderAsync(orderId As String, parentOrderID As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
 
-        Public Overrides Function PlaceBOLimitMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, price As Decimal, squareOffValue As Decimal, stopLossValue As Decimal, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Cancel Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
+        Public Overrides Async Function CancelCOOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"OrderId", orderId},
+                {"ParentOrderId", parentOrderID},
+                {"Variety", TypesOfVariety.CO}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function PlaceBOSLMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, price As Decimal, triggerPrice As Decimal, squareOffValue As Decimal, stopLossValue As Decimal, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
 
-        Public Overrides Function PlaceCOMarketMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, triggerPrice As Decimal, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Cancel Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
+        Public Overrides Async Function CancelRegularOrderAsync(ByVal orderId As String, ByVal parentOrderID As String) As Task(Of Dictionary(Of String, Object))
+            'logger.Debug("ModifyStoplossOrderAsync, parameters:{0},{1}", orderId, parentOrderID)
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"OrderId", orderId},
+                {"ParentOrderId", parentOrderID},
+                {"Variety", TypesOfVariety.REGULAR}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function PlaceRegularMarketMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
 
-        Public Overrides Function PlaceRegularLimitMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, price As Decimal, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("Cancel Order successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
+#End Region
 
-        Public Overrides Function PlaceRegularSLMMISOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, triggerPrice As Decimal, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
-        End Function
+#Region "Place BO"
+        Public Overrides Async Function PlaceBOLimitMISOrderAsync(ByVal tradeExchange As String,
+                                                                   ByVal instrumentToken As String,
+                                                                   ByVal transaction As IOrder.TypeOfTransaction,
+                                                                   ByVal quantity As Integer,
+                                                                   ByVal price As Decimal,
+                                                                   ByVal squareOffValue As Decimal,
+                                                                   ByVal stopLossValue As Decimal,
+                                                                   ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
 
-        Public Overrides Function PlaceRegularMarketCNCOrderAsync(tradeExchange As String, tradingSymbol As String, transaction As IOrder.TypeOfTransaction, quantity As Integer, tag As String) As Task(Of Dictionary(Of String, Object))
-            Throw New NotImplementedException()
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", price},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.LIMIT},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", squareOffValue},
+                {"StoplossValue", stopLossValue},
+                {"Variety", TypesOfVariety.BO},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
         End Function
+        Public Overrides Async Function PlaceBOSLMISOrderAsync(ByVal tradeExchange As String,
+                                                                ByVal instrumentToken As String,
+                                                                ByVal transaction As IOrder.TypeOfTransaction,
+                                                                ByVal quantity As Integer,
+                                                                ByVal price As Decimal,
+                                                                ByVal triggerPrice As Decimal,
+                                                                ByVal squareOffValue As Decimal,
+                                                                ByVal stopLossValue As Decimal,
+                                                                ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", price},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.SL},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", triggerPrice},
+                {"SquareOffValue", squareOffValue},
+                {"StoplossValue", stopLossValue},
+                {"Variety", TypesOfVariety.BO},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Place CO"
+        Public Overrides Async Function PlaceCOMarketMISOrderAsync(ByVal tradeExchange As String,
+                                                                   ByVal instrumentToken As String,
+                                                                   ByVal transaction As IOrder.TypeOfTransaction,
+                                                                   ByVal quantity As Integer,
+                                                                   ByVal triggerPrice As Decimal,
+                                                                   ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.MARKET},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", triggerPrice},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", TypesOfVariety.CO},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Place Regular MIS"
+        Public Overrides Async Function PlaceRegularMarketMISOrderAsync(ByVal tradeExchange As String,
+                                                                     ByVal instrumentToken As String,
+                                                                     ByVal transaction As IOrder.TypeOfTransaction,
+                                                                     ByVal quantity As Integer,
+                                                                     ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.MARKET},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", TypesOfVariety.REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function PlaceRegularLimitMISOrderAsync(ByVal tradeExchange As String,
+                                                                    ByVal instrumentToken As String,
+                                                                    ByVal transaction As IOrder.TypeOfTransaction,
+                                                                    ByVal quantity As Integer,
+                                                                    ByVal price As Decimal,
+                                                                    ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", price},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.LIMIT},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", TypesOfVariety.REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+        Public Overrides Async Function PlaceRegularSLMMISOrderAsync(ByVal tradeExchange As String,
+                                                                  ByVal instrumentToken As String,
+                                                                  ByVal transaction As IOrder.TypeOfTransaction,
+                                                                  ByVal quantity As Integer,
+                                                                  ByVal triggerPrice As Decimal,
+                                                                  ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", TypesOfProduct.MIS},
+                {"OrderType", TypesOfOrder.SLM},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", triggerPrice},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", TypesOfVariety.REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
+#Region "Place Regular CNC"
+        Public Overrides Async Function PlaceRegularMarketCNCOrderAsync(ByVal tradeExchange As String,
+                                                                         ByVal instrumentToken As String,
+                                                                         ByVal transaction As IOrder.TypeOfTransaction,
+                                                                         ByVal quantity As Integer,
+                                                                         ByVal tag As String) As Task(Of Dictionary(Of String, Object))
+            Dim ret As Dictionary(Of String, Object) = Nothing
+            Dim execCommand As ExecutionCommands = ExecutionCommands.PlaceOrder
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim transactionDirection As TypesOfTransaction = TypesOfTransaction.None
+            Select Case transaction
+                Case IOrder.TypeOfTransaction.Buy
+                    transactionDirection = TypesOfTransaction.BUY
+                Case IOrder.TypeOfTransaction.Sell
+                    transactionDirection = TypesOfTransaction.SELL
+            End Select
+            Dim tradeParameters As New Dictionary(Of String, Object) From {
+                {"Exchange", tradeExchange},
+                {"InstrumentToken", instrumentToken},
+                {"TransactionType", transactionDirection},
+                {"Quantity", quantity},
+                {"Price", Nothing},
+                {"Product", TypesOfProduct.CNC},
+                {"OrderType", TypesOfOrder.MARKET},
+                {"Validity", ValidityOfOrder.DAY},
+                {"TriggerPrice", Nothing},
+                {"SquareOffValue", Nothing},
+                {"StoplossValue", Nothing},
+                {"Variety", TypesOfVariety.REGULAR},
+                {"Tag", tag}
+            }
+            Dim tempAllRet As Dictionary(Of String, Object) = Nothing
+            Try
+                tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
+            Catch tex As TokenException
+                Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
+            Catch gex As GeneralException
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+            Catch ex As Exception
+                Throw ex
+            End Try
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Dim tempRet As Object = Nothing
+            If tempAllRet IsNot Nothing AndAlso tempAllRet.ContainsKey(execCommand.ToString) Then
+                tempRet = tempAllRet(execCommand.ToString)
+                If tempRet IsNot Nothing Then
+                    Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                    If errorMessage IsNot Nothing Then
+                        Throw New ApplicationException(errorMessage)
+                    End If
+                Else
+                    Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+                End If
+            Else
+                Throw New ApplicationException(String.Format("Relevant command was fired but not detected in the response, command:{0}", execCommand.ToString))
+            End If
+
+            If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
+                OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
+                ret = CType(tempRet, Dictionary(Of String, Object))
+            Else
+                Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
+            End If
+            Return ret
+        End Function
+#End Region
+
 
 #Region "Alice Commands"
         Private Async Function ExecuteCommandAsync(ByVal command As ExecutionCommands, ByVal stockData As Dictionary(Of String, Object)) As Task(Of Dictionary(Of String, Object))
@@ -424,5 +1455,6 @@ Namespace Adapter
             Return ret
         End Function
 #End Region
+
     End Class
 End Namespace

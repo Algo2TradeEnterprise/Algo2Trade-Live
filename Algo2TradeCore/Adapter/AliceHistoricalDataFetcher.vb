@@ -5,6 +5,7 @@ Imports NLog
 Imports Algo2TradeCore.Entities
 Imports System.IO
 Imports Utilities.Strings
+Imports Utilities.Time
 
 Namespace Adapter
     Public Class AliceHistoricalDataFetcher
@@ -28,9 +29,7 @@ Namespace Adapter
         End Sub
 #End Region
 
-        Private ZERODHA_HISTORICAL_URL = "https://api.kite.trade/instruments/historical/{0}/minute?from={1}&to={2}"
-        'Private ZERODHA_HISTORICAL_URL = "https://kitecharts-aws.zerodha.com/api/chart/{0}/minute?api_key=kitefront&access_token=K&from={1}&to={2}"
-        'Private ZERODHA_HISTORICAL_URL = "https://kite.zerodha.com/oms/instruments/historical/{0}/minute?oi=1&from={1}&to={2}"
+        Private ALICE_HISTORICAL_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=historical"
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
@@ -58,68 +57,13 @@ Namespace Adapter
             'AddHandler Me.FetcherCandlesAsync, AddressOf currentZerodhaStrategyController.OnFetcherCandlesAsync
             'AddHandler Me.FetcherError, AddressOf currentZerodhaStrategyController.OnFetcherError
         End Function
-        'Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
-        '    Try
-        '        _cts.Token.ThrowIfCancellationRequested()
-        '        Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
-        '                                                            _instrumentIdentifer,
-        '                                                            Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
-        '                                                            Now.ToString("yyyy-MM-dd"))
-
-        '        ServicePointManager.Expect100Continue = False
-        '        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
-        '        ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
-        '                                                                      Return True
-        '                                                                  End Function
-
-        '        Console.WriteLine(historicalDataURL)
-        '        Dim request As HttpWebRequest = HttpWebRequest.Create(historicalDataURL)
-        '        request.Host = "kite.zerodha.com"
-        '        request.Accept = "*/*"
-        '        request.Headers.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8,ko;q=0.7")
-        '        request.Headers.Add("Authorization", String.Format("enctoken {0}", Me.ParentController.APIConnection.ENCToken))
-        '        request.Referer = "https://kite.zerodha.com/static/build/chart.html?v=2.4.0"
-        '        request.Headers.Add("sec-fetch-mode", "cors")
-        '        request.Headers.Add("sec-fetch-site", "same-origin")
-        '        request.KeepAlive = True
-
-        '        Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
-        '            Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
-        '            Dim retDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
-
-        '            Return retDictionary
-        '        End Using
-        '    Catch ex As Exception
-        '        Throw ex
-        '    End Try
-        'End Function
-        'Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
-        '    Try
-        '        'If Not _isPollRunning Then Exit Function
-        '        _cts.Token.ThrowIfCancellationRequested()
-        '        Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
-        '                                                            _instrumentIdentifer,
-        '                                                            Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
-        '                                                            Now.ToString("yyyy-MM-dd"))
-
-        '        Console.WriteLine(historicalDataURL)
-        '        Using sr = New StreamReader(HttpWebRequest.Create(historicalDataURL).GetResponseAsync().Result.GetResponseStream)
-        '            Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
-        '            Dim retDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
-
-        '            Return retDictionary
-        '        End Using
-        '    Catch ex As Exception
-        '        Throw ex
-        '    End Try
-        'End Function
         Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
             Try
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim historicalDataURL As String = String.Format(ZERODHA_HISTORICAL_URL,
+                Dim historicalDataURL As String = String.Format(ALICE_HISTORICAL_URL,
                                                                     _instrumentIdentifer,
-                                                                    Now.AddDays(-1 * _daysToGoBack).ToString("yyyy-MM-dd"),
-                                                                    Now.ToString("yyyy-MM-dd"))
+                                                                    DateTimeToUnix(Now.AddDays(-1 * _daysToGoBack)),
+                                                                    DateTimeToUnix(Now))
 
                 ServicePointManager.Expect100Continue = False
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
@@ -129,8 +73,7 @@ Namespace Adapter
 
                 Console.WriteLine(historicalDataURL)
                 Dim request As HttpWebRequest = HttpWebRequest.Create(historicalDataURL)
-                request.Headers.Add("Authorization", String.Format("token {0}:{1}", Me.ParentController.APIConnection.APIUser.APIKey, Me.ParentController.APIConnection.AccessToken))
-                request.Headers.Add("X-Kite-Version", "3")
+                request.Headers.Add("X-Authorization-Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJibGFja2xpc3Rfa2V5IjoiQUIwOTY0MDM6T3FZVUZIQlpVdmhXRkZYOUJyV1pvUSIsImNsaWVudF9pZCI6IkFCMDk2NDAzIiwiY2xpZW50X3Rva2VuIjoidXRJbnZPcjkrL2hGTDFDb0UyVE1UQSIsImRldmljZSI6IndlYiIsImV4cCI6MTU4OTAwMjQzMzg3OH0.K_YQbdKHwutgfR6Ws6ZMbxKFJv6sXreQcUQtswtgWks")
 
                 Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
