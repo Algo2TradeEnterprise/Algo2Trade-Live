@@ -59,7 +59,7 @@ Namespace Controller
                 _cts.Token.ThrowIfCancellationRequested()
                 Try
                     Dim requestToken As String = Nothing
-                    'Dim encToken As String = Nothing
+                    Dim encToken As String = Await WebLoginAsync().ConfigureAwait(False)
 
                     Dim postContent As Dictionary(Of String, String) = Nothing
 
@@ -81,8 +81,8 @@ Namespace Controller
                         'Now launch the authentication page
                         Dim headers As Dictionary(Of String, String) = Nothing
 
-                        OnHeartbeat("Opening login page")
-                        logger.Debug("Opening login page, GetLoginURL:{0}, headers:{1}", GetLoginURL, Utils.JsonSerialize(headers))
+                        OnHeartbeat("Opening API login page")
+                        logger.Debug("Opening API login page, GetLoginURL:{0}, headers:{1}", GetLoginURL, Utils.JsonSerialize(headers))
 
                         _cts.Token.ThrowIfCancellationRequested()
                         Dim tempRet As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(GetLoginURL, Http.HttpMethod.Get, Nothing, False, Nothing, False, Nothing).ConfigureAwait(False)
@@ -181,7 +181,7 @@ Namespace Controller
                     If requestToken IsNot Nothing Then
                         _cts.Token.ThrowIfCancellationRequested()
                         APIConnection = Await RequestAccessTokenAsync(requestToken).ConfigureAwait(False)
-                        'APIConnection.ENCToken = encToken
+                        APIConnection.ENCToken = encToken
                         _cts.Token.ThrowIfCancellationRequested()
 
                         'Now open the ticker
@@ -234,7 +234,7 @@ Namespace Controller
                         Await _APIHistoricalDataFetcher.ConnectFetcherAsync().ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
                     End If
-                Catch tex As KiteConnect.TokenException
+                Catch tex As TokenException
                     logger.Error(tex)
                     OnHeartbeat("Possible error while generating session, token may be invalid, retrying the whole login process")
                     Continue While
@@ -244,6 +244,76 @@ Namespace Controller
             End While
             Return APIConnection
         End Function
+
+        Private Async Function WebLoginAsync() As Task(Of String)
+            Dim ret As String = Nothing
+            ServicePointManager.Expect100Continue = False
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
+            ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
+                                                                          Return True
+                                                                      End Function
+
+            Dim proxyToBeUsed As HttpProxy = Nothing
+            Using browser As New HttpBrowser(proxyToBeUsed, DecompressionMethods.GZip Or DecompressionMethods.Deflate Or DecompressionMethods.None, New TimeSpan(0, 1, 0), _cts)
+                AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+                AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+
+                OnHeartbeat("Opening Web login page")
+                Dim url1 As String = "https://ant.aliceblueonline.com/api/v2/login"
+
+                Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
+                headers.Add("a2tContent", "application/json")
+
+                Dim postJson As Dictionary(Of String, Object) = New Dictionary(Of String, Object)
+                postJson.Add("login_id", _currentUser.UserId)
+                postJson.Add("password", _currentUser.Password)
+                postJson.Add("device", "web")
+
+                Dim postContent As StringContent = New StringContent(Strings.JsonSerialize(postJson), System.Text.Encoding.UTF8, "application/json")
+
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim tempRet As Tuple(Of Uri, Object) = Await browser.POSTRequestAsync(url1, Nothing, postContent, False, headers, False).ConfigureAwait(False)
+                If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing Then
+                    Dim jsonDict As Dictionary(Of String, Object) = TryCast(tempRet.Item2, Dictionary(Of String, Object))
+                    If jsonDict IsNot Nothing AndAlso jsonDict.ContainsKey("status") AndAlso jsonDict("status") = "success" AndAlso jsonDict.ContainsKey("data") Then
+                        Dim dataDict As Dictionary(Of String, Object) = TryCast(jsonDict("data"), Dictionary(Of String, Object))
+                        If dataDict IsNot Nothing AndAlso dataDict.ContainsKey("question_ids") Then
+                            Dim questionIds As ArrayList = dataDict("question_ids")
+                            If questionIds IsNot Nothing AndAlso questionIds.Count = 2 Then
+                                Dim answers() As String = {_currentUser.API2FAPin, _currentUser.API2FAPin}
+                                Dim url2 As String = "https://ant.aliceblueonline.com/api/v2/checktwofa"
+
+                                headers = New Dictionary(Of String, String)
+                                headers.Add("a2tContent", "application/json")
+
+                                postJson = New Dictionary(Of String, Object)
+                                postJson.Add("login_id", _currentUser.UserId)
+                                postJson.Add("device", "web")
+                                postJson.Add("count", "2")
+                                postJson.Add("question_ids", questionIds)
+                                postJson.Add("answers", answers)
+                                postContent = New StringContent(Utilities.Strings.JsonSerialize(postJson), System.Text.Encoding.UTF8, "application/json")
+
+                                tempRet = Await browser.POSTRequestAsync(url2, Nothing, postContent, False, headers, False).ConfigureAwait(False)
+                                If tempRet IsNot Nothing AndAlso tempRet.Item1 IsNot Nothing AndAlso tempRet.Item2 IsNot Nothing Then
+                                    jsonDict = TryCast(tempRet.Item2, Dictionary(Of String, Object))
+                                    If jsonDict IsNot Nothing AndAlso jsonDict.ContainsKey("status") AndAlso jsonDict("status") = "success" AndAlso jsonDict.ContainsKey("data") Then
+                                        dataDict = TryCast(jsonDict("data"), Dictionary(Of String, Object))
+                                        If dataDict IsNot Nothing AndAlso dataDict.ContainsKey("auth_token") Then
+                                            ret = dataDict("auth_token")
+                                        End If
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End Using
+            Return ret
+        End Function
+
         Private Async Function RequestAccessTokenAsync(ByVal requestToken As String) As Task(Of AliceConnection)
             logger.Debug("RequestAccessTokenAsync, requestToken:{0}", requestToken)
 
@@ -413,7 +483,7 @@ Namespace Controller
             _cts.Token.ThrowIfCancellationRequested()
             If Not allOKWithoutException Then Throw lastException
             ' For handling 403 errors
-            '_Kite.SetSessionExpiryHook(AddressOf OnSessionExpireAsync)
+            '_Alice.SetSessionExpiryHook(AddressOf OnSessionExpireAsync)
             Return ret
         End Function
 
