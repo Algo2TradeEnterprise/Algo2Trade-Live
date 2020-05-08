@@ -19,6 +19,7 @@
         Property IsHistoricalCompleted As Boolean
         Property FetchHistorical As Boolean
         ReadOnly Property InstrumentType As TypeOfInstrument
+        ReadOnly Property PriceDivisor As Integer
         Property ExchangeDetails As Exchange
 
         <Serializable>

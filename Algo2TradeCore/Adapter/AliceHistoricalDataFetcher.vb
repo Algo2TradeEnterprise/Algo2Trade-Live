@@ -30,6 +30,7 @@ Namespace Adapter
 #End Region
 
         Private ALICE_HISTORICAL_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=historical"
+        Private ALICE_LIVE_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=live"
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
@@ -59,6 +60,7 @@ Namespace Adapter
         End Function
         Protected Overrides Async Function GetHistoricalCandleStickAsync() As Task(Of Dictionary(Of String, Object))
             Try
+                Dim ret As Dictionary(Of String, Object) = Nothing
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim historicalDataURL As String = String.Format(ALICE_HISTORICAL_URL,
                                                                     _instrumentIdentifer,
@@ -77,9 +79,50 @@ Namespace Adapter
 
                 Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
-                    Dim retDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
+                    Dim dataDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
 
-                    Return retDictionary
+                    If dataDictionary IsNot Nothing AndAlso dataDictionary.ContainsKey("data") Then
+                        Dim candles As ArrayList = dataDictionary("data")
+                        Dim candlesDict As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"candles", candles}}
+                        dataDictionary = New Dictionary(Of String, Object) From {{"data", candlesDict}}
+                        ret = dataDictionary
+                    End If
+                    Return ret
+                End Using
+            Catch ex As Exception
+                Throw ex
+            End Try
+        End Function
+        Private Async Function GetLiveCandleStickAsync() As Task(Of Dictionary(Of String, Object))
+            Try
+                Dim ret As Dictionary(Of String, Object) = Nothing
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim liveDataURL As String = String.Format(ALICE_LIVE_URL,
+                                                                _instrumentIdentifer,
+                                                                DateTimeToUnix(Now.Date),
+                                                                DateTimeToUnix(Now))
+
+                ServicePointManager.Expect100Continue = False
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12
+                ServicePointManager.ServerCertificateValidationCallback = Function(s, Ca, CaC, sslPE)
+                                                                              Return True
+                                                                          End Function
+
+                Console.WriteLine(liveDataURL)
+                Dim request As HttpWebRequest = HttpWebRequest.Create(liveDataURL)
+                request.Headers.Add("X-Authorization-Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJibGFja2xpc3Rfa2V5IjoiQUIwOTY0MDM6T3FZVUZIQlpVdmhXRkZYOUJyV1pvUSIsImNsaWVudF9pZCI6IkFCMDk2NDAzIiwiY2xpZW50X3Rva2VuIjoidXRJbnZPcjkrL2hGTDFDb0UyVE1UQSIsImRldmljZSI6IndlYiIsImV4cCI6MTU4OTAwMjQzMzg3OH0.K_YQbdKHwutgfR6Ws6ZMbxKFJv6sXreQcUQtswtgWks")
+
+                Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
+                    Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
+                    Dim dataDictionary As Dictionary(Of String, Object) = StringManipulation.JsonDeserialize(jsonString)
+
+                    If dataDictionary IsNot Nothing AndAlso dataDictionary.ContainsKey("data") Then
+                        Dim candles As ArrayList = dataDictionary("data")
+                        Dim candlesDict As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"candles", candles}}
+                        dataDictionary = New Dictionary(Of String, Object) From {{"data", candlesDict}}
+                        ret = dataDictionary
+                    End If
+                    Return ret
                 End Using
             Catch ex As Exception
                 Throw ex
@@ -114,13 +157,30 @@ Namespace Adapter
                                                                                                               If(x.IsHistoricalCompleted, 1, _daysToGoBack),
                                                                                                               x.InstrumentIdentifier,
                                                                                                               Me._cts)
-                                                                              Dim tempRet = Await individualFetcher.GetHistoricalCandleStickAsync.ConfigureAwait(False)
-                                                                              If tempRet IsNot Nothing AndAlso tempRet.GetType Is GetType(Dictionary(Of String, Object)) Then
-                                                                                  Dim errorMessage As String = ParentController.GetErrorResponse(tempRet)
+                                                                              Dim ret As Dictionary(Of String, Object) = Await individualFetcher.GetLiveCandleStickAsync.ConfigureAwait(False)
+                                                                              If Not x.IsHistoricalCompleted Then
+                                                                                  Dim tempret As Dictionary(Of String, Object) = Await individualFetcher.GetHistoricalCandleStickAsync.ConfigureAwait(False)
+                                                                                  If tempret IsNot Nothing AndAlso tempret.Count > 0 Then
+                                                                                      If ret Is Nothing Then
+                                                                                          ret = tempret
+                                                                                      Else
+                                                                                          If tempret IsNot Nothing AndAlso tempret.ContainsKey("data") AndAlso tempret("data").ContainsKey("candles") Then
+                                                                                              If ret IsNot Nothing AndAlso ret.ContainsKey("data") AndAlso ret("data").ContainsKey("candles") Then
+                                                                                                  Dim livedata As ArrayList = ret("data")("candles")
+                                                                                                  Dim historicaldata As ArrayList = tempret("data")("candles")
+                                                                                                  historicaldata.AddRange(livedata)
+                                                                                                  ret("data")("candles") = historicaldata
+                                                                                              End If
+                                                                                          End If
+                                                                                      End If
+                                                                                  End If
+                                                                              End If
+                                                                              If ret IsNot Nothing AndAlso ret.GetType Is GetType(Dictionary(Of String, Object)) Then
+                                                                                  Dim errorMessage As String = ParentController.GetErrorResponse(ret)
                                                                                   If errorMessage IsNot Nothing Then
                                                                                       individualFetcher.OnFetcherError(x.InstrumentIdentifier, errorMessage)
                                                                                   Else
-                                                                                      Await individualFetcher.OnFetcherCandlesAsync(x.InstrumentIdentifier, tempRet).ConfigureAwait(False)
+                                                                                      Await individualFetcher.OnFetcherCandlesAsync(x.InstrumentIdentifier, ret).ConfigureAwait(False)
                                                                                   End If
                                                                               Else
                                                                                   'TO DO: Uncomment this

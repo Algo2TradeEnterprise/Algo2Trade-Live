@@ -39,9 +39,16 @@ Namespace ChartHandler.ChartStyle
                         Dim historicalCandles As ArrayList = historicalCandlesDict("candles")
                         Dim previousCandlePayload As OHLCPayload = Nothing
                         If _parentInstrument.RawPayloads IsNot Nothing AndAlso _parentInstrument.RawPayloads.Count > 0 Then
+                            Dim snapshotTime As Date = Date.MinValue
+                            If IsNumeric(historicalCandles(0)(0)) Then
+                                snapshotTime = Utilities.Time.UnixToDateTime(historicalCandles(0)(0))
+                            Else
+                                snapshotTime = Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
+                            End If
+
                             Dim previousCandles As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) =
                            _parentInstrument.RawPayloads.Where(Function(y)
-                                                                   Return y.Key < Utilities.Time.GetDateTimeTillMinutes(historicalCandles(0)(0))
+                                                                   Return y.Key < Utilities.Time.GetDateTimeTillMinutes(snapshotTime)
                                                                End Function)
 
                             If previousCandles IsNot Nothing AndAlso previousCandles.Count > 0 Then
@@ -72,10 +79,10 @@ Namespace ChartHandler.ChartStyle
                                     With runningPayload
                                         .SnapshotDateTime = runningSnapshotTime
                                         .TradingSymbol = _parentInstrument.TradingSymbol
-                                        .OpenPrice.Value = historicalCandle(1)
-                                        .HighPrice.Value = historicalCandle(2)
-                                        .LowPrice.Value = historicalCandle(3)
-                                        .ClosePrice.Value = historicalCandle(4)
+                                        .OpenPrice.Value = historicalCandle(1) / _parentInstrument.PriceDivisor
+                                        .HighPrice.Value = historicalCandle(2) / _parentInstrument.PriceDivisor
+                                        .LowPrice.Value = historicalCandle(3) / _parentInstrument.PriceDivisor
+                                        .ClosePrice.Value = historicalCandle(4) / _parentInstrument.PriceDivisor
                                         .Volume.Value = historicalCandle(5)
                                         If previousCandlePayload IsNot Nothing AndAlso
                                             .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then
@@ -522,10 +529,10 @@ Namespace ChartHandler.ChartStyle
                     .PayloadGeneratedBy = OHLCPayload.PayloadSource.Historical
                     .SnapshotDateTime = runningCandleTime
                     .TradingSymbol = _parentInstrument.TradingSymbol
-                    .OpenPrice.Value = open
-                    .HighPrice.Value = high
-                    .LowPrice.Value = low
-                    .ClosePrice.Value = close
+                    .OpenPrice.Value = open / _parentInstrument.PriceDivisor
+                    .HighPrice.Value = high / _parentInstrument.PriceDivisor
+                    .LowPrice.Value = low / _parentInstrument.PriceDivisor
+                    .ClosePrice.Value = close / _parentInstrument.PriceDivisor
                     .Volume.Value = volume
                     If previousCandlePayload IsNot Nothing AndAlso
                     .SnapshotDateTime.Date = previousCandlePayload.SnapshotDateTime.Date Then

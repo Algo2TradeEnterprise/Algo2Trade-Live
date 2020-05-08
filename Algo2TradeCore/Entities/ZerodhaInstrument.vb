@@ -116,6 +116,12 @@ Namespace Entities
 
         Public Property FetchHistorical As Boolean Implements IInstrument.FetchHistorical
 
+        Public ReadOnly Property PriceDivisor As Integer Implements IInstrument.PriceDivisor
+            Get
+                Return 1
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return String.Format("{0}_{1}", Me.TradingSymbol, Me.InstrumentIdentifier)
         End Function

@@ -47,7 +47,7 @@ Public Class NFOStrategy
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = Nothing
                     Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                         Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
+                                                                                                         Return x.TradingSymbol.Split(" ")(0) = instrument.Key AndAlso
                                                                                                              x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
                                                                                                              x.RawExchange = "NFO"
                                                                                                      End Function)
