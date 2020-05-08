@@ -75,7 +75,7 @@ Namespace Adapter
 
                 Console.WriteLine(historicalDataURL)
                 Dim request As HttpWebRequest = HttpWebRequest.Create(historicalDataURL)
-                request.Headers.Add("X-Authorization-Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJibGFja2xpc3Rfa2V5IjoiQUIwOTY0MDM6T3FZVUZIQlpVdmhXRkZYOUJyV1pvUSIsImNsaWVudF9pZCI6IkFCMDk2NDAzIiwiY2xpZW50X3Rva2VuIjoidXRJbnZPcjkrL2hGTDFDb0UyVE1UQSIsImRldmljZSI6IndlYiIsImV4cCI6MTU4OTAwMjQzMzg3OH0.K_YQbdKHwutgfR6Ws6ZMbxKFJv6sXreQcUQtswtgWks")
+                request.Headers.Add("X-Authorization-Token", Me.ParentController.APIConnection.ENCToken)
 
                 Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
@@ -110,7 +110,7 @@ Namespace Adapter
 
                 Console.WriteLine(liveDataURL)
                 Dim request As HttpWebRequest = HttpWebRequest.Create(liveDataURL)
-                request.Headers.Add("X-Authorization-Token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJibGFja2xpc3Rfa2V5IjoiQUIwOTY0MDM6T3FZVUZIQlpVdmhXRkZYOUJyV1pvUSIsImNsaWVudF9pZCI6IkFCMDk2NDAzIiwiY2xpZW50X3Rva2VuIjoidXRJbnZPcjkrL2hGTDFDb0UyVE1UQSIsImRldmljZSI6IndlYiIsImV4cCI6MTU4OTAwMjQzMzg3OH0.K_YQbdKHwutgfR6Ws6ZMbxKFJv6sXreQcUQtswtgWks")
+                request.Headers.Add("X-Authorization-Token", Me.ParentController.APIConnection.ENCToken)
 
                 Using sr = New StreamReader(request.GetResponseAsync().Result.GetResponseStream)
                     Dim jsonString = Await sr.ReadToEndAsync.ConfigureAwait(False)
@@ -191,6 +191,16 @@ Namespace Adapter
                                                                           'Neglect error as in the next minute, it will be run again,
                                                                           'till that time tick based candles will be used
                                                                           logger.Warn(ex)
+                                                                          If ex.GetType Is GetType(AggregateException) Then
+                                                                              For Each e In CType(ex, AggregateException).Flatten.InnerExceptions
+                                                                                  If e.GetType Is GetType(WebException) Then
+                                                                                      If e.Message.Contains("401") Then
+                                                                                          OnFetcherError(Me.ToString, e.Message)
+                                                                                          CType(ParentController, AliceStrategyController).OnSessionExpireAsync()
+                                                                                      End If
+                                                                                  End If
+                                                                              Next
+                                                                          End If
                                                                           If Not ex.GetType Is GetType(OperationCanceledException) Then
                                                                               OnFetcherError(Me.ToString, ex.Message)
                                                                           End If
