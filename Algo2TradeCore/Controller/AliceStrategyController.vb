@@ -207,6 +207,8 @@ Namespace Controller
                         _cts.Token.ThrowIfCancellationRequested()
                         Await _APITicker.ConnectTickerAsync().ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
+                        'Subscribing nifty 50 to avoid disconnection
+                        Await _APITicker.SubscribeAsync(CType(_APITicker, AliceTicker).GetTickerSubscriptionString(New Dictionary(Of String, String) From {{"26000", "NSE"}})).ConfigureAwait(False)
 
                         'Now open the historicaldatafetcher
                         If _APIHistoricalDataFetcher IsNot Nothing Then
@@ -1105,61 +1107,34 @@ Namespace Controller
 
         Public Async Sub OnTickerTickAsync(ByVal tickData As Tick)
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-            'Try
-            '    logger.Fatal("TickData, Tkn,{0},Dt,{1},Tm,{2},LTP,{3},BQn,{4},SQn,{5},%,{6},Bid,{7},Off,{8},OIH,{9},OIL,{10},OI,{11}",
-            '                 tickData.InstrumentToken,
-            '                 tickData.Timestamp.Value.ToShortDateString,
-            '                 tickData.Timestamp.Value.ToShortTimeString,
-            '                 tickData.LastPrice,
-            '                 tickData.BuyQuantity,
-            '                 tickData.SellQuantity,
-            '                 If(tickData.BuyQuantity > tickData.SellQuantity, ((tickData.BuyQuantity / tickData.SellQuantity) - 1) * 100, ((tickData.SellQuantity / tickData.BuyQuantity) - 1) * -100),
-            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Bids), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
-            '                 Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Replace(Utils.JsonSerialize(tickData.Offers), "[", ""), "{", ""), "}", ""), "]", ""), ":", ","), """", ""), "Quantity", "Qty"), "Price", "Prc"), "Orders", "Ord"),
-            '                 tickData.OIDayHigh,
-            '                 tickData.OIDayLow,
-            '                 tickData.OI)
-            'Catch ex As Exception
-            '    logger.Error("Tick log error:{0}", ex.ToString)
-            'End Try
-            Dim runningTick As New AliceTick() With {.WrappedTick = tickData}
-            Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
-                                                                                                            Return x.InstrumentIdentifier = tickData.InstrumentToken
-                                                                                                        End Function)
+            If _AllStrategyUniqueInstruments IsNot Nothing AndAlso _AllStrategyUniqueInstruments.Count > 0 Then
+                Dim runningTick As New AliceTick() With {.WrappedTick = tickData}
+                Dim runningInstruments As IEnumerable(Of IInstrument) = _AllStrategyUniqueInstruments.Where(Function(x)
+                                                                                                                Return x.InstrumentIdentifier = tickData.InstrumentToken
+                                                                                                            End Function)
 
-            Dim change As Boolean = False
-            If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
-                change = runningInstruments.FirstOrDefault.LastTick IsNot Nothing AndAlso
-                        (runningTick.OI <> runningInstruments.FirstOrDefault.LastTick.OI OrElse
-                        runningTick.Volume <> runningInstruments.FirstOrDefault.LastTick.Volume OrElse
-                        runningTick.LastPrice <> runningInstruments.FirstOrDefault.LastTick.LastPrice)
+                If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                    runningInstruments.FirstOrDefault.LastTick = runningTick
+                End If
 
-                runningInstruments.FirstOrDefault.LastTick = runningTick
-            End If
+                If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
+                    _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
+                End If
+                If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
+                    _subscribedStrategyInstruments.ContainsKey(tickData.InstrumentToken) Then
+                    'This loop is for population of ticks payload. As ticks payload depends on instrument so loop should exit after 1 iteration.
+                    For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                        If runningStrategyInstrument.ParentStrategy.IsTickPopulationNeeded Then
+                            runningStrategyInstrument.TradableInstrument.TickPayloads.Add(runningTick)
+                        End If
+                        Exit For
+                    Next
 
-            'If change Then
-            '    logger.Fatal("TickData, Token,{0},Date,{1},Time,{2},LastPrice,{3},Volume,{4},OI,{5}",
-            '             tickData.InstrumentToken, tickData.Timestamp.Value.ToShortDateString, tickData.Timestamp.Value.ToLongTimeString,
-            '             tickData.LastPrice, tickData.Volume, tickData.OI)
-            'End If
-
-            If _rawPayloadCreators IsNot Nothing AndAlso _rawPayloadCreators.ContainsKey(tickData.InstrumentToken) Then
-                _rawPayloadCreators(tickData.InstrumentToken).GetChartFromTickAsync(runningTick)
-            End If
-            If _subscribedStrategyInstruments IsNot Nothing AndAlso _subscribedStrategyInstruments.Count > 0 AndAlso
-                _subscribedStrategyInstruments.ContainsKey(tickData.InstrumentToken) Then
-                'This loop is for population of ticks payload. As ticks payload depends on instrument so loop should exit after 1 iteration.
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    If runningStrategyInstrument.ParentStrategy.IsTickPopulationNeeded Then
-                        runningStrategyInstrument.TradableInstrument.TickPayloads.Add(runningTick)
-                    End If
-                    Exit For
-                Next
-
-                'This for loop needs to be after the tick is published
-                For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
-                    runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
-                Next
+                    'This for loop needs to be after the tick is published
+                    For Each runningStrategyInstrument In _subscribedStrategyInstruments(tickData.InstrumentToken)
+                        runningStrategyInstrument.HandleTickTriggerToUIETCAsync()
+                    Next
+                End If
             End If
         End Sub
         Public Async Sub OnTickerOrderUpdateAsync(ByVal orderData As Order)
