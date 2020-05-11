@@ -2,8 +2,10 @@
 Imports System.Threading
 Imports Utilities.DAL
 Imports Algo2TradeCore.Entities
+Imports Algo2TradeCore.Adapter
 Imports Utilities.Network
 Imports Utilities.Time
+Imports Utilities.Numbers
 Imports System.Net.Http
 Imports NLog
 
@@ -40,11 +42,23 @@ Public Class NFOFillInstrumentDetails
     Private ReadOnly AliceEODHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=3&starttime={1}&endtime={2}&type=historical"
     Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=historical"
     Private ReadOnly tradingDay As Date = Date.MinValue
+    Private ReadOnly _APIAdapter As APIAdapter
     Public Sub New(ByVal canceller As CancellationTokenSource, ByVal parentStrategy As NFOStrategy)
         _cts = canceller
         _parentStrategy = parentStrategy
         _userInputs = _parentStrategy.UserSettings
         tradingDay = Now
+
+        Select Case _parentStrategy.ParentController.BrokerSource
+            Case APISource.Zerodha
+                _APIAdapter = New ZerodhaAdapter(parentStrategy.ParentController, _cts)
+            Case APISource.AliceBlue
+                _APIAdapter = New AliceAdapter(parentStrategy.ParentController, _cts)
+            Case APISource.Upstox
+                Throw New NotImplementedException
+            Case APISource.None
+                Throw New NotImplementedException
+        End Select
     End Sub
 
     Private Async Function GetHistoricalCandleStickAsync(ByVal instrumentToken As String, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
@@ -284,7 +298,8 @@ Public Class NFOFillInstrumentDetails
                                          .ATRPercentage = stock.Value(0),
                                          .Price = stock.Value(1),
                                          .Slab = CalculateSlab(stock.Value(1), stock.Value(0)),
-                                         .BlankCandlePercentage = blankCandlePercentage}
+                                         .BlankCandlePercentage = blankCandlePercentage,
+                                         .Instrument = tradingStock}
                                     If capableStocks Is Nothing Then capableStocks = New Dictionary(Of String, InstrumentDetails)
                                     capableStocks.Add(tradingStock.TradingSymbol, instrumentData)
                                 End If
@@ -315,31 +330,41 @@ Public Class NFOFillInstrumentDetails
                             If _userInputs.InstrumentDetailsFilePath IsNot Nothing AndAlso
                                 File.Exists(_userInputs.InstrumentDetailsFilePath) Then
                                 File.Delete(_userInputs.InstrumentDetailsFilePath)
+                                Dim eligibleStocks As Dictionary(Of String, Decimal) = Nothing
+                                Dim slabList As List(Of Decimal) = New List(Of Decimal) From {0.5, 1, 2.5, 5, 10, 25}
+                                For Each runningStock In todayStockList
+                                    Dim lotSize As Integer = capableStocks(runningStock).Instrument.LotSize
+                                    Dim slab As Decimal = capableStocks(runningStock).Slab
+                                    Dim price As Decimal = capableStocks(runningStock).Price
+                                    Dim previousSlab As List(Of Decimal) = slabList.FindAll(Function(x)
+                                                                                                Return x < slab
+                                                                                            End Function)
+                                    If previousSlab IsNot Nothing AndAlso previousSlab.Count > 0 Then
+                                        Dim projectedSlab As Decimal = previousSlab.LastOrDefault
+                                        Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
+                                        Dim slPoint As Decimal = projectedSlab + 2 * buffer
+                                        Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(capableStocks(runningStock).Instrument, price, price - slPoint, lotSize)
+                                        If Math.Abs(pl) >= 600 AndAlso Math.Abs(pl) <= 1200 Then
+                                            If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
+                                            eligibleStocks.Add(runningStock, projectedSlab)
 
+                                            If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
+                                        End If
+                                    End If
+                                Next
 
 
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
-                                    allStockData.Columns.Add("Instrument Name")
-                                    allStockData.Columns.Add("Quantity")
-                                    allStockData.Columns.Add("Buffer")
-                                    For Each stock In todayStockList
+                                    allStockData.Columns.Add("TRADING SYMBOL")
+                                    allStockData.Columns.Add("SLAB")
+                                    For Each stock In eligibleStocks
                                         Dim row As DataRow = allStockData.NewRow
-                                        Dim instrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                                       Return x.TradingSymbol = stock
-                                                                                                   End Function)
-                                        row("Instrument Name") = instrument.RawInstrumentName
-                                        row("Quantity") = instrument.LotSize
-                                        row("Buffer") = Utilities.Numbers.ConvertFloorCeling(highATRStocks(instrument.RawInstrumentName)(1) * 0.01 * 0.025, instrument.TickSize, Utilities.Numbers.NumberManipulation.RoundOfType.Floor)
+                                        row("TRADING SYMBOL") = stock.Key
+                                        row("SLAB") = stock.Value
                                         allStockData.Rows.Add(row)
                                     Next
-
-                                    Dim row1 As DataRow = allStockData.NewRow
-                                    row1("Instrument Name") = "BANKNIFTY"
-                                    row1("Quantity") = 20
-                                    row1("Buffer") = 2
-                                    allStockData.Rows.Add(row1)
 
                                     csv.GetCSVFromDataTable(allStockData)
                                 End Using
@@ -431,6 +456,11 @@ Public Class NFOFillInstrumentDetails
         End If
         Return ret
     End Function
+    Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
+        Dim bufferPrice As Double = Nothing
+        bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
+        Return bufferPrice
+    End Function
 
     Private Class InstrumentDetails
         Public TradingSymbol As String
@@ -438,6 +468,7 @@ Public Class NFOFillInstrumentDetails
         Public Price As Decimal
         Public Slab As Decimal
         Public BlankCandlePercentage As Decimal
+        Public Instrument As IInstrument
     End Class
 
     Enum TypeOfData
