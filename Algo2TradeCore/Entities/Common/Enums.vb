@@ -33,6 +33,7 @@
             VWAP
             RSI
             PSAR
+            HeikinAshi
         End Enum
         Enum CrossDirection
             Above = 1

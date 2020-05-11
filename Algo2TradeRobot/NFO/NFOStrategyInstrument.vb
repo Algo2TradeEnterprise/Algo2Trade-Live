@@ -15,8 +15,7 @@ Public Class NFOStrategyInstrument
 #End Region
 
     Private _lastPrevPayloadPlaceOrder As String = ""
-    Private ReadOnly _dummyLFSupertrendConsumer As SupertrendConsumer
-    Private ReadOnly _dummyHFSupertrendConsumer As SupertrendConsumer
+    Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -38,23 +37,17 @@ Public Class NFOStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
-        'If Me.ParentStrategy.IsStrategyCandleStickBased Then
-        '    If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
-        '        Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-        '        chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
-        '        {New SupertrendConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)}
-        '        RawPayloadDependentConsumers.Add(chartConsumer)
-        '        _dummyLFSupertrendConsumer = New SupertrendConsumer(chartConsumer, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)
-
-        '        Dim chartConsumer2 As PayloadToChartConsumer = New PayloadToChartConsumer(CType(Me.ParentStrategy.UserSettings, NFOUserInputs).HigherTimeframe)
-        '        chartConsumer2.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
-        '        {New SupertrendConsumer(chartConsumer2, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)}
-        '        RawPayloadDependentConsumers.Add(chartConsumer2)
-        '        _dummyHFSupertrendConsumer = New SupertrendConsumer(chartConsumer2, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Period, CType(Me.ParentStrategy.UserSettings, NFOUserInputs).Multiplier)
-        '    Else
-        '        Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
-        '    End If
-        'End If
+        If Me.ParentStrategy.IsStrategyCandleStickBased Then
+            If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
+                Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From
+                {New HeikinAshiConsumer(chartConsumer)}
+                RawPayloadDependentConsumers.Add(chartConsumer)
+                _dummyHKConsumer = New HeikinAshiConsumer(chartConsumer)
+            Else
+                Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
+            End If
+        End If
     End Sub
     Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
         Throw New NotImplementedException()

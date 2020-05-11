@@ -111,6 +111,7 @@
     <Compile Include="Entities\Alice\AliceUserMargin.vb" />
     <Compile Include="Entities\Common\Exchange.vb" />
     <Compile Include="Entities\Common\Field.vb" />
+    <Compile Include="Entities\Indicators\HeikinAshiConsumer.vb" />
     <Compile Include="Entities\Interfaces\IHolding.vb" />
     <Compile Include="Entities\Indicators\ATRConsumer.vb" />
     <Compile Include="Entities\Indicators\BollingerConsumer.vb" />
