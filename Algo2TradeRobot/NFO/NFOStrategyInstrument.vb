@@ -27,7 +27,7 @@ Public Class NFOStrategyInstrument
             Case APISource.Zerodha
                 _APIAdapter = New ZerodhaAdapter(ParentStrategy.ParentController, _cts)
             Case APISource.AliceBlue
-                _APIAdapter = New AliceAdapter(ParentStrategy.ParentController, _cts)
+                _APIAdapter = New AliceAdapter(ParentStrategy.ParentController, Me.TradableInstrument, _cts)
             Case APISource.Upstox
                 Throw New NotImplementedException
             Case APISource.None

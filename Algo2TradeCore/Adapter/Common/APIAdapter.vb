@@ -7,6 +7,7 @@ Namespace Adapter
     Public MustInherit Class APIAdapter
         Protected _cts As CancellationTokenSource
         Public Property ParentController As APIStrategyController
+        Public Property ParentInstrument As IInstrument
         Protected Calculator As APIBrokerageCalculator
 
 #Region "Events/Event handlers"
@@ -36,6 +37,13 @@ Namespace Adapter
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal canceller As CancellationTokenSource)
             Me.ParentController = associatedParentController
+            _cts = canceller
+        End Sub
+        Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal associatedInstrument As IInstrument,
+                       ByVal canceller As CancellationTokenSource)
+            Me.ParentController = associatedParentController
+            Me.ParentInstrument = associatedInstrument
             _cts = canceller
         End Sub
         Public MustOverride Function CalculatePLWithBrokerage(ByVal instrument As IInstrument, ByVal buy As Double, ByVal sell As Double, ByVal quantity As Integer) As Decimal
