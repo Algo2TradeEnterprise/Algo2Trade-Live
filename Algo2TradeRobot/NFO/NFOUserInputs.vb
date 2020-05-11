@@ -14,6 +14,11 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
+    Public Property MinimumStockPrice As Decimal
+    Public Property MaximumStockPrice As Decimal
+    Public Property MinimumATRPercentage As Decimal
+    Public Property MaximumBlankCandlePercentage As Decimal
+
     Public Property Period As Decimal
     Public Property Multiplier As Decimal
 

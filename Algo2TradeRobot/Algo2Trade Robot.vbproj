@@ -164,6 +164,7 @@
     <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="NFO\NFOFillInstrumentDetails.vb" />
     <Compile Include="NFO\NFOStrategy.vb" />
     <Compile Include="NFO\NFOStrategyInstrument.vb" />
     <Compile Include="NFO\NFOUserInputs.vb" />
