@@ -29,8 +29,8 @@ Namespace Adapter
         End Sub
 #End Region
 
-        Private ALICE_HISTORICAL_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=historical"
-        Private ALICE_LIVE_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=live"
+        Private ALICE_HISTORICAL_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
+        Private ALICE_LIVE_URL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=live"
         Public Sub New(ByVal associatedParentController As APIStrategyController,
                        ByVal daysToGoBack As Integer,
                        ByVal canceller As CancellationTokenSource)
@@ -42,6 +42,16 @@ Namespace Adapter
                        ByVal instrumentIdentifier As String,
                        ByVal canceller As CancellationTokenSource)
             MyBase.New(associatedParentController, daysToGoBack, instrumentIdentifier, canceller)
+            Dim currentAliceStrategyController As AliceStrategyController = CType(ParentController, AliceStrategyController)
+            AddHandler Me.FetcherCandles, AddressOf currentAliceStrategyController.OnFetcherCandlesAsync
+            AddHandler Me.FetcherError, AddressOf currentAliceStrategyController.OnFetcherError
+        End Sub
+        Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal daysToGoBack As Integer,
+                       ByVal instrumentIdentifier As String,
+                       ByVal instrumentExchange As String,
+                       ByVal canceller As CancellationTokenSource)
+            MyBase.New(associatedParentController, daysToGoBack, instrumentIdentifier, instrumentExchange, canceller)
             Dim currentAliceStrategyController As AliceStrategyController = CType(ParentController, AliceStrategyController)
             AddHandler Me.FetcherCandles, AddressOf currentAliceStrategyController.OnFetcherCandlesAsync
             AddHandler Me.FetcherError, AddressOf currentAliceStrategyController.OnFetcherError
@@ -63,6 +73,7 @@ Namespace Adapter
                 Dim ret As Dictionary(Of String, Object) = Nothing
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim historicalDataURL As String = String.Format(ALICE_HISTORICAL_URL,
+                                                                    _instrumentExchange,
                                                                     _instrumentIdentifer,
                                                                     DateTimeToUnix(Now.AddDays(-1 * _daysToGoBack)),
                                                                     DateTimeToUnix(Now))
@@ -98,6 +109,7 @@ Namespace Adapter
                 Dim ret As Dictionary(Of String, Object) = Nothing
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim liveDataURL As String = String.Format(ALICE_LIVE_URL,
+                                                                _instrumentExchange,
                                                                 _instrumentIdentifer,
                                                                 DateTimeToUnix(Now.Date),
                                                                 DateTimeToUnix(Now))
@@ -155,7 +167,7 @@ Namespace Adapter
                                                                               _cts.Token.ThrowIfCancellationRequested()
                                                                               Dim individualFetcher As New AliceHistoricalDataFetcher(Me.ParentController,
                                                                                                               If(x.IsHistoricalCompleted, 1, _daysToGoBack),
-                                                                                                              x.InstrumentIdentifier,
+                                                                                                              x.InstrumentIdentifier, x.RawExchange,
                                                                                                               Me._cts)
                                                                               Dim ret As Dictionary(Of String, Object) = Await individualFetcher.GetLiveCandleStickAsync.ConfigureAwait(False)
                                                                               If Not x.IsHistoricalCompleted Then

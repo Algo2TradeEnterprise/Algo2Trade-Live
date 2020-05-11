@@ -35,6 +35,7 @@ Namespace Adapter
         Protected _daysToGoBack As Integer
         Protected _subscribedInstruments As Concurrent.ConcurrentBag(Of IInstrument) 'The unique instruments
         Protected _instrumentIdentifer As String 'To allow this to process each instrument seperately
+        Protected _instrumentExchange As String 'To allow this to process each instrument seperately
         Protected _isPollRunning As Boolean
         Protected _stopPollRunning As Boolean
         'Protected _isFirstTimeDone As Boolean
@@ -51,6 +52,15 @@ Namespace Adapter
                        ByVal canceller As CancellationTokenSource)
             Me.New(associatedParentController, daysToGoback, canceller)
             Me._instrumentIdentifer = instrumentIdentifier
+        End Sub
+        Public Sub New(ByVal associatedParentController As APIStrategyController,
+                       ByVal daysToGoback As Integer,
+                       ByVal instrumentIdentifier As String,
+                       ByVal instrumentExchange As String,
+                       ByVal canceller As CancellationTokenSource)
+            Me.New(associatedParentController, daysToGoback, canceller)
+            Me._instrumentIdentifer = instrumentIdentifier
+            Me._instrumentExchange = instrumentExchange
         End Sub
         Public MustOverride Async Function ConnectFetcherAsync() As Task
         Public MustOverride Async Function SubscribeAsync(ByVal instrumentIdentifiers As IEnumerable(Of IInstrument), ByVal maxNumberOfDays As Integer) As Task

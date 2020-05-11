@@ -39,8 +39,8 @@ Public Class NFOFillInstrumentDetails
     Private _cts As CancellationTokenSource
     Private ReadOnly _parentStrategy As NFOStrategy
     Private ReadOnly _userInputs As NFOUserInputs
-    Private ReadOnly AliceEODHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=3&starttime={1}&endtime={2}&type=historical"
-    Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange=NFO&token={0}&candletype=1&starttime={1}&endtime={2}&type=historical"
+    Private ReadOnly AliceEODHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
+    Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
     Private ReadOnly tradingDay As Date = Date.MinValue
     Private ReadOnly _APIAdapter As APIAdapter
     Public Sub New(ByVal canceller As CancellationTokenSource, ByVal parentStrategy As NFOStrategy)
@@ -61,15 +61,15 @@ Public Class NFOFillInstrumentDetails
         End Select
     End Sub
 
-    Private Async Function GetHistoricalCandleStickAsync(ByVal instrumentToken As String, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
+    Private Async Function GetHistoricalCandleStickAsync(ByVal instrument As IInstrument, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
         Dim ret As Dictionary(Of String, Object) = Nothing
         _cts.Token.ThrowIfCancellationRequested()
         Dim historicalDataURL As String = Nothing
         Select Case historicalDataType
             Case TypeOfData.Intraday
-                historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrumentToken, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
             Case TypeOfData.EOD
-                historicalDataURL = String.Format(AliceEODHistoricalURL, instrumentToken, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                historicalDataURL = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
         End Select
         OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
         Dim proxyToBeUsed As HttpProxy = Nothing
@@ -108,7 +108,7 @@ Public Class NFOFillInstrumentDetails
                                                        ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of Date, OHLCPayload))
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim ret As Dictionary(Of Date, OHLCPayload) = Nothing
-        Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Await GetHistoricalCandleStickAsync(instrument.InstrumentIdentifier, fromDate, toDate, historicalDataType).ConfigureAwait(False)
+        Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Await GetHistoricalCandleStickAsync(instrument, fromDate, toDate, historicalDataType).ConfigureAwait(False)
         If historicalCandlesJSONDict.ContainsKey("data") Then
             Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
             OnHeartbeat(String.Format("Generating Payload for {0}", instrument.TradingSymbol))
@@ -131,7 +131,7 @@ Public Class NFOFillInstrumentDetails
                 previousPayload = runningPayload
 
                 If ret Is Nothing Then ret = New Dictionary(Of Date, OHLCPayload)
-                ret.Add(runningSnapshotTime, runningPayload)
+                If Not ret.ContainsKey(runningSnapshotTime) Then ret.Add(runningSnapshotTime, runningPayload)
             Next
         End If
         Return ret
