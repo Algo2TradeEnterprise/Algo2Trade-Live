@@ -172,7 +172,7 @@ Public Class NFOFillInstrumentDetails
                                                                                                        Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
                                                                                                        If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
                                                                                                            Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
-                                                                                                           If lastDayPayload.ClosePrice.Value >= _userInputs.MinimumStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaximumStockPrice Then
+                                                                                                           If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
                                                                                                                Dim rawCashInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
                                                                                                                                                                                      Return x.TradingSymbol = y.RawInstrumentName
                                                                                                                                                                                  End Function)
@@ -188,7 +188,7 @@ Public Class NFOFillInstrumentDetails
                                                                                                                        Dim lastDayClosePrice As Decimal = eodHistoricalData.LastOrDefault.Value.ClosePrice.Value
                                                                                                                        lastTradingDay = eodHistoricalData.LastOrDefault.Key
                                                                                                                        Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
-                                                                                                                       If atrPercentage >= _userInputs.MinimumATRPercentage Then
+                                                                                                                       If atrPercentage >= _userInputs.MinATRPercentage Then
                                                                                                                            If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
                                                                                                                            highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice})
                                                                                                                        End If
@@ -296,7 +296,7 @@ Public Class NFOFillInstrumentDetails
                         Dim stocksLessThanMaxBlankCandlePercentage As IEnumerable(Of KeyValuePair(Of String, InstrumentDetails)) =
                                     capableStocks.Where(Function(x)
                                                             Return x.Value.BlankCandlePercentage <> Decimal.MinValue AndAlso
-                                                                  x.Value.BlankCandlePercentage <= _userInputs.MaximumBlankCandlePercentage
+                                                                  x.Value.BlankCandlePercentage <= _userInputs.MaxBlankCandlePercentage
                                                         End Function)
                         If stocksLessThanMaxBlankCandlePercentage IsNot Nothing AndAlso stocksLessThanMaxBlankCandlePercentage.Count > 0 Then
                             Dim stockCounter As Integer = 0
@@ -315,6 +315,9 @@ Public Class NFOFillInstrumentDetails
                             If _userInputs.InstrumentDetailsFilePath IsNot Nothing AndAlso
                                 File.Exists(_userInputs.InstrumentDetailsFilePath) Then
                                 File.Delete(_userInputs.InstrumentDetailsFilePath)
+
+
+
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
