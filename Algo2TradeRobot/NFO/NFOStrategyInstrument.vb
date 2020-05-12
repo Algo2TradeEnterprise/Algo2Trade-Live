@@ -76,6 +76,13 @@ Public Class NFOStrategyInstrument
                 End If
                 'Place Order block end
                 _cts.Token.ThrowIfCancellationRequested()
+                'Modify Order block start
+                Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
+                If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
+                End If
+                'Modify Order block end
+                _cts.Token.ThrowIfCancellationRequested()
                 'Exit Order block start
                 Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
@@ -245,8 +252,64 @@ Public Class NFOStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
-        Throw New NotImplementedException()
+    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
+        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+            Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                          Return x.ParentOrderIdentifier IsNot Nothing AndAlso
+                                                                          x.Status = IOrder.TypeOfStatus.TriggerPending
+                                                                      End Function)
+            If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
+                Dim parentOrder As IOrder = allActiveOrders.Find(Function(x)
+                                                                     Return x.ParentOrderIdentifier Is Nothing AndAlso
+                                                                     x.Status = IOrder.TypeOfStatus.TriggerPending
+                                                                 End Function)
+                If parentOrder IsNot Nothing Then
+                    For Each runningSLOrder In slOrders
+                        If Not runningSLOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                            Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
+                            Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
+                            Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
+                            If bussinessOrder.ParentOrder.TransactionType <> parentOrder.TransactionType Then
+                                Dim triggerPrice As Decimal = Decimal.MinValue
+                                If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                                    If parentOrder.TriggerPrice > runningSLOrder.TriggerPrice Then
+                                        triggerPrice = parentOrder.TriggerPrice
+                                    End If
+                                ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                                    If parentOrder.TriggerPrice < runningSLOrder.TriggerPrice Then
+                                        triggerPrice = parentOrder.TriggerPrice
+                                    End If
+                                End If
+                                If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
+                                    'Below portion have to be done in every modify stoploss order trigger
+                                    Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
+                                    If currentSignalActivities IsNot Nothing Then
+                                        If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                            If Val(currentSignalActivities.StoplossModifyActivity.Supporting) = triggerPrice Then
+                                                Continue For
+                                            End If
+                                        End If
+                                    End If
+                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, "Opposite Direction signal trigger"))
+                                End If
+                            End If
+                        End If
+                    Next
+                End If
+            End If
+        End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
+            For Each runningOrder In ret
+                logger.Debug("***** Modify Stoploss ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
+            Next
+        End If
+        Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Throw New NotImplementedException()
