@@ -26,7 +26,7 @@
             Public Property PreviousPayload As HeikinAshiPayload
 
             Public Overrides Function ToString() As String
-                Return String.Format("HK Open:{0}, HK High:{1}, HK Low:{2}, HK Close:{3}", Math.Round(Me.Open.Value, 4), Math.Round(Me.High.Value, 4), Math.Round(Me.Low.Value, 4), Math.Round(Me.Close.Value, 4))
+                Return String.Format("HK Open:{0}, HK High:{1}, HK Low:{2}, HK Close:{3}, DateTime:{4}", Math.Round(Me.Open.Value, 4), Math.Round(Me.High.Value, 4), Math.Round(Me.Low.Value, 4), Math.Round(Me.Close.Value, 4), Me.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"))
             End Function
         End Class
     End Class
