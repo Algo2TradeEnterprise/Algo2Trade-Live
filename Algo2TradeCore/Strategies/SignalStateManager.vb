@@ -468,7 +468,7 @@ Namespace Strategies
             If signalGeneratedTime <> Nothing OrElse signalGeneratedTime <> Date.MinValue Then existingActivities.SignalGeneratedTime = signalGeneratedTime
             If signalDirection <> IOrder.TypeOfTransaction.None Then existingActivities.SignalDirection = signalDirection
             If signalType <> IOrder.TypeOfOrder.None Then existingActivities.SignalType = signalType
-            If signalQuantity <> Integer.MinValue OrElse signalQuantity <> 0 Then existingActivities.SignalQuantity = signalQuantity
+            If signalQuantity <> Integer.MinValue AndAlso signalQuantity <> 0 Then existingActivities.SignalQuantity = signalQuantity
             If requestTime <> Nothing OrElse requestTime <> Date.MinValue Then existingActivities.EntryActivity.RequestTime = requestTime
             If receivedTime <> Nothing OrElse receivedTime <> Date.MinValue Then existingActivities.EntryActivity.ReceivedTime = If(receivedTime.Equals(_defaultDateValue), Date.MinValue, receivedTime)
             If requestStatus <> ActivityDashboard.SignalStatusType.None Then existingActivities.EntryActivity.RequestStatus = requestStatus

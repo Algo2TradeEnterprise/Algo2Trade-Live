@@ -1529,11 +1529,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1584,11 +1584,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1640,11 +1640,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1693,11 +1693,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1745,11 +1745,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1798,11 +1798,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL_M, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1851,11 +1851,11 @@ Namespace Strategies
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                      If x.Item1 = ExecuteCommandAction.WaitAndTake Then
-                                                                                          x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
-                                                                                      End If
+                                                                                      'If x.Item1 = ExecuteCommandAction.WaitAndTake Then
+                                                                                      '    x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
+                                                                                      'End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularMarketCNCOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,

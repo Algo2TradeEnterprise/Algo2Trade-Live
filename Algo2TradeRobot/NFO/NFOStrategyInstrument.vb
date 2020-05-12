@@ -175,6 +175,7 @@ Public Class NFOStrategyInstrument
                                              .Price = price,
                                              .StoplossValue = slPoint + 2 * buffer,
                                              .SquareOffValue = targetPoint,
+                                             .OrderType = IOrder.TypeOfOrder.SL,
                                              .Quantity = quantity}
                             End If
                         End If
@@ -190,6 +191,7 @@ Public Class NFOStrategyInstrument
                                              .Price = price,
                                              .StoplossValue = slPoint + 2 * buffer,
                                              .SquareOffValue = targetPoint,
+                                             .OrderType = IOrder.TypeOfOrder.SL,
                                              .Quantity = quantity}
                             End If
                         End If
@@ -222,6 +224,8 @@ Public Class NFOStrategyInstrument
                     If lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
                             lastPlacedActivity.EntryActivity.LastException IsNot Nothing AndAlso
                             lastPlacedActivity.EntryActivity.LastException.Message.ToUpper.Contains("TIME") Then
+                        Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
+
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
                         ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, parameters.ToString))
                     ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled Then
