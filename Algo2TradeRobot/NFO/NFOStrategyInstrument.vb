@@ -155,6 +155,9 @@ Public Class NFOStrategyInstrument
                 If signalCandle IsNot Nothing Then
                     Dim quantity As Decimal = Me.TradableInstrument.LotSize
                     Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
+                        buffer = 0
+                    End If
                     Dim slPoint As Decimal = _slab
                     Dim targetPoint As Decimal = _slab * 25
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
@@ -261,15 +264,15 @@ Public Class NFOStrategyInstrument
             hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
             If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-                Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
-                                                                              Return x.ParentOrderIdentifier IsNot Nothing AndAlso
+                Dim parentOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                                  Return x.ParentOrderIdentifier Is Nothing AndAlso
                                                                               x.Status = IOrder.TypeOfStatus.TriggerPending
-                                                                          End Function)
-                If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
+                                                                              End Function)
+                If parentOrders IsNot Nothing AndAlso parentOrders.Count > 0 Then
                     Dim hkCandle As HeikinAshiConsumer.HeikinAshiPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                    For Each runningSLOrder In slOrders
-                        If runningSLOrder.Status = IOrder.TypeOfStatus.TriggerPending Then
-                            Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
+                    For Each runningOrder In parentOrders
+                        If runningOrder.Status = IOrder.TypeOfStatus.TriggerPending Then
+                            Dim bussinessOrder As IBusinessOrder = OrderDetails(runningOrder.OrderIdentifier)
                             Dim exitTrade As Boolean = False
                             Dim signal As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle)
                             If signal IsNot Nothing AndAlso signal.Item1 Then
@@ -282,7 +285,7 @@ Public Class NFOStrategyInstrument
                             End If
                             If exitTrade Then
                                 'Below portion have to be done in every cancel order trigger
-                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
+                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningOrder.Tag)
                                 If currentSignalActivities IsNot Nothing Then
                                     If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
                                         currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
@@ -291,7 +294,7 @@ Public Class NFOStrategyInstrument
                                     End If
                                 End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningSLOrder, "Invalid signal"))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningOrder, "Invalid signal"))
                             End If
                         End If
                     Next
