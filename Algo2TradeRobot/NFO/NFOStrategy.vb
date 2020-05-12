@@ -129,9 +129,33 @@ Public Class NFOStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
+        Dim userSettings As NFOUserInputs = Me.UserSettings
+        Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
+        Dim trailingMTMLoss As Decimal = CalculateTrailingMTM(Math.Abs(userSettings.OverallMaxLossPerDay), Math.Abs(userSettings.OverallMaxLossPerDay) / 2, overallPL)
+        If trailingMTMLoss <> Decimal.MinValue AndAlso trailingMTMLoss > userSettings.OverallMaxLossPerDay Then
+            userSettings.OverallMaxLossPerDay = trailingMTMLoss
+            Try
+                logger.Debug("Overall loss moved to: {0}, PL: {1}", Math.Round(trailingMTMLoss, 2), Math.Round(overallPL, 2))
+            Catch ex As Exception
+                logger.Error(ex.ToString)
+            End Try
+        End If
+
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
+        ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
+        ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
+        End If
+        Return ret
+    End Function
+    Public Function CalculateTrailingMTM(ByVal mtmSlab As Decimal, ByVal mvmntSlab As Decimal, ByVal pl As Decimal) As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If pl >= mtmSlab Then
+            Dim multiplier As Decimal = pl / mtmSlab
+            ret = Math.Floor(multiplier) * mvmntSlab
         End If
         Return ret
     End Function

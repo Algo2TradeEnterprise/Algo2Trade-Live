@@ -111,32 +111,28 @@ Public Class NFOStrategyInstrument
         Dim buyActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
         Dim sellActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
 
-        'Try
-        '    If runningLFCandlePayload IsNot Nothing AndAlso runningLFCandlePayload.PreviousPayload IsNot Nothing AndAlso
-        '        runningHFCandlePayload IsNot Nothing AndAlso runningHFCandlePayload.PreviousPayload IsNot Nothing AndAlso
-        '        Me.TradableInstrument.IsHistoricalCompleted Then
-        '        If Not runningLFCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
-        '            _lastPrevPayloadPlaceOrder = runningLFCandlePayload.PreviousPayload.ToString
-        '            logger.Debug("PlaceOrder-> Potential LF Signal Candle is:{0}. Will check rest parameters.", runningLFCandlePayload.PreviousPayload.ToString)
-        '            logger.Debug("PlaceOrder-> Potential HF Signal Candle is:{0}. Will check rest parameters.", runningHFCandlePayload.PreviousPayload.ToString)
-        '            logger.Debug("PlaceOrder-> Rest all parameters: Running LF Candle:{0}, Running HF Candle:{1}, LF PayloadGeneratedBy:{2}, HF PayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, IsFirstTimeInformationCollected:{5}, LF {6}, HF {7}, IsActiveInstrument:{8}, Current Time:{9}, Current Tick:{10}, TradingSymbol:{11}",
-        '                        runningLFCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
-        '                        runningHFCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
-        '                        runningLFCandlePayload.PayloadGeneratedBy.ToString,
-        '                        runningHFCandlePayload.PayloadGeneratedBy.ToString,
-        '                        Me.TradableInstrument.IsHistoricalCompleted,
-        '                        Me.ParentStrategy.IsFirstTimeInformationCollected,
-        '                        supertrendConsumerLF.ConsumerPayloads(runningLFCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-        '                        supertrendConsumerHF.ConsumerPayloads(runningHFCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-        '                        IsActiveInstrument(),
-        '                        currentTime.ToString,
-        '                        currentTick.LastPrice,
-        '                        Me.TradableInstrument.TradingSymbol)
-        '        End If
-        '    End If
-        'Catch ex As Exception
-        '    logger.Error(ex)
-        'End Try
+        Try
+            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                Me.TradableInstrument.IsHistoricalCompleted Then
+                If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
+                    _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
+                    logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, Buy Active Trades:{5}, Sell Active Trades:{6}, Current Time:{7}, Current Tick:{8}, TradingSymbol:{9}",
+                                runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
+                                runningCandlePayload.PayloadGeneratedBy.ToString,
+                                Me.TradableInstrument.IsHistoricalCompleted,
+                                Me.ParentStrategy.IsFirstTimeInformationCollected,
+                                hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                If(buyActiveTrades IsNot Nothing, buyActiveTrades.Count, 0),
+                                If(sellActiveTrades IsNot Nothing, sellActiveTrades.Count, 0),
+                                currentTime.ToString,
+                                currentTick.LastPrice,
+                                Me.TradableInstrument.TradingSymbol)
+                End If
+            End If
+        Catch ex As Exception
+            logger.Error(ex)
+        End Try
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso currentTime <= userSettings.EODExitTime AndAlso
