@@ -158,6 +158,12 @@ Namespace Entities
         <Display(Name:="Signal Direction", Order:=11)>
         Public Property SignalDirection As IOrder.TypeOfTransaction
 
+        <Display(Name:="Signal Type", Order:=11, AutoGenerateField:=False)>
+        Public Property SignalType As IOrder.TypeOfOrder
+
+        <Display(Name:="Signal Quantity", Order:=11, AutoGenerateField:=False)>
+        Public Property SignalQuantity As Integer
+
         <System.ComponentModel.Browsable(False)>
         Public Property EntryActivity As Activity
         <Display(Name:="Entry Request Time", Order:=12)>

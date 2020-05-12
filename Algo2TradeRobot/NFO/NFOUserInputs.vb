@@ -55,7 +55,7 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
-                            Dim slb As Decimal = 0
+                            Dim slab As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -70,7 +70,7 @@ Public Class NFOUserInputs
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            slb = instrumentDetails(rowCtr, columnCtr)
+                                            slab = instrumentDetails(rowCtr, columnCtr)
                                         Else
                                             Throw New ApplicationException(String.Format("Slab can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
                                         End If
@@ -83,6 +83,7 @@ Public Class NFOUserInputs
                                 Dim instrumentData As New InstrumentDetails
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
+                                    .Slab = slab
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then

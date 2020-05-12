@@ -77,7 +77,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -148,7 +148,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -196,7 +196,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -249,7 +249,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -277,8 +277,16 @@ Namespace Adapter
                     Dim AliceReturedOrders As List(Of Order) = CType(tempRet, List(Of Order))
                     For Each runningOrder As Order In AliceReturedOrders
                         _cts.Token.ThrowIfCancellationRequested()
-                        If ret Is Nothing Then ret = New List(Of AliceOrder)
-                        ret.Add(New AliceOrder With {.WrappedOrder = runningOrder})
+                        Dim tag As String = runningOrder.Tag
+                        If tag Is Nothing OrElse tag.Trim = "" Then
+                            Dim dummyOrder As AliceOrder = New AliceOrder With {.WrappedOrder = runningOrder}
+                            tag = Await Me.ParentController.GetOrderTagAsync(runningOrder.InstrumentToken, dummyOrder.OrderIdentifier, dummyOrder.ParentOrderIdentifier, runningOrder.OrderTimestamp.Value, dummyOrder.TransactionType, dummyOrder.OrderType, dummyOrder.Quantity).ConfigureAwait(False)
+                        End If
+                        If tag IsNot Nothing AndAlso tag.Trim <> "" Then
+                            runningOrder.Tag = tag
+                            If ret Is Nothing Then ret = New List(Of AliceOrder)
+                            ret.Add(New AliceOrder With {.WrappedOrder = runningOrder})
+                        End If
                     Next
                     'Else
                     'OnHeartbeat(String.Format("Alice command execution did not return any list of order, command:{0}", execCommand.ToString))
@@ -313,7 +321,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -367,7 +375,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -432,7 +440,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -484,7 +492,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -525,7 +533,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -573,7 +581,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -618,7 +626,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -663,7 +671,7 @@ Namespace Adapter
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
             Catch gex As GeneralException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -716,7 +724,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                {"Exchange", tradeExchange},
+                {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                 {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                 {"TransactionType", transactionDirection},
                 {"Quantity", quantity},
@@ -736,7 +744,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -759,7 +767,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -790,7 +804,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -810,7 +824,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -833,7 +847,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -864,7 +884,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -884,7 +904,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -907,7 +927,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -937,7 +963,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -957,7 +983,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -980,7 +1006,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -1008,7 +1040,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -1028,7 +1060,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1051,7 +1083,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -1079,7 +1117,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -1099,7 +1137,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1122,7 +1160,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -1152,7 +1196,7 @@ Namespace Adapter
                         transactionDirection = TypesOfTransaction.SELL
                 End Select
                 Dim tradeParameters As New Dictionary(Of String, Object) From {
-                    {"Exchange", tradeExchange},
+                    {"Exchange", CType(Me.ParentInstrument, AliceInstrument).WrappedInstrument.ExchangeType},
                     {"InstrumentToken", Me.ParentInstrument.InstrumentIdentifier},
                     {"TransactionType", transactionDirection},
                     {"Quantity", quantity},
@@ -1172,7 +1216,7 @@ Namespace Adapter
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
                 Catch gex As GeneralException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.GeneralException)
+                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1195,7 +1239,13 @@ Namespace Adapter
 
                 If tempRet.GetType = GetType(Dictionary(Of String, Object)) Then
                     OnHeartbeat(String.Format("PlaceOrder successful, details:{0}", Utils.JsonSerialize(tempRet)))
-                    ret = CType(tempRet, Dictionary(Of String, Object))
+                    If tempRet.ContainsKey("data") AndAlso tempRet("data").ContainsKey("oms_order_id") Then
+                        Dim order As Dictionary(Of String, Object) = New Dictionary(Of String, Object) From {{"order_id", tempRet("data")("oms_order_id")}}
+                        ret = New Dictionary(Of String, Object) From {
+                            {"status", "success"},
+                            {"data", order}
+                        }
+                    End If
                 Else
                     Throw New ApplicationException(String.Format("Alice command execution did not return anything, command:{0}", execCommand.ToString))
                 End If
@@ -1283,19 +1333,19 @@ Namespace Adapter
                     If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
                         placedOrders = Await Task.Factory.StartNew(Function()
                                                                        Try
-                                                                           Return _Alice.PlaceOrder(Exchange:=CType(stockData("Exchange"), String),
-                                                                                                    InstrumentToken:=CType(stockData("InstrumentToken"), String),
-                                                                                                    TransactionType:=CType(stockData("TransactionType"), String),
-                                                                                                    Quantity:=CType(stockData("Quantity"), Integer),
-                                                                                                    Price:=CType(stockData("Price"), Decimal),
-                                                                                                    Product:=CType(stockData("Product"), String),
-                                                                                                    OrderType:=CType(stockData("OrderType"), String),
-                                                                                                    Validity:=CType(stockData("Validity"), String),
-                                                                                                    TriggerPrice:=CType(stockData("TriggerPrice"), String),
-                                                                                                    SquareOffValue:=CType(stockData("SquareOffValue"), Decimal),
-                                                                                                    StoplossValue:=CType(stockData("StoplossValue"), Decimal),
-                                                                                                    Variety:=CType(stockData("Variety"), String),
-                                                                                                    Tag:=CType(stockData("Tag"), String))
+                                                                           Return _Alice.PlaceOrder(Exchange:=stockData("Exchange"),
+                                                                                                    InstrumentToken:=stockData("InstrumentToken"),
+                                                                                                    TransactionType:=stockData("TransactionType"),
+                                                                                                    Quantity:=stockData("Quantity"),
+                                                                                                    Price:=stockData("Price"),
+                                                                                                    Product:=stockData("Product"),
+                                                                                                    OrderType:=stockData("OrderType"),
+                                                                                                    Validity:=stockData("Validity"),
+                                                                                                    TriggerPrice:=stockData("TriggerPrice"),
+                                                                                                    SquareOffValue:=stockData("SquareOffValue"),
+                                                                                                    StoplossValue:=stockData("StoplossValue"),
+                                                                                                    Variety:=stockData("Variety"),
+                                                                                                    Tag:=stockData("Tag"))
                                                                        Catch ex As Exception
                                                                            logger.Error(ex)
                                                                            lastException = ex

@@ -1533,7 +1533,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1588,7 +1588,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1644,7 +1644,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1697,7 +1697,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1749,7 +1749,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1802,7 +1802,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1855,7 +1855,7 @@ Namespace Strategies
                                                                                           x.Item2.Tag = Await WaitAndGenerateFreshTag(x.Item2.Tag).ConfigureAwait(False)
                                                                                       End If
 
-                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, Now, x.Item3).ConfigureAwait(False)
+                                                                                      Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, x.Item2.OrderType, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
                                                                                       placeOrderResponse = Await _APIAdapter.PlaceRegularMarketCNCOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
@@ -1907,6 +1907,8 @@ Namespace Strategies
                             Case AdapterBusinessException.TypeOfException.NetworkException
                                 Continue For
                             Case AdapterBusinessException.TypeOfException.InputException
+                                Continue For
+                            Case AdapterBusinessException.TypeOfException.UnknownException
                                 Continue For
                             Case Else
                                 Exit For
@@ -2024,400 +2026,6 @@ Namespace Strategies
             _cts.Token.ThrowIfCancellationRequested()
             If Not allOKWithoutException Then
                 Throw lastException
-            End If
-            Return ret
-        End Function
-#End Region
-
-#Region "Paper Trade"
-        Private _placeOrderLock As Integer = 0
-        Protected Async Function TakeCOPaperTradeAsync(ByVal data As Object, Optional ByVal entryImmediately As Boolean = False, Optional ByVal currentTick As ITick = Nothing) As Task(Of List(Of IBusinessOrder))
-            Dim ret As List(Of IBusinessOrder) = Nothing
-            'logger.Debug(String.Format("Before Place Lock:{0}, {1}", Interlocked.Read(_placeOrderLock), Me.TradableInstrument.TradingSymbol))
-            If 0 = Interlocked.Exchange(_placeOrderLock, 1) Then
-                'logger.Debug(String.Format("After Place Lock:{0}, {1}", Interlocked.Read(_placeOrderLock), Me.TradableInstrument.TradingSymbol))
-                Try
-                    Dim activityTag As String = GenerateTag(Now)
-                    Dim parentPlaceOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, StrategyInstrument, PlaceOrderParameters, String)) = data
-                    If parentPlaceOrderTriggers IsNot Nothing AndAlso parentPlaceOrderTriggers.Count > 0 Then
-                        For Each runningPlaceOrderTrigger In parentPlaceOrderTriggers
-                            If runningPlaceOrderTrigger.Item1 = ExecuteCommandAction.Take Then
-                                logger.Debug("Place Order Details-> Direction:{0}, Qunatity:{1}, Trigger Price:{2}",
-                                     runningPlaceOrderTrigger.Item3.EntryDirection.ToString, runningPlaceOrderTrigger.Item3.Quantity, runningPlaceOrderTrigger.Item3.TriggerPrice)
-
-                                If Not entryImmediately Then
-                                    Dim lastTradeTime As Date = Me.TradableInstrument.LastTick.LastTradeTime.Value
-                                    While Utilities.Time.IsTimeEqualTillSeconds(Me.TradableInstrument.LastTick.LastTradeTime.Value, lastTradeTime)
-                                        Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
-                                    End While
-                                End If
-
-                                activityTag = GenerateFreshTagForNewSignal(activityTag, runningPlaceOrderTrigger.Item3.SignalCandle.SnapshotDateTime, runningPlaceOrderTrigger.Item3.EntryDirection, runningPlaceOrderTrigger.Item3.GenerateDifferentTag)
-
-                                If runningPlaceOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
-
-                                Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, runningPlaceOrderTrigger.Item3.SignalCandle.SnapshotDateTime, runningPlaceOrderTrigger.Item3.EntryDirection, Now, runningPlaceOrderTrigger.Item4).ConfigureAwait(False)
-
-                                Dim entryPrice As Decimal = Decimal.MinValue
-                                If currentTick IsNot Nothing Then
-                                    entryPrice = currentTick.LastPrice
-                                Else
-                                    entryPrice = Me.TradableInstrument.LastTick.LastPrice
-                                End If
-
-                                Dim parentOrder As PaperOrder = New PaperOrder
-                                parentOrder.AveragePrice = entryPrice
-                                parentOrder.Quantity = runningPlaceOrderTrigger.Item3.Quantity
-                                parentOrder.Status = IOrder.TypeOfStatus.Complete
-                                parentOrder.InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
-                                parentOrder.OrderIdentifier = Utilities.Numbers.GetUniqueNumber()
-                                parentOrder.ParentOrderIdentifier = Nothing
-                                parentOrder.Tradingsymbol = Me.TradableInstrument.TradingSymbol
-                                parentOrder.TransactionType = runningPlaceOrderTrigger.Item3.EntryDirection
-                                parentOrder.TimeStamp = Now
-                                parentOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Parent
-                                parentOrder.Tag = activityTag
-
-                                Dim slOrder As PaperOrder = New PaperOrder
-                                slOrder.TriggerPrice = runningPlaceOrderTrigger.Item3.TriggerPrice
-                                slOrder.Quantity = runningPlaceOrderTrigger.Item3.Quantity
-                                slOrder.Status = IOrder.TypeOfStatus.TriggerPending
-                                slOrder.InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
-                                slOrder.OrderIdentifier = Utilities.Numbers.GetUniqueNumber()
-                                slOrder.ParentOrderIdentifier = parentOrder.OrderIdentifier
-                                slOrder.Tradingsymbol = Me.TradableInstrument.TradingSymbol
-                                slOrder.TransactionType = If(runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Buy, IOrder.TypeOfTransaction.Sell, IOrder.TypeOfTransaction.Buy)
-                                slOrder.TimeStamp = Now
-                                slOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Stoploss
-                                slOrder.Tag = activityTag
-
-                                Dim slOrderList As List(Of IOrder) = New List(Of IOrder)
-                                slOrderList.Add(slOrder)
-                                Dim parentBOrder As BusinessOrder = New BusinessOrder
-                                parentBOrder.ParentOrder = parentOrder
-                                parentBOrder.SLOrder = slOrderList
-                                parentBOrder.ParentOrderIdentifier = parentOrder.OrderIdentifier
-
-                                Await Me.ParentStrategy.SignalManager.ActivateEntryActivity(activityTag, Me, parentBOrder.ParentOrderIdentifier, Now).ConfigureAwait(False)
-                                logger.Debug("Order Placed {0}, Time:{1}", Me.TradableInstrument.TradingSymbol, Now.ToString)
-                                Await ProcessOrderAsync(parentBOrder).ConfigureAwait(False)
-                                'Me.OrderDetails.AddOrUpdate(parentBOrder.ParentOrderIdentifier, parentBOrder, Function(key, value) parentBOrder)
-                                If ret Is Nothing Then ret = New List(Of IBusinessOrder)
-                                ret.Add(OrderDetails(parentBOrder.ParentOrderIdentifier))
-                                OnHeartbeat(String.Format("Place Order Successful. Order ID:{0}", parentBOrder.ParentOrderIdentifier))
-                            End If
-                        Next
-                    End If
-                Finally
-                    'logger.Debug("Releasing lock")
-                    Interlocked.Exchange(_placeOrderLock, 0)
-                End Try
-            End If
-            Return ret
-        End Function
-
-        Protected Async Function TakeBOPaperTradeAsync(ByVal data As Object, Optional ByVal entryImmediately As Boolean = False, Optional ByVal currentTick As ITick = Nothing) As Task(Of List(Of IBusinessOrder))
-            Dim ret As List(Of IBusinessOrder) = Nothing
-            'logger.Debug(String.Format("Before Place Lock:{0}, {1}", Interlocked.Read(_placeOrderLock), Me.TradableInstrument.TradingSymbol))
-            If 0 = Interlocked.Exchange(_placeOrderLock, 1) Then
-                'logger.Debug(String.Format("After Place Lock:{0}, {1}", Interlocked.Read(_placeOrderLock), Me.TradableInstrument.TradingSymbol))
-                Try
-                    Dim activityTag As String = GenerateTag(Now)
-                    Dim parentPlaceOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, StrategyInstrument, PlaceOrderParameters, String)) = data
-                    If parentPlaceOrderTriggers IsNot Nothing AndAlso parentPlaceOrderTriggers.Count Then
-                        For Each runningPlaceOrderTrigger In parentPlaceOrderTriggers
-                            If runningPlaceOrderTrigger.Item1 = ExecuteCommandAction.Take Then
-                                logger.Debug("Place Order Details-> Direction:{0}, Qunatity:{1}, Trigger Price:{2}",
-                                     runningPlaceOrderTrigger.Item3.EntryDirection.ToString, runningPlaceOrderTrigger.Item3.Quantity, runningPlaceOrderTrigger.Item3.TriggerPrice)
-
-                                If Not entryImmediately Then
-                                    Dim lastTradeTime As Date = Me.TradableInstrument.LastTick.LastTradeTime.Value
-                                    While Utilities.Time.IsTimeEqualTillSeconds(Me.TradableInstrument.LastTick.LastTradeTime.Value, lastTradeTime)
-                                        Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
-                                    End While
-                                End If
-
-                                activityTag = GenerateFreshTagForNewSignal(activityTag, runningPlaceOrderTrigger.Item3.SignalCandle.SnapshotDateTime, runningPlaceOrderTrigger.Item3.EntryDirection, runningPlaceOrderTrigger.Item3.GenerateDifferentTag)
-
-                                If runningPlaceOrderTrigger.Item1 = ExecuteCommandAction.WaitAndTake Then activityTag = Await WaitAndGenerateFreshTag(activityTag).ConfigureAwait(False)
-
-                                Await Me.ParentStrategy.SignalManager.HandleEntryActivity(activityTag, Me, Nothing, runningPlaceOrderTrigger.Item3.SignalCandle.SnapshotDateTime, runningPlaceOrderTrigger.Item3.EntryDirection, Now, runningPlaceOrderTrigger.Item4).ConfigureAwait(False)
-
-                                Dim entryPrice As Decimal = Decimal.MinValue
-                                Dim entryTime As Date = Date.MinValue
-                                If currentTick IsNot Nothing Then
-                                    entryPrice = currentTick.LastPrice
-                                    entryTime = currentTick.Timestamp.Value
-                                Else
-                                    entryPrice = Me.TradableInstrument.LastTick.LastPrice
-                                    entryTime = Me.TradableInstrument.LastTick.Timestamp.Value
-                                End If
-
-                                Dim parentOrder As PaperOrder = New PaperOrder
-                                parentOrder.AveragePrice = entryPrice
-                                parentOrder.Quantity = runningPlaceOrderTrigger.Item3.Quantity
-                                parentOrder.Status = IOrder.TypeOfStatus.Complete
-                                parentOrder.InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
-                                parentOrder.OrderIdentifier = Utilities.Numbers.GetUniqueNumber()
-                                parentOrder.ParentOrderIdentifier = Nothing
-                                parentOrder.Tradingsymbol = Me.TradableInstrument.TradingSymbol
-                                parentOrder.TransactionType = runningPlaceOrderTrigger.Item3.EntryDirection
-                                parentOrder.TimeStamp = entryTime
-                                parentOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Parent
-                                parentOrder.Tag = activityTag
-
-                                Dim slOrder As PaperOrder = New PaperOrder
-                                slOrder.TransactionType = If(runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Buy, IOrder.TypeOfTransaction.Sell, IOrder.TypeOfTransaction.Buy)
-                                If runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Buy Then
-                                    slOrder.TriggerPrice = parentOrder.AveragePrice - runningPlaceOrderTrigger.Item3.StoplossValue
-                                ElseIf runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Sell Then
-                                    slOrder.TriggerPrice = parentOrder.AveragePrice + runningPlaceOrderTrigger.Item3.StoplossValue
-                                End If
-                                slOrder.Quantity = runningPlaceOrderTrigger.Item3.Quantity
-                                slOrder.Status = IOrder.TypeOfStatus.TriggerPending
-                                slOrder.InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
-                                slOrder.OrderIdentifier = Utilities.Numbers.GetUniqueNumber()
-                                slOrder.ParentOrderIdentifier = parentOrder.OrderIdentifier
-                                slOrder.Tradingsymbol = Me.TradableInstrument.TradingSymbol
-                                slOrder.TimeStamp = entryTime
-                                slOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Stoploss
-                                slOrder.Tag = activityTag
-
-                                Dim targetOrder As PaperOrder = New PaperOrder
-                                targetOrder.TransactionType = If(runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Buy, IOrder.TypeOfTransaction.Sell, IOrder.TypeOfTransaction.Buy)
-                                If runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Buy Then
-                                    targetOrder.AveragePrice = parentOrder.AveragePrice + runningPlaceOrderTrigger.Item3.SquareOffValue
-                                ElseIf runningPlaceOrderTrigger.Item3.EntryDirection = IOrder.TypeOfTransaction.Sell Then
-                                    targetOrder.AveragePrice = parentOrder.AveragePrice - runningPlaceOrderTrigger.Item3.SquareOffValue
-                                End If
-                                targetOrder.Quantity = runningPlaceOrderTrigger.Item3.Quantity
-                                targetOrder.Status = IOrder.TypeOfStatus.Open
-                                targetOrder.InstrumentIdentifier = Me.TradableInstrument.InstrumentIdentifier
-                                targetOrder.OrderIdentifier = Utilities.Numbers.GetUniqueNumber()
-                                targetOrder.ParentOrderIdentifier = parentOrder.OrderIdentifier
-                                targetOrder.Tradingsymbol = Me.TradableInstrument.TradingSymbol
-                                targetOrder.TimeStamp = entryTime
-                                targetOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Target
-                                targetOrder.Tag = activityTag
-
-                                Dim slOrderList As List(Of IOrder) = New List(Of IOrder)
-                                slOrderList.Add(slOrder)
-                                Dim targetOrderList As List(Of IOrder) = New List(Of IOrder)
-                                targetOrderList.Add(targetOrder)
-                                Dim parentBOrder As BusinessOrder = New BusinessOrder
-                                parentBOrder.ParentOrder = parentOrder
-                                parentBOrder.SLOrder = slOrderList
-                                parentBOrder.TargetOrder = targetOrderList
-                                parentBOrder.ParentOrderIdentifier = parentOrder.OrderIdentifier
-
-                                Await Me.ParentStrategy.SignalManager.ActivateEntryActivity(activityTag, Me, parentBOrder.ParentOrderIdentifier, Now).ConfigureAwait(False)
-                                logger.Debug("Order Placed {0}, Time:{1}", Me.TradableInstrument.TradingSymbol, Now.ToString)
-                                Await ProcessOrderAsync(parentBOrder).ConfigureAwait(False)
-                                'Me.OrderDetails.AddOrUpdate(parentBOrder.ParentOrderIdentifier, parentBOrder, Function(key, value) parentBOrder)
-                                If ret Is Nothing Then ret = New List(Of IBusinessOrder)
-                                ret.Add(OrderDetails(parentBOrder.ParentOrderIdentifier))
-                                OnHeartbeat(String.Format("Place Order Successful. Order ID:{0}", parentBOrder.ParentOrderIdentifier))
-                            End If
-                        Next
-                    End If
-                Finally
-                    'logger.Debug("Releasing lock")
-                    Interlocked.Exchange(_placeOrderLock, 0)
-                End Try
-            End If
-            Return ret
-        End Function
-
-        Private _cancelOrderLock As Integer = 0
-        Public PairStrategyCancellationRequest As Boolean = False
-        Protected Async Function CancelPaperTradeAsync(ByVal data As Object) As Task(Of List(Of IBusinessOrder))
-            Dim ret As List(Of IBusinessOrder) = Nothing
-            If 0 = Interlocked.Exchange(_cancelOrderLock, 1) Then
-                Try
-                    PairStrategyCancellationRequest = True
-                    Dim exitOrdersTriggers As List(Of Tuple(Of ExecuteCommandAction, StrategyInstrument, IOrder, String)) = data
-                    If exitOrdersTriggers IsNot Nothing AndAlso exitOrdersTriggers.Count > 0 Then
-                        For Each runningExitOrdersTrigger In exitOrdersTriggers
-                            If runningExitOrdersTrigger.Item1 = ExecuteCommandAction.Take Then
-                                Dim potentialExitOrders As List(Of IOrder) = Nothing
-                                If runningExitOrdersTrigger.Item1 = ExecuteCommandAction.Take Then
-
-                                    Dim lastTradeTime As Date = Me.TradableInstrument.LastTick.LastTradeTime.Value
-                                    While Utilities.Time.IsTimeEqualTillSeconds(Me.TradableInstrument.LastTick.LastTradeTime.Value, lastTradeTime)
-                                        Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
-                                    End While
-
-                                    Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(runningExitOrdersTrigger.Item3)
-                                    Await Me.ParentStrategy.SignalManager.HandleCancelActivity(runningExitOrdersTrigger.Item3.Tag, Me, Nothing, Now, runningExitOrdersTrigger.Item4).ConfigureAwait(False)
-                                    CType(runningExitOrdersTrigger.Item3, PaperOrder).Status = IOrder.TypeOfStatus.Cancelled
-                                    CType(runningExitOrdersTrigger.Item3, PaperOrder).TimeStamp = Now
-                                    CType(runningExitOrdersTrigger.Item3, PaperOrder).AveragePrice = Me.TradableInstrument.LastTick.LastPrice
-                                    Await Me.ParentStrategy.SignalManager.ActivateCancelActivity(runningExitOrdersTrigger.Item3.Tag, Me, Nothing, Now).ConfigureAwait(False)
-                                    Await ProcessOrderAsync(parentBusinessOrder).ConfigureAwait(False)
-                                    logger.Debug("Order Exited {0}", Me.TradableInstrument.TradingSymbol)
-
-                                    If parentBusinessOrder.SLOrder.Count = 1 Then
-                                        parentBusinessOrder.SLOrder = Nothing
-                                    Else
-                                        Throw New ApplicationException("Check why there is more than one sl order")
-                                    End If
-
-                                    If potentialExitOrders Is Nothing Then potentialExitOrders = New List(Of IOrder)
-                                    potentialExitOrders.Add(runningExitOrdersTrigger.Item3)
-                                    parentBusinessOrder.AllOrder = potentialExitOrders
-
-                                    If ret Is Nothing Then ret = New List(Of IBusinessOrder)
-                                    ret.Add(parentBusinessOrder)
-                                    OnHeartbeat(String.Format("Cancel Order Successful. Order ID:{0}", parentBusinessOrder.ParentOrderIdentifier))
-                                End If
-                            End If
-                        Next
-                    End If
-                Finally
-                    Interlocked.Exchange(_cancelOrderLock, 0)
-                    PairStrategyCancellationRequest = False
-                End Try
-            End If
-            Return ret
-        End Function
-
-        Private _forceCancelOrderLock As Integer = 0
-        Protected Async Function ForceCancelPaperTradeAsync(ByVal data As Object, Optional ByVal exitImmediately As Boolean = False, Optional ByVal currentTick As ITick = Nothing) As Task(Of List(Of IBusinessOrder))
-            Dim ret As List(Of IBusinessOrder) = Nothing
-            If 0 = Interlocked.Exchange(_forceCancelOrderLock, 1) Then
-                Try
-                    Dim exitOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = data
-                    If exitOrdersTrigger IsNot Nothing AndAlso exitOrdersTrigger.Count > 0 Then
-                        Dim potentialExitOrders As List(Of IOrder) = Nothing
-                        For Each runningExitOrder In exitOrdersTrigger
-                            If runningExitOrder.Item1 = ExecuteCommandAction.Take Then
-                                Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(runningExitOrder.Item2)
-
-                                logger.Debug("Cancel Order Details-> Parent Order ID:{0}, Direction:{1}, Reason:{2}",
-                                             parentBusinessOrder.ParentOrderIdentifier, parentBusinessOrder.ParentOrder.TransactionType.ToString, runningExitOrder.Item3)
-
-                                If Not exitImmediately Then
-                                    Dim lastTradeTime As Date = Me.TradableInstrument.LastTick.LastTradeTime.Value
-                                    While Utilities.Time.IsTimeEqualTillSeconds(Me.TradableInstrument.LastTick.LastTradeTime.Value, lastTradeTime)
-                                        Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
-                                    End While
-                                End If
-
-                                Await Me.ParentStrategy.SignalManager.HandleCancelActivity(runningExitOrder.Item2.Tag, Me, Nothing, Now, runningExitOrder.Item3).ConfigureAwait(False)
-
-                                Dim slOrder As IOrder = runningExitOrder.Item2
-                                Dim targetOrder As IOrder = Nothing
-                                If parentBusinessOrder.TargetOrder IsNot Nothing AndAlso parentBusinessOrder.TargetOrder.Count = 1 Then
-                                    targetOrder = parentBusinessOrder.TargetOrder.FirstOrDefault
-                                End If
-
-                                Dim exitPrice As Decimal = Decimal.MinValue
-                                Dim exitTime As Date = Date.MinValue
-                                If currentTick IsNot Nothing Then
-                                    exitPrice = currentTick.LastPrice
-                                    exitTime = currentTick.Timestamp.Value
-                                Else
-                                    exitPrice = Me.TradableInstrument.LastTick.LastPrice
-                                    exitTime = Me.TradableInstrument.LastTick.Timestamp.Value
-                                End If
-
-                                If runningExitOrder.Item3.ToUpper = "STOPLOSS REACHED" Then
-                                    CType(slOrder, PaperOrder).Status = IOrder.TypeOfStatus.Complete
-                                    CType(slOrder, PaperOrder).TimeStamp = exitTime
-                                    CType(slOrder, PaperOrder).AveragePrice = exitPrice
-                                    If targetOrder IsNot Nothing Then
-                                        CType(targetOrder, PaperOrder).Status = IOrder.TypeOfStatus.Cancelled
-                                        CType(targetOrder, PaperOrder).TimeStamp = exitTime
-                                        CType(targetOrder, PaperOrder).Quantity = 0
-                                    End If
-                                ElseIf runningExitOrder.Item3.ToUpper = "TARGET REACHED" Then
-                                    If targetOrder IsNot Nothing Then
-                                        CType(slOrder, PaperOrder).Status = IOrder.TypeOfStatus.Cancelled
-                                        CType(slOrder, PaperOrder).TimeStamp = exitTime
-                                        CType(slOrder, PaperOrder).Quantity = 0
-                                        CType(targetOrder, PaperOrder).Status = IOrder.TypeOfStatus.Complete
-                                        CType(targetOrder, PaperOrder).TimeStamp = exitTime
-                                        CType(targetOrder, PaperOrder).AveragePrice = exitPrice
-                                    Else
-                                        CType(slOrder, PaperOrder).Status = IOrder.TypeOfStatus.Cancelled
-                                        CType(slOrder, PaperOrder).TimeStamp = exitTime
-                                        CType(slOrder, PaperOrder).AveragePrice = exitPrice
-                                    End If
-                                Else
-                                    CType(slOrder, PaperOrder).Status = IOrder.TypeOfStatus.Complete
-                                    CType(slOrder, PaperOrder).TimeStamp = exitTime
-                                    CType(slOrder, PaperOrder).AveragePrice = exitPrice
-                                    If targetOrder IsNot Nothing Then
-                                        CType(targetOrder, PaperOrder).Status = IOrder.TypeOfStatus.Cancelled
-                                        CType(targetOrder, PaperOrder).TimeStamp = exitTime
-                                        CType(targetOrder, PaperOrder).Quantity = 0
-                                    End If
-                                End If
-
-                                Await Me.ParentStrategy.SignalManager.ActivateCancelActivity(runningExitOrder.Item2.Tag, Me, Nothing, Now).ConfigureAwait(False)
-                                Await ProcessOrderAsync(parentBusinessOrder).ConfigureAwait(False)
-                                logger.Debug("Order Exited {0}", Me.TradableInstrument.TradingSymbol)
-
-                                If parentBusinessOrder.SLOrder.Count = 1 Then
-                                    parentBusinessOrder.SLOrder = Nothing
-                                Else
-                                    Throw New ApplicationException("Check why there is more than one sl order")
-                                End If
-                                If parentBusinessOrder.TargetOrder.Count = 1 Then
-                                    parentBusinessOrder.TargetOrder = Nothing
-                                Else
-                                    Throw New ApplicationException("Check why there is more than one target order")
-                                End If
-
-                                If potentialExitOrders Is Nothing Then potentialExitOrders = New List(Of IOrder)
-                                potentialExitOrders.Add(runningExitOrder.Item2)
-                                If targetOrder IsNot Nothing Then potentialExitOrders.Add(targetOrder)
-                                parentBusinessOrder.AllOrder = potentialExitOrders
-                                If ret Is Nothing Then ret = New List(Of IBusinessOrder)
-                                ret.Add(parentBusinessOrder)
-                                'OnHeartbeat(String.Format("Force Cancel Order Successful. Order ID:{0}", parentBusinessOrder.ParentOrderIdentifier))
-                            End If
-                        Next
-                    End If
-                Finally
-                    Interlocked.Exchange(_forceCancelOrderLock, 0)
-                End Try
-            End If
-            Return ret
-        End Function
-
-        Private _modifySLOrderLock As Integer = 0
-        Protected Async Function ModifySLPaperTradeAsync(ByVal data As Object) As Task(Of List(Of IBusinessOrder))
-            Dim ret As List(Of IBusinessOrder) = Nothing
-            If 0 = Interlocked.Exchange(_modifySLOrderLock, 1) Then
-                Try
-                    Dim modifyOrdersTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = data
-                    If modifyOrdersTrigger IsNot Nothing AndAlso modifyOrdersTrigger.Count > 0 Then
-                        For Each runningOrder In modifyOrdersTrigger
-                            If runningOrder.Item1 = ExecuteCommandAction.Take Then
-                                Dim parentBusinessOrder As IBusinessOrder = GetParentFromChildOrder(runningOrder.Item2)
-
-                                logger.Debug("Modify Order Details-> Parent Order ID:{0}, Direction:{1}, Trigger Price:{2}, Reason:{3}",
-                                             parentBusinessOrder.ParentOrderIdentifier, parentBusinessOrder.ParentOrder.TransactionType.ToString, runningOrder.Item3, runningOrder.Item4)
-
-
-                                Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(runningOrder.Item2.Tag, Me, Nothing, Now, runningOrder.Item3, runningOrder.Item4).ConfigureAwait(False)
-
-                                Dim slOrder As IOrder = runningOrder.Item2
-                                CType(slOrder, PaperOrder).TriggerPrice = runningOrder.Item3
-
-                                Await Me.ParentStrategy.SignalManager.ActivateStoplossModifyActivity(runningOrder.Item2.Tag, Me, Nothing, Now).ConfigureAwait(False)
-                                Await ProcessOrderAsync(parentBusinessOrder).ConfigureAwait(False)
-                                logger.Debug("Order Modified {0}", Me.TradableInstrument.TradingSymbol)
-                                If ret Is Nothing Then ret = New List(Of IBusinessOrder)
-                                ret.Add(parentBusinessOrder)
-                                OnHeartbeat(String.Format("Modify Order Successful. Order ID:{0}", parentBusinessOrder.ParentOrderIdentifier))
-                            End If
-                        Next
-                    End If
-                Finally
-                    Interlocked.Exchange(_modifySLOrderLock, 0)
-                End Try
             End If
             Return ret
         End Function

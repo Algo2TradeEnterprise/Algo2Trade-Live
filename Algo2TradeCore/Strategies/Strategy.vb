@@ -270,7 +270,7 @@ Namespace Strategies
         End Function
         Private Function IsOrderAssociatedWithThisStrategy(ByVal orderData As IOrder) As Boolean
             Dim ret As Boolean = False
-            If orderData.Tag IsNot Nothing Then
+            If orderData.Tag IsNot Nothing AndAlso orderData.Tag.Trim <> "" Then
                 Dim decodedTag As String = Convert.ToInt64(orderData.Tag, 16)
                 If decodedTag.Substring(0, 1).Equals(Me.StrategyIdentifier) Then
                     ret = True

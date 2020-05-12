@@ -604,5 +604,45 @@ Namespace Controller
             End Using
             Return ret
         End Function
+        Public Async Function GetOrderTagAsync(ByVal instrument_identifier As String, ByVal order_id As String, ByVal parent_order_id As String,
+                                               ByVal order_entry_time As Date, ByVal order_direction As IOrder.TypeOfTransaction, ByVal order_type As IOrder.TypeOfOrder, ByVal order_quantity As Integer) As Task(Of String)
+            Dim ret As String = Nothing
+            If _AllStrategies IsNot Nothing AndAlso _AllStrategies.Count > 0 Then
+                For Each runningStrategy In _AllStrategies
+                    If runningStrategy.TradableStrategyInstruments IsNot Nothing AndAlso runningStrategy.TradableStrategyInstruments.Count > 0 Then
+                        For Each runningStrategyInstrument In runningStrategy.TradableStrategyInstruments
+                            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier = instrument_identifier Then
+                                Dim orderID As String = order_id
+                                If parent_order_id IsNot Nothing AndAlso parent_order_id.Trim <> "" Then
+                                    orderID = parent_order_id
+                                End If
+                                Dim activityWithTag As Tuple(Of String, ActivityDashboard) = runningStrategyInstrument.ParentStrategy.SignalManager.GetSignalActivities(orderID, instrument_identifier)
+                                If activityWithTag IsNot Nothing Then
+                                    ret = activityWithTag.Item1
+                                Else
+                                    Dim orphanActivities As Dictionary(Of String, ActivityDashboard) = runningStrategyInstrument.ParentStrategy.SignalManager.GetOrphanSignalActivities(instrument_identifier)
+                                    If orphanActivities IsNot Nothing AndAlso orphanActivities.Count > 0 Then
+                                        For Each runningActivity In orphanActivities
+                                            If runningActivity.Value.ParentOrderID Is Nothing OrElse runningActivity.Value.ParentOrderID.Trim = "" Then
+                                                If runningActivity.Value.SignalDirection = order_direction AndAlso
+                                                    runningActivity.Value.SignalType = order_type AndAlso
+                                                    runningActivity.Value.SignalQuantity = order_quantity Then
+                                                    Await runningStrategyInstrument.ParentStrategy.SignalManager.ActivateEntryActivity(runningActivity.Key, runningActivity.Value.ParentStrategyInstrument, orderID, Now).ConfigureAwait(False)
+                                                    ret = runningActivity.Key
+                                                    Exit For
+                                                End If
+                                            End If
+                                        Next
+                                    End If
+                                End If
+                                Exit For
+                            End If
+                        Next
+                    End If
+                    If ret IsNot Nothing Then Exit For
+                Next
+            End If
+            Return ret
+        End Function
     End Class
 End Namespace

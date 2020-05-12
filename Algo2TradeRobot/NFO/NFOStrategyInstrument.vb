@@ -68,20 +68,20 @@ Public Class NFOStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
 
-                ''Place Order block start
-                'Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                'If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
-                '    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                '    Await ExecuteCommandAsync(ExecuteCommands.PlaceCOMarketMISOrder, Nothing).ConfigureAwait(False)
-                'End If
-                ''Place Order block end
-                '_cts.Token.ThrowIfCancellationRequested()
-                ''Exit Order block start
-                'Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
-                'If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
-                '    Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
-                'End If
-                ''Exit Order block end
+                'Place Order block start
+                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                    Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
+                End If
+                'Place Order block end
+                _cts.Token.ThrowIfCancellationRequested()
+                'Exit Order block start
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
+                End If
+                'Exit Order block end
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While
@@ -100,6 +100,9 @@ Public Class NFOStrategyInstrument
         Dim hkConsumer As HeikinAshiConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHKConsumer)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
+        Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
+        Dim buyActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
+        Dim sellActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
 
         'Try
         '    If runningLFCandlePayload IsNot Nothing AndAlso runningLFCandlePayload.PreviousPayload IsNot Nothing AndAlso
@@ -132,12 +135,61 @@ Public Class NFOStrategyInstrument
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso currentTime <= userSettings.EODExitTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Not IsActiveInstrument() AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso GetTotalExecutedOrders() < userSettings.NumberOfTradePerStock AndAlso
+            Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLossPerDay AndAlso
+            Me.ParentStrategy.GetTotalPLAfterBrokerage() < userSettings.OverallMaxProfitPerDay AndAlso Not Me.StrategyExitAllTriggerd AndAlso
             hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
             hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim hkCandle As HeikinAshiConsumer.HeikinAshiPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+            Dim signal As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle)
+            If signal IsNot Nothing AndAlso signal.Item1 Then
+                Dim signalCandle As OHLCPayload = Nothing
+                If lastExecutedOrder Is Nothing Then
+                    signalCandle = runningCandlePayload.PreviousPayload
+                Else
+                    Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                    If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
+                        signalCandle = runningCandlePayload.PreviousPayload
+                    End If
+                End If
+                If signalCandle IsNot Nothing Then
+                    Dim quantity As Decimal = Me.TradableInstrument.LotSize
+                    Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    Dim slPoint As Decimal = _slab
+                    Dim targetPoint As Decimal = _slab * 25
+                    If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
+                        If buyActiveTrades Is Nothing OrElse buyActiveTrades.Count = 0 Then
+                            Dim triggerPrice As Decimal = signal.Item2 + buffer
+                            Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
+                            If currentTick.LastPrice < triggerPrice Then
+                                parameters = New PlaceOrderParameters(signalCandle) With
+                                            {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                             .TriggerPrice = triggerPrice,
+                                             .Price = price,
+                                             .StoplossValue = slPoint + 2 * buffer,
+                                             .SquareOffValue = targetPoint,
+                                             .Quantity = quantity}
+                            End If
+                        End If
+                    ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
+                        If sellActiveTrades Is Nothing OrElse sellActiveTrades.Count = 0 Then
+                            Dim triggerPrice As Decimal = signal.Item2 - buffer
+                            Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
+                            If currentTick.LastPrice > triggerPrice Then
+                                parameters = New PlaceOrderParameters(signalCandle) With
+                                            {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                             .TriggerPrice = triggerPrice,
+                                             .Price = price,
+                                             .StoplossValue = slPoint + 2 * buffer,
+                                             .SquareOffValue = targetPoint,
+                                             .Quantity = quantity}
+                            End If
+                        End If
+                    End If
+                End If
+            End If
         End If
 
         'Below portion have to be done in every place order trigger
@@ -199,73 +251,65 @@ Public Class NFOStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        'Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        'Dim supertrendConsumerLF As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyLFSupertrendConsumer)
-        'Dim supertrendConsumerHF As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHFSupertrendConsumer)
-        'Dim runningLFCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
-        'Dim runningHFCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.HigherTimeframe)
+        Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+        Dim hkConsumer As HeikinAshiConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHKConsumer)
+        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
 
-        'If runningLFCandlePayload IsNot Nothing AndAlso runningLFCandlePayload.PreviousPayload IsNot Nothing AndAlso
-        '    runningHFCandlePayload IsNot Nothing AndAlso runningHFCandlePayload.PreviousPayload IsNot Nothing AndAlso
-        '    Me.TradableInstrument.IsHistoricalCompleted AndAlso
-        '    supertrendConsumerLF.ConsumerPayloads IsNot Nothing AndAlso supertrendConsumerLF.ConsumerPayloads.Count > 0 AndAlso
-        '    supertrendConsumerLF.ConsumerPayloads.ContainsKey(runningLFCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
-        '    supertrendConsumerHF.ConsumerPayloads IsNot Nothing AndAlso supertrendConsumerHF.ConsumerPayloads.Count > 0 AndAlso
-        '    supertrendConsumerHF.ConsumerPayloads.ContainsKey(runningHFCandlePayload.PreviousPayload.SnapshotDateTime) Then
-        '    Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
-        '    If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-        '        Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
-        '                                                                      Return x.ParentOrderIdentifier IsNot Nothing AndAlso
-        '                                                                      (x.Status = IOrder.TypeOfStatus.TriggerPending OrElse
-        '                                                                      x.Status = IOrder.TypeOfStatus.Open)
-        '                                                                  End Function)
-        '        If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
-        '            For Each runningSLOrder In slOrders
-        '                If runningSLOrder.Status = IOrder.TypeOfStatus.TriggerPending OrElse
-        '                runningSLOrder.Status = IOrder.TypeOfStatus.Open Then
-        '                    Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
-        '                    Dim exitTrade As Boolean = False
-        '                    Dim supertrendLF As SupertrendConsumer.SupertrendPayload = supertrendConsumerLF.ConsumerPayloads(runningLFCandlePayload.PreviousPayload.SnapshotDateTime)
-        '                    Dim supertrendHF As SupertrendConsumer.SupertrendPayload = supertrendConsumerLF.ConsumerPayloads(runningLFCandlePayload.PreviousPayload.SnapshotDateTime)
-        '                    If (supertrendLF.SupertrendColor = Color.Green OrElse supertrendHF.SupertrendColor = Color.Green) AndAlso
-        '                        bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-        '                        exitTrade = True
-        '                    ElseIf (supertrendLF.SupertrendColor = Color.Red OrElse supertrendHF.SupertrendColor = Color.Red) AndAlso
-        '                        bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-        '                        exitTrade = True
-        '                    End If
-        '                    If exitTrade Then
-        '                        'Below portion have to be done in every cancel order trigger
-        '                        Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
-        '                        If currentSignalActivities IsNot Nothing Then
-        '                            If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-        '                                currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-        '                                currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
-        '                                Continue For
-        '                            End If
-        '                        End If
-        '                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
-        '                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningSLOrder, "Opposite direction signal"))
-        '                    End If
-        '                End If
-        '            Next
-        '        End If
-        '    End If
-        'End If
-        'If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
-        '    Try
-        '        For Each runningOrder In ret
-        '            logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, LF {2}, HF {3}, {4}",
-        '                         runningOrder.Item2.OrderIdentifier,
-        '                         runningOrder.Item3,
-        '                         supertrendConsumerLF.ConsumerPayloads(runningLFCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-        '                         supertrendConsumerHF.ConsumerPayloads(runningHFCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-        '                         Me.TradableInstrument.TradingSymbol)
-        '        Next
-        '    Catch ex As Exception
-        '        logger.Error(ex)
-        '    End Try
-        'End If
+        If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso
+            hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
+            hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                              Return x.ParentOrderIdentifier IsNot Nothing AndAlso
+                                                                              x.Status = IOrder.TypeOfStatus.TriggerPending
+                                                                          End Function)
+                If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
+                    Dim hkCandle As HeikinAshiConsumer.HeikinAshiPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+                    For Each runningSLOrder In slOrders
+                        If runningSLOrder.Status = IOrder.TypeOfStatus.TriggerPending Then
+                            Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
+                            Dim exitTrade As Boolean = False
+                            Dim signal As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle)
+                            If signal IsNot Nothing AndAlso signal.Item1 Then
+                                If bussinessOrder.ParentOrder.TransactionType = signal.Item4 Then
+                                    Dim orderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(bussinessOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                                    If orderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
+                                        exitTrade = True
+                                    End If
+                                End If
+                            End If
+                            If exitTrade Then
+                                'Below portion have to be done in every cancel order trigger
+                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
+                                If currentSignalActivities IsNot Nothing Then
+                                    If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                                        currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                        currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                        Continue For
+                                    End If
+                                End If
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningSLOrder, "Invalid signal"))
+                            End If
+                        End If
+                    Next
+                End If
+            End If
+        End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
+            Try
+                For Each runningOrder In ret
+                    logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}",
+                                 runningOrder.Item2.OrderIdentifier,
+                                 runningOrder.Item3,
+                                 Me.TradableInstrument.TradingSymbol)
+                Next
+            Catch ex As Exception
+                logger.Error(ex)
+            End Try
+        End If
         Return ret
     End Function
     Protected Overrides Function IsTriggerReceivedForPlaceOrderAsync(forcePrint As Boolean, data As Object) As Task(Of List(Of Tuple(Of ExecuteCommandAction, StrategyInstrument, PlaceOrderParameters, String)))
@@ -284,16 +328,16 @@ Public Class NFOStrategyInstrument
                 New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
             }
 
-            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelCOOrder, cancellableOrder).ConfigureAwait(False)
+            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelBOOrder, cancellableOrder).ConfigureAwait(False)
         End If
     End Function
 
     Private Function GetSlabBasedLevel(ByVal price As Decimal, ByVal direction As IOrder.TypeOfTransaction) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If direction = IOrder.TypeOfTransaction.Buy Then
-            ret = Math.Ceiling(price / _slab) * _slab
+            ret = ConvertFloorCeling(Math.Ceiling(price / _slab) * _slab, Me.TradableInstrument.TickSize, RoundOfType.Celing)
         ElseIf direction = IOrder.TypeOfTransaction.Sell Then
-            ret = Math.Floor(price / _slab) * _slab
+            ret = ConvertFloorCeling(Math.Floor(price / _slab) * _slab, Me.TradableInstrument.TickSize, RoundOfType.Floor)
         End If
         Return ret
     End Function

@@ -18,6 +18,7 @@ Namespace Exceptions
             InputException
             DataException
             NetworkException
+            UnknownException
             None
         End Enum
 #End Region

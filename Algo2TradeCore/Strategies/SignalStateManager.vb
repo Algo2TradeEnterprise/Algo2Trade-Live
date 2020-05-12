@@ -47,6 +47,8 @@ Namespace Strategies
                                                   ByVal associatedOrderID As String,
                                                   ByVal signalGeneratedTime As Date,
                                                   ByVal signalDirection As IOrder.TypeOfTransaction,
+                                                  ByVal signalType As IOrder.TypeOfOrder,
+                                                  ByVal signalQuantity As Integer,
                                                   ByVal requestTime As Date,
                                                   ByVal requestRemarks As String) As Task
             Await AddOrUpdateEntryActivity(activityTag:=activityTag,
@@ -54,6 +56,8 @@ Namespace Strategies
                                             associatedOrderID:=associatedOrderID,
                                             signalGeneratedTime:=signalGeneratedTime,
                                             signalDirection:=signalDirection,
+                                            signalType:=signalType,
+                                            signalQuantity:=signalQuantity,
                                             requestTime:=requestTime,
                                             receivedTime:=_defaultDateValue,
                                             requestStatus:=ActivityDashboard.SignalStatusType.Handled,
@@ -290,6 +294,46 @@ Namespace Strategies
             End If
             Return ret
         End Function
+        Public Function GetSignalActivities(ByVal orderID As String, ByVal instrumentIdentifier As String) As Tuple(Of String, ActivityDashboard)
+            Dim ret As Tuple(Of String, ActivityDashboard) = Nothing
+            If Me.ActivityDetails IsNot Nothing AndAlso Me.ActivityDetails.Count > 0 Then
+                Dim runningStrategyInstrumentActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
+                    Me.ActivityDetails.Where(Function(x)
+                                                 Dim key As String = Convert.ToInt64(x.Key, 16)
+                                                 Return key.Substring(0, 1).Equals(Me.ParentStrategy.StrategyIdentifier) AndAlso
+                                                 Val(key.Substring(1, 3)) = Val(Me.ParentController.InstrumentMappingTable(instrumentIdentifier))
+                                             End Function)
+                If runningStrategyInstrumentActivities IsNot Nothing AndAlso runningStrategyInstrumentActivities.Count > 0 Then
+                    For Each runningActivity In runningStrategyInstrumentActivities
+                        If runningActivity.Value.ParentOrderID = orderID Then
+                            ret = New Tuple(Of String, ActivityDashboard)(runningActivity.Key, runningActivity.Value)
+                            Exit For
+                        End If
+                    Next
+                End If
+            End If
+            Return ret
+        End Function
+        Public Function GetOrphanSignalActivities(ByVal instrumentIdentifier As String) As Dictionary(Of String, ActivityDashboard)
+            Dim ret As Dictionary(Of String, ActivityDashboard) = Nothing
+            If Me.ActivityDetails IsNot Nothing AndAlso Me.ActivityDetails.Count > 0 Then
+                Dim runningStrategyInstrumentActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
+                    Me.ActivityDetails.Where(Function(x)
+                                                 Dim key As String = Convert.ToInt64(x.Key, 16)
+                                                 Return key.Substring(0, 1).Equals(Me.ParentStrategy.StrategyIdentifier) AndAlso
+                                                 Val(key.Substring(1, 3)) = Val(Me.ParentController.InstrumentMappingTable(instrumentIdentifier))
+                                             End Function)
+                If runningStrategyInstrumentActivities IsNot Nothing AndAlso runningStrategyInstrumentActivities.Count > 0 Then
+                    For Each runningActivity In runningStrategyInstrumentActivities
+                        If runningActivity.Value.ParentOrderID Is Nothing OrElse runningActivity.Value.ParentOrderID.Trim = "" Then
+                            If ret Is Nothing Then ret = New Dictionary(Of String, ActivityDashboard)
+                            ret.Add(runningActivity.Key, runningActivity.Value)
+                        End If
+                    Next
+                End If
+            End If
+            Return ret
+        End Function
 #End Region
 
 #Region "UI Refresh"
@@ -407,6 +451,8 @@ Namespace Strategies
                                                          ByVal associatedOrderID As String,
                                                          Optional ByVal signalGeneratedTime As Date = Nothing,
                                                          Optional ByVal signalDirection As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None,
+                                                         Optional ByVal signalType As IOrder.TypeOfOrder = IOrder.TypeOfOrder.None,
+                                                         Optional ByVal signalQuantity As Integer = Integer.MinValue,
                                                          Optional ByVal requestTime As Date = Nothing,
                                                          Optional ByVal receivedTime As Date = Nothing,
                                                          Optional ByVal requestStatus As ActivityDashboard.SignalStatusType = ActivityDashboard.SignalStatusType.None,
@@ -421,6 +467,8 @@ Namespace Strategies
             If associatedOrderID IsNot Nothing Then existingActivities.ParentOrderID = associatedOrderID
             If signalGeneratedTime <> Nothing OrElse signalGeneratedTime <> Date.MinValue Then existingActivities.SignalGeneratedTime = signalGeneratedTime
             If signalDirection <> IOrder.TypeOfTransaction.None Then existingActivities.SignalDirection = signalDirection
+            If signalType <> IOrder.TypeOfOrder.None Then existingActivities.SignalType = signalType
+            If signalQuantity <> Integer.MinValue OrElse signalQuantity <> 0 Then existingActivities.SignalQuantity = signalQuantity
             If requestTime <> Nothing OrElse requestTime <> Date.MinValue Then existingActivities.EntryActivity.RequestTime = requestTime
             If receivedTime <> Nothing OrElse receivedTime <> Date.MinValue Then existingActivities.EntryActivity.ReceivedTime = If(receivedTime.Equals(_defaultDateValue), Date.MinValue, receivedTime)
             If requestStatus <> ActivityDashboard.SignalStatusType.None Then existingActivities.EntryActivity.RequestStatus = requestStatus
