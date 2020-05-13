@@ -16,7 +16,7 @@ Public Class NFOStrategyInstrument
 
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
-    Private ReadOnly _slab As Decimal
+    Public Slab As Decimal
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -50,7 +50,7 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
-        _slab = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).Slab
+        Slab = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).Slab
     End Sub
     Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
         Throw New NotImplementedException()
@@ -161,8 +161,8 @@ Public Class NFOStrategyInstrument
                     If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
                         buffer = 0
                     End If
-                    Dim slPoint As Decimal = _slab
-                    Dim targetPoint As Decimal = _slab * 25
+                    Dim slPoint As Decimal = Slab
+                    Dim targetPoint As Decimal = Slab * 25
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
                         If buyActiveTrades Is Nothing OrElse buyActiveTrades.Count = 0 Then
                             Dim triggerPrice As Decimal = signal.Item2 + buffer
@@ -414,9 +414,9 @@ Public Class NFOStrategyInstrument
     Private Function GetSlabBasedLevel(ByVal price As Decimal, ByVal direction As IOrder.TypeOfTransaction) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If direction = IOrder.TypeOfTransaction.Buy Then
-            ret = ConvertFloorCeling(Math.Ceiling(price / _slab) * _slab, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+            ret = ConvertFloorCeling(Math.Ceiling(price / Slab) * Slab, Me.TradableInstrument.TickSize, RoundOfType.Celing)
         ElseIf direction = IOrder.TypeOfTransaction.Sell Then
-            ret = ConvertFloorCeling(Math.Floor(price / _slab) * _slab, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            ret = ConvertFloorCeling(Math.Floor(price / Slab) * Slab, Me.TradableInstrument.TickSize, RoundOfType.Floor)
         End If
         Return ret
     End Function

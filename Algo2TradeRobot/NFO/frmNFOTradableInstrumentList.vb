@@ -15,6 +15,8 @@
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
+            dt.Columns.Add("Slab")
+            dt.Columns.Add("Historical Complete")
             For Each instrument In _TradableInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
@@ -23,6 +25,8 @@
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
+                row("Slab") = CType(instrument, NFOStrategyInstrument).Slab
+                row("Historical Complete") = instrument.TradableInstrument.IsHistoricalCompleted
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
