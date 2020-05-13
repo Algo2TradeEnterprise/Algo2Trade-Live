@@ -76,8 +76,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -147,8 +149,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, New Dictionary(Of String, Object) From {{"instruments", instruments}}).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -195,8 +199,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -248,8 +254,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -320,8 +328,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -374,8 +384,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -439,8 +451,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, Nothing).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -491,8 +505,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -532,8 +548,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -580,8 +598,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -625,8 +645,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -670,8 +692,10 @@ Namespace Adapter
                 tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
             Catch tex As TokenException
                 Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-            Catch gex As UnknownException
-                Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch oex As OrderException
+                Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+            Catch uex As UnknownException
+                Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -743,8 +767,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -823,8 +849,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -903,8 +931,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -982,8 +1012,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1059,8 +1091,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1136,8 +1170,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1215,8 +1251,10 @@ Namespace Adapter
                     tempAllRet = Await ExecuteCommandAsync(execCommand, tradeParameters).ConfigureAwait(False)
                 Catch tex As TokenException
                     Throw New AliceBusinessException(tex.Message, tex, AdapterBusinessException.TypeOfException.TokenException)
-                Catch gex As UnknownException
-                    Throw New AliceBusinessException(gex.Message, gex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch oex As OrderException
+                    Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
+                Catch uex As UnknownException
+                    Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1362,6 +1400,9 @@ Namespace Adapter
                                                                                  Try
                                                                                      Return _Alice.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
                                                                                                               Quantity:=CType(stockData("Quantity"), String))
+                                                                                 Catch oex As OrderException
+                                                                                     logger.Error(oex)
+                                                                                     Return New Dictionary(Of String, Object) From {{"status", "success"}, {"message", oex.Message}}
                                                                                  Catch ex As Exception
                                                                                      logger.Error(ex)
                                                                                      lastException = ex
@@ -1378,6 +1419,9 @@ Namespace Adapter
                                                                               Try
                                                                                   Return _Alice.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
                                                                                                            Price:=CType(stockData("Price"), Decimal))
+                                                                              Catch oex As OrderException
+                                                                                  logger.Error(oex)
+                                                                                  Return New Dictionary(Of String, Object) From {{"status", "success"}, {"message", oex.Message}}
                                                                               Catch ex As Exception
                                                                                   logger.Error(ex)
                                                                                   lastException = ex
@@ -1394,6 +1438,9 @@ Namespace Adapter
                                                                               Try
                                                                                   Return _Alice.ModifyOrder(OrderId:=CType(stockData("OrderId"), String),
                                                                                                            TriggerPrice:=CType(stockData("TriggerPrice"), Decimal))
+                                                                              Catch oex As OrderException
+                                                                                  logger.Error(oex)
+                                                                                  Return New Dictionary(Of String, Object) From {{"status", "success"}, {"message", oex.Message}}
                                                                               Catch ex As Exception
                                                                                   logger.Error(ex)
                                                                                   lastException = ex
@@ -1411,6 +1458,9 @@ Namespace Adapter
                                                                              Return _Alice.CancelOrder(OrderId:=CType(stockData("OrderId"), String),
                                                                                                        ParentOrderId:=CType(stockData("ParentOrderId"), String),
                                                                                                        Variety:=CType(stockData("Variety"), String))
+                                                                         Catch oex As OrderException
+                                                                             logger.Error(oex)
+                                                                             Return New Dictionary(Of String, Object) From {{"status", "success"}, {"message", oex.Message}}
                                                                          Catch ex As Exception
                                                                              logger.Error(ex)
                                                                              lastException = ex
