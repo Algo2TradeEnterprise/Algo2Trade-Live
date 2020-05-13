@@ -334,6 +334,35 @@ Namespace Strategies
             End If
             Return ret
         End Function
+        Public Function GetActiveSignalActivities(ByVal instrumentIdentifier As String) As IEnumerable(Of ActivityDashboard)
+            Dim ret As IEnumerable(Of ActivityDashboard) = Nothing
+            Dim tempRet As List(Of ActivityDashboard) = Nothing
+            If Me.ActivityDetails IsNot Nothing AndAlso Me.ActivityDetails.Count > 0 Then
+                Dim runningStrategyInstrumentActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
+                Me.ActivityDetails.Where(Function(x)
+                                             Dim key As String = Convert.ToInt64(x.Key, 16)
+                                             Return key.Substring(0, 1).Equals(Me.ParentStrategy.StrategyIdentifier) AndAlso
+                                             Val(key.Substring(1, 3)) = Val(Me.ParentController.InstrumentMappingTable(instrumentIdentifier))
+                                         End Function)
+
+                If runningStrategyInstrumentActivities IsNot Nothing AndAlso runningStrategyInstrumentActivities.Count > 0 Then
+                    Dim currentSignalActivities As IEnumerable(Of KeyValuePair(Of String, ActivityDashboard)) =
+                    runningStrategyInstrumentActivities.Where(Function(y)
+                                                                  Return y.Value.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                                                  y.Value.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled
+                                                              End Function)
+
+                    If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
+                        For Each currentSignalActivity In currentSignalActivities
+                            If tempRet Is Nothing Then tempRet = New List(Of ActivityDashboard)
+                            tempRet.Add(currentSignalActivity.Value)
+                        Next
+                    End If
+                End If
+            End If
+            ret = tempRet
+            Return ret
+        End Function
 #End Region
 
 #Region "UI Refresh"
