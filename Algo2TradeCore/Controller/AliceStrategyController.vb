@@ -919,8 +919,8 @@ Namespace Controller
                                                                    Return Nothing
                                                                Else
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
-                                                                 ((y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                 y.WrappedOrder.TriggerPrice <> 0) OrElse (y.OrderType = IOrder.TypeOfOrder.SL))
+                                                                    ((y.WrappedOrder.TriggerPrice <= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
+                                                                    y.WrappedOrder.TriggerPrice <> 0) OrElse (y.OrderType = IOrder.TypeOfOrder.SL) OrElse (y.OrderType = IOrder.TypeOfOrder.SL_M))
                                                                End If
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -958,7 +958,7 @@ Namespace Controller
                                                                Else
                                                                    Return y.WrappedOrder.ParentOrderId = parentOrder.OrderIdentifier AndAlso
                                                                 ((y.WrappedOrder.TriggerPrice >= wrappedParentOrder.WrappedOrder.AveragePrice AndAlso
-                                                                y.WrappedOrder.TriggerPrice <> 0) OrElse (y.OrderType = IOrder.TypeOfOrder.SL))
+                                                                y.WrappedOrder.TriggerPrice <> 0) OrElse (y.OrderType = IOrder.TypeOfOrder.SL) OrElse (y.OrderType = IOrder.TypeOfOrder.SL_M))
                                                                End If
                                                            End Function)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -1003,6 +1003,8 @@ Namespace Controller
                             ElseIf runningOrder.OrderType = IOrder.TypeOfOrder.Limit AndAlso runningOrder.TriggerPrice <> 0 Then
                                 runningOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Stoploss
                             ElseIf runningOrder.OrderType = IOrder.TypeOfOrder.SL Then
+                                runningOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Stoploss
+                            ElseIf runningOrder.OrderType = IOrder.TypeOfOrder.SL_M Then
                                 runningOrder.LogicalOrderType = IOrder.LogicalTypeOfOrder.Stoploss
                             End If
                         Next
