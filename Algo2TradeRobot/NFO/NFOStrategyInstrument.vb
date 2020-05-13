@@ -424,16 +424,16 @@ Public Class NFOStrategyInstrument
     Private Function GetSignalCandle(ByVal hkCandle As HeikinAshiConsumer.HeikinAshiPayload, ByVal forcePrint As Boolean) As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = Nothing
         If hkCandle IsNot Nothing Then
-            If Math.Round(hkCandle.High.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
-                Dim buyLevel As Decimal = GetSlabBasedLevel(hkCandle.High.Value, IOrder.TypeOfTransaction.Buy)
-                ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
-            ElseIf Math.Round(hkCandle.Low.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
-                Dim sellLevel As Decimal = GetSlabBasedLevel(hkCandle.Low.Value, IOrder.TypeOfTransaction.Sell)
-                ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
-            End If
-            If ret Is Nothing Then
-                ret = GetLastHistoricalSignal(hkCandle)
-            End If
+            'If Math.Round(hkCandle.High.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
+            '    Dim buyLevel As Decimal = GetSlabBasedLevel(hkCandle.High.Value, IOrder.TypeOfTransaction.Buy)
+            '    ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
+            'ElseIf Math.Round(hkCandle.Low.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
+            '    Dim sellLevel As Decimal = GetSlabBasedLevel(hkCandle.Low.Value, IOrder.TypeOfTransaction.Sell)
+            '    ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
+            'End If
+            'If ret Is Nothing Then
+            ret = GetLastHistoricalSignal(hkCandle)
+            'End If
         End If
         If ret IsNot Nothing AndAlso forcePrint Then
             Try
@@ -447,10 +447,10 @@ Public Class NFOStrategyInstrument
 
     Private Function GetLastHistoricalSignal(ByVal hkCandle As HeikinAshiConsumer.HeikinAshiPayload) As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = Nothing
-        If hkCandle.PreviousPayload IsNot Nothing Then
-            Dim candleToCheck As HeikinAshiConsumer.HeikinAshiPayload = hkCandle.PreviousPayload
+        If hkCandle IsNot Nothing Then
+            Dim candleToCheck As HeikinAshiConsumer.HeikinAshiPayload = hkCandle
             While candleToCheck IsNot Nothing
-                If candleToCheck.SnapshotDateTime <> Now.Date Then
+                If candleToCheck.SnapshotDateTime.Date <> Now.Date Then
                     Exit While
                 End If
 
@@ -478,37 +478,39 @@ Public Class NFOStrategyInstrument
 
     Private Function IsSignalTriggered(ByVal entryPrice As Decimal, ByVal entryDirection As IOrder.TypeOfTransaction, ByVal fromTime As Date, ByVal toTime As Date) As Boolean
         Dim ret As Boolean = False
-        If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
-            Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
-                                                                                                         If x.GetType Is GetType(PayloadToChartConsumer) Then
-                                                                                                             Return CType(x, PayloadToChartConsumer).Timeframe = Me.ParentStrategy.UserSettings.SignalTimeFrame
-                                                                                                         Else
-                                                                                                             Return Nothing
-                                                                                                         End If
-                                                                                                     End Function)
+        If fromTime < toTime Then
+            If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
+                Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
+                                                                                                             If x.GetType Is GetType(PayloadToChartConsumer) Then
+                                                                                                                 Return CType(x, PayloadToChartConsumer).Timeframe = Me.ParentStrategy.UserSettings.SignalTimeFrame
+                                                                                                             Else
+                                                                                                                 Return Nothing
+                                                                                                             End If
+                                                                                                         End Function)
 
-            If XMinutePayloadConsumer IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
-                Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
-                    XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
-                                                                      Return y.Key > fromTime AndAlso y.Key <= toTime
-                                                                  End Function)
-                If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then
-                    For Each runningPayload In lastExistingPayloads.OrderBy(Function(x)
-                                                                                Return x.Key
-                                                                            End Function)
-                        Dim candle As OHLCPayload = runningPayload.Value
-                        If entryDirection = IOrder.TypeOfTransaction.Buy Then
-                            If candle.HighPrice.Value >= entryPrice Then
-                                ret = True
-                                Exit For
+                If XMinutePayloadConsumer IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
+                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                        XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
+                                                                          Return y.Key > fromTime AndAlso y.Key <= toTime
+                                                                      End Function)
+                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then
+                        For Each runningPayload In lastExistingPayloads.OrderBy(Function(x)
+                                                                                    Return x.Key
+                                                                                End Function)
+                            Dim candle As OHLCPayload = runningPayload.Value
+                            If entryDirection = IOrder.TypeOfTransaction.Buy Then
+                                If candle.HighPrice.Value >= entryPrice Then
+                                    ret = True
+                                    Exit For
+                                End If
+                            ElseIf entryDirection = IOrder.TypeOfTransaction.Sell Then
+                                If candle.LowPrice.Value <= entryPrice Then
+                                    ret = True
+                                    Exit For
+                                End If
                             End If
-                        ElseIf entryDirection = IOrder.TypeOfTransaction.Sell Then
-                            If candle.LowPrice.Value <= entryPrice Then
-                                ret = True
-                                Exit For
-                            End If
-                        End If
-                    Next
+                        Next
+                    End If
                 End If
             End If
         End If
