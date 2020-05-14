@@ -36,7 +36,7 @@ Public Class frmNFOSettings
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtMinLossPerTrade.Text = _settings.MinStoplossPerTrade
-            txtMaxLossPerTrade.Text = _settings.MaxLossPercentagePerDay
+            txtMaxLossPerTrade.Text = _settings.MaxStoplossPerTrade
             txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
             txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
             txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
@@ -56,7 +56,7 @@ Public Class frmNFOSettings
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.MinStoplossPerTrade = Math.Abs(CDec(txtMinLossPerTrade.Text)) * -1
-        _settings.MaxLossPercentagePerDay = Math.Abs(CDec(txtMaxLossPerTrade.Text)) * -1
+        _settings.MaxStoplossPerTrade = Math.Abs(CDec(txtMaxLossPerTrade.Text)) * -1
         _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
         _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
         _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))

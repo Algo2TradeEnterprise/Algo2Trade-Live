@@ -344,7 +344,7 @@ Public Class NFOFillInstrumentDetails
                                         Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
                                         Dim slPoint As Decimal = projectedSlab + 2 * buffer
                                         Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(capableStocks(runningStock).Instrument, price, price - slPoint, lotSize)
-                                        If Math.Abs(pl) >= 600 AndAlso Math.Abs(pl) <= 1200 Then
+                                        If Math.Abs(pl) >= Math.Abs(_userInputs.MinStoplossPerTrade) AndAlso Math.Abs(pl) <= Math.Abs(_userInputs.MaxStoplossPerTrade) Then
                                             If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
                                             eligibleStocks.Add(runningStock, projectedSlab)
 
