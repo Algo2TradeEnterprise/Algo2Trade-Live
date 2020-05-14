@@ -14,10 +14,12 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Private _slPoint As Decimal = Decimal.MinValue
+    Private _targetPoint As Decimal = Decimal.MinValue
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
-    Public Multiplier As Decimal
+    Public ReadOnly Multiplier As Decimal = 0
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -79,13 +81,6 @@ Public Class NFOStrategyInstrument
                 End If
                 'Place Order block end
                 _cts.Token.ThrowIfCancellationRequested()
-                ''Modify Order block start
-                'Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
-                'If modifyStoplossOrderTrigger IsNot Nothing AndAlso modifyStoplossOrderTrigger.Count > 0 Then
-                '    Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
-                'End If
-                ''Modify Order block end
-                _cts.Token.ThrowIfCancellationRequested()
                 'Exit Order block start
                 Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
@@ -112,92 +107,92 @@ Public Class NFOStrategyInstrument
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
         Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
-        Dim buyActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
-        Dim sellActiveTrades = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
 
-        Try
-            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-                Me.TradableInstrument.IsHistoricalCompleted Then
-                If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
-                    _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
-                    logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, Buy Active Trades:{5}, Sell Active Trades:{6}, Current Time:{7}, Current Tick:{8}, TradingSymbol:{9}",
-                                runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
-                                runningCandlePayload.PayloadGeneratedBy.ToString,
-                                Me.TradableInstrument.IsHistoricalCompleted,
-                                Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-                                If(buyActiveTrades IsNot Nothing, buyActiveTrades.Count, 0),
-                                If(sellActiveTrades IsNot Nothing, sellActiveTrades.Count, 0),
-                                currentTime.ToString,
-                                currentTick.LastPrice,
-                                Me.TradableInstrument.TradingSymbol)
-                End If
-            End If
-        Catch ex As Exception
-            logger.Error(ex)
-        End Try
+        'Try
+        '    If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+        '        Me.TradableInstrument.IsHistoricalCompleted Then
+        '        If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
+        '            _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
+        '            logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
+        '            logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, Buy Active Trades:{5}, Sell Active Trades:{6}, Current Time:{7}, Current Tick:{8}, TradingSymbol:{9}",
+        '                        runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
+        '                        runningCandlePayload.PayloadGeneratedBy.ToString,
+        '                        Me.TradableInstrument.IsHistoricalCompleted,
+        '                        Me.ParentStrategy.IsFirstTimeInformationCollected,
+        '                        hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+        '                        If(buyActiveTrades IsNot Nothing, buyActiveTrades.Count, 0),
+        '                        If(sellActiveTrades IsNot Nothing, sellActiveTrades.Count, 0),
+        '                        currentTime.ToString,
+        '                        currentTick.LastPrice,
+        '                        Me.TradableInstrument.TradingSymbol)
+        '        End If
+        '    End If
+        'Catch ex As Exception
+        '    logger.Error(ex)
+        'End Try
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso currentTime <= userSettings.EODExitTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso GetTotalExecutedOrders() < userSettings.NumberOfTradePerStock AndAlso
-            Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLossPerDay AndAlso
+            Not IsActiveInstrument() AndAlso Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLossPerDay AndAlso
             Me.ParentStrategy.GetTotalPLAfterBrokerage() < userSettings.OverallMaxProfitPerDay AndAlso Not Me.StrategyExitAllTriggerd AndAlso
             hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
-            hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+            atrConsumer.ConsumerPayloads IsNot Nothing AndAlso atrConsumer.ConsumerPayloads.Count > 0 AndAlso
+            atrConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim hkCandle As OHLCPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
             If signal IsNot Nothing AndAlso signal.Item1 Then
                 Dim signalCandle As OHLCPayload = Nothing
+                Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
-                    signalCandle = runningCandlePayload.PreviousPayload
+                    signalCandle = signal.Item3
+                    _slPoint = GetHighestATR(atrConsumer, runningCandlePayload)
+                    If _slPoint <> Decimal.MinValue Then
+                        quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
+                        _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
+                    End If
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
                     If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
-                        signalCandle = runningCandlePayload.PreviousPayload
+                        signalCandle = signal.Item3
+                        quantity = lastExecutedOrder.ParentOrder.Quantity * 2
                     End If
                 End If
-                If signalCandle IsNot Nothing Then
-                    Dim quantity As Decimal = Me.TradableInstrument.LotSize
+                If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue Then
                     Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                        buffer = 0
+                        buffer = 1
                     End If
-                    Dim slPoint As Decimal = Multiplier
-                    Dim targetPoint As Decimal = Multiplier * 25
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                        If buyActiveTrades Is Nothing OrElse buyActiveTrades.Count = 0 Then
-                            Dim triggerPrice As Decimal = signal.Item2 + buffer
-                            Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
+                        Dim triggerPrice As Decimal = signal.Item2 + buffer
+                        Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
-                            If currentTick.LastPrice < triggerPrice Then
-                                parameters = New PlaceOrderParameters(signalCandle) With
-                                            {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                             .TriggerPrice = triggerPrice,
-                                             .Price = price,
-                                             .StoplossValue = slPoint + 2 * buffer,
-                                             .SquareOffValue = targetPoint,
-                                             .OrderType = IOrder.TypeOfOrder.SL,
-                                             .Quantity = quantity}
-                            End If
+                        If currentTick.LastPrice < triggerPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                         .TriggerPrice = triggerPrice,
+                                         .Price = price,
+                                         .StoplossValue = _slPoint,
+                                         .SquareOffValue = _targetPoint,
+                                         .OrderType = IOrder.TypeOfOrder.SL,
+                                         .Quantity = quantity}
                         End If
                     ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                        If sellActiveTrades Is Nothing OrElse sellActiveTrades.Count = 0 Then
-                            Dim triggerPrice As Decimal = signal.Item2 - buffer
-                            Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
+                        Dim triggerPrice As Decimal = signal.Item2 - buffer
+                        Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
-                            If currentTick.LastPrice > triggerPrice Then
-                                parameters = New PlaceOrderParameters(signalCandle) With
-                                            {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                             .TriggerPrice = triggerPrice,
-                                             .Price = price,
-                                             .StoplossValue = slPoint + 2 * buffer,
-                                             .SquareOffValue = targetPoint,
-                                             .OrderType = IOrder.TypeOfOrder.SL,
-                                             .Quantity = quantity}
-                            End If
+                        If currentTick.LastPrice > triggerPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                        {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                         .TriggerPrice = triggerPrice,
+                                         .Price = price,
+                                         .StoplossValue = _slPoint,
+                                         .SquareOffValue = _targetPoint,
+                                         .OrderType = IOrder.TypeOfOrder.SL,
+                                         .Quantity = quantity}
                         End If
                     End If
                 End If
@@ -278,64 +273,8 @@ Public Class NFOStrategyInstrument
         End If
         Return ret
     End Function
-    Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
-        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
-        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-            Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
-                                                                          Return x.ParentOrderIdentifier IsNot Nothing AndAlso
-                                                                          x.Status = IOrder.TypeOfStatus.TriggerPending
-                                                                      End Function)
-            If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
-                Dim parentOrder As IOrder = allActiveOrders.Find(Function(x)
-                                                                     Return x.ParentOrderIdentifier Is Nothing AndAlso
-                                                                     x.Status = IOrder.TypeOfStatus.TriggerPending
-                                                                 End Function)
-                If parentOrder IsNot Nothing Then
-                    For Each runningSLOrder In slOrders
-                        If Not runningSLOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
-                            Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
-                            Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
-                            Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
-                            If bussinessOrder.ParentOrder.TransactionType <> parentOrder.TransactionType Then
-                                Dim triggerPrice As Decimal = Decimal.MinValue
-                                If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                    If parentOrder.TriggerPrice > runningSLOrder.TriggerPrice Then
-                                        triggerPrice = parentOrder.TriggerPrice
-                                    End If
-                                ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                    If parentOrder.TriggerPrice < runningSLOrder.TriggerPrice Then
-                                        triggerPrice = parentOrder.TriggerPrice
-                                    End If
-                                End If
-                                If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
-                                    'Below portion have to be done in every modify stoploss order trigger
-                                    Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
-                                    If currentSignalActivities IsNot Nothing Then
-                                        If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
-                                            If Val(currentSignalActivities.StoplossModifyActivity.Supporting) = triggerPrice Then
-                                                Continue For
-                                            End If
-                                        End If
-                                    End If
-                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, "Opposite Direction signal trigger"))
-                                End If
-                            End If
-                        End If
-                    Next
-                End If
-            End If
-        End If
-        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
-            For Each runningOrder In ret
-                logger.Debug("***** Modify Stoploss ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
-            Next
-        End If
-        Return ret
+    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Throw New NotImplementedException()
     End Function
     Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Throw New NotImplementedException()
@@ -372,7 +311,7 @@ Public Class NFOStrategyInstrument
                                     'End If
                                     Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                                     If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                                        buffer = 0
+                                        buffer = 1
                                     End If
                                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
                                         If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 + buffer Then
@@ -437,29 +376,16 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-    Private Function GetSlabBasedLevel(ByVal price As Decimal, ByVal direction As IOrder.TypeOfTransaction) As Decimal
-        Dim ret As Decimal = Decimal.MinValue
-        If direction = IOrder.TypeOfTransaction.Buy Then
-            ret = ConvertFloorCeling(Math.Ceiling(price / Multiplier) * Multiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-        ElseIf direction = IOrder.TypeOfTransaction.Sell Then
-            ret = ConvertFloorCeling(Math.Floor(price / Multiplier) * Multiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-        End If
-        Return ret
-    End Function
-
     Private Function GetSignalCandle(ByVal hkCandle As OHLCPayload, ByVal forcePrint As Boolean) As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
         If hkCandle IsNot Nothing Then
-            'If Math.Round(hkCandle.High.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
-            '    Dim buyLevel As Decimal = GetSlabBasedLevel(hkCandle.High.Value, IOrder.TypeOfTransaction.Buy)
-            '    ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
-            'ElseIf Math.Round(hkCandle.Low.Value, 4) = Math.Round(hkCandle.Open.Value, 4) Then
-            '    Dim sellLevel As Decimal = GetSlabBasedLevel(hkCandle.Low.Value, IOrder.TypeOfTransaction.Sell)
-            '    ret = New Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
-            'End If
-            'If ret Is Nothing Then
-            ret = GetLastHistoricalSignal(hkCandle)
-            'End If
+            If Math.Round(hkCandle.HighPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
+                Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
+            ElseIf Math.Round(hkCandle.LowPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
+                Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
+            End If
         End If
         If ret IsNot Nothing AndAlso forcePrint Then
             Try
@@ -471,80 +397,16 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Private Function GetLastHistoricalSignal(ByVal hkCandle As OHLCPayload) As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)
-        Dim ret As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
-        If hkCandle IsNot Nothing Then
-            Dim candleToCheck As OHLCPayload = hkCandle
-            While candleToCheck IsNot Nothing
-                If candleToCheck.SnapshotDateTime.Date <> Now.Date Then
-                    Exit While
-                End If
-
-                If Math.Round(candleToCheck.HighPrice.Value, 4) = Math.Round(candleToCheck.OpenPrice.Value, 4) Then
-                    Dim buyLevel As Decimal = GetSlabBasedLevel(candleToCheck.HighPrice.Value, IOrder.TypeOfTransaction.Buy)
-                    Dim buffer As Decimal = CalculateBuffer(buyLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                    If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                        buffer = 0
-                    End If
-                    If Not IsSignalTriggered(buyLevel + buffer, IOrder.TypeOfTransaction.Buy, candleToCheck.SnapshotDateTime, Now) Then
-                        ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, candleToCheck, IOrder.TypeOfTransaction.Buy)
-                    End If
-                    Exit While
-                ElseIf Math.Round(candleToCheck.LowPrice.Value, 4) = Math.Round(candleToCheck.OpenPrice.Value, 4) Then
-                    Dim sellLevel As Decimal = GetSlabBasedLevel(candleToCheck.LowPrice.Value, IOrder.TypeOfTransaction.Sell)
-                    Dim buffer As Decimal = CalculateBuffer(sellLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                    If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                        buffer = 0
-                    End If
-                    If Not IsSignalTriggered(sellLevel - buffer, IOrder.TypeOfTransaction.Sell, candleToCheck.SnapshotDateTime, Now) Then
-                        ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, candleToCheck, IOrder.TypeOfTransaction.Sell)
-                    End If
-                    Exit While
-                End If
-
-                candleToCheck = candleToCheck.PreviousPayload
-            End While
-        End If
-        Return ret
-    End Function
-
-    Private Function IsSignalTriggered(ByVal entryPrice As Decimal, ByVal entryDirection As IOrder.TypeOfTransaction, ByVal fromTime As Date, ByVal toTime As Date) As Boolean
-        Dim ret As Boolean = False
-        If fromTime < toTime Then
-            If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
-                Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
-                                                                                                             If x.GetType Is GetType(PayloadToChartConsumer) Then
-                                                                                                                 Return CType(x, PayloadToChartConsumer).Timeframe = Me.ParentStrategy.UserSettings.SignalTimeFrame
-                                                                                                             Else
-                                                                                                                 Return Nothing
-                                                                                                             End If
-                                                                                                         End Function)
-
-                If XMinutePayloadConsumer IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
-                    Dim lastExistingPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
-                        XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
-                                                                          Return y.Key > fromTime AndAlso y.Key <= toTime
-                                                                      End Function)
-                    If lastExistingPayloads IsNot Nothing AndAlso lastExistingPayloads.Count > 0 Then
-                        For Each runningPayload In lastExistingPayloads.OrderBy(Function(x)
-                                                                                    Return x.Key
-                                                                                End Function)
-                            Dim candle As OHLCPayload = runningPayload.Value
-                            If entryDirection = IOrder.TypeOfTransaction.Buy Then
-                                If candle.HighPrice.Value >= entryPrice Then
-                                    ret = True
-                                    Exit For
-                                End If
-                            ElseIf entryDirection = IOrder.TypeOfTransaction.Sell Then
-                                If candle.LowPrice.Value <= entryPrice Then
-                                    ret = True
-                                    Exit For
-                                End If
-                            End If
-                        Next
-                    End If
-                End If
-            End If
+    Private Function GetHighestATR(ByVal atrConsumer As ATRConsumer, ByVal runningCandle As OHLCPayload) As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If atrConsumer IsNot Nothing AndAlso atrConsumer.ConsumerPayloads IsNot Nothing AndAlso atrConsumer.ConsumerPayloads.Count > 0 AndAlso runningCandle IsNot Nothing Then
+            ret = atrConsumer.ConsumerPayloads.Max(Function(x)
+                                                       If x.Key.Date = Now.Date AndAlso x.Key < runningCandle.SnapshotDateTime Then
+                                                           Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
+                                                       Else
+                                                           Return Decimal.MinValue
+                                                       End If
+                                                   End Function)
         End If
         Return ret
     End Function
