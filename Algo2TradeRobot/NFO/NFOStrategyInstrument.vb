@@ -163,11 +163,22 @@ Public Class NFOStrategyInstrument
                     If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
                         signalCandle = signal.Item3
                         quantity = lastExecutedOrder.ParentOrder.Quantity * 2
+                        If _slPoint <> Decimal.MinValue OrElse _targetPoint <> Decimal.MinValue Then
+                            If lastExecutedOrder.AllOrder IsNot Nothing AndAlso lastExecutedOrder.AllOrder.Count > 0 Then
+                                For Each runningOrder In lastExecutedOrder.AllOrder
+                                    If runningOrder.TriggerPrice <> Decimal.MinValue AndAlso runningOrder.TriggerPrice <> 0 Then
+                                        _slPoint = Math.Abs(runningOrder.TriggerPrice - lastExecutedOrder.ParentOrder.TriggerPrice)
+                                    Else
+                                        _targetPoint = Math.Abs(runningOrder.Price - lastExecutedOrder.ParentOrder.TriggerPrice)
+                                    End If
+                                Next
+                            End If
+                        End If
                     End If
                 End If
-                If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue Then
+                If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                        Dim triggerPrice As Decimal = signal.Item2 + Buffer
+                        Dim triggerPrice As Decimal = signal.Item2 + buffer
                         Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
                         If currentTick.LastPrice < triggerPrice Then
