@@ -183,7 +183,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                    If y.RawExchange.ToUpper = "NFO" AndAlso (bannedStock Is Nothing OrElse
                                                                                                                    bannedStock IsNot Nothing AndAlso Not bannedStock.Contains(y.RawInstrumentName)) Then
-                                                                                                       Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       'Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                        If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
                                                                                                            Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
                                                                                                            If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
@@ -192,7 +193,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                                                                                                  End Function)
                                                                                                                If rawCashInstrument IsNot Nothing Then
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                   Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                                   'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                                   Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                                    If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 0 Then
                                                                                                                        _cts.Token.ThrowIfCancellationRequested()
@@ -294,10 +296,13 @@ Public Class NFOFillInstrumentDetails
                         _cts.Token.ThrowIfCancellationRequested()
                         If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
                             _cts.Token.ThrowIfCancellationRequested()
-                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                            'Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
                             If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 100 Then
+                                Dim intradayHKPayload As Dictionary(Of Date, OHLCPayload) = Nothing
+                                ConvertToHeikenAshi(intradayHistoricalData, intradayHKPayload)
                                 Dim intradayATRPayload As Dictionary(Of Date, Decimal) = Nothing
-                                CalculateATR(14, intradayHistoricalData, intradayATRPayload)
+                                CalculateATR(14, intradayHKPayload, intradayATRPayload)
                                 Dim blankCandlePercentage As Decimal = CalculateBlankVolumePercentage(intradayHistoricalData, lastTradingDay)
                                 Dim instrumentData As New InstrumentDetails With
                                     {.TradingSymbol = tradingStock.TradingSymbol,
@@ -345,7 +350,7 @@ Public Class NFOFillInstrumentDetails
                                     Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Floor)
                                     Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
                                     Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
-                                    Dim multiplier As Decimal = (target - price) / slPoint
+                                    Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
                                     If multiplier <= 1.3 Then
                                         If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
                                         eligibleStocks.Add(runningStock, multiplier)
@@ -438,6 +443,37 @@ Public Class NFOFillInstrumentDetails
                     AvgTR = SumTR / counter
                     outputPayload.Add(runningInputPayload.Value.SnapshotDateTime, AvgTR)
                 End If
+            Next
+        End If
+    End Sub
+    Private Sub ConvertToHeikenAshi(ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByRef outputPayload As Dictionary(Of Date, OHLCPayload))
+        If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
+            If inputPayload.Count < 30 Then
+                Throw New ApplicationException("Can't Calculate Heikenshi Properly")
+            End If
+
+            Dim tempHAPayload As OHLCPayload = Nothing
+            Dim tempPreHAPayload As OHLCPayload = Nothing
+
+            For Each runningInputPayload In inputPayload
+
+                tempHAPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
+                tempHAPayload.PreviousPayload = tempPreHAPayload
+                If tempPreHAPayload Is Nothing Then
+                    tempHAPayload.OpenPrice.Value = (runningInputPayload.Value.OpenPrice.Value + runningInputPayload.Value.ClosePrice.Value) / 2
+                Else
+                    tempHAPayload.OpenPrice.Value = (tempPreHAPayload.OpenPrice.Value + tempPreHAPayload.ClosePrice.Value) / 2
+                End If
+                tempHAPayload.ClosePrice.Value = (runningInputPayload.Value.OpenPrice.Value + runningInputPayload.Value.ClosePrice.Value + runningInputPayload.Value.HighPrice.Value + runningInputPayload.Value.LowPrice.Value) / 4
+                tempHAPayload.HighPrice.Value = Math.Max(runningInputPayload.Value.HighPrice.Value, Math.Max(tempHAPayload.OpenPrice.Value, tempHAPayload.ClosePrice.Value))
+                tempHAPayload.LowPrice.Value = Math.Min(runningInputPayload.Value.LowPrice.Value, Math.Min(tempHAPayload.OpenPrice.Value, tempHAPayload.ClosePrice.Value))
+                tempHAPayload.Volume.Value = runningInputPayload.Value.Volume
+                tempHAPayload.DailyVolume = runningInputPayload.Value.DailyVolume
+                tempHAPayload.SnapshotDateTime = runningInputPayload.Value.SnapshotDateTime
+                tempHAPayload.TradingSymbol = runningInputPayload.Value.TradingSymbol
+                tempPreHAPayload = tempHAPayload
+                If outputPayload Is Nothing Then outputPayload = New Dictionary(Of Date, OHLCPayload)
+                outputPayload.Add(runningInputPayload.Key, tempHAPayload)
             Next
         End If
     End Sub
