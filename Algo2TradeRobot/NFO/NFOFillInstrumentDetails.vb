@@ -183,35 +183,37 @@ Public Class NFOFillInstrumentDetails
                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                    If y.RawExchange.ToUpper = "NFO" AndAlso (bannedStock Is Nothing OrElse
                                                                                                                    bannedStock IsNot Nothing AndAlso Not bannedStock.Contains(y.RawInstrumentName)) Then
-                                                                                                       'Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                       Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                       If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
-                                                                                                           Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
-                                                                                                           If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
-                                                                                                               Dim rawCashInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                                                                                                                     Return x.TradingSymbol = y.RawInstrumentName
-                                                                                                                                                                                 End Function)
-                                                                                                               If rawCashInstrument IsNot Nothing Then
+                                                                                                       ''Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       'Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       'If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
+                                                                                                       '    Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
+                                                                                                       '    If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
+                                                                                                       Dim rawCashInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                                                                                                             Return x.TradingSymbol = y.RawInstrumentName
+                                                                                                                                                                         End Function)
+                                                                                                       If rawCashInstrument IsNot Nothing Then
+                                                                                                           _cts.Token.ThrowIfCancellationRequested()
+                                                                                                           'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                           Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                           _cts.Token.ThrowIfCancellationRequested()
+                                                                                                           If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 100 Then
+                                                                                                               _cts.Token.ThrowIfCancellationRequested()
+                                                                                                               If eodHistoricalData.LastOrDefault.Value.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso eodHistoricalData.LastOrDefault.Value.ClosePrice.Value <= _userInputs.MaxStockPrice Then
+                                                                                                                   Dim ATRPayload As Dictionary(Of Date, Decimal) = Nothing
+                                                                                                                   CalculateATR(14, eodHistoricalData, ATRPayload)
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                   'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                                   Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                                   _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                   If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 0 Then
-                                                                                                                       _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                       Dim ATRPayload As Dictionary(Of Date, Decimal) = Nothing
-                                                                                                                       CalculateATR(14, eodHistoricalData, ATRPayload)
-                                                                                                                       _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                       Dim lastDayClosePrice As Decimal = eodHistoricalData.LastOrDefault.Value.ClosePrice.Value
-                                                                                                                       lastTradingDay = eodHistoricalData.LastOrDefault.Key
-                                                                                                                       Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
-                                                                                                                       If atrPercentage >= _userInputs.MinATRPercentage Then
-                                                                                                                           If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
-                                                                                                                           highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice})
-                                                                                                                       End If
+                                                                                                                   Dim lastDayClosePrice As Decimal = eodHistoricalData.LastOrDefault.Value.ClosePrice.Value
+                                                                                                                   lastTradingDay = eodHistoricalData.LastOrDefault.Key
+                                                                                                                   Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
+                                                                                                                   If atrPercentage >= _userInputs.MinATRPercentage Then
+                                                                                                                       If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
+                                                                                                                       highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice})
                                                                                                                    End If
                                                                                                                End If
                                                                                                            End If
                                                                                                        End If
+                                                                                                       '    End If
+                                                                                                       'End If
                                                                                                    End If
                                                                                                Catch ex As Exception
                                                                                                    logger.Error(ex)
@@ -356,6 +358,8 @@ Public Class NFOFillInstrumentDetails
                                         eligibleStocks.Add(runningStock, multiplier)
 
                                         If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
+                                    Else
+                                        Console.WriteLine(runningStock)
                                     End If
                                 Next
 
