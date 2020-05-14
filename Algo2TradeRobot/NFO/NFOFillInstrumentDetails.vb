@@ -183,7 +183,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                    If y.RawExchange.ToUpper = "NFO" AndAlso (bannedStock Is Nothing OrElse
                                                                                                                    bannedStock IsNot Nothing AndAlso Not bannedStock.Contains(y.RawInstrumentName)) Then
-                                                                                                       Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       'Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                       Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                        If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
                                                                                                            Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
                                                                                                            If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
@@ -192,7 +193,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                                                                                                  End Function)
                                                                                                                If rawCashInstrument IsNot Nothing Then
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
-                                                                                                                   Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                                   'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                                   Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                                    If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 0 Then
                                                                                                                        _cts.Token.ThrowIfCancellationRequested()
@@ -290,7 +292,8 @@ Public Class NFOFillInstrumentDetails
                             _cts.Token.ThrowIfCancellationRequested()
                             If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
                                 _cts.Token.ThrowIfCancellationRequested()
-                                Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay, lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                                'Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay, lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                                Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay, tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
                                 If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 0 Then
                                     Dim blankCandlePercentage As Decimal = CalculateBlankVolumePercentage(intradayHistoricalData)
                                     Dim instrumentData As New InstrumentDetails With
