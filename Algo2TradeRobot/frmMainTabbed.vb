@@ -496,7 +496,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        Dim authenticationUserId As String = "HYDJ39"
+        Dim authenticationUserId As String = "AB096403"
         If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
             (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
