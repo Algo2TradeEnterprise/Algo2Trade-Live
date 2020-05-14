@@ -56,10 +56,8 @@ Partial Class frmNFOSettings
         Me.txtOverallMaxLossPerDay = New System.Windows.Forms.TextBox()
         Me.lblOverallMaxProfitPerDay = New System.Windows.Forms.Label()
         Me.txtOverallMaxProfitPerDay = New System.Windows.Forms.TextBox()
-        Me.lblMinLossPerTrade = New System.Windows.Forms.Label()
-        Me.txtMinLossPerTrade = New System.Windows.Forms.TextBox()
-        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
-        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxProfitPerTrade = New System.Windows.Forms.Label()
+        Me.txtMaxProfitPerTrade = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
         Me.grpStockSelection.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
@@ -70,7 +68,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(736, 306)
+        Me.btnSave.Location = New System.Drawing.Point(736, 272)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -234,7 +232,7 @@ Partial Class frmNFOSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 337)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 303)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -243,7 +241,7 @@ Partial Class frmNFOSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(198, 334)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(198, 300)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -253,7 +251,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(428, 333)
+        Me.btnBrowse.Location = New System.Drawing.Point(428, 299)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
@@ -324,7 +322,7 @@ Partial Class frmNFOSettings
         'lblNumberOfTradePerStock
         '
         Me.lblNumberOfTradePerStock.AutoSize = True
-        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(8, 234)
+        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(8, 198)
         Me.lblNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblNumberOfTradePerStock.Name = "lblNumberOfTradePerStock"
         Me.lblNumberOfTradePerStock.Size = New System.Drawing.Size(184, 17)
@@ -333,7 +331,7 @@ Partial Class frmNFOSettings
         '
         'txtNumberOfTradePerStock
         '
-        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(198, 230)
+        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(198, 194)
         Me.txtNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfTradePerStock.Name = "txtNumberOfTradePerStock"
         Me.txtNumberOfTradePerStock.Size = New System.Drawing.Size(272, 22)
@@ -343,7 +341,7 @@ Partial Class frmNFOSettings
         'lblOverallMaxLossPerDay
         '
         Me.lblOverallMaxLossPerDay.AutoSize = True
-        Me.lblOverallMaxLossPerDay.Location = New System.Drawing.Point(9, 270)
+        Me.lblOverallMaxLossPerDay.Location = New System.Drawing.Point(9, 234)
         Me.lblOverallMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblOverallMaxLossPerDay.Name = "lblOverallMaxLossPerDay"
         Me.lblOverallMaxLossPerDay.Size = New System.Drawing.Size(171, 17)
@@ -352,7 +350,7 @@ Partial Class frmNFOSettings
         '
         'txtOverallMaxLossPerDay
         '
-        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(198, 266)
+        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(198, 230)
         Me.txtOverallMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxLossPerDay.Name = "txtOverallMaxLossPerDay"
         Me.txtOverallMaxLossPerDay.Size = New System.Drawing.Size(272, 22)
@@ -361,7 +359,7 @@ Partial Class frmNFOSettings
         'lblOverallMaxProfitPerDay
         '
         Me.lblOverallMaxProfitPerDay.AutoSize = True
-        Me.lblOverallMaxProfitPerDay.Location = New System.Drawing.Point(9, 304)
+        Me.lblOverallMaxProfitPerDay.Location = New System.Drawing.Point(9, 268)
         Me.lblOverallMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblOverallMaxProfitPerDay.Name = "lblOverallMaxProfitPerDay"
         Me.lblOverallMaxProfitPerDay.Size = New System.Drawing.Size(174, 17)
@@ -370,54 +368,34 @@ Partial Class frmNFOSettings
         '
         'txtOverallMaxProfitPerDay
         '
-        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(198, 301)
+        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(198, 265)
         Me.txtOverallMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxProfitPerDay.Name = "txtOverallMaxProfitPerDay"
         Me.txtOverallMaxProfitPerDay.Size = New System.Drawing.Size(272, 22)
         Me.txtOverallMaxProfitPerDay.TabIndex = 9
         '
-        'lblMinLossPerTrade
+        'lblMaxProfitPerTrade
         '
-        Me.lblMinLossPerTrade.AutoSize = True
-        Me.lblMinLossPerTrade.Location = New System.Drawing.Point(9, 165)
-        Me.lblMinLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinLossPerTrade.Name = "lblMinLossPerTrade"
-        Me.lblMinLossPerTrade.Size = New System.Drawing.Size(132, 17)
-        Me.lblMinLossPerTrade.TabIndex = 52
-        Me.lblMinLossPerTrade.Text = "Min Loss Per Trade"
+        Me.lblMaxProfitPerTrade.AutoSize = True
+        Me.lblMaxProfitPerTrade.Location = New System.Drawing.Point(9, 163)
+        Me.lblMaxProfitPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxProfitPerTrade.Name = "lblMaxProfitPerTrade"
+        Me.lblMaxProfitPerTrade.Size = New System.Drawing.Size(138, 17)
+        Me.lblMaxProfitPerTrade.TabIndex = 53
+        Me.lblMaxProfitPerTrade.Text = "Max Profit Per Trade"
         '
-        'txtMinLossPerTrade
+        'txtMaxProfitPerTrade
         '
-        Me.txtMinLossPerTrade.Location = New System.Drawing.Point(198, 161)
-        Me.txtMinLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinLossPerTrade.Name = "txtMinLossPerTrade"
-        Me.txtMinLossPerTrade.Size = New System.Drawing.Size(272, 22)
-        Me.txtMinLossPerTrade.TabIndex = 5
-        '
-        'lblMaxLossPerTrade
-        '
-        Me.lblMaxLossPerTrade.AutoSize = True
-        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(9, 199)
-        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
-        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxLossPerTrade.TabIndex = 53
-        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
-        '
-        'txtMaxLossPerTrade
-        '
-        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(198, 196)
-        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
-        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(272, 22)
-        Me.txtMaxLossPerTrade.TabIndex = 6
+        Me.txtMaxProfitPerTrade.Location = New System.Drawing.Point(198, 160)
+        Me.txtMaxProfitPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxProfitPerTrade.Name = "txtMaxProfitPerTrade"
+        Me.txtMaxProfitPerTrade.Size = New System.Drawing.Size(272, 22)
+        Me.txtMaxProfitPerTrade.TabIndex = 6
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtMaxLossPerTrade)
-        Me.GroupBox1.Controls.Add(Me.lblMaxLossPerTrade)
-        Me.GroupBox1.Controls.Add(Me.txtMinLossPerTrade)
-        Me.GroupBox1.Controls.Add(Me.lblMinLossPerTrade)
+        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPerTrade)
+        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPerTrade)
         Me.GroupBox1.Controls.Add(Me.txtOverallMaxProfitPerDay)
         Me.GroupBox1.Controls.Add(Me.lblOverallMaxProfitPerDay)
         Me.GroupBox1.Controls.Add(Me.txtOverallMaxLossPerDay)
@@ -439,7 +417,7 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 366)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 332)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
@@ -447,7 +425,7 @@ Partial Class frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(852, 368)
+        Me.ClientSize = New System.Drawing.Size(852, 335)
         Me.Controls.Add(Me.chkbAutoSelectStock)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.grpStockSelection)
@@ -500,9 +478,7 @@ Partial Class frmNFOSettings
     Friend WithEvents txtOverallMaxLossPerDay As TextBox
     Friend WithEvents lblOverallMaxProfitPerDay As Label
     Friend WithEvents txtOverallMaxProfitPerDay As TextBox
-    Friend WithEvents lblMinLossPerTrade As Label
-    Friend WithEvents txtMinLossPerTrade As TextBox
-    Friend WithEvents lblMaxLossPerTrade As Label
-    Friend WithEvents txtMaxLossPerTrade As TextBox
+    Friend WithEvents lblMaxProfitPerTrade As Label
+    Friend WithEvents txtMaxProfitPerTrade As TextBox
     Friend WithEvents GroupBox1 As GroupBox
 End Class

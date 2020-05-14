@@ -243,68 +243,75 @@ Public Class NFOFillInstrumentDetails
                                                                           Return x.Value(0)
                                                                       End Function)
                         _cts.Token.ThrowIfCancellationRequested()
-                        Dim futureStocks As List(Of IInstrument) = nfoInstruments.ToList.FindAll(Function(x)
-                                                                                                     Return x.RawInstrumentName = stock.Key
-                                                                                                 End Function)
-                        If futureStocks IsNot Nothing AndAlso futureStocks.Count > 0 Then
-                            Dim minexpiry As Date = futureStocks.Min(Function(y)
-                                                                         Return y.Expiry
-                                                                     End Function)
-                            Dim tradingStock As IInstrument = Nothing
-                            Dim volumeCheckingStock As IInstrument = Nothing
+                        'Dim futureStocks As List(Of IInstrument) = nfoInstruments.ToList.FindAll(Function(x)
+                        '                                                                             Return x.RawInstrumentName = stock.Key
+                        '                                                                         End Function)
+                        'If futureStocks IsNot Nothing AndAlso futureStocks.Count > 0 Then
+                        '    Dim minexpiry As Date = futureStocks.Min(Function(y)
+                        '                                                 Return y.Expiry
+                        '                                             End Function)
+                        'Dim tradingStock As IInstrument = Nothing
+                        'Dim volumeCheckingStock As IInstrument = Nothing
+                        Dim tradingStock As IInstrument = allInstruments.ToList.Find(Function(y)
+                                                                                         Return y.TradingSymbol = stock.Key
+                                                                                     End Function)
+                        Dim volumeCheckingStock As IInstrument = tradingStock
+                        '_cts.Token.ThrowIfCancellationRequested()
+                        'If minexpiry.Date = Now.Date Then
+                        '    volumeCheckingStock = futureStocks.Find(Function(x)
+                        '                                                Return x.Expiry = minexpiry
+                        '                                            End Function)
+                        '    Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
+                        '                                                     If Not y.Expiry.Value.Date = Now.Date Then
+                        '                                                         Return y.Expiry.Value
+                        '                                                     Else
+                        '                                                         Return Date.MaxValue
+                        '                                                     End If
+                        '                                                 End Function)
+                        '    tradingStock = futureStocks.Find(Function(z)
+                        '                                         Return z.Expiry = nextMinExpiry
+                        '                                     End Function)
+                        'ElseIf minexpiry.Date < Now.Date Then
+                        '    Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
+                        '                                                     If Not y.Expiry.Value.Date <= Now.Date Then
+                        '                                                         Return y.Expiry.Value
+                        '                                                     Else
+                        '                                                         Return Date.MaxValue
+                        '                                                     End If
+                        '                                                 End Function)
+                        '    volumeCheckingStock = futureStocks.Find(Function(x)
+                        '                                                Return x.Expiry = nextMinExpiry
+                        '                                            End Function)
+                        '    tradingStock = futureStocks.Find(Function(z)
+                        '                                         Return z.Expiry = nextMinExpiry
+                        '                                     End Function)
+                        'Else
+                        '    tradingStock = futureStocks.Find(Function(x)
+                        '                                         Return x.Expiry = minexpiry
+                        '                                     End Function)
+                        '    volumeCheckingStock = tradingStock
+                        'End If
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
                             _cts.Token.ThrowIfCancellationRequested()
-                            If minexpiry.Date = Now.Date Then
-                                volumeCheckingStock = futureStocks.Find(Function(x)
-                                                                            Return x.Expiry = minexpiry
-                                                                        End Function)
-                                Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
-                                                                                 If Not y.Expiry.Value.Date = Now.Date Then
-                                                                                     Return y.Expiry.Value
-                                                                                 Else
-                                                                                     Return Date.MaxValue
-                                                                                 End If
-                                                                             End Function)
-                                tradingStock = futureStocks.Find(Function(z)
-                                                                     Return z.Expiry = nextMinExpiry
-                                                                 End Function)
-                            ElseIf minexpiry.Date < Now.Date Then
-                                Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
-                                                                                 If Not y.Expiry.Value.Date <= Now.Date Then
-                                                                                     Return y.Expiry.Value
-                                                                                 Else
-                                                                                     Return Date.MaxValue
-                                                                                 End If
-                                                                             End Function)
-                                volumeCheckingStock = futureStocks.Find(Function(x)
-                                                                            Return x.Expiry = nextMinExpiry
-                                                                        End Function)
-                                tradingStock = futureStocks.Find(Function(z)
-                                                                     Return z.Expiry = nextMinExpiry
-                                                                 End Function)
-                            Else
-                                tradingStock = futureStocks.Find(Function(x)
-                                                                     Return x.Expiry = minexpiry
-                                                                 End Function)
-                                volumeCheckingStock = tradingStock
-                            End If
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay, lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
-                                If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 0 Then
-                                    Dim blankCandlePercentage As Decimal = CalculateBlankVolumePercentage(intradayHistoricalData)
-                                    Dim instrumentData As New InstrumentDetails With
-                                        {.TradingSymbol = tradingStock.TradingSymbol,
-                                         .ATRPercentage = stock.Value(0),
-                                         .Price = stock.Value(1),
-                                         .Slab = CalculateSlab(stock.Value(1), stock.Value(0)),
-                                         .BlankCandlePercentage = blankCandlePercentage,
-                                         .Instrument = tradingStock}
-                                    If capableStocks Is Nothing Then capableStocks = New Dictionary(Of String, InstrumentDetails)
-                                    capableStocks.Add(tradingStock.TradingSymbol, instrumentData)
-                                End If
+                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                            If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 100 Then
+                                Dim intradayATRPayload As Dictionary(Of Date, Decimal) = Nothing
+                                CalculateATR(14, intradayHistoricalData, intradayATRPayload)
+                                Dim blankCandlePercentage As Decimal = CalculateBlankVolumePercentage(intradayHistoricalData, lastTradingDay)
+                                Dim instrumentData As New InstrumentDetails With
+                                    {.TradingSymbol = tradingStock.TradingSymbol,
+                                     .ATRPercentage = stock.Value(0),
+                                     .Price = stock.Value(1),
+                                     .Slab = CalculateSlab(stock.Value(1), stock.Value(0)),
+                                     .BlankCandlePercentage = blankCandlePercentage,
+                                     .PreviousDayHighestATR = GetHighestATR(intradayATRPayload, lastTradingDay),
+                                     .Instrument = tradingStock}
+                                If capableStocks Is Nothing Then capableStocks = New Dictionary(Of String, InstrumentDetails)
+                                capableStocks.Add(tradingStock.TradingSymbol, instrumentData)
                             End If
                         End If
+                        'End If
                     Next
                     If capableStocks IsNot Nothing AndAlso capableStocks.Count > 0 Then
                         Dim todayStockList As List(Of String) = Nothing
@@ -331,25 +338,19 @@ Public Class NFOFillInstrumentDetails
                                 File.Exists(_userInputs.InstrumentDetailsFilePath) Then
                                 File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Dim eligibleStocks As Dictionary(Of String, Decimal) = Nothing
-                                Dim slabList As List(Of Decimal) = New List(Of Decimal) From {0.5, 1, 2.5, 5, 10, 25}
                                 For Each runningStock In todayStockList
-                                    Dim lotSize As Integer = capableStocks(runningStock).Instrument.LotSize
-                                    Dim slab As Decimal = capableStocks(runningStock).Slab
+                                    Dim highestATR As Decimal = capableStocks(runningStock).PreviousDayHighestATR
                                     Dim price As Decimal = capableStocks(runningStock).Price
-                                    Dim previousSlab As List(Of Decimal) = slabList.FindAll(Function(x)
-                                                                                                Return x < slab
-                                                                                            End Function)
-                                    If previousSlab IsNot Nothing AndAlso previousSlab.Count > 0 Then
-                                        Dim projectedSlab As Decimal = previousSlab.LastOrDefault
-                                        Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
-                                        Dim slPoint As Decimal = projectedSlab + 2 * buffer
-                                        Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(capableStocks(runningStock).Instrument, price, price - slPoint, lotSize)
-                                        If Math.Abs(pl) >= 600 AndAlso Math.Abs(pl) <= 1200 Then
-                                            If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
-                                            eligibleStocks.Add(runningStock, projectedSlab)
+                                    Dim instrument As IInstrument = capableStocks(runningStock).Instrument
+                                    Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Floor)
+                                    Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
+                                    Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
+                                    Dim multiplier As Decimal = (target - price) / slPoint
+                                    If multiplier <= 1.3 Then
+                                        If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
+                                        eligibleStocks.Add(runningStock, multiplier)
 
-                                            If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
-                                        End If
+                                        If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
                                     End If
                                 Next
 
@@ -358,11 +359,11 @@ Public Class NFOFillInstrumentDetails
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
                                     allStockData.Columns.Add("TRADING SYMBOL")
-                                    allStockData.Columns.Add("SLAB")
+                                    allStockData.Columns.Add("MULTIPLIER")
                                     For Each stock In eligibleStocks
                                         Dim row As DataRow = allStockData.NewRow
                                         row("TRADING SYMBOL") = stock.Key
-                                        row("SLAB") = stock.Value
+                                        row("MULTIPLIER") = stock.Value
                                         allStockData.Rows.Add(row)
                                     Next
 
@@ -440,13 +441,14 @@ Public Class NFOFillInstrumentDetails
             Next
         End If
     End Sub
-    Private Function CalculateBlankVolumePercentage(ByVal inputPayload As Dictionary(Of Date, OHLCPayload)) As Decimal
+    Private Function CalculateBlankVolumePercentage(ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByVal lastTradingDay As Date) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
             Dim blankCandlePayload As IEnumerable(Of KeyValuePair(Of Date, OHLCPayload)) = inputPayload.Where(Function(x)
                                                                                                                   Return x.Value.OpenPrice.Value = x.Value.LowPrice.Value AndAlso
                                                                                                                   x.Value.LowPrice.Value = x.Value.HighPrice.Value AndAlso
-                                                                                                                  x.Value.HighPrice.Value = x.Value.ClosePrice.Value
+                                                                                                                  x.Value.HighPrice.Value = x.Value.ClosePrice.Value AndAlso
+                                                                                                                  x.Value.SnapshotDateTime.Date = lastTradingDay.Date
                                                                                                               End Function)
             If blankCandlePayload IsNot Nothing AndAlso blankCandlePayload.Count > 0 Then
                 ret = Math.Round((blankCandlePayload.Count / inputPayload.Count) * 100, 2)
@@ -456,10 +458,48 @@ Public Class NFOFillInstrumentDetails
         End If
         Return ret
     End Function
+    Private Function GetHighestATR(ByVal inputPayload As Dictionary(Of Date, Decimal), ByVal lastTradingDay As Date) As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
+            ret = inputPayload.Max(Function(x)
+                                       If x.Key.Date = lastTradingDay.Date Then
+                                           Return x.Value
+                                       Else
+                                           Return Decimal.MinValue
+                                       End If
+                                   End Function)
+        End If
+        Return ret
+    End Function
     Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
         Dim bufferPrice As Double = Nothing
         bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
         Return bufferPrice
+    End Function
+    Public Function CalculateQuantityFromStoploss(ByVal buyPrice As Double, ByVal sellPrice As Double, ByVal NetProfitLossOfTrade As Double, ByVal instrument As IInstrument) As Integer
+        Dim lotSize As Integer = instrument.LotSize
+        Dim quantityMultiplier As Integer = 1
+        Dim previousQuantity As Integer = lotSize
+        For quantityMultiplier = 1 To Integer.MaxValue
+            Dim plAfterBrokerage As Decimal = _APIAdapter.CalculatePLWithBrokerage(instrument, buyPrice, sellPrice, lotSize * quantityMultiplier)
+            If plAfterBrokerage <= Math.Abs(NetProfitLossOfTrade) * -1 Then
+                previousQuantity = lotSize * If(quantityMultiplier - 1 = 0, 1, quantityMultiplier - 1)
+                Exit For
+            Else
+                previousQuantity = lotSize * quantityMultiplier
+            End If
+        Next
+        Return previousQuantity
+    End Function
+    Public Function CalculateTargetFromPL(ByVal buyPrice As Decimal, ByVal quantity As Integer, ByVal NetProfitOfTrade As Decimal, ByVal instrument As IInstrument) As Decimal
+        Dim ret As Decimal = buyPrice
+        For ret = buyPrice To Decimal.MaxValue Step instrument.TickSize
+            Dim plAfterBrokerage As Decimal = _APIAdapter.CalculatePLWithBrokerage(instrument, buyPrice, ret, quantity)
+            If plAfterBrokerage >= NetProfitOfTrade Then
+                Exit For
+            End If
+        Next
+        Return ret
     End Function
 
     Private Class InstrumentDetails
@@ -469,6 +509,7 @@ Public Class NFOFillInstrumentDetails
         Public Slab As Decimal
         Public BlankCandlePercentage As Decimal
         Public Instrument As IInstrument
+        Public PreviousDayHighestATR As Decimal
     End Class
 
     Enum TypeOfData

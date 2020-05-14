@@ -13,8 +13,7 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property MinStoplossPerTrade As Decimal
-    Public Property MaxStoplossPerTrade As Decimal
+    Public Property MaxProfitPerTrade As Decimal
     Public Property NumberOfTradePerStock As Integer
     Public Property OverallMaxProfitPerDay As Decimal
     Public Property OverallMaxLossPerDay As Decimal
@@ -29,7 +28,7 @@ Public Class NFOUserInputs
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property Slab As Decimal
+        Public Property Multiplier As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -42,7 +41,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "SLAB"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -55,7 +54,7 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
-                            Dim slab As Decimal = 0
+                            Dim mul As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -70,12 +69,12 @@ Public Class NFOUserInputs
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            slab = instrumentDetails(rowCtr, columnCtr)
+                                            mul = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Slab can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                            Throw New ApplicationException(String.Format("Multiplier can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Slab can not be null. RowNumber: {0}", rowCtr))
+                                        Throw New ApplicationException(String.Format("Multiplier can not be null. RowNumber: {0}", rowCtr))
                                     End If
                                 End If
                             Next
@@ -83,7 +82,7 @@ Public Class NFOUserInputs
                                 Dim instrumentData As New InstrumentDetails
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
-                                    .Slab = slab
+                                    .Multiplier = mul
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
