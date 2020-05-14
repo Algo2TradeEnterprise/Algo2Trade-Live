@@ -588,9 +588,14 @@ Namespace Adapter
             Dim ret As Dictionary(Of String, Object) = Nothing
             Dim execCommand As ExecutionCommands = ExecutionCommands.CancelOrder
             _cts.Token.ThrowIfCancellationRequested()
+            Dim cancelOrderID As String = orderId
+            If parentOrderID IsNot Nothing AndAlso parentOrderID.Trim <> "" Then
+                cancelOrderID = parentOrderID
+            End If
+
             Dim tradeParameters As New Dictionary(Of String, Object) From {
-                {"OrderId", orderId},
-                {"ParentOrderId", parentOrderID},
+                {"OrderId", cancelOrderID},
+                {"ParentOrderId", cancelOrderID},
                 {"Variety", TypesOfVariety.BO}
             }
             Dim tempAllRet As Dictionary(Of String, Object) = Nothing
