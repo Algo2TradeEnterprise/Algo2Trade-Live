@@ -752,6 +752,7 @@ Namespace Strategies
                             If runningRawPayloadConsumer.OnwardLevelConsumers IsNot Nothing AndAlso runningRawPayloadConsumer.OnwardLevelConsumers.Count > 0 Then
                                 For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
                                     candleCreator.IndicatorCreator.CalculateHeikinAshi(currentXMinute, consumer)
+                                    candleCreator.IndicatorCreator.CalculateATR(currentXMinute, consumer.OnwardLevelConsumers.FirstOrDefault)
                                 Next
                             End If
 

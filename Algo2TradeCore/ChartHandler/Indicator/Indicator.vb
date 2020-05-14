@@ -924,10 +924,11 @@ Namespace ChartHandler.Indicator
                                                                          Return x
                                                                      End Function)
                     If outputConsumer.ConsumerPayloads Is Nothing Then outputConsumer.ConsumerPayloads = New Concurrent.ConcurrentDictionary(Of Date, IPayload)
+                    Dim currentPayload As OHLCPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
 
-                    Dim hkValue As HeikinAshiConsumer.HeikinAshiPayload = Nothing
+                    Dim hkValue As OHLCPayload = Nothing
                     If Not outputConsumer.ConsumerPayloads.TryGetValue(runningInputDate, hkValue) Then
-                        hkValue = New HeikinAshiConsumer.HeikinAshiPayload
+                        hkValue = New OHLCPayload(currentPayload.PayloadGeneratedBy)
                     End If
 
                     Dim previousHKValues As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = Nothing
@@ -943,16 +944,15 @@ Namespace ChartHandler.Indicator
                         End If
                     End If
 
-                    Dim currentPayload As OHLCPayload = outputConsumer.ParentConsumer.ConsumerPayloads(runningInputDate)
                     If previousHKValue.Key <> Date.MinValue AndAlso previousHKValue.Value IsNot Nothing Then
                         hkValue.PreviousPayload = previousHKValue.Value
-                        hkValue.Open.Value = (hkValue.PreviousPayload.Open.Value + hkValue.PreviousPayload.Close.Value) / 2
+                        hkValue.OpenPrice.Value = (hkValue.PreviousPayload.OpenPrice.Value + hkValue.PreviousPayload.ClosePrice.Value) / 2
                     Else
-                        hkValue.Open.Value = (currentPayload.OpenPrice.Value + currentPayload.ClosePrice.Value) / 2
+                        hkValue.OpenPrice.Value = (currentPayload.OpenPrice.Value + currentPayload.ClosePrice.Value) / 2
                     End If
-                    hkValue.Close.Value = (currentPayload.OpenPrice.Value + currentPayload.HighPrice.Value + currentPayload.LowPrice.Value + currentPayload.ClosePrice.Value) / 4
-                    hkValue.High.Value = Math.Max(currentPayload.HighPrice.Value, Math.Max(hkValue.Open.Value, hkValue.Close.Value))
-                    hkValue.Low.Value = Math.Min(currentPayload.LowPrice.Value, Math.Min(hkValue.Open.Value, hkValue.Close.Value))
+                    hkValue.ClosePrice.Value = (currentPayload.OpenPrice.Value + currentPayload.HighPrice.Value + currentPayload.LowPrice.Value + currentPayload.ClosePrice.Value) / 4
+                    hkValue.HighPrice.Value = Math.Max(currentPayload.HighPrice.Value, Math.Max(hkValue.OpenPrice.Value, hkValue.ClosePrice.Value))
+                    hkValue.LowPrice.Value = Math.Min(currentPayload.LowPrice.Value, Math.Min(hkValue.OpenPrice.Value, hkValue.ClosePrice.Value))
                     hkValue.Volume.Value = currentPayload.Volume.Value
                     hkValue.SnapshotDateTime = currentPayload.SnapshotDateTime
                     hkValue.TradingSymbol = currentPayload.TradingSymbol
