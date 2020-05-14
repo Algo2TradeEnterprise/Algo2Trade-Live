@@ -269,7 +269,7 @@ Public Class frmMainTabbed
 #End Region
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmZerodhaUserDetails(_commonControllerUserInput)
+        Dim newForm As New frmAliceUserDetails(_commonControllerUserInput)
         newForm.ShowDialog()
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
@@ -332,7 +332,6 @@ Public Class frmMainTabbed
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
             logger.Debug(Utilities.Strings.JsonSerialize(_nfoUserInputs))
-            SendNotificationAsync(_nfoUserInputs.ToString)
 
             If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
@@ -581,7 +580,6 @@ Public Class frmMainTabbed
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
             logger.Debug(Utilities.Strings.JsonSerialize(_mcxUserInputs))
-            SendNotificationAsync(_mcxUserInputs.ToString)
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
@@ -830,7 +828,6 @@ Public Class frmMainTabbed
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
             logger.Debug(Utilities.Strings.JsonSerialize(_cdsUserInputs))
-            SendNotificationAsync(_cdsUserInputs.ToString)
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
@@ -1328,21 +1325,6 @@ Public Class frmMainTabbed
         End If
     End Function
 
-    Private Async Function SendNotificationAsync(ByVal message As String) As Task
-        Try
-            _cts.Token.ThrowIfCancellationRequested()
-            If message.Contains("&") Then
-                message = message.Replace("&", "_")
-            End If
-            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-            Using tSender As New Utilities.Notification.Telegram("700121864:AAHjes45V0kEPBDLIfnZzsatH5NhRwIjciw", "-456916116", _cts)
-                Dim encodedString As String = Utilities.Strings.EncodeString(message)
-                Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-            End Using
-        Catch ex As Exception
-            'No exception can be thrown
-        End Try
-    End Function
 #End Region
 
 #Region "EX Users"
@@ -1354,7 +1336,7 @@ Public Class frmMainTabbed
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
         End If
-        If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then
+        If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then
             miUserDetails_Click(sender, e)
         End If
         Dim formRemarks As String = Nothing

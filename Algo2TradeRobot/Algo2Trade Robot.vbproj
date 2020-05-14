@@ -140,16 +140,22 @@
     <Compile Include="frmAdvancedOptions.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="frmAliceUserDetails.Designer.vb">
+      <DependentUpon>frmAliceUserDetails.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmAliceUserDetails.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmMainTabbed.Designer.vb">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>
     </Compile>
     <Compile Include="frmMainTabbed.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmUserDetails.Designer.vb">
-      <DependentUpon>frmUserDetails.vb</DependentUpon>
+    <Compile Include="frmZerodhaUserDetails.Designer.vb">
+      <DependentUpon>frmZerodhaUserDetails.vb</DependentUpon>
     </Compile>
-    <Compile Include="frmUserDetails.vb">
+    <Compile Include="frmZerodhaUserDetails.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="NFO\frmNFOSettings.Designer.vb">
@@ -212,11 +218,14 @@
     <EmbeddedResource Include="frmAdvancedOptions.resx">
       <DependentUpon>frmAdvancedOptions.vb</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="frmAliceUserDetails.resx">
+      <DependentUpon>frmAliceUserDetails.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="frmMainTabbed.resx">
       <DependentUpon>frmMainTabbed.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmUserDetails.resx">
-      <DependentUpon>frmUserDetails.vb</DependentUpon>
+    <EmbeddedResource Include="frmZerodhaUserDetails.resx">
+      <DependentUpon>frmZerodhaUserDetails.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NFO\frmNFOSettings.resx">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>

@@ -34,8 +34,6 @@ Module Common
             Return New AliceUser With
                {.UserId = userInputs.UserDetails.UserId,
                 .Password = Decrypt(userInputs.UserDetails.Password, MASTER_KEY),
-                .APIVersion = "3",
-                .APIKey = Decrypt(userInputs.UserDetails.APIKey, MASTER_KEY),
                 .APISecret = Decrypt(userInputs.UserDetails.APISecret, MASTER_KEY),
                 .API2FAPin = Decrypt(userInputs.UserDetails.API2FAPin, MASTER_KEY)}
         Else
