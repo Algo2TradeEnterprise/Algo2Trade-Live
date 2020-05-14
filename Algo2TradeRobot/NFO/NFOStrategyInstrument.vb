@@ -153,27 +153,30 @@ Public Class NFOStrategyInstrument
                 Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
                     signalCandle = signal.Item3
-                    _slPoint = GetHighestATR(atrConsumer, runningCandlePayload) + buffer
+                    _slPoint = GetHighestATR(atrConsumer, runningCandlePayload)
                     If _slPoint <> Decimal.MinValue Then
                         quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
                         _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
                     End If
+                    '_slPoint = 20
+                    'quantity = Me.TradableInstrument.LotSize
+                    '_targetPoint = 100
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
                     If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
                         signalCandle = signal.Item3
                         quantity = lastExecutedOrder.ParentOrder.Quantity * 2
-                        If _slPoint <> Decimal.MinValue OrElse _targetPoint <> Decimal.MinValue Then
-                            If lastExecutedOrder.AllOrder IsNot Nothing AndAlso lastExecutedOrder.AllOrder.Count > 0 Then
-                                For Each runningOrder In lastExecutedOrder.AllOrder
-                                    If runningOrder.TriggerPrice <> Decimal.MinValue AndAlso runningOrder.TriggerPrice <> 0 Then
-                                        _slPoint = Math.Abs(runningOrder.TriggerPrice - lastExecutedOrder.ParentOrder.TriggerPrice)
-                                    Else
-                                        _targetPoint = Math.Abs(runningOrder.Price - lastExecutedOrder.ParentOrder.TriggerPrice)
-                                    End If
-                                Next
-                            End If
-                        End If
+                        'If _slPoint = Decimal.MinValue OrElse _targetPoint = Decimal.MinValue Then
+                        '    If lastExecutedOrder.AllOrder IsNot Nothing AndAlso lastExecutedOrder.AllOrder.Count > 0 Then
+                        '        For Each runningOrder In lastExecutedOrder.AllOrder
+                        '            If runningOrder.TriggerPrice <> Decimal.MinValue AndAlso runningOrder.TriggerPrice <> 0 Then
+                        '                _slPoint = Math.Abs(runningOrder.TriggerPrice - lastExecutedOrder.ParentOrder.TriggerPrice)
+                        '            Else
+                        '                _targetPoint = Math.Abs(runningOrder.Price - lastExecutedOrder.ParentOrder.TriggerPrice)
+                        '            End If
+                        '        Next
+                        '    End If
+                        'End If
                     End If
                 End If
                 If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
