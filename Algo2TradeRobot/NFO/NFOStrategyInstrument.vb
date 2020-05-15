@@ -115,7 +115,7 @@ Public Class NFOStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     Dim highestATR As Decimal = GetHighestATR(atrConsumer, runningCandlePayload)
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Current Time:{7}, Current Tick:{8}, TradingSymbol:{9}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Total PL:{7}, Current Time:{8}, Current Tick:{9}, TradingSymbol:{10}",
                                 runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -123,6 +123,7 @@ Public Class NFOStrategyInstrument
                                 IsActiveInstrument(),
                                 IsAnyTradeTargetReached(),
                                 If(highestATR <> Decimal.MinValue, Math.Round(highestATR, 4), "∞"),
+                                Me.ParentStrategy.GetTotalPLAfterBrokerage(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -153,7 +154,7 @@ Public Class NFOStrategyInstrument
                 Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
                     signalCandle = signal.Item3
-                    _slPoint = GetHighestATR(atrConsumer, runningCandlePayload)
+                    _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, runningCandlePayload), Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     If _slPoint <> Decimal.MinValue Then
                         quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
                         _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
