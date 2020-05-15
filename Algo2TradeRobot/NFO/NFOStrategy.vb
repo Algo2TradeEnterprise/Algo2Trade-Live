@@ -145,8 +145,10 @@ Public Class NFOStrategy
         If currentTime >= Me.UserSettings.EODExitTime Then
             ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
         ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
+            logger.Debug("Max loss reached. Overall PL: {0}", overallPL)
             ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
         ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
+            logger.Debug("Max profit reached. Overall PL: {0}", overallPL)
             ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
         End If
         Return ret

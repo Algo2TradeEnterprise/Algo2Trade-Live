@@ -117,7 +117,7 @@ Public Class NFOStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, Buy Active Trades:{5}, Sell Active Trades:{6}, Current Time:{7}, Current Tick:{8}, TradingSymbol:{9}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, {4}, Buy Active Trades:{5}, Sell Active Trades:{6}, Overall PL:{7}, Current Time:{8}, Current Tick:{9}, TradingSymbol:{10}",
                                 runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -125,6 +125,7 @@ Public Class NFOStrategyInstrument
                                 hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                 If(buyActiveTrades IsNot Nothing, buyActiveTrades.Count, 0),
                                 If(sellActiveTrades IsNot Nothing, sellActiveTrades.Count, 0),
+                                Me.ParentStrategy.GetTotalPLAfterBrokerage(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
