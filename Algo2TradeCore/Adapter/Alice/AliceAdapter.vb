@@ -1480,7 +1480,8 @@ Namespace Adapter
                     If stockData IsNot Nothing AndAlso stockData.Count > 0 Then
                         orderList = Await Task.Factory.StartNew(Function()
                                                                     Try
-                                                                        Return _Alice.GetOrderHistory(OrderId:=CType(stockData("OrderId"), String))
+                                                                        Return _Alice.GetOrderHistory(OrderId:=CType(stockData("OrderId"), String),
+                                                                                                      InstrumentToken:=CType(stockData("InstrumentToken"), String))
                                                                     Catch ex As Exception
                                                                         logger.Error(ex)
                                                                         lastException = ex
