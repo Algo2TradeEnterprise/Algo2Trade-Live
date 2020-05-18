@@ -359,6 +359,8 @@ Public Class NFOFillInstrumentDetails
                                         eligibleStocks.Add(runningStock, multiplier)
 
                                         If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
+                                    Else
+                                        Console.WriteLine(String.Format("{0},{1}", runningStock, multiplier))
                                     End If
                                 Next
 
