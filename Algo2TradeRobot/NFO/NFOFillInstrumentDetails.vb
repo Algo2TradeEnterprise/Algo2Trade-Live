@@ -357,8 +357,6 @@ Public Class NFOFillInstrumentDetails
                                     If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
                                         If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
                                         eligibleStocks.Add(runningStock, multiplier)
-
-                                        If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
                                     Else
                                         Console.WriteLine(String.Format("{0},{1}", runningStock, multiplier))
                                     End If

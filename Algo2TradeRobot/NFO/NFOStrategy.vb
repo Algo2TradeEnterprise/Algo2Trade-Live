@@ -58,6 +58,7 @@ Public Class NFOStrategy
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
                     ret = True
+                    If retTradableInstrumentsAsPerStrategy.Count >= userInputs.NumberOfStock Then Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
