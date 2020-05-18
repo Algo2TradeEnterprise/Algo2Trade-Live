@@ -60,8 +60,6 @@ Partial Class frmMainTabbed
         Me.pnlOHLBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstMCXLog = New System.Windows.Forms.ListBox()
         Me.sfdgvMCXMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
-        Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tabCDS = New System.Windows.Forms.TabPage()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
         Me.TableLayoutPanel2 = New System.Windows.Forms.TableLayoutPanel()
@@ -77,6 +75,8 @@ Partial Class frmMainTabbed
         Me.TableLayoutPanel4 = New System.Windows.Forms.TableLayoutPanel()
         Me.lstCDSLog = New System.Windows.Forms.ListBox()
         Me.sfdgvCDSMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrCDSTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
@@ -335,8 +335,8 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Name = "pnlMomentumReversalBodyHorizontalSplitter"
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowCount = 2
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 1.286174!))
+        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 98.71383!))
         Me.pnlMomentumReversalBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
         Me.pnlMomentumReversalBodyHorizontalSplitter.TabIndex = 0
         '
@@ -346,10 +346,10 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstNFOLog.FormattingEnabled = True
         Me.lstNFOLog.ItemHeight = 16
-        Me.lstNFOLog.Location = New System.Drawing.Point(4, 439)
+        Me.lstNFOLog.Location = New System.Drawing.Point(4, 11)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstNFOLog.Name = "lstNFOLog"
-        Me.lstNFOLog.Size = New System.Drawing.Size(926, 179)
+        Me.lstNFOLog.Size = New System.Drawing.Size(926, 607)
         Me.lstNFOLog.TabIndex = 9
         '
         'sfdgvNFOMainDashboard
@@ -366,7 +366,7 @@ Partial Class frmMainTabbed
         Me.sfdgvNFOMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvNFOMainDashboard.Name = "sfdgvNFOMainDashboard"
         Me.sfdgvNFOMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 427)
+        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 1)
         Me.sfdgvNFOMainDashboard.TabIndex = 6
         Me.sfdgvNFOMainDashboard.Text = "SfDataGrid1"
         '
@@ -582,14 +582,6 @@ Partial Class frmMainTabbed
         Me.sfdgvMCXMainDashboard.TabIndex = 6
         Me.sfdgvMCXMainDashboard.Text = "SfDataGrid1"
         '
-        'tmrNFOTickerStatus
-        '
-        Me.tmrNFOTickerStatus.Enabled = True
-        '
-        'tmrMCXTickerStatus
-        '
-        Me.tmrMCXTickerStatus.Enabled = True
-        '
         'tabCDS
         '
         Me.tabCDS.Controls.Add(Me.TableLayoutPanel1)
@@ -799,6 +791,14 @@ Partial Class frmMainTabbed
         Me.sfdgvCDSMainDashboard.Size = New System.Drawing.Size(932, 432)
         Me.sfdgvCDSMainDashboard.TabIndex = 6
         Me.sfdgvCDSMainDashboard.Text = "SfDataGrid1"
+        '
+        'tmrNFOTickerStatus
+        '
+        Me.tmrNFOTickerStatus.Enabled = True
+        '
+        'tmrMCXTickerStatus
+        '
+        Me.tmrMCXTickerStatus.Enabled = True
         '
         'tmrCDSTickerStatus
         '
