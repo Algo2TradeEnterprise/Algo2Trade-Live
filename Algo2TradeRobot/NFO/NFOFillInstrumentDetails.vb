@@ -370,10 +370,12 @@ Public Class NFOFillInstrumentDetails
                                     allStockData = New DataTable
                                     allStockData.Columns.Add("TRADING SYMBOL")
                                     allStockData.Columns.Add("MULTIPLIER")
+                                    allStockData.Columns.Add("HIGHEST ATR")
                                     For Each stock In eligibleStocks
                                         Dim row As DataRow = allStockData.NewRow
                                         row("TRADING SYMBOL") = stock.Key
                                         row("MULTIPLIER") = stock.Value
+                                        row("HIGHEST ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
                                         allStockData.Rows.Add(row)
                                     Next
 

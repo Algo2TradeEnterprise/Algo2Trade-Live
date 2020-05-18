@@ -30,6 +30,7 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
         Public Property Multiplier As Decimal
+        Public Property PreviousDayHighestATR As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -42,7 +43,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "HIGHEST ATR"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -56,6 +57,7 @@ Public Class NFOUserInputs
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
                             Dim mul As Decimal = 0
+                            Dim hgstATR As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -77,6 +79,17 @@ Public Class NFOUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Multiplier can not be null. RowNumber: {0}", rowCtr))
                                     End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            hgstATR = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Highest ATR can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Highest ATR can not be null. RowNumber: {0}", rowCtr))
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
@@ -84,6 +97,7 @@ Public Class NFOUserInputs
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
                                     .Multiplier = mul
+                                    .PreviousDayHighestATR = hgstATR
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
