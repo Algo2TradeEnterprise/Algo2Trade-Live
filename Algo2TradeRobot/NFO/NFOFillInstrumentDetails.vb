@@ -350,7 +350,7 @@ Public Class NFOFillInstrumentDetails
                                     Dim price As Decimal = capableStocks(runningStock).Price
                                     Dim instrument As IInstrument = capableStocks(runningStock).Instrument
                                     Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
-                                    Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Floor)
+                                    Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Celing)
                                     Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
                                     Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
                                     Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)

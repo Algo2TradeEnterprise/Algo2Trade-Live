@@ -165,7 +165,7 @@ Public Class NFOStrategyInstrument
                 Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
                     signalCandle = signal.Item3
-                    _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, runningCandlePayload), Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, runningCandlePayload), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     If _slPoint <> Decimal.MinValue Then
                         quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
                         _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
@@ -362,7 +362,7 @@ Public Class NFOStrategyInstrument
                             ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                 price = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Floor) - _targetPoint
                             End If
-                            If price <> Decimal.MinValue AndAlso runningTargetOrder.TriggerPrice <> price Then
+                            If price <> Decimal.MinValue AndAlso runningTargetOrder.Price <> price Then
                                 'Below portion have to be done in every modify target order trigger
                                 Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningTargetOrder.Tag)
                                 If currentSignalActivities IsNot Nothing Then
