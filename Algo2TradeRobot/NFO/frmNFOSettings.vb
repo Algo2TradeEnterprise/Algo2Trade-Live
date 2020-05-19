@@ -111,9 +111,9 @@ Public Class frmNFOSettings
 
     Private Sub chkbAutoSelectStock_CheckedChanged(sender As Object, e As EventArgs) Handles chkbAutoSelectStock.CheckedChanged
         If chkbAutoSelectStock.Checked Then
-            grpStockSelection.Enabled = True
+            pnlAutoStockSelect.Enabled = True
         Else
-            grpStockSelection.Enabled = False
+            pnlAutoStockSelect.Enabled = False
         End If
     End Sub
 End Class

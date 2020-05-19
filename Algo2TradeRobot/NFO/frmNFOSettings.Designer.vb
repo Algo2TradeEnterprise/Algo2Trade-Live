@@ -29,16 +29,8 @@ Partial Class frmNFOSettings
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.chkbAutoSelectStock = New System.Windows.Forms.CheckBox()
         Me.grpStockSelection = New System.Windows.Forms.GroupBox()
-        Me.txtMaxBlankCandlePer = New System.Windows.Forms.TextBox()
-        Me.lblMaxBlankCandlePer = New System.Windows.Forms.Label()
         Me.txtNumberOfStock = New System.Windows.Forms.TextBox()
         Me.lblNumberOfStock = New System.Windows.Forms.Label()
-        Me.txtATRPercentage = New System.Windows.Forms.TextBox()
-        Me.lblATR = New System.Windows.Forms.Label()
-        Me.txtMaxPrice = New System.Windows.Forms.TextBox()
-        Me.lblMaxPrice = New System.Windows.Forms.Label()
-        Me.txtMinPrice = New System.Windows.Forms.TextBox()
-        Me.lblMinPrice = New System.Windows.Forms.Label()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
@@ -61,8 +53,18 @@ Partial Class frmNFOSettings
         Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
         Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.pnlAutoStockSelect = New System.Windows.Forms.Panel()
+        Me.txtMaxBlankCandlePer = New System.Windows.Forms.TextBox()
+        Me.lblMaxBlankCandlePer = New System.Windows.Forms.Label()
+        Me.txtATRPercentage = New System.Windows.Forms.TextBox()
+        Me.lblATR = New System.Windows.Forms.Label()
+        Me.txtMaxPrice = New System.Windows.Forms.TextBox()
+        Me.lblMaxPrice = New System.Windows.Forms.Label()
+        Me.txtMinPrice = New System.Windows.Forms.TextBox()
+        Me.lblMinPrice = New System.Windows.Forms.Label()
         Me.grpStockSelection.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
+        Me.pnlAutoStockSelect.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -100,45 +102,19 @@ Partial Class frmNFOSettings
         '
         'grpStockSelection
         '
-        Me.grpStockSelection.Controls.Add(Me.txtMaxBlankCandlePer)
-        Me.grpStockSelection.Controls.Add(Me.lblMaxBlankCandlePer)
+        Me.grpStockSelection.Controls.Add(Me.pnlAutoStockSelect)
         Me.grpStockSelection.Controls.Add(Me.txtNumberOfStock)
         Me.grpStockSelection.Controls.Add(Me.lblNumberOfStock)
-        Me.grpStockSelection.Controls.Add(Me.txtATRPercentage)
-        Me.grpStockSelection.Controls.Add(Me.lblATR)
-        Me.grpStockSelection.Controls.Add(Me.txtMaxPrice)
-        Me.grpStockSelection.Controls.Add(Me.lblMaxPrice)
-        Me.grpStockSelection.Controls.Add(Me.txtMinPrice)
-        Me.grpStockSelection.Controls.Add(Me.lblMinPrice)
         Me.grpStockSelection.Location = New System.Drawing.Point(490, 46)
         Me.grpStockSelection.Name = "grpStockSelection"
-        Me.grpStockSelection.Size = New System.Drawing.Size(358, 195)
+        Me.grpStockSelection.Size = New System.Drawing.Size(358, 214)
         Me.grpStockSelection.TabIndex = 46
         Me.grpStockSelection.TabStop = False
         Me.grpStockSelection.Text = "Stock Selection Settings"
         '
-        'txtMaxBlankCandlePer
-        '
-        Me.txtMaxBlankCandlePer.Location = New System.Drawing.Point(146, 130)
-        Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
-        Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxBlankCandlePer.TabIndex = 15
-        Me.txtMaxBlankCandlePer.Tag = "Min Price"
-        '
-        'lblMaxBlankCandlePer
-        '
-        Me.lblMaxBlankCandlePer.AutoSize = True
-        Me.lblMaxBlankCandlePer.Location = New System.Drawing.Point(9, 133)
-        Me.lblMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxBlankCandlePer.Name = "lblMaxBlankCandlePer"
-        Me.lblMaxBlankCandlePer.Size = New System.Drawing.Size(136, 17)
-        Me.lblMaxBlankCandlePer.TabIndex = 46
-        Me.lblMaxBlankCandlePer.Text = "Max Blank Candle %"
-        '
         'txtNumberOfStock
         '
-        Me.txtNumberOfStock.Location = New System.Drawing.Point(146, 165)
+        Me.txtNumberOfStock.Location = New System.Drawing.Point(146, 176)
         Me.txtNumberOfStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfStock.Name = "txtNumberOfStock"
         Me.txtNumberOfStock.Size = New System.Drawing.Size(201, 22)
@@ -148,69 +124,12 @@ Partial Class frmNFOSettings
         'lblNumberOfStock
         '
         Me.lblNumberOfStock.AutoSize = True
-        Me.lblNumberOfStock.Location = New System.Drawing.Point(9, 168)
+        Me.lblNumberOfStock.Location = New System.Drawing.Point(9, 179)
         Me.lblNumberOfStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblNumberOfStock.Name = "lblNumberOfStock"
         Me.lblNumberOfStock.Size = New System.Drawing.Size(116, 17)
         Me.lblNumberOfStock.TabIndex = 43
         Me.lblNumberOfStock.Text = "Number Of Stock"
-        '
-        'txtATRPercentage
-        '
-        Me.txtATRPercentage.Location = New System.Drawing.Point(146, 95)
-        Me.txtATRPercentage.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtATRPercentage.Name = "txtATRPercentage"
-        Me.txtATRPercentage.Size = New System.Drawing.Size(201, 22)
-        Me.txtATRPercentage.TabIndex = 14
-        Me.txtATRPercentage.Tag = "ATR %"
-        '
-        'lblATR
-        '
-        Me.lblATR.AutoSize = True
-        Me.lblATR.Location = New System.Drawing.Point(9, 98)
-        Me.lblATR.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblATR.Name = "lblATR"
-        Me.lblATR.Size = New System.Drawing.Size(78, 17)
-        Me.lblATR.TabIndex = 39
-        Me.lblATR.Text = "Min ATR %"
-        '
-        'txtMaxPrice
-        '
-        Me.txtMaxPrice.Location = New System.Drawing.Point(146, 59)
-        Me.txtMaxPrice.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxPrice.Name = "txtMaxPrice"
-        Me.txtMaxPrice.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxPrice.TabIndex = 13
-        Me.txtMaxPrice.Tag = "Max Price"
-        '
-        'lblMaxPrice
-        '
-        Me.lblMaxPrice.AutoSize = True
-        Me.lblMaxPrice.Location = New System.Drawing.Point(9, 62)
-        Me.lblMaxPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxPrice.Name = "lblMaxPrice"
-        Me.lblMaxPrice.Size = New System.Drawing.Size(69, 17)
-        Me.lblMaxPrice.TabIndex = 37
-        Me.lblMaxPrice.Text = "Max Price"
-        '
-        'txtMinPrice
-        '
-        Me.txtMinPrice.Location = New System.Drawing.Point(146, 25)
-        Me.txtMinPrice.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinPrice.Name = "txtMinPrice"
-        Me.txtMinPrice.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinPrice.TabIndex = 12
-        Me.txtMinPrice.Tag = "Min Price"
-        '
-        'lblMinPrice
-        '
-        Me.lblMinPrice.AutoSize = True
-        Me.lblMinPrice.Location = New System.Drawing.Point(9, 28)
-        Me.lblMinPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinPrice.Name = "lblMinPrice"
-        Me.lblMinPrice.Size = New System.Drawing.Size(66, 17)
-        Me.lblMinPrice.TabIndex = 35
-        Me.lblMinPrice.Text = "Min Price"
         '
         'lblSignalTimeFrame
         '
@@ -443,6 +362,97 @@ Partial Class frmNFOSettings
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
+        'pnlAutoStockSelect
+        '
+        Me.pnlAutoStockSelect.Controls.Add(Me.txtMaxBlankCandlePer)
+        Me.pnlAutoStockSelect.Controls.Add(Me.lblMaxBlankCandlePer)
+        Me.pnlAutoStockSelect.Controls.Add(Me.txtATRPercentage)
+        Me.pnlAutoStockSelect.Controls.Add(Me.lblATR)
+        Me.pnlAutoStockSelect.Controls.Add(Me.txtMaxPrice)
+        Me.pnlAutoStockSelect.Controls.Add(Me.lblMaxPrice)
+        Me.pnlAutoStockSelect.Controls.Add(Me.txtMinPrice)
+        Me.pnlAutoStockSelect.Controls.Add(Me.lblMinPrice)
+        Me.pnlAutoStockSelect.Location = New System.Drawing.Point(7, 22)
+        Me.pnlAutoStockSelect.Name = "pnlAutoStockSelect"
+        Me.pnlAutoStockSelect.Size = New System.Drawing.Size(345, 146)
+        Me.pnlAutoStockSelect.TabIndex = 44
+        '
+        'txtMaxBlankCandlePer
+        '
+        Me.txtMaxBlankCandlePer.Location = New System.Drawing.Point(140, 114)
+        Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
+        Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMaxBlankCandlePer.TabIndex = 50
+        Me.txtMaxBlankCandlePer.Tag = "Min Price"
+        '
+        'lblMaxBlankCandlePer
+        '
+        Me.lblMaxBlankCandlePer.AutoSize = True
+        Me.lblMaxBlankCandlePer.Location = New System.Drawing.Point(3, 117)
+        Me.lblMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxBlankCandlePer.Name = "lblMaxBlankCandlePer"
+        Me.lblMaxBlankCandlePer.Size = New System.Drawing.Size(136, 17)
+        Me.lblMaxBlankCandlePer.TabIndex = 54
+        Me.lblMaxBlankCandlePer.Text = "Max Blank Candle %"
+        '
+        'txtATRPercentage
+        '
+        Me.txtATRPercentage.Location = New System.Drawing.Point(140, 79)
+        Me.txtATRPercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtATRPercentage.Name = "txtATRPercentage"
+        Me.txtATRPercentage.Size = New System.Drawing.Size(201, 22)
+        Me.txtATRPercentage.TabIndex = 49
+        Me.txtATRPercentage.Tag = "ATR %"
+        '
+        'lblATR
+        '
+        Me.lblATR.AutoSize = True
+        Me.lblATR.Location = New System.Drawing.Point(3, 82)
+        Me.lblATR.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblATR.Name = "lblATR"
+        Me.lblATR.Size = New System.Drawing.Size(78, 17)
+        Me.lblATR.TabIndex = 53
+        Me.lblATR.Text = "Min ATR %"
+        '
+        'txtMaxPrice
+        '
+        Me.txtMaxPrice.Location = New System.Drawing.Point(140, 43)
+        Me.txtMaxPrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxPrice.Name = "txtMaxPrice"
+        Me.txtMaxPrice.Size = New System.Drawing.Size(201, 22)
+        Me.txtMaxPrice.TabIndex = 48
+        Me.txtMaxPrice.Tag = "Max Price"
+        '
+        'lblMaxPrice
+        '
+        Me.lblMaxPrice.AutoSize = True
+        Me.lblMaxPrice.Location = New System.Drawing.Point(3, 46)
+        Me.lblMaxPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxPrice.Name = "lblMaxPrice"
+        Me.lblMaxPrice.Size = New System.Drawing.Size(69, 17)
+        Me.lblMaxPrice.TabIndex = 52
+        Me.lblMaxPrice.Text = "Max Price"
+        '
+        'txtMinPrice
+        '
+        Me.txtMinPrice.Location = New System.Drawing.Point(140, 9)
+        Me.txtMinPrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinPrice.Name = "txtMinPrice"
+        Me.txtMinPrice.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinPrice.TabIndex = 47
+        Me.txtMinPrice.Tag = "Min Price"
+        '
+        'lblMinPrice
+        '
+        Me.lblMinPrice.AutoSize = True
+        Me.lblMinPrice.Location = New System.Drawing.Point(3, 12)
+        Me.lblMinPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinPrice.Name = "lblMinPrice"
+        Me.lblMinPrice.Size = New System.Drawing.Size(66, 17)
+        Me.lblMinPrice.TabIndex = 51
+        Me.lblMinPrice.Text = "Min Price"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -463,6 +473,8 @@ Partial Class frmNFOSettings
         Me.grpStockSelection.PerformLayout()
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
+        Me.pnlAutoStockSelect.ResumeLayout(False)
+        Me.pnlAutoStockSelect.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -473,16 +485,8 @@ Partial Class frmNFOSettings
     Friend WithEvents opnFileSettings As OpenFileDialog
     Friend WithEvents chkbAutoSelectStock As CheckBox
     Friend WithEvents grpStockSelection As GroupBox
-    Friend WithEvents txtMaxBlankCandlePer As TextBox
-    Friend WithEvents lblMaxBlankCandlePer As Label
     Friend WithEvents txtNumberOfStock As TextBox
     Friend WithEvents lblNumberOfStock As Label
-    Friend WithEvents txtATRPercentage As TextBox
-    Friend WithEvents lblATR As Label
-    Friend WithEvents txtMaxPrice As TextBox
-    Friend WithEvents lblMaxPrice As Label
-    Friend WithEvents txtMinPrice As TextBox
-    Friend WithEvents lblMinPrice As Label
     Friend WithEvents lblSignalTimeFrame As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblInstrumentDetails As Label
@@ -505,4 +509,13 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMaxLossPerTrade As Label
     Friend WithEvents txtMaxLossPerTrade As TextBox
     Friend WithEvents GroupBox1 As GroupBox
+    Friend WithEvents pnlAutoStockSelect As Panel
+    Friend WithEvents txtMaxBlankCandlePer As TextBox
+    Friend WithEvents lblMaxBlankCandlePer As Label
+    Friend WithEvents txtATRPercentage As TextBox
+    Friend WithEvents lblATR As Label
+    Friend WithEvents txtMaxPrice As TextBox
+    Friend WithEvents lblMaxPrice As Label
+    Friend WithEvents txtMinPrice As TextBox
+    Friend WithEvents lblMinPrice As Label
 End Class

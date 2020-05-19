@@ -458,6 +458,7 @@ Public Class frmMainTabbed
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
             _cts.Token.ThrowIfCancellationRequested()
 
+            GenerateTelegramMessageAsync("** Login Successful **")
             Await _nfoStrategyToExecute.MonitorAsync().ConfigureAwait(False)
         Catch aex As AdapterBusinessException
             logger.Error(aex)
@@ -1306,23 +1307,26 @@ Public Class frmMainTabbed
         End Try
     End Sub
     Private Async Function GenerateTelegramMessageAsync(ByVal message As String) As Task
-        logger.Debug("Telegram Message:{0}", message)
-        _cts.Token.ThrowIfCancellationRequested()
-        If message.Contains("&") Then
-            message = message.Replace("&", "_")
-        End If
-        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-        If _commonControllerUserInput IsNot Nothing AndAlso _commonControllerUserInput.TelegramAPIKey IsNot Nothing AndAlso
-            Not _commonControllerUserInput.TelegramAPIKey.Trim = "" AndAlso _commonControllerUserInput.TelegramChatID IsNot Nothing AndAlso
-            Not _commonControllerUserInput.TelegramChatID.Trim = "" Then
-            If _commonControllerUserInput.FormRemarks IsNot Nothing Then
-                message = String.Format("{0}: {1}", _commonControllerUserInput.FormRemarks, message)
+        Try
+            logger.Debug("Telegram Message:{0}", message)
+            _cts.Token.ThrowIfCancellationRequested()
+            If message.Contains("&") Then
+                message = message.Replace("&", "_")
             End If
-            Using tSender As New Utilities.Notification.Telegram(_commonControllerUserInput.TelegramAPIKey.Trim, _commonControllerUserInput.TelegramChatID, _cts)
-                Dim encodedString As String = Utilities.Strings.EncodeString(message)
-                Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-            End Using
-        End If
+            If _commonControllerUserInput IsNot Nothing AndAlso _commonControllerUserInput.TelegramAPIKey IsNot Nothing AndAlso
+                Not _commonControllerUserInput.TelegramAPIKey.Trim = "" AndAlso _commonControllerUserInput.TelegramChatID IsNot Nothing AndAlso
+                Not _commonControllerUserInput.TelegramChatID.Trim = "" Then
+                If _commonControllerUserInput.FormRemarks IsNot Nothing AndAlso _commonControllerUserInput.FormRemarks.Trim <> "" Then
+                    message = String.Format("{0}: {1}", _commonControllerUserInput.FormRemarks, message)
+                End If
+                Using tSender As New Utilities.Notification.Telegram(_commonControllerUserInput.TelegramAPIKey.Trim, _commonControllerUserInput.TelegramChatID.Trim, _cts)
+                    Dim encodedString As String = Utilities.Strings.EncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                End Using
+            End If
+        Catch ex As Exception
+            logger.Warn(ex)
+        End Try
     End Function
 
 #End Region
