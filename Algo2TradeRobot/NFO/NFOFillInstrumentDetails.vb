@@ -350,12 +350,41 @@ Public Class NFOFillInstrumentDetails
                                         If Math.Abs(pl) >= Math.Abs(_userInputs.MinStoplossPerTrade) AndAlso Math.Abs(pl) <= Math.Abs(_userInputs.MaxStoplossPerTrade) Then
                                             If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
                                             eligibleStocks.Add(runningStock, projectedSlab)
-
-                                            If eligibleStocks.Count >= _userInputs.NumberOfStock Then Exit For
                                         End If
                                     End If
                                 Next
 
+                                Try
+                                    Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, "Backtest", String.Format("Backtest Stocks {0}.csv", Now.ToString("dd_MM_yyyy")))
+                                    If File.Exists(filename) Then File.Delete(filename)
+                                    Using csv As New CSVHelper(filename, ",", _cts)
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        allStockData = New DataTable
+                                        allStockData.Columns.Add("Date")
+                                        allStockData.Columns.Add("Trading Symbol")
+                                        allStockData.Columns.Add("Lot Size")
+                                        allStockData.Columns.Add("ATR%")
+                                        allStockData.Columns.Add("Slab")
+                                        allStockData.Columns.Add("Previous Day Close")
+                                        allStockData.Columns.Add("Token")
+                                        For Each stock In eligibleStocks
+                                            Dim row As DataRow = allStockData.NewRow
+                                            row("Date") = Now.ToString("dd-MM-yyyy")
+                                            row("Trading Symbol") = stock.Key
+                                            row("Lot Size") = capableStocks(stock.Key).Instrument.LotSize
+                                            row("ATR%") = capableStocks(stock.Key).ATRPercentage
+                                            row("Slab") = capableStocks(stock.Key).Slab
+                                            row("Previous Day Close") = capableStocks(stock.Key).Price
+                                            row("Token") = capableStocks(stock.Key).Instrument.InstrumentIdentifier
+
+                                            allStockData.Rows.Add(row)
+                                        Next
+
+                                        csv.GetCSVFromDataTable(allStockData)
+                                    End Using
+                                Catch ex As Exception
+                                    logger.Error("Can not generate today's active instrument csv file. Error:{0}", ex.ToString)
+                                End Try
 
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()

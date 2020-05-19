@@ -78,6 +78,7 @@ Partial Class frmMainTabbed
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrCDSTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.lblDisplay = New System.Windows.Forms.Label()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -208,6 +209,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstrument, 10, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.lblDisplay, 5, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -335,8 +337,8 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlMomentumReversalBodyHorizontalSplitter.Name = "pnlMomentumReversalBodyHorizontalSplitter"
         Me.pnlMomentumReversalBodyHorizontalSplitter.RowCount = 2
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 1.286174!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 98.71383!))
+        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 66.88103!))
+        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.11897!))
         Me.pnlMomentumReversalBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
         Me.pnlMomentumReversalBodyHorizontalSplitter.TabIndex = 0
         '
@@ -346,10 +348,10 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstNFOLog.FormattingEnabled = True
         Me.lstNFOLog.ItemHeight = 16
-        Me.lstNFOLog.Location = New System.Drawing.Point(4, 11)
+        Me.lstNFOLog.Location = New System.Drawing.Point(4, 419)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstNFOLog.Name = "lstNFOLog"
-        Me.lstNFOLog.Size = New System.Drawing.Size(926, 607)
+        Me.lstNFOLog.Size = New System.Drawing.Size(926, 199)
         Me.lstNFOLog.TabIndex = 9
         '
         'sfdgvNFOMainDashboard
@@ -366,7 +368,7 @@ Partial Class frmMainTabbed
         Me.sfdgvNFOMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvNFOMainDashboard.Name = "sfdgvNFOMainDashboard"
         Me.sfdgvNFOMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 1)
+        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 407)
         Me.sfdgvNFOMainDashboard.TabIndex = 6
         Me.sfdgvNFOMainDashboard.Text = "SfDataGrid1"
         '
@@ -804,6 +806,15 @@ Partial Class frmMainTabbed
         '
         Me.tmrCDSTickerStatus.Enabled = True
         '
+        'lblDisplay
+        '
+        Me.lblDisplay.AutoSize = True
+        Me.lblDisplay.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lblDisplay.Location = New System.Drawing.Point(448, 0)
+        Me.lblDisplay.Name = "lblDisplay"
+        Me.lblDisplay.Size = New System.Drawing.Size(83, 39)
+        Me.lblDisplay.TabIndex = 13
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -909,4 +920,5 @@ Partial Class frmMainTabbed
     Friend WithEvents lstCDSLog As ListBox
     Friend WithEvents sfdgvCDSMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrCDSTickerStatus As Timer
+    Friend WithEvents lblDisplay As Label
 End Class

@@ -11,6 +11,8 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Private _overallLoss As Decimal = Decimal.MinValue
+
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As NFOUserInputs,
@@ -40,6 +42,7 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
+            _overallLoss = userInputs.OverallMaxLossPerDay
             If userInputs.AutoSelectStock Then
                 Using fillInstrumentDetails As New NFOFillInstrumentDetails(_cts, Me)
                     Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
@@ -57,6 +60,7 @@ Public Class NFOStrategy
                     _cts.Token.ThrowIfCancellationRequested()
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                    If retTradableInstrumentsAsPerStrategy.Count >= userInputs.NumberOfStock Then Exit For
                     ret = True
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -131,7 +135,7 @@ Public Class NFOStrategy
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim userSettings As NFOUserInputs = Me.UserSettings
         Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
-        Dim trailingMTMLoss As Decimal = CalculateTrailingMTM(Math.Abs(userSettings.OverallMaxLossPerDay), Math.Abs(userSettings.OverallMaxLossPerDay) / 2, overallPL)
+        Dim trailingMTMLoss As Decimal = CalculateTrailingMTM(Math.Abs(_overallLoss), Math.Abs(_overallLoss) / 2, overallPL)
         If trailingMTMLoss <> Decimal.MinValue AndAlso trailingMTMLoss > userSettings.OverallMaxLossPerDay Then
             userSettings.OverallMaxLossPerDay = trailingMTMLoss
             Try
