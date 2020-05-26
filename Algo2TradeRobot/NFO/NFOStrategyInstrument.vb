@@ -278,55 +278,79 @@ Public Class NFOStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
-        If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
-            Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
-                                                                          Return x.ParentOrderIdentifier IsNot Nothing AndAlso
-                                                                          x.Status = IOrder.TypeOfStatus.TriggerPending
-                                                                      End Function)
-            If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
-                Dim parentOrder As IOrder = allActiveOrders.Find(Function(x)
-                                                                     Return x.ParentOrderIdentifier Is Nothing AndAlso
-                                                                     x.Status = IOrder.TypeOfStatus.TriggerPending
-                                                                 End Function)
-                If parentOrder IsNot Nothing Then
+        Dim hkConsumer As HeikinAshiConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHKConsumer)
+        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+
+        If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso
+            hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
+            hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
+            If allActiveOrders IsNot Nothing AndAlso allActiveOrders.Count > 0 Then
+                Dim slOrders As List(Of IOrder) = allActiveOrders.FindAll(Function(x)
+                                                                              Return x.ParentOrderIdentifier IsNot Nothing AndAlso
+                                                                              x.Status = IOrder.TypeOfStatus.TriggerPending
+                                                                          End Function)
+                If slOrders IsNot Nothing AndAlso slOrders.Count > 0 Then
+                    Dim hkCandle As HeikinAshiConsumer.HeikinAshiPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+                    Dim signal As Tuple(Of Boolean, Decimal, HeikinAshiConsumer.HeikinAshiPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
                     For Each runningSLOrder In slOrders
                         If Not runningSLOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
                             Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
-                            If bussinessOrder.ParentOrder.TransactionType <> parentOrder.TransactionType Then
-                                Dim triggerPrice As Decimal = Decimal.MinValue
-                                If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                    If parentOrder.TriggerPrice > runningSLOrder.TriggerPrice Then
-                                        triggerPrice = parentOrder.TriggerPrice
-                                    End If
-                                ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                    If parentOrder.TriggerPrice < runningSLOrder.TriggerPrice Then
-                                        triggerPrice = parentOrder.TriggerPrice
+                            Dim triggerPrice As Decimal = Decimal.MinValue
+                            Dim reason As String = ""
+                            Dim buffer As Decimal = CalculateBuffer(bussinessOrder.ParentOrder.TriggerPrice, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
+                                buffer = 0
+                            End If
+                            If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                                If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
+                                    triggerPrice = bussinessOrder.ParentOrder.TriggerPrice - (Me.Slab + 2 * buffer)
+                                    reason = "Slippage"
+                                End If
+                                If signal IsNot Nothing AndAlso signal.Item1 AndAlso signal.Item4 = IOrder.TypeOfTransaction.Sell Then
+                                    If signal.Item2 - buffer > runningSLOrder.TriggerPrice Then
+                                        triggerPrice = signal.Item2 - buffer
+                                        reason = "Opposite Direction Signal"
                                     End If
                                 End If
-                                If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
-                                    'Below portion have to be done in every modify stoploss order trigger
-                                    Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
-                                    If currentSignalActivities IsNot Nothing Then
-                                        If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
-                                            If Val(currentSignalActivities.StoplossModifyActivity.Supporting) = triggerPrice Then
-                                                Continue For
-                                            End If
+                                If Me.TradableInstrument.LastTick.LastPrice < triggerPrice Then triggerPrice = Decimal.MinValue
+                            ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                                If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
+                                    triggerPrice = bussinessOrder.ParentOrder.TriggerPrice + (Me.Slab + 2 * buffer)
+                                    reason = "Slippage"
+                                End If
+                                If signal IsNot Nothing AndAlso signal.Item1 AndAlso signal.Item4 = IOrder.TypeOfTransaction.Buy Then
+                                    If signal.Item2 + buffer < runningSLOrder.TriggerPrice Then
+                                        triggerPrice = signal.Item2 + buffer
+                                        reason = "Opposite Direction Signal"
+                                    End If
+                                End If
+                                If Me.TradableInstrument.LastTick.LastPrice > triggerPrice Then triggerPrice = Decimal.MinValue
+                            End If
+                            If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
+                                'Below portion have to be done in every modify stoploss order trigger
+                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
+                                If currentSignalActivities IsNot Nothing Then
+                                    If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                                    currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                    currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                        If Val(currentSignalActivities.StoplossModifyActivity.Supporting) = triggerPrice Then
+                                            Continue For
                                         End If
                                     End If
-                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, "Opposite Direction signal trigger"))
                                 End If
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, reason))
                             End If
                         End If
                     Next
                 End If
             End If
         End If
+
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             For Each runningOrder In ret
                 logger.Debug("***** Modify Stoploss ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
@@ -345,7 +369,7 @@ Public Class NFOStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Me.TradableInstrument.IsHistoricalCompleted AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso
             hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
             hkConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim allActiveOrders As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.None)
