@@ -1540,11 +1540,11 @@ Namespace Adapter
                                                                     Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
-                    'Try
-                    '    logger.Fatal(Utils.JsonSerialize(orderList))
-                    'Catch ex As Exception
-                    '    'No log
-                    'End Try
+                    Try
+                        logger.Fatal(Utils.JsonSerialize(orderList))
+                    Catch ex As Exception
+                        'No log
+                    End Try
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
                 Case ExecutionCommands.GetOrderTrades
