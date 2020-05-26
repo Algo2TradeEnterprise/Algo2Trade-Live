@@ -72,7 +72,7 @@ Namespace Adapter
                                                                                     True,
                                                                                     "text/plain").ConfigureAwait(False)
                     If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                        Dim expiryData As String() = l.Item2.ToString.Split(vbCrLf)
+                        Dim expiryData As String() = l.Item2.ToString.Trim.Split(vbCrLf)
                         For Each runningData In expiryData
                             Dim data As String() = runningData.Trim.Split(",")
                             If ret Is Nothing Then ret = New Dictionary(Of String, Date)
