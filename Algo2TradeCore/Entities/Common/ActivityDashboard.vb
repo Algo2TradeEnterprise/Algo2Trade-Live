@@ -208,13 +208,13 @@ Namespace Entities
                 Return StoplossModifyActivity.RequestTime
             End Get
         End Property
-        <Display(Name:="Stoploss Modify Request Status", Order:=18, AutoGenerateField:=False)>
+        <Display(Name:="Stoploss Modify Request Status", Order:=18)>
         Public ReadOnly Property StoplossModifyRequestStatus As SignalStatusType
             Get
                 Return StoplossModifyActivity.RequestStatus
             End Get
         End Property
-        <Display(Name:="Stoploss Modify Remarks", Order:=19, AutoGenerateField:=False)>
+        <Display(Name:="Stoploss Modify Remarks", Order:=19)>
         Public ReadOnly Property StoplossModifyRemarks As String
             Get
                 Return StoplossModifyActivity.RequestRemarks

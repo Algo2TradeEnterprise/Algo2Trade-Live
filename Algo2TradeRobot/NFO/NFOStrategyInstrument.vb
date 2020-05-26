@@ -298,6 +298,7 @@ Public Class NFOStrategyInstrument
                         If Not runningSLOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
+                            Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
                             Dim bussinessOrder As IBusinessOrder = GetParentFromChildOrder(runningSLOrder)
                             Dim triggerPrice As Decimal = Decimal.MinValue
                             Dim reason As String = ""
@@ -306,9 +307,11 @@ Public Class NFOStrategyInstrument
                                 buffer = 0
                             End If
                             If bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
-                                    triggerPrice = bussinessOrder.ParentOrder.TriggerPrice - (Me.Slab + 2 * buffer)
-                                    reason = "Slippage"
+                                If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.None Then
+                                    If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
+                                        triggerPrice = bussinessOrder.ParentOrder.TriggerPrice - (Me.Slab + 2 * buffer)
+                                        reason = "Slippage"
+                                    End If
                                 End If
                                 If signal IsNot Nothing AndAlso signal.Item1 AndAlso signal.Item4 = IOrder.TypeOfTransaction.Sell Then
                                     If signal.Item2 - buffer > runningSLOrder.TriggerPrice Then
@@ -318,9 +321,11 @@ Public Class NFOStrategyInstrument
                                 End If
                                 If Me.TradableInstrument.LastTick.LastPrice < triggerPrice Then triggerPrice = Decimal.MinValue
                             ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
-                                    triggerPrice = bussinessOrder.ParentOrder.TriggerPrice + (Me.Slab + 2 * buffer)
-                                    reason = "Slippage"
+                                If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.None Then
+                                    If bussinessOrder.ParentOrder.TriggerPrice <> bussinessOrder.ParentOrder.AveragePrice Then
+                                        triggerPrice = bussinessOrder.ParentOrder.TriggerPrice + (Me.Slab + 2 * buffer)
+                                        reason = "Slippage"
+                                    End If
                                 End If
                                 If signal IsNot Nothing AndAlso signal.Item1 AndAlso signal.Item4 = IOrder.TypeOfTransaction.Buy Then
                                     If signal.Item2 + buffer < runningSLOrder.TriggerPrice Then
@@ -332,11 +337,10 @@ Public Class NFOStrategyInstrument
                             End If
                             If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
                                 'Below portion have to be done in every modify stoploss order trigger
-                                Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
                                 If currentSignalActivities IsNot Nothing Then
                                     If currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-                                    currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-                                    currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                        currentSignalActivities.StoplossModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
                                         If Val(currentSignalActivities.StoplossModifyActivity.Supporting) = triggerPrice Then
                                             Continue For
                                         End If
