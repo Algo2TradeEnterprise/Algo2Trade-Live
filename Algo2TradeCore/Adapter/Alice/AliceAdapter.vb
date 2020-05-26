@@ -80,6 +80,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -153,6 +155,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -203,6 +207,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -258,6 +264,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -332,6 +340,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -388,6 +398,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -455,6 +467,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -509,6 +523,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -552,6 +568,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -607,6 +625,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -654,6 +674,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -701,6 +723,8 @@ Namespace Adapter
                 Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
             Catch uex As UnknownException
                 Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+            Catch nex As NetworkException
+                Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
             Catch ex As Exception
                 Throw ex
             End Try
@@ -776,6 +800,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -858,6 +884,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -940,6 +968,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1021,6 +1051,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1100,6 +1132,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1179,6 +1213,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1260,6 +1296,8 @@ Namespace Adapter
                     Throw New AliceBusinessException(oex.Message, oex, AdapterBusinessException.TypeOfException.OrderException)
                 Catch uex As UnknownException
                     Throw New AliceBusinessException(uex.Message, uex, AdapterBusinessException.TypeOfException.UnknownException)
+                Catch nex As NetworkException
+                    Throw New AliceBusinessException(nex.Message, nex, AdapterBusinessException.TypeOfException.NetworkException)
                 Catch ex As Exception
                     Throw ex
                 End Try
@@ -1502,11 +1540,11 @@ Namespace Adapter
                                                                     Return Nothing
                                                                 End Try
                                                             End Function).ConfigureAwait(False)
-                    Try
-                        logger.Fatal(Utils.JsonSerialize(orderList))
-                    Catch ex As Exception
-                        'No log
-                    End Try
+                    'Try
+                    '    logger.Fatal(Utils.JsonSerialize(orderList))
+                    'Catch ex As Exception
+                    '    'No log
+                    'End Try
                     _cts.Token.ThrowIfCancellationRequested()
                     ret = New Dictionary(Of String, Object) From {{command.ToString, orderList}}
                 Case ExecutionCommands.GetOrderTrades
