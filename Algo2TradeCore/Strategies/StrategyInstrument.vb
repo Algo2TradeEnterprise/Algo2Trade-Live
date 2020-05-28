@@ -1,4 +1,5 @@
 ﻿Imports System.Net.Http
+Imports System.Reflection
 Imports System.Threading
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.ChartHandler.ChartStyle
@@ -1357,6 +1358,20 @@ Namespace Strategies
         Protected MustOverride Async Function ForceExitSpecificTradeAsync(ByVal order As IOrder, ByVal reason As String) As Task
 #End Region
 
+#Region "Private Function"
+        Private Function GetDuplicateAdapter() As APIAdapter
+            Dim ret As APIAdapter = CType(System.Reflection.Assembly.GetExecutingAssembly().CreateInstance(typeName:=_APIAdapter.GetType.FullName,
+                                                                                                                ignoreCase:=False,
+                                                                                                                bindingAttr:=BindingFlags.[Default],
+                                                                                                                binder:=Nothing,
+                                                                                                                args:=New Object() {ParentStrategy.ParentController, Me.TradableInstrument, _cts},
+                                                                                                                culture:=Nothing,
+                                                                                                                activationAttributes:=Nothing), APIAdapter)
+            ret.SetAPIAccessToken(Me.ParentStrategy.ParentController.APIConnection.AccessToken)
+            Return ret
+        End Function
+#End Region
+
 #Region "Excecute Command"
         ''' <summary>
         ''' To run in diffrent thread it is not defined in Strategy level
@@ -1403,7 +1418,9 @@ Namespace Strategies
                                                                                                Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                                Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
 
-                                                                                               modifyStoplossOrderResponse = Await _APIAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier, triggerPrice:=x.Item3).ConfigureAwait(False)
+                                                                                               Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                               modifyStoplossOrderResponse = Await tempAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier, triggerPrice:=x.Item3).ConfigureAwait(False)
 
                                                                                                If modifyStoplossOrderResponse IsNot Nothing Then
                                                                                                    logger.Debug("Modify stoploss order is completed, modifyStoplossOrderResponse:{0}, {1}", Strings.JsonSerialize(modifyStoplossOrderResponse), Me.TradableInstrument.TradingSymbol)
@@ -1442,7 +1459,9 @@ Namespace Strategies
                                                                                              Await Me.ParentStrategy.SignalManager.HandleTargetModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                              Dim modifyTargetOrderResponse As Dictionary(Of String, Object) = Nothing
 
-                                                                                             modifyTargetOrderResponse = Await _APIAdapter.ModifyTargetOrderAsync(orderId:=x.Item2.OrderIdentifier, price:=x.Item3).ConfigureAwait(False)
+                                                                                             Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                             modifyTargetOrderResponse = Await tempAdapter.ModifyTargetOrderAsync(orderId:=x.Item2.OrderIdentifier, price:=x.Item3).ConfigureAwait(False)
 
                                                                                              If modifyTargetOrderResponse IsNot Nothing Then
                                                                                                  logger.Debug("Modify target order is completed, modifyTargetOrderResponse:{0}, {1}", Strings.JsonSerialize(modifyTargetOrderResponse), Me.TradableInstrument.TradingSymbol)
@@ -1486,13 +1505,16 @@ Namespace Strategies
                                                                                    If x.Item1 = ExecuteCommandAction.Take Then
                                                                                        Await Me.ParentStrategy.SignalManager.HandleCancelActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3).ConfigureAwait(False)
                                                                                        Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
+
+                                                                                       Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
                                                                                        Select Case command
                                                                                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
-                                                                                               cancelOrderResponse = Await _APIAdapter.CancelBOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                               cancelOrderResponse = Await tempAdapter.CancelBOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
                                                                                            Case ExecuteCommands.CancelCOOrder, ExecuteCommands.ForceCancelCOOrder
-                                                                                               cancelOrderResponse = Await _APIAdapter.CancelCOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                               cancelOrderResponse = Await tempAdapter.CancelCOOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
                                                                                            Case ExecuteCommands.CancelRegularOrder, ExecuteCommands.ForceCancelRegularOrder
-                                                                                               cancelOrderResponse = Await _APIAdapter.CancelRegularOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
+                                                                                               cancelOrderResponse = Await tempAdapter.CancelRegularOrderAsync(orderId:=x.Item2.OrderIdentifier, parentOrderID:=x.Item2.ParentOrderIdentifier).ConfigureAwait(False)
                                                                                        End Select
                                                                                        If cancelOrderResponse IsNot Nothing Then
                                                                                            logger.Debug("Cancel order is completed, cancelOrderResponse:{0}, {1}", Strings.JsonSerialize(cancelOrderResponse), Me.TradableInstrument.TradingSymbol)
@@ -1536,7 +1558,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                     transaction:=x.Item2.EntryDirection,
                                                                                                                                                     quantity:=x.Item2.Quantity,
@@ -1591,7 +1616,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                   tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                   transaction:=x.Item2.EntryDirection,
                                                                                                                                                   quantity:=x.Item2.Quantity,
@@ -1647,7 +1675,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                     transaction:=x.Item2.EntryDirection,
                                                                                                                                                     quantity:=x.Item2.Quantity,
@@ -1700,7 +1731,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                             transaction:=x.Item2.EntryDirection,
                                                                                                                                                             quantity:=x.Item2.Quantity,
@@ -1752,7 +1786,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                             transaction:=x.Item2.EntryDirection,
                                                                                                                                                             quantity:=x.Item2.Quantity,
@@ -1805,7 +1842,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL_M, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                         tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                         transaction:=x.Item2.EntryDirection,
                                                                                                                                                         quantity:=x.Item2.Quantity,
@@ -1858,7 +1898,10 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-                                                                                      placeOrderResponse = Await _APIAdapter.PlaceRegularMarketCNCOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
+
+                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+
+                                                                                      placeOrderResponse = Await tempAdapter.PlaceRegularMarketCNCOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
                                                                                                                                                             transaction:=x.Item2.EntryDirection,
                                                                                                                                                             quantity:=x.Item2.Quantity,
