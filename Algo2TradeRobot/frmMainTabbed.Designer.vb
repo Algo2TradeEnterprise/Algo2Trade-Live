@@ -31,8 +31,8 @@ Partial Class frmMainTabbed
         Me.miAbout = New System.Windows.Forms.ToolStripMenuItem()
         Me.tabMain = New System.Windows.Forms.TabControl()
         Me.tabNFO = New System.Windows.Forms.TabPage()
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlNFOMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlNFOTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.btnNFOStop = New System.Windows.Forms.Button()
         Me.btnNFOStart = New System.Windows.Forms.Button()
         Me.Panel1 = New System.Windows.Forms.Panel()
@@ -40,9 +40,9 @@ Partial Class frmMainTabbed
         Me.lblNFOTickerStatus = New System.Windows.Forms.Label()
         Me.btnNFOSettings = New System.Windows.Forms.Button()
         Me.linklblNFOTradableInstrument = New System.Windows.Forms.LinkLabel()
-        Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlNFOBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox2 = New System.Windows.Forms.PictureBox()
-        Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlNFOBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstNFOLog = New System.Windows.Forms.ListBox()
         Me.sfdgvNFOMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tabMCX = New System.Windows.Forms.TabPage()
@@ -82,12 +82,12 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.SuspendLayout()
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.SuspendLayout()
+        Me.pnlNFOMainPanelHorizontalSplitter.SuspendLayout()
+        Me.pnlNFOTopHeaderVerticalSplitter.SuspendLayout()
         Me.Panel1.SuspendLayout()
-        Me.pnlMomentumReversalBodyVerticalSplitter.SuspendLayout()
+        Me.pnlNFOBodyVerticalSplitter.SuspendLayout()
         CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.pnlMomentumReversalBodyHorizontalSplitter.SuspendLayout()
+        Me.pnlNFOBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvNFOMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.tabMCX.SuspendLayout()
         Me.pnlOHLMainPanelHorizontalSplitter.SuspendLayout()
@@ -160,7 +160,7 @@ Partial Class frmMainTabbed
         '
         'tabNFO
         '
-        Me.tabNFO.Controls.Add(Me.pnlMomentumReversalMainPanelHorizontalSplitter)
+        Me.tabNFO.Controls.Add(Me.pnlNFOMainPanelHorizontalSplitter)
         Me.tabNFO.Location = New System.Drawing.Point(4, 25)
         Me.tabNFO.Margin = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Name = "tabNFO"
@@ -170,54 +170,54 @@ Partial Class frmMainTabbed
         Me.tabNFO.Text = "NFO"
         Me.tabNFO.UseVisualStyleBackColor = True
         '
-        'pnlMomentumReversalMainPanelHorizontalSplitter
+        'pnlNFOMainPanelHorizontalSplitter
         '
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.ColumnCount = 1
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Controls.Add(Me.pnlMomentumReversalTopHeaderVerticalSplitter, 0, 0)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Controls.Add(Me.pnlMomentumReversalBodyVerticalSplitter, 0, 1)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Name = "pnlMomentumReversalMainPanelHorizontalSplitter"
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowCount = 2
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 685)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.TabIndex = 0
+        Me.pnlNFOMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlNFOMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlNFOMainPanelHorizontalSplitter.Controls.Add(Me.pnlNFOTopHeaderVerticalSplitter, 0, 0)
+        Me.pnlNFOMainPanelHorizontalSplitter.Controls.Add(Me.pnlNFOBodyVerticalSplitter, 0, 1)
+        Me.pnlNFOMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlNFOMainPanelHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlNFOMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlNFOMainPanelHorizontalSplitter.Name = "pnlNFOMainPanelHorizontalSplitter"
+        Me.pnlNFOMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlNFOMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 685)
+        Me.pnlNFOMainPanelHorizontalSplitter.TabIndex = 0
         '
-        'pnlMomentumReversalTopHeaderVerticalSplitter
+        'pnlNFOTopHeaderVerticalSplitter
         '
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnCount = 15
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOStop, 0, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOStart, 0, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstrument, 10, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.lblDisplay, 5, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Name = "pnlMomentumReversalTopHeaderVerticalSplitter"
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowCount = 1
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1347, 39)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.TabIndex = 0
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnCount = 15
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOStop, 0, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOStart, 0, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstrument, 10, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.lblDisplay, 5, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlNFOTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlNFOTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlNFOTopHeaderVerticalSplitter.Name = "pnlNFOTopHeaderVerticalSplitter"
+        Me.pnlNFOTopHeaderVerticalSplitter.RowCount = 1
+        Me.pnlNFOTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlNFOTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1347, 39)
+        Me.pnlNFOTopHeaderVerticalSplitter.TabIndex = 0
         '
         'btnNFOStop
         '
@@ -297,22 +297,22 @@ Partial Class frmMainTabbed
         Me.linklblNFOTradableInstrument.Text = "Tradable Instruments: 0"
         Me.linklblNFOTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
-        'pnlMomentumReversalBodyVerticalSplitter
+        'pnlNFOBodyVerticalSplitter
         '
-        Me.pnlMomentumReversalBodyVerticalSplitter.ColumnCount = 2
-        Me.pnlMomentumReversalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.PictureBox2, 0, 0)
-        Me.pnlMomentumReversalBodyVerticalSplitter.Controls.Add(Me.pnlMomentumReversalBodyHorizontalSplitter, 0, 0)
-        Me.pnlMomentumReversalBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalBodyVerticalSplitter.Location = New System.Drawing.Point(4, 51)
-        Me.pnlMomentumReversalBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
-        Me.pnlMomentumReversalBodyVerticalSplitter.Name = "pnlMomentumReversalBodyVerticalSplitter"
-        Me.pnlMomentumReversalBodyVerticalSplitter.RowCount = 1
-        Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
-        Me.pnlMomentumReversalBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
-        Me.pnlMomentumReversalBodyVerticalSplitter.TabIndex = 1
+        Me.pnlNFOBodyVerticalSplitter.ColumnCount = 2
+        Me.pnlNFOBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlNFOBodyVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlNFOBodyVerticalSplitter.Controls.Add(Me.PictureBox2, 0, 0)
+        Me.pnlNFOBodyVerticalSplitter.Controls.Add(Me.pnlNFOBodyHorizontalSplitter, 0, 0)
+        Me.pnlNFOBodyVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlNFOBodyVerticalSplitter.Location = New System.Drawing.Point(4, 51)
+        Me.pnlNFOBodyVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlNFOBodyVerticalSplitter.Name = "pnlNFOBodyVerticalSplitter"
+        Me.pnlNFOBodyVerticalSplitter.RowCount = 1
+        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.pnlNFOBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
+        Me.pnlNFOBodyVerticalSplitter.TabIndex = 1
         '
         'PictureBox2
         '
@@ -326,21 +326,21 @@ Partial Class frmMainTabbed
         Me.PictureBox2.TabIndex = 2
         Me.PictureBox2.TabStop = False
         '
-        'pnlMomentumReversalBodyHorizontalSplitter
+        'pnlNFOBodyHorizontalSplitter
         '
-        Me.pnlMomentumReversalBodyHorizontalSplitter.ColumnCount = 1
-        Me.pnlMomentumReversalBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Controls.Add(Me.lstNFOLog, 0, 1)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Controls.Add(Me.sfdgvNFOMainDashboard, 0, 0)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Name = "pnlMomentumReversalBodyHorizontalSplitter"
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowCount = 2
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 66.88103!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.11897!))
-        Me.pnlMomentumReversalBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
-        Me.pnlMomentumReversalBodyHorizontalSplitter.TabIndex = 0
+        Me.pnlNFOBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlNFOBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlNFOBodyHorizontalSplitter.Controls.Add(Me.lstNFOLog, 0, 1)
+        Me.pnlNFOBodyHorizontalSplitter.Controls.Add(Me.sfdgvNFOMainDashboard, 0, 0)
+        Me.pnlNFOBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlNFOBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlNFOBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlNFOBodyHorizontalSplitter.Name = "pnlNFOBodyHorizontalSplitter"
+        Me.pnlNFOBodyHorizontalSplitter.RowCount = 2
+        Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 66.88103!))
+        Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.11897!))
+        Me.pnlNFOBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
+        Me.pnlNFOBodyHorizontalSplitter.TabIndex = 0
         '
         'lstNFOLog
         '
@@ -832,14 +832,14 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.PerformLayout()
         Me.tabMain.ResumeLayout(False)
         Me.tabNFO.ResumeLayout(False)
-        Me.pnlMomentumReversalMainPanelHorizontalSplitter.ResumeLayout(False)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.ResumeLayout(False)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.PerformLayout()
+        Me.pnlNFOMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.pnlNFOTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlNFOTopHeaderVerticalSplitter.PerformLayout()
         Me.Panel1.ResumeLayout(False)
         Me.Panel1.PerformLayout()
-        Me.pnlMomentumReversalBodyVerticalSplitter.ResumeLayout(False)
+        Me.pnlNFOBodyVerticalSplitter.ResumeLayout(False)
         CType(Me.PictureBox2, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.pnlMomentumReversalBodyHorizontalSplitter.ResumeLayout(False)
+        Me.pnlNFOBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvNFOMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.tabMCX.ResumeLayout(False)
         Me.pnlOHLMainPanelHorizontalSplitter.ResumeLayout(False)
@@ -873,14 +873,14 @@ Partial Class frmMainTabbed
     Friend WithEvents tabMain As TabControl
     Friend WithEvents tabNFO As TabPage
     Friend WithEvents tabMCX As TabPage
-    Friend WithEvents pnlMomentumReversalMainPanelHorizontalSplitter As TableLayoutPanel
-    Friend WithEvents pnlMomentumReversalTopHeaderVerticalSplitter As TableLayoutPanel
+    Friend WithEvents pnlNFOMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlNFOTopHeaderVerticalSplitter As TableLayoutPanel
     Friend WithEvents btnNFOStart As Button
     Friend WithEvents Panel1 As Panel
     Friend WithEvents lblNFOTickerStatus As Label
     Friend WithEvents blbNFOTickerStatus As Bulb.LedBulb
-    Friend WithEvents pnlMomentumReversalBodyVerticalSplitter As TableLayoutPanel
-    Friend WithEvents pnlMomentumReversalBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlNFOBodyVerticalSplitter As TableLayoutPanel
+    Friend WithEvents pnlNFOBodyHorizontalSplitter As TableLayoutPanel
     Friend WithEvents sfdgvNFOMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents lstNFOLog As ListBox
     Friend WithEvents tmrNFOTickerStatus As Timer

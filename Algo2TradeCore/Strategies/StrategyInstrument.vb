@@ -1412,13 +1412,17 @@ Namespace Strategies
                                 Dim modifyStoplossOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(True).ConfigureAwait(False)
                                 If modifyStoplossOrderTriggers IsNot Nothing AndAlso modifyStoplossOrderTriggers.Count > 0 Then
                                     Dim tasks = modifyStoplossOrderTriggers.Select(Async Function(x)
+                                                                                       Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                                       AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                       AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                       AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                       AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                                        Try
                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                            If x.Item1 = ExecuteCommandAction.Take Then
                                                                                                Await Me.ParentStrategy.SignalManager.HandleStoplossModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                                Dim modifyStoplossOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                               Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                                modifyStoplossOrderResponse = Await tempAdapter.ModifyStoplossOrderAsync(orderId:=x.Item2.OrderIdentifier, triggerPrice:=x.Item3).ConfigureAwait(False)
 
@@ -1438,6 +1442,11 @@ Namespace Strategies
                                                                                        Catch ex As Exception
                                                                                            logger.Error(ex)
                                                                                            Throw ex
+                                                                                       Finally
+                                                                                           RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                           RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                           RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                           RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                                        End Try
                                                                                        Return True
                                                                                    End Function)
@@ -1453,13 +1462,17 @@ Namespace Strategies
                                 Dim modifyTargetOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(True).ConfigureAwait(False)
                                 If modifyTargetOrderTriggers IsNot Nothing AndAlso modifyTargetOrderTriggers.Count > 0 Then
                                     Dim tasks = modifyTargetOrderTriggers.Select(Async Function(x)
+                                                                                     Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                                     AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                     AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                     AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                     AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                                      Try
                                                                                          _cts.Token.ThrowIfCancellationRequested()
                                                                                          If x.Item1 = ExecuteCommandAction.Take Then
                                                                                              Await Me.ParentStrategy.SignalManager.HandleTargetModifyActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3, x.Item4).ConfigureAwait(False)
                                                                                              Dim modifyTargetOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                             Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                              modifyTargetOrderResponse = Await tempAdapter.ModifyTargetOrderAsync(orderId:=x.Item2.OrderIdentifier, price:=x.Item3).ConfigureAwait(False)
 
@@ -1479,6 +1492,11 @@ Namespace Strategies
                                                                                      Catch ex As Exception
                                                                                          logger.Error(ex)
                                                                                          Throw ex
+                                                                                     Finally
+                                                                                         RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                         RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                         RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                         RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                                      End Try
                                                                                      Return True
                                                                                  End Function)
@@ -1500,13 +1518,17 @@ Namespace Strategies
                                 End Select
                                 If cancelOrderTriggers IsNot Nothing AndAlso cancelOrderTriggers.Count > 0 Then
                                     Dim tasks = cancelOrderTriggers.Select(Async Function(x)
+                                                                               Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                               AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                               AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                               AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                               AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                                Try
                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                    If x.Item1 = ExecuteCommandAction.Take Then
                                                                                        Await Me.ParentStrategy.SignalManager.HandleCancelActivity(x.Item2.Tag, Me, Nothing, Now, x.Item3).ConfigureAwait(False)
                                                                                        Dim cancelOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                       Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                        Select Case command
                                                                                            Case ExecuteCommands.CancelBOOrder, ExecuteCommands.ForceCancelBOOrder
@@ -1532,6 +1554,11 @@ Namespace Strategies
                                                                                Catch ex As Exception
                                                                                    logger.Error(ex)
                                                                                    Throw ex
+                                                                               Finally
+                                                                                   RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                   RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                   RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                   RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                                End Try
                                                                                Return True
                                                                            End Function)
@@ -1548,6 +1575,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1558,8 +1591,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceBOLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1590,6 +1621,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1606,6 +1642,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1616,8 +1658,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceBOSLMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                   tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1649,6 +1689,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1665,6 +1710,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1675,8 +1726,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceCOMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                     tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1705,6 +1754,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1721,6 +1775,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1731,8 +1791,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceRegularMarketMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1760,6 +1818,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1776,6 +1839,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1786,8 +1855,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Limit, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceRegularLimitMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1816,6 +1883,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1832,6 +1904,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1842,8 +1920,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.SL_M, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceRegularSLMMISOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                         tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1872,6 +1948,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)
@@ -1888,6 +1969,12 @@ Namespace Strategies
                                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 Then
                                     Await GenerateTagForPlaceOrderTriggers(placeOrderTriggers).ConfigureAwait(False)
                                     Dim tasks = placeOrderTriggers.Select(Async Function(x)
+                                                                              Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
+                                                                              AddHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                              AddHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                              AddHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                              AddHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
                                                                               Try
                                                                                   _cts.Token.ThrowIfCancellationRequested()
                                                                                   If x.Item1 = ExecuteCommandAction.Take OrElse x.Item1 = ExecuteCommandAction.WaitAndTake Then
@@ -1898,8 +1985,6 @@ Namespace Strategies
                                                                                       Await Me.ParentStrategy.SignalManager.HandleEntryActivity(x.Item2.Tag, Me, Nothing, x.Item2.SignalCandle.SnapshotDateTime, x.Item2.EntryDirection, IOrder.TypeOfOrder.Market, x.Item2.Quantity, Now, x.Item3).ConfigureAwait(False)
 
                                                                                       Dim placeOrderResponse As Dictionary(Of String, Object) = Nothing
-
-                                                                                      Dim tempAdapter As APIAdapter = GetDuplicateAdapter()
 
                                                                                       placeOrderResponse = Await tempAdapter.PlaceRegularMarketCNCOrderAsync(tradeExchange:=Me.TradableInstrument.RawExchange,
                                                                                                                                                             tradingSymbol:=Me.TradableInstrument.TradingSymbol,
@@ -1927,6 +2012,11 @@ Namespace Strategies
                                                                                   logger.Error("{0}: {1}", Me.TradableInstrument.TradingSymbol, ex.ToString)
                                                                                   Me.ParentStrategy.SignalManager.DiscardEntryActivity(x.Item2.Tag, Me, Nothing, Now, ex)
                                                                                   Throw ex
+                                                                              Finally
+                                                                                  RemoveHandler tempAdapter.Heartbeat, AddressOf OnHeartbeat
+                                                                                  RemoveHandler tempAdapter.WaitingFor, AddressOf OnWaitingFor
+                                                                                  RemoveHandler tempAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                                                                                  RemoveHandler tempAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
                                                                               End Try
                                                                               Return True
                                                                           End Function)

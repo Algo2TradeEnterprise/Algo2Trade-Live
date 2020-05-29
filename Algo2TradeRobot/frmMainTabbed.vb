@@ -1333,12 +1333,12 @@ Public Class frmMainTabbed
 
 #Region "EX Users"
     Private Sub lblDisplay_Click(sender As Object, e As EventArgs) Handles lblDisplay.Click
-        If pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 70 Then
-            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
-            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+        If pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 70 Then
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
         Else
-            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
-            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 70
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 70
         End If
     End Sub
     Private Sub frmMainTabbed_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -1362,8 +1362,8 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
 
-        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
-        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+        'pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        'pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
         tabMain.TabPages.Remove(tabMCX)
         tabMain.TabPages.Remove(tabCDS)
