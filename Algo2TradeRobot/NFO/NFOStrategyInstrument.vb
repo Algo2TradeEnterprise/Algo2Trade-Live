@@ -5,6 +5,8 @@ Imports Algo2TradeCore.Strategies
 Imports Utilities.Numbers
 Imports NLog
 Imports Algo2TradeCore.Entities.Indicators
+Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports Algo2TradeCore
 
 Public Class NFOStrategyInstrument
     Inherits StrategyInstrument
@@ -57,6 +59,27 @@ Public Class NFOStrategyInstrument
 
         Multiplier = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).Multiplier
     End Sub
+    Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
+        If RawPayloadDependentConsumers IsNot Nothing AndAlso RawPayloadDependentConsumers.Count > 0 Then
+            For Each runningRawPayloadConsumer In RawPayloadDependentConsumers
+                If runningRawPayloadConsumer.TypeOfConsumer = IPayloadConsumer.ConsumerType.Chart Then
+                    Dim currentXMinute As Date = candleCreator.ConvertTimeframe(CType(runningRawPayloadConsumer, PayloadToChartConsumer).Timeframe,
+                                                                currentCandle,
+                                                                runningRawPayloadConsumer)
+                    If candleCreator.IndicatorCreator Is Nothing Then candleCreator.IndicatorCreator = New ChartHandler.Indicator.IndicatorManeger(Me.ParentStrategy.ParentController, candleCreator, _cts)
+                    If currentXMinute <> Date.MaxValue Then
+                        Dim c As Integer = 1
+                        If runningRawPayloadConsumer.OnwardLevelConsumers IsNot Nothing AndAlso runningRawPayloadConsumer.OnwardLevelConsumers.Count > 0 Then
+                            For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
+                                candleCreator.IndicatorCreator.CalculateHeikinAshi(currentXMinute, consumer)
+                                candleCreator.IndicatorCreator.CalculateATR(currentXMinute, consumer.OnwardLevelConsumers.FirstOrDefault)
+                            Next
+                        End If
+                    End If
+                End If
+            Next
+        End If
+    End Function
     Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
         Throw New NotImplementedException()
     End Function

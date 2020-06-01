@@ -5,6 +5,7 @@ Imports Algo2TradeCore.Strategies
 Imports Utilities.Numbers
 Imports NLog
 Imports Algo2TradeCore.Entities.Indicators
+Imports Algo2TradeCore.ChartHandler.ChartStyle
 
 Public Class MCXStrategyInstrument
     Inherits StrategyInstrument
@@ -54,6 +55,9 @@ Public Class MCXStrategyInstrument
             End If
         End If
     End Sub
+    Public Overrides Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
+        Throw New NotImplementedException()
+    End Function
     Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
         Throw New NotImplementedException()
     End Function
