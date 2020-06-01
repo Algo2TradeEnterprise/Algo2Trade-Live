@@ -41,10 +41,10 @@ Public Class OHLStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             'Get OHL Strategy Instruments
-            Using fillInstrumentDetails As New OHLFillInstrumentDetails(_cts, Me)
-                Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
-            End Using
-            logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
+            'Using fillInstrumentDetails As New OHLFillInstrumentDetails(_cts, Me)
+            '    Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
+            'End Using
+            'logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
 
             Dim ohlUserInputs As OHLUserInputs = CType(Me.UserSettings, OHLUserInputs)
             If ohlUserInputs.InstrumentsData IsNot Nothing AndAlso ohlUserInputs.InstrumentsData.Count > 0 Then
