@@ -57,14 +57,18 @@ Partial Class frmAdvancedOptions
         Me.tabRemarks = New System.Windows.Forms.TabPage()
         Me.txtRemarks = New System.Windows.Forms.TextBox()
         Me.lblRemarks = New System.Windows.Forms.Label()
-        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
         Me.tabSender = New System.Windows.Forms.TabPage()
         Me.grpTelegram = New System.Windows.Forms.GroupBox()
         Me.txtTelegramChatID = New System.Windows.Forms.TextBox()
         Me.lblTelegramChatID = New System.Windows.Forms.Label()
         Me.txtTelegramAPI = New System.Windows.Forms.TextBox()
         Me.lblTelegramAPI = New System.Windows.Forms.Label()
+        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
+        Me.btnSaveDelaySettings = New System.Windows.Forms.Button()
+        Me.dtpckrDeadStateStartTime = New System.Windows.Forms.DateTimePicker()
+        Me.lblDeadStateStartTime = New System.Windows.Forms.Label()
+        Me.dtpckrDeadStateEndTime = New System.Windows.Forms.DateTimePicker()
+        Me.lblDeadStateEndTime = New System.Windows.Forms.Label()
         Me.tabMain.SuspendLayout()
         Me.tabExchangeDetailsSettings.SuspendLayout()
         Me.GroupBox3.SuspendLayout()
@@ -327,6 +331,10 @@ Partial Class frmAdvancedOptions
         '
         'tabDelaySettings
         '
+        Me.tabDelaySettings.Controls.Add(Me.dtpckrDeadStateEndTime)
+        Me.tabDelaySettings.Controls.Add(Me.lblDeadStateEndTime)
+        Me.tabDelaySettings.Controls.Add(Me.dtpckrDeadStateStartTime)
+        Me.tabDelaySettings.Controls.Add(Me.lblDeadStateStartTime)
         Me.tabDelaySettings.Controls.Add(Me.dtpckrForceRestartTime)
         Me.tabDelaySettings.Controls.Add(Me.lblForceRestartTime)
         Me.tabDelaySettings.Controls.Add(Me.txtBackToBackOrderCoolOffDelay)
@@ -426,26 +434,6 @@ Partial Class frmAdvancedOptions
         Me.lblRemarks.TabIndex = 12
         Me.lblRemarks.Text = "Form Remarks"
         '
-        'ImageList1
-        '
-        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
-        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
-        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
-        '
-        'btnSaveDelaySettings
-        '
-        Me.btnSaveDelaySettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        Me.btnSaveDelaySettings.ImageKey = "save-icon-36533.png"
-        Me.btnSaveDelaySettings.ImageList = Me.ImageList1
-        Me.btnSaveDelaySettings.Location = New System.Drawing.Point(424, 25)
-        Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
-        Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
-        Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveDelaySettings.TabIndex = 0
-        Me.btnSaveDelaySettings.Text = "&Save"
-        Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        Me.btnSaveDelaySettings.UseVisualStyleBackColor = True
-        '
         'tabSender
         '
         Me.tabSender.Controls.Add(Me.grpTelegram)
@@ -504,6 +492,66 @@ Partial Class frmAdvancedOptions
         Me.lblTelegramAPI.Size = New System.Drawing.Size(57, 17)
         Me.lblTelegramAPI.TabIndex = 31
         Me.lblTelegramAPI.Text = "API Key"
+        '
+        'ImageList1
+        '
+        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
+        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
+        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
+        '
+        'btnSaveDelaySettings
+        '
+        Me.btnSaveDelaySettings.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+        Me.btnSaveDelaySettings.ImageKey = "save-icon-36533.png"
+        Me.btnSaveDelaySettings.ImageList = Me.ImageList1
+        Me.btnSaveDelaySettings.Location = New System.Drawing.Point(424, 25)
+        Me.btnSaveDelaySettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnSaveDelaySettings.Name = "btnSaveDelaySettings"
+        Me.btnSaveDelaySettings.Size = New System.Drawing.Size(112, 58)
+        Me.btnSaveDelaySettings.TabIndex = 0
+        Me.btnSaveDelaySettings.Text = "&Save"
+        Me.btnSaveDelaySettings.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        Me.btnSaveDelaySettings.UseVisualStyleBackColor = True
+        '
+        'dtpckrDeadStateStartTime
+        '
+        Me.dtpckrDeadStateStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrDeadStateStartTime.Location = New System.Drawing.Point(268, 133)
+        Me.dtpckrDeadStateStartTime.Name = "dtpckrDeadStateStartTime"
+        Me.dtpckrDeadStateStartTime.ShowUpDown = True
+        Me.dtpckrDeadStateStartTime.Size = New System.Drawing.Size(134, 22)
+        Me.dtpckrDeadStateStartTime.TabIndex = 22
+        Me.dtpckrDeadStateStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        '
+        'lblDeadStateStartTime
+        '
+        Me.lblDeadStateStartTime.AutoSize = True
+        Me.lblDeadStateStartTime.Location = New System.Drawing.Point(6, 135)
+        Me.lblDeadStateStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDeadStateStartTime.Name = "lblDeadStateStartTime"
+        Me.lblDeadStateStartTime.Size = New System.Drawing.Size(148, 17)
+        Me.lblDeadStateStartTime.TabIndex = 23
+        Me.lblDeadStateStartTime.Text = "Dead State Start Time"
+        '
+        'dtpckrDeadStateEndTime
+        '
+        Me.dtpckrDeadStateEndTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrDeadStateEndTime.Location = New System.Drawing.Point(268, 170)
+        Me.dtpckrDeadStateEndTime.Name = "dtpckrDeadStateEndTime"
+        Me.dtpckrDeadStateEndTime.ShowUpDown = True
+        Me.dtpckrDeadStateEndTime.Size = New System.Drawing.Size(134, 22)
+        Me.dtpckrDeadStateEndTime.TabIndex = 24
+        Me.dtpckrDeadStateEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        '
+        'lblDeadStateEndTime
+        '
+        Me.lblDeadStateEndTime.AutoSize = True
+        Me.lblDeadStateEndTime.Location = New System.Drawing.Point(6, 172)
+        Me.lblDeadStateEndTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDeadStateEndTime.Name = "lblDeadStateEndTime"
+        Me.lblDeadStateEndTime.Size = New System.Drawing.Size(143, 17)
+        Me.lblDeadStateEndTime.TabIndex = 25
+        Me.lblDeadStateEndTime.Text = "Dead State End Time"
         '
         'frmAdvancedOptions
         '
@@ -578,4 +626,8 @@ Partial Class frmAdvancedOptions
     Friend WithEvents lblTelegramChatID As Label
     Friend WithEvents txtTelegramAPI As TextBox
     Friend WithEvents lblTelegramAPI As Label
+    Friend WithEvents dtpckrDeadStateEndTime As DateTimePicker
+    Friend WithEvents lblDeadStateEndTime As Label
+    Friend WithEvents dtpckrDeadStateStartTime As DateTimePicker
+    Friend WithEvents lblDeadStateStartTime As Label
 End Class

@@ -480,6 +480,7 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
+            SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstrument, False)
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         End Try
@@ -516,10 +517,24 @@ Public Class frmMainTabbed
                 logger.Debug("Restarting the application again as there is premission issue")
                 btnNFOStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                Debug.WriteLine("Restart for daily refresh")
-                logger.Debug("Restarting the application again for daily refresh")
-                PreviousDayCleanup(True)
-                btnNFOStart_Click(sender, e)
+                If CType(_lastException, ForceExitException).RestartWithDelay Then
+                    Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
+                    logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
+                    While True
+                        If Now > _commonControllerUserInput.DeadStateEndTime Then
+                            Exit While
+                        End If
+                        Await Task.Delay(5000).ConfigureAwait(False)
+                    End While
+                    Debug.WriteLine("Restart for dead state end")
+                    logger.Debug("Restarting the application again for dead state end")
+                    btnNFOStart_Click(sender, e)
+                Else
+                    Debug.WriteLine("Restart for daily refresh")
+                    logger.Debug("Restarting the application again for daily refresh")
+                    PreviousDayCleanup(True)
+                    btnNFOStart_Click(sender, e)
+                End If
             End If
         End If
     End Sub

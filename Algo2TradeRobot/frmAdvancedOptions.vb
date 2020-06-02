@@ -29,6 +29,8 @@ Public Class frmAdvancedOptions
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
+            dtpckrDeadStateStartTime.Value = _UserInputs.DeadStateStartTime
+            dtpckrDeadStateEndTime.Value = _UserInputs.DeadStateEndTime
             If _UserInputs.ExchangeDetails IsNot Nothing Then
                 dtpckrNSEExchangeStartTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeStartTime
                 dtpckrNSEExchangeEndTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeEndTime
@@ -53,6 +55,8 @@ Public Class frmAdvancedOptions
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
+        _UserInputs.DeadStateStartTime = dtpckrDeadStateStartTime.Value
+        _UserInputs.DeadStateEndTime = dtpckrDeadStateEndTime.Value
         _UserInputs.ExchangeDetails = New Dictionary(Of String, Exchange) From {
             {"NSE", New Exchange(Enums.TypeOfExchage.NSE) With
             {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value, .ContractRolloverTime = dtpckrNSEContractRolloverTime.Value}},
