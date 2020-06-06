@@ -31,6 +31,18 @@ Public Class frmAdvancedOptions
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
             dtpckrDeadStateStartTime.Value = _UserInputs.DeadStateStartTime
             dtpckrDeadStateEndTime.Value = _UserInputs.DeadStateEndTime
+            If _UserInputs.TradingDays IsNot Nothing AndAlso _UserInputs.TradingDays.Count > 0 Then
+                For Each runningTradingday In _UserInputs.TradingDays
+                    Dim index As Integer = 0
+                    For Each runningCheckBox In chkbLstTradingDays.Items
+                        If runningCheckBox.ToString.ToUpper = runningTradingday.ToString.ToUpper Then
+                            chkbLstTradingDays.SetItemChecked(index, True)
+                            Exit For
+                        End If
+                        index += 1
+                    Next
+                Next
+            End If
             If _UserInputs.ExchangeDetails IsNot Nothing Then
                 dtpckrNSEExchangeStartTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeStartTime
                 dtpckrNSEExchangeEndTime.Value = _UserInputs.ExchangeDetails("NSE").ExchangeEndTime
@@ -57,6 +69,27 @@ Public Class frmAdvancedOptions
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
         _UserInputs.DeadStateStartTime = dtpckrDeadStateStartTime.Value
         _UserInputs.DeadStateEndTime = dtpckrDeadStateEndTime.Value
+        _UserInputs.TradingDays = New List(Of DayOfWeek)
+        For Each runningTradingday In chkbLstTradingDays.CheckedItems
+            Dim day As DayOfWeek = DayOfWeek.Sunday
+            If runningTradingday.ToString.ToUpper = "MONDAY" Then
+                day = DayOfWeek.Monday
+            ElseIf runningTradingday.ToString.ToUpper = "TUESDAY" Then
+                day = DayOfWeek.Tuesday
+            ElseIf runningTradingday.ToString.ToUpper = "WEDNESDAY" Then
+                day = DayOfWeek.Wednesday
+            ElseIf runningTradingday.ToString.ToUpper = "THURSDAY" Then
+                day = DayOfWeek.Thursday
+            ElseIf runningTradingday.ToString.ToUpper = "FRIDAY" Then
+                day = DayOfWeek.Friday
+            ElseIf runningTradingday.ToString.ToUpper = "SATURDAY" Then
+                day = DayOfWeek.Saturday
+            ElseIf runningTradingday.ToString.ToUpper = "SUNDAY" Then
+                day = DayOfWeek.Sunday
+            End If
+            _UserInputs.TradingDays.Add(day)
+        Next
+
         _UserInputs.ExchangeDetails = New Dictionary(Of String, Exchange) From {
             {"NSE", New Exchange(Enums.TypeOfExchage.NSE) With
             {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value, .ContractRolloverTime = dtpckrNSEContractRolloverTime.Value}},
