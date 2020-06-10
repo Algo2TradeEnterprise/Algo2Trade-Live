@@ -6,14 +6,20 @@ Public Class frmMCXSettings
     Private _cts As CancellationTokenSource = Nothing
     Private _settings As MCXUserInputs = Nothing
     Private _settingsFilename As String = MCXUserInputs.SettingsFileName
+    Private _strategyRunning As Boolean = False
 
-    Public Sub New(ByRef userInputs As MCXUserInputs)
+    Public Sub New(ByRef userInputs As MCXUserInputs, ByVal strategyRunning As Boolean)
         InitializeComponent()
         _settings = userInputs
+        _strategyRunning = strategyRunning
     End Sub
 
     Private Sub frmMCXSettings_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        If _strategyRunning Then
+            btnSave.Enabled = False
+        End If
         LoadSettings()
+        chkbAutoSelectStock_CheckedChanged(sender, e)
     End Sub
     Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
         Try
@@ -31,26 +37,42 @@ Public Class frmMCXSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of MCXUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
-            txtHigherTimeframe.Text = _settings.HigherTimeframe
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
+            txtMaxTargetToStoplossMultiplier.Text = _settings.MaxTargetToStoplossMultiplier
+            txtMaxProfitPerTrade.Text = _settings.MaxProfitPerTrade
+            txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
+            txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
+            txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
-            txtSupertrendPeriod.Text = _settings.Period
-            txtSupertrendMultiplier.Text = _settings.Multiplier
+            chkbAutoSelectStock.Checked = _settings.AutoSelectStock
+            txtMinPrice.Text = _settings.MinStockPrice
+            txtMaxPrice.Text = _settings.MaxStockPrice
+            txtATRPercentage.Text = _settings.MinATRPercentage
+            txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
+            txtNumberOfStock.Text = _settings.NumberOfStock
         End If
     End Sub
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
-        _settings.HigherTimeframe = txtHigherTimeframe.Text
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
+        _settings.MaxTargetToStoplossMultiplier = txtMaxTargetToStoplossMultiplier.Text
+        _settings.MaxProfitPerTrade = Math.Abs(CDec(txtMaxProfitPerTrade.Text))
+        _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
+        _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
+        _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
-        _settings.Period = txtSupertrendPeriod.Text
-        _settings.Multiplier = txtSupertrendMultiplier.Text
+        _settings.AutoSelectStock = chkbAutoSelectStock.Checked
+        _settings.MinStockPrice = txtMinPrice.Text
+        _settings.MaxStockPrice = txtMaxPrice.Text
+        _settings.MinATRPercentage = txtATRPercentage.Text
+        _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
+        _settings.NumberOfStock = txtNumberOfStock.Text
 
         Utilities.Strings.SerializeFromCollection(Of MCXUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -74,13 +96,6 @@ Public Class frmMCXSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(1, 180, txtHigherTimeframe, True)
-        ValidateNumbers(0, Integer.MaxValue, txtSupertrendPeriod, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
-
-        If Val(txtHigherTimeframe.Text) <= Val(txtSignalTimeFrame.Text) Then
-            Throw New ApplicationException("Higher timeframe can not be lower than or equal to Signal timeframe")
-        End If
 
         ValidateFile()
     End Sub
@@ -96,6 +111,14 @@ Public Class frmMCXSettings
             txtInstrumentDetalis.Text = opnFileSettings.FileName
         Else
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
+        End If
+    End Sub
+
+    Private Sub chkbAutoSelectStock_CheckedChanged(sender As Object, e As EventArgs) Handles chkbAutoSelectStock.CheckedChanged
+        If chkbAutoSelectStock.Checked Then
+            grpStockSelection.Enabled = True
+        Else
+            grpStockSelection.Enabled = False
         End If
     End Sub
 End Class

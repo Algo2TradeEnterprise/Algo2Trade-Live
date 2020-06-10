@@ -145,12 +145,4 @@ Public Class NFOStrategy
         End If
         Return ret
     End Function
-    Public Function CalculateTrailingMTM(ByVal mtmSlab As Decimal, ByVal mvmntSlab As Decimal, ByVal pl As Decimal) As Decimal
-        Dim ret As Decimal = Decimal.MinValue
-        If pl >= mtmSlab Then
-            Dim multiplier As Decimal = pl / mtmSlab
-            ret = Math.Floor(multiplier) * mvmntSlab
-        End If
-        Return ret
-    End Function
 End Class

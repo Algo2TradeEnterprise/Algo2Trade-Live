@@ -39,7 +39,7 @@ Partial Class frmMainTabbed
         Me.blbNFOTickerStatus = New Bulb.LedBulb()
         Me.lblNFOTickerStatus = New System.Windows.Forms.Label()
         Me.btnNFOSettings = New System.Windows.Forms.Button()
-        Me.linklblNFOTradableInstrument = New System.Windows.Forms.LinkLabel()
+        Me.linklblNFOTradableInstruments = New System.Windows.Forms.LinkLabel()
         Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox2 = New System.Windows.Forms.PictureBox()
         Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -207,7 +207,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOStart, 0, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
-        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstrument, 10, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstruments, 10, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -282,18 +282,18 @@ Partial Class frmMainTabbed
         Me.btnNFOSettings.Text = "Settings"
         Me.btnNFOSettings.UseVisualStyleBackColor = True
         '
-        'linklblNFOTradableInstrument
+        'linklblNFOTradableInstruments
         '
-        Me.linklblNFOTradableInstrument.AutoSize = True
-        Me.linklblNFOTradableInstrument.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.linklblNFOTradableInstrument.Enabled = False
-        Me.linklblNFOTradableInstrument.Location = New System.Drawing.Point(893, 0)
-        Me.linklblNFOTradableInstrument.Name = "linklblNFOTradableInstrument"
-        Me.linklblNFOTradableInstrument.Size = New System.Drawing.Size(219, 39)
-        Me.linklblNFOTradableInstrument.TabIndex = 12
-        Me.linklblNFOTradableInstrument.TabStop = True
-        Me.linklblNFOTradableInstrument.Text = "Tradable Instruments: 0"
-        Me.linklblNFOTradableInstrument.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        Me.linklblNFOTradableInstruments.AutoSize = True
+        Me.linklblNFOTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblNFOTradableInstruments.Enabled = False
+        Me.linklblNFOTradableInstruments.Location = New System.Drawing.Point(893, 0)
+        Me.linklblNFOTradableInstruments.Name = "linklblNFOTradableInstruments"
+        Me.linklblNFOTradableInstruments.Size = New System.Drawing.Size(219, 39)
+        Me.linklblNFOTradableInstruments.TabIndex = 12
+        Me.linklblNFOTradableInstruments.TabStop = True
+        Me.linklblNFOTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblNFOTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
         '
         'pnlMomentumReversalBodyVerticalSplitter
         '
@@ -889,7 +889,7 @@ Partial Class frmMainTabbed
     Friend WithEvents btnNFOSettings As Button
     Friend WithEvents PictureBox3 As PictureBox
     Friend WithEvents miAdvancedOptions As ToolStripMenuItem
-    Friend WithEvents linklblNFOTradableInstrument As LinkLabel
+    Friend WithEvents linklblNFOTradableInstruments As LinkLabel
     Friend WithEvents btnMCXSettings As Button
     Friend WithEvents linklblMCXTradableInstruments As LinkLabel
     Friend WithEvents PictureBox2 As PictureBox

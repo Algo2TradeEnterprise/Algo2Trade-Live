@@ -40,47 +40,30 @@ Public Class MCXStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As MCXUserInputs = Me.UserSettings
+            If userInputs.AutoSelectStock Then
+                Using fillInstrumentDetails As New MCXFillInstrumentDetails(_cts, Me)
+                    Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
+                End Using
+                logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
+            End If
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                Dim ignoredStocklist As List(Of String) = Nothing
+                Dim counter As Integer = 0
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = Nothing
-                    Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                         Return Regex.Replace(x.TradingSymbol, "[0-9]+[A-Z]+FUT", "") = instrument.Key AndAlso
-                                                                                                             x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                                                                                             x.RawExchange = "MCX"
-                                                                                                     End Function)
-                    If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
-                        Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
-                                                                               If x.Expiry.Value.Date > Now.Date Then
-                                                                                   Return x.Expiry.Value
-                                                                               Else
-                                                                                   Return Date.MaxValue
-                                                                               End If
-                                                                           End Function)
-
-                        runningTradableInstrument = allTradableInstruments.Find(Function(x)
-                                                                                    Return x.Expiry = minExpiry
-                                                                                End Function)
+                    counter += 1
+                    If counter > userInputs.NumberOfStock Then
+                        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                    Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                                                End Function)
 
                         _cts.Token.ThrowIfCancellationRequested()
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
                         ret = True
-                    Else
-                        If ignoredStocklist Is Nothing Then ignoredStocklist = New List(Of String)
-                        ignoredStocklist.Add(instrument.Key)
+                        If retTradableInstrumentsAsPerStrategy.Count >= userInputs.NumberOfStock Then Exit For
                     End If
                 Next
-                If ignoredStocklist IsNot Nothing AndAlso ignoredStocklist.Count > 0 Then
-                    Dim stocksName As String = Nothing
-                    For Each runningStock In ignoredStocklist
-                        stocksName = String.Format("{0},{1}", stocksName, runningStock)
-                    Next
-
-                    MessageBox.Show(String.Format("Unable to fetch '{0}' these stocks in 'MCX' segment", stocksName.Substring(1).ToUpper), "Stock Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                End If
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
@@ -151,9 +134,18 @@ Public Class MCXStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
+        Dim userSettings As MCXUserInputs = Me.UserSettings
+        Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
+
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
+        ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
+            logger.Debug("Max loss reached. Overall PL: {0}", overallPL)
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
+        ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
+            logger.Debug("Max Profit reached. Overall PL: {0}", overallPL)
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
         End If
         Return ret
     End Function

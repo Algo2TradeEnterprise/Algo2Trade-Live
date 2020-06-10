@@ -22,6 +22,7 @@ Public Class NFOStrategyInstrument
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
     Public ReadOnly Multiplier As Decimal = 0
+    Public ReadOnly PreviousDayHighestATR As Decimal = 0
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -58,6 +59,7 @@ Public Class NFOStrategyInstrument
         End If
 
         Multiplier = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).Multiplier
+        PreviousDayHighestATR = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR
     End Sub
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
         If RawPayloadDependentConsumers IsNot Nothing AndAlso RawPayloadDependentConsumers.Count > 0 Then
@@ -540,11 +542,8 @@ Public Class NFOStrategyInstrument
                                                                                   End If
                                                                               End Function)
             If todayHighestATR <> Decimal.MinValue Then
-                Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-                ret = Math.Min(todayHighestATR, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR)
+                ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
             End If
-            'Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-            'ret = UserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR
         End If
         Return ret
     End Function

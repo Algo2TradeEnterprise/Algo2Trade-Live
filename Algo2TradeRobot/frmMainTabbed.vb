@@ -310,10 +310,10 @@ Public Class frmMainTabbed
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(NFOStrategy))
     End Sub
     Private Async Function NFOWorkerAsync() As Task
-        If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
-            MsgBox("Cannot start as another strategy is loggin in")
-            Exit Function
-        End If
+        'If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
+        '    MsgBox("Cannot start as another strategy is loggin in")
+        '    Exit Function
+        'End If
 
         If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
@@ -321,6 +321,9 @@ Public Class frmMainTabbed
 
         Try
             EnableDisableUIEx(UIMode.Active, GetType(NFOStrategy))
+            While GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(NFOStrategy))
 
             OnHeartbeat("Validating user settings")
@@ -442,7 +445,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, 5, _cts)
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, 10, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -450,8 +453,8 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstrument, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
-            SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstrument, True)
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
+            SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoDashboadList = New BindingList(Of ActivityDashboard)(_nfoStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
@@ -483,8 +486,8 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
-            SetObjectText_ThreadSafe(linklblNFOTradableInstrument, String.Format("Tradable Instruments: {0}", 0))
-            SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstrument, False)
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", 0))
+            SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, False)
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         End Try
@@ -556,7 +559,7 @@ Public Class frmMainTabbed
         Dim newForm As New frmNFOSettings(_nfoUserInputs, _nfoStrategyRunning)
         newForm.ShowDialog()
     End Sub
-    Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstrument.LinkClicked
+    Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstruments.LinkClicked
         Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
         newForm.ShowDialog()
     End Sub
@@ -575,10 +578,10 @@ Public Class frmMainTabbed
         ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(MCXStrategy))
     End Sub
     Private Async Function MCXWorkerAsync() As Task
-        If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
-            MsgBox("Cannot start as another strategy is loggin in")
-            Exit Function
-        End If
+        'If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
+        '    MsgBox("Cannot start as another strategy is loggin in")
+        '    Exit Function
+        'End If
 
         If _cts Is Nothing Then _cts = New CancellationTokenSource
         _cts.Token.ThrowIfCancellationRequested()
@@ -586,6 +589,10 @@ Public Class frmMainTabbed
 
         Try
             EnableDisableUIEx(UIMode.Active, GetType(MCXStrategy))
+            While GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(MCXStrategy))
 
             OnHeartbeat("Validating user settings")
@@ -601,14 +608,14 @@ Public Class frmMainTabbed
             End If
             logger.Debug(Utilities.Strings.JsonSerialize(_mcxUserInputs))
 
-            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
+            If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
             logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
             Else
-                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
+                _commonController = New AliceStrategyController(currentUser, _commonControllerUserInput, _cts)
 
                 RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -748,6 +755,8 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
+            SetObjectText_ThreadSafe(linklblMCXTradableInstruments, String.Format("Tradable Instruments: {0}", 0))
+            SetObjectEnableDisable_ThreadSafe(linklblMCXTradableInstruments, False)
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(MCXStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         End Try
@@ -764,7 +773,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnMCXStart_Click(sender As Object, e As EventArgs) Handles btnMCXStart.Click
-        Dim authenticationUserId As String = "SE1516"
+        Dim authenticationUserId As String = "AB096403"
         If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
             (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
@@ -782,12 +791,26 @@ Public Class frmMainTabbed
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
                 Debug.WriteLine("Restart for permission")
                 logger.Debug("Restarting the application again as there is premission issue")
-                btnMCXStart_Click(sender, e)
+                btnNFOStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                Debug.WriteLine("Restart for daily refresh")
-                logger.Debug("Restarting the application again for daily refresh")
-                PreviousDayCleanup(True)
-                btnMCXStart_Click(sender, e)
+                If CType(_lastException, ForceExitException).RestartWithDelay Then
+                    Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
+                    logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
+                    While True
+                        If Now > _commonControllerUserInput.DeadStateEndTime Then
+                            Exit While
+                        End If
+                        Await Task.Delay(5000).ConfigureAwait(False)
+                    End While
+                    Debug.WriteLine("Restart for dead state end")
+                    logger.Debug("Restarting the application again for dead state end")
+                    btnNFOStart_Click(sender, e)
+                Else
+                    Debug.WriteLine("Restart for daily refresh")
+                    logger.Debug("Restarting the application again for daily refresh")
+                    PreviousDayCleanup(True)
+                    btnNFOStart_Click(sender, e)
+                End If
             End If
         End If
     End Sub
@@ -802,7 +825,7 @@ Public Class frmMainTabbed
         _cts.Cancel()
     End Sub
     Private Sub btnMCXSettings_Click(sender As Object, e As EventArgs) Handles btnMCXSettings.Click
-        Dim newForm As New frmMCXSettings(_mcxUserInputs)
+        Dim newForm As New frmMCXSettings(_mcxUserInputs, _mcxStrategyRunning)
         newForm.ShowDialog()
     End Sub
     Private Sub linklblMCXTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblMCXTradableInstruments.LinkClicked
@@ -1081,11 +1104,11 @@ Public Class frmMainTabbed
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnMCXStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnMCXStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnMCXStop, Common.LOGIN_PENDING)
+                        'SetObjectText_ThreadSafe(btnMCXStop, Common.LOGIN_PENDING)
                     End If
                     If GetObjectText_ThreadSafe(btnCDSStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnCDSStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
+                        'SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
                     End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
@@ -1113,11 +1136,11 @@ Public Class frmMainTabbed
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnNFOStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
+                        'SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
                     End If
                     If GetObjectText_ThreadSafe(btnCDSStart) = "Start" Then
                         SetObjectText_ThreadSafe(btnCDSStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
+                        'SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
                     End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then

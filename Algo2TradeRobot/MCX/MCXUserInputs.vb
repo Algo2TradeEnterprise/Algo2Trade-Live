@@ -8,21 +8,31 @@ Imports Algo2TradeCore.Entities
 Public Class MCXUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Supertrend_MCX.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "HKMartingale(CR).Strategy.a2t")
 
-    Public Property HigherTimeframe As Integer
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property Period As Decimal
-    Public Property Multiplier As Decimal
+    Public Property MaxProfitPerTrade As Decimal
+    Public Property NumberOfTradePerStock As Integer
+    Public Property OverallMaxProfitPerDay As Decimal
+    Public Property OverallMaxLossPerDay As Decimal
+    Public Property MaxTargetToStoplossMultiplier As Decimal
+
+    Public Property AutoSelectStock As Boolean
+    Public Property MinStockPrice As Decimal
+    Public Property MaxStockPrice As Decimal
+    Public Property MinATRPercentage As Decimal
+    Public Property MaxBlankCandlePercentage As Decimal
+    Public Property NumberOfStock As Integer
 
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property NumberOfLots As Integer
-        Public Property MaxStoplossPercentage As Decimal
+        Public Property Multiplier As Decimal
+        Public Property PreviousDayHighestATR As Decimal
     End Class
+
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
@@ -33,7 +43,7 @@ Public Class MCXUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "MAX STOPLOSS %"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "HIGHEST ATR"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -45,15 +55,14 @@ Public Class MCXUserInputs
                             End If
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
-                            Dim trdngSymbl As String = Nothing
-                            Dim nmbrOfLots As Integer = Integer.MinValue
-                            Dim maxSlPer As Decimal = Decimal.MinValue
-
+                            Dim instrumentName As String = Nothing
+                            Dim mul As Decimal = 0
+                            Dim hgstATR As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        trdngSymbl = instrumentDetails(rowCtr, columnCtr)
+                                        instrumentName = instrumentDetails(rowCtr, columnCtr)
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
                                             Throw New ApplicationException(String.Format("Trading Symbol Missing or Blank Row. RowNumber: {0}", rowCtr))
@@ -62,33 +71,34 @@ Public Class MCXUserInputs
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            nmbrOfLots = instrumentDetails(rowCtr, columnCtr)
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            mul = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                            Throw New ApplicationException(String.Format("Multiplier can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                        Throw New ApplicationException(String.Format("Multiplier can not be null. RowNumber: {0}", rowCtr))
                                     End If
                                 ElseIf columnCtr = 2 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            maxSlPer = instrumentDetails(rowCtr, columnCtr)
+                                            hgstATR = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Max Stoploss % cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                            Throw New ApplicationException(String.Format("Highest ATR can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Max Stoploss % cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
+                                        Throw New ApplicationException(String.Format("Highest ATR can not be null. RowNumber: {0}", rowCtr))
                                     End If
                                 End If
                             Next
-                            If trdngSymbl IsNot Nothing Then
+                            If instrumentName IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
-                                instrumentData.TradingSymbol = trdngSymbl.ToUpper
-                                instrumentData.NumberOfLots = nmbrOfLots
-                                instrumentData.MaxStoplossPercentage = maxSlPer
+                                With instrumentData
+                                    .TradingSymbol = instrumentName.ToUpper
+                                    .Multiplier = mul
+                                    .PreviousDayHighestATR = hgstATR
+                                End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
                                     Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", instrumentData.TradingSymbol))
@@ -97,34 +107,16 @@ Public Class MCXUserInputs
                             End If
                         Next
                     Else
-                        Throw New ApplicationException("No valid input in the 'Instruments' file")
+                        Throw New ApplicationException("No valid input in the file")
                     End If
                 Else
-                    Throw New ApplicationException("'Instruments' File Type not supported. Application only support .csv file.")
+                    Throw New ApplicationException("File Type not supported. Application only support .csv file.")
                 End If
             Else
-                Throw New ApplicationException("'Instruments' File does not exists. Please select valid file")
+                Throw New ApplicationException("File does not exists. Please select valid file")
             End If
         Else
-            Throw New ApplicationException("No valid 'Instruments' file path exists")
+            Throw New ApplicationException("No valid file path exists")
         End If
     End Sub
-
-    Public Overrides Function ToString() As String
-        Dim stockList As String = Nothing
-        If Me.InstrumentsData IsNot Nothing AndAlso Me.InstrumentsData.Count > 0 Then
-            For Each runningInstrument In Me.InstrumentsData
-                stockList = String.Format("{0},{1}", stockList, runningInstrument.Value.TradingSymbol)
-            Next
-        End If
-        If stockList IsNot Nothing Then
-            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
-                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, stockList.Substring(1),
-                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
-        Else
-            Return String.Format("LTF={0}, HTF={1}, Superternd Period={2}, Supertrend Multiplier={3}, Stocklist={4}, Start Time={5}, End Time={6}",
-                             Me.SignalTimeFrame, Me.HigherTimeframe, Me.Period, Me.Multiplier, "Nothing",
-                             Me.TradeStartTime.ToString("HH-mm-ss"), Me.LastTradeEntryTime.ToString("HH-mm-ss"))
-        End If
-    End Function
 End Class
