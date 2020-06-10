@@ -529,19 +529,19 @@ Public Class NFOStrategyInstrument
     Private Function GetHighestATR(ByVal atrConsumer As ATRConsumer, ByVal runningCandle As OHLCPayload) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If atrConsumer IsNot Nothing AndAlso atrConsumer.ConsumerPayloads IsNot Nothing AndAlso atrConsumer.ConsumerPayloads.Count > 0 AndAlso runningCandle IsNot Nothing Then
-            'Dim todayHighestATR As Decimal = atrConsumer.ConsumerPayloads.Max(Function(x)
-            '                                                                      If x.Key.Date = Now.Date AndAlso x.Key < runningCandle.SnapshotDateTime Then
-            '                                                                          Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
-            '                                                                      Else
-            '                                                                          Return Decimal.MinValue
-            '                                                                      End If
-            '                                                                  End Function)
-            'If todayHighestATR <> Decimal.MinValue Then
-            '    Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-            '    ret = Math.Max(todayHighestATR, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR)
-            'End If
-            Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-            ret = UserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR
+            Dim todayHighestATR As Decimal = atrConsumer.ConsumerPayloads.Max(Function(x)
+                                                                                  If x.Key.Date = Now.Date AndAlso x.Key < runningCandle.SnapshotDateTime Then
+                                                                                      Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
+                                                                                  Else
+                                                                                      Return Decimal.MinValue
+                                                                                  End If
+                                                                              End Function)
+            If todayHighestATR <> Decimal.MinValue Then
+                Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+                ret = Math.Min(todayHighestATR, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR)
+            End If
+            'Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+            'ret = UserSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR
         End If
         Return ret
     End Function
