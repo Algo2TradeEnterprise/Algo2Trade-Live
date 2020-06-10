@@ -268,8 +268,10 @@ Public Class frmMainTabbed
     Private _lastException As Exception = Nothing
 #End Region
 
+    Private _toolRunning As Boolean = False
+
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmAliceUserDetails(_commonControllerUserInput)
+        Dim newForm As New frmAliceUserDetails(_commonControllerUserInput, _toolRunning)
         newForm.ShowDialog()
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
@@ -282,7 +284,7 @@ Public Class frmMainTabbed
     End Sub
 
     Private Sub miAdvanceOptions_Click(sender As Object, e As EventArgs) Handles miAdvancedOptions.Click
-        Dim newForm As New frmAdvancedOptions(_commonControllerUserInput)
+        Dim newForm As New frmAdvancedOptions(_commonControllerUserInput, _toolRunning)
         newForm.ShowDialog()
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
@@ -296,6 +298,7 @@ Public Class frmMainTabbed
     End Sub
 
 #Region "NFO"
+    Private _nfoStrategyRunning As Boolean = False
     Private _nfoUserInputs As NFOUserInputs = Nothing
     Private _nfoDashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private _nfoTradableInstruments As IEnumerable(Of NFOStrategyInstrument) = Nothing
@@ -480,6 +483,7 @@ Public Class frmMainTabbed
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         Finally
             ProgressStatus("No pending actions")
+            SetObjectText_ThreadSafe(linklblNFOTradableInstrument, String.Format("Tradable Instruments: {0}", 0))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstrument, False)
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
             EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
@@ -549,7 +553,7 @@ Public Class frmMainTabbed
         _cts.Cancel()
     End Sub
     Private Sub btnNFOSettings_Click(sender As Object, e As EventArgs) Handles btnNFOSettings.Click
-        Dim newForm As New frmNFOSettings(_nfoUserInputs)
+        Dim newForm As New frmNFOSettings(_nfoUserInputs, _nfoStrategyRunning)
         newForm.ShowDialog()
     End Sub
     Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstrument.LinkClicked
@@ -559,6 +563,7 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "MCX"
+    Private _mcxStrategyRunning As Boolean = False
     Private _mcxUserInputs As MCXUserInputs = Nothing
     Private _mcxDashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private _mcxTradableInstruments As IEnumerable(Of MCXStrategyInstrument) = Nothing
@@ -807,6 +812,7 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "CDS"
+    Private _cdsStrategyRunning As Boolean = False
     Private _cdsUserInputs As CDSUserInputs = Nothing
     Private _cdsDashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private _cdsTradableInstruments As IEnumerable(Of CDSStrategyInstrument) = Nothing
@@ -1068,8 +1074,9 @@ Public Class frmMainTabbed
         If source Is GetType(NFOStrategy) Then
             Select Case mode
                 Case UIMode.Active
+                    _nfoStrategyRunning = True
                     SetObjectEnableDisable_ThreadSafe(btnNFOStart, False)
-                    SetObjectEnableDisable_ThreadSafe(btnNFOSettings, False)
+                    'SetObjectEnableDisable_ThreadSafe(btnNFOSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnNFOStop, True)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnMCXStart) = "Start" Then
@@ -1090,16 +1097,18 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnCDSStop, "Stop")
                     End If
                 Case UIMode.Idle
+                    _nfoStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnNFOStart, True)
-                    SetObjectEnableDisable_ThreadSafe(btnNFOSettings, True)
+                    'SetObjectEnableDisable_ThreadSafe(btnNFOSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnNFOStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, Nothing)
             End Select
         ElseIf source Is GetType(MCXStrategy) Then
             Select Case mode
                 Case UIMode.Active
+                    _mcxStrategyRunning = True
                     SetObjectEnableDisable_ThreadSafe(btnMCXStart, False)
-                    SetObjectEnableDisable_ThreadSafe(btnMCXSettings, False)
+                    'SetObjectEnableDisable_ThreadSafe(btnMCXSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnMCXStop, True)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
@@ -1120,16 +1129,18 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnCDSStop, "Stop")
                     End If
                 Case UIMode.Idle
+                    _mcxStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnMCXStart, True)
-                    SetObjectEnableDisable_ThreadSafe(btnMCXSettings, True)
+                    'SetObjectEnableDisable_ThreadSafe(btnMCXSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnMCXStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, Nothing)
             End Select
         ElseIf source Is GetType(CDSStrategy) Then
             Select Case mode
                 Case UIMode.Active
+                    _cdsStrategyRunning = True
                     SetObjectEnableDisable_ThreadSafe(btnCDSStart, False)
-                    SetObjectEnableDisable_ThreadSafe(btnCDSSettings, False)
+                    'SetObjectEnableDisable_ThreadSafe(btnCDSSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnCDSStop, True)
                 Case UIMode.BlockOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
@@ -1150,12 +1161,14 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnMCXStop, "Stop")
                     End If
                 Case UIMode.Idle
+                    _cdsStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnCDSStart, True)
-                    SetObjectEnableDisable_ThreadSafe(btnCDSSettings, True)
+                    'SetObjectEnableDisable_ThreadSafe(btnCDSSettings, True)
                     SetObjectEnableDisable_ThreadSafe(btnCDSStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, Nothing)
             End Select
         End If
+        _toolRunning = _nfoStrategyRunning OrElse _cdsStrategyRunning OrElse _mcxStrategyRunning
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
@@ -1364,7 +1377,6 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
 
-        tabMain.TabPages.Remove(tabMCX)
         tabMain.TabPages.Remove(tabCDS)
     End Sub
     Private Sub OnTickerClose()

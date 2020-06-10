@@ -5,13 +5,16 @@ Imports Utilities.Strings.StringManipulation
 Public Class frmAliceUserDetails
 
     Private _UserInputs As ControllerUserInputs
+    Private _toolRunning As Boolean = False
 
-    Public Sub New(ByVal userInputs As ControllerUserInputs)
+    Public Sub New(ByVal userInputs As ControllerUserInputs, ByVal toolRunning As Boolean)
         InitializeComponent()
         Me._UserInputs = userInputs
+        _toolRunning = toolRunning
     End Sub
 
     Private Sub frmAliceUserDetails_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        If _toolRunning Then btnSaveAliceUserDetails.Enabled = False
         If _UserInputs IsNot Nothing AndAlso _UserInputs.UserDetails IsNot Nothing Then
             txtAliceUserId.Text = _UserInputs.UserDetails.UserId
             txtAlicePassword.Text = Decrypt(_UserInputs.UserDetails.Password, Common.MASTER_KEY)

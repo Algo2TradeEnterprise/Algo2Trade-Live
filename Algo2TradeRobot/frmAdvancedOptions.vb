@@ -4,17 +4,20 @@ Imports Algo2TradeCore.Entities
 Public Class frmAdvancedOptions
 
     Private _UserInputs As ControllerUserInputs
+    Private _toolRunning As Boolean = False
 
-    Public Sub New(ByVal userInputs As ControllerUserInputs)
+    Public Sub New(ByVal userInputs As ControllerUserInputs, ByVal toolRunning As Boolean)
         InitializeComponent()
         Me._UserInputs = userInputs
+        _toolRunning = toolRunning
     End Sub
 
     Private Sub frmAdvancedOptions_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        If _toolRunning Then btnSaveSettings.Enabled = False
         LoadSettings()
     End Sub
 
-    Private Sub btnSaveDelaySettings_Click(sender As Object, e As EventArgs) Handles btnSaveDelaySettings.Click
+    Private Sub btnSaveSettings_Click(sender As Object, e As EventArgs) Handles btnSaveSettings.Click
         Try
             ValidateInputs()
             SaveSettings()

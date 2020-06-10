@@ -6,13 +6,18 @@ Public Class frmNFOSettings
     Private _cts As CancellationTokenSource = Nothing
     Private _settings As NFOUserInputs = Nothing
     Private _settingsFilename As String = NFOUserInputs.SettingsFileName
+    Private _strategyRunning As Boolean = False
 
-    Public Sub New(ByRef userInputs As NFOUserInputs)
+    Public Sub New(ByRef userInputs As NFOUserInputs, ByVal strategyRunning As Boolean)
         InitializeComponent()
         _settings = userInputs
+        _strategyRunning = strategyRunning
     End Sub
 
     Private Sub frmNFOSettings_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        If _strategyRunning Then
+            btnSave.Enabled = False
+        End If
         LoadSettings()
         chkbAutoSelectStock_CheckedChanged(sender, e)
     End Sub

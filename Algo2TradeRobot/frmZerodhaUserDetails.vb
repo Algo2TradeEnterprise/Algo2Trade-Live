@@ -5,10 +5,12 @@ Imports Utilities.Strings.StringManipulation
 Public Class frmZerodhaUserDetails
 
     Private _UserInputs As ControllerUserInputs
+    Private _toolRunning As Boolean = False
 
-    Public Sub New(ByVal userInputs As ControllerUserInputs)
+    Public Sub New(ByVal userInputs As ControllerUserInputs, ByVal toolRunning As Boolean)
         InitializeComponent()
         Me._UserInputs = userInputs
+        _toolRunning = toolRunning
     End Sub
 
     Private Sub btnSaveZerodhaUserDetails_Click(sender As Object, e As EventArgs) Handles btnSaveZerodhaUserDetails.Click
@@ -22,6 +24,7 @@ Public Class frmZerodhaUserDetails
     End Sub
 
     Private Sub frmZerodhaUserDetails_Load(sender As Object, e As EventArgs) Handles Me.Load
+        If _toolRunning Then btnSaveZerodhaUserDetails.Enabled = False
         If _UserInputs IsNot Nothing AndAlso _UserInputs.UserDetails IsNot Nothing Then
             txtZerodhaUserId.Text = _UserInputs.UserDetails.UserId
             txtZerodhaPassword.Text = Decrypt(_UserInputs.UserDetails.Password, Common.MASTER_KEY)

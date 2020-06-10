@@ -418,6 +418,7 @@ Public Class NFOStrategyInstrument
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim hkConsumer As HeikinAshiConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHKConsumer)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+        Dim currentTick As ITick = Me.TradableInstrument.LastTick
 
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso
@@ -443,11 +444,13 @@ Public Class NFOStrategyInstrument
                                         buffer = 1
                                     End If
                                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 + buffer Then
+                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 + buffer AndAlso
+                                            currentTick.LastPrice < signal.Item2 + buffer Then
                                             exitTrade = True
                                         End If
                                     ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 - buffer Then
+                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 - buffer AndAlso
+                                            currentTick.LastPrice > signal.Item2 - buffer Then
                                             exitTrade = True
                                         End If
                                     End If
