@@ -182,10 +182,6 @@ Public Class NFOStrategyInstrument
             Dim hkCandle As OHLCPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
             If signal IsNot Nothing AndAlso signal.Item1 Then
-                Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                    buffer = 1
-                End If
                 Dim signalCandle As OHLCPayload = Nothing
                 Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
@@ -195,30 +191,16 @@ Public Class NFOStrategyInstrument
                         quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
                         _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
                     End If
-                    '_slPoint = 20
-                    'quantity = Me.TradableInstrument.LotSize
-                    '_targetPoint = 100
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
                     If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
                         signalCandle = signal.Item3
                         quantity = lastExecutedOrder.ParentOrder.Quantity * 2
-                        'If _slPoint = Decimal.MinValue OrElse _targetPoint = Decimal.MinValue Then
-                        '    If lastExecutedOrder.AllOrder IsNot Nothing AndAlso lastExecutedOrder.AllOrder.Count > 0 Then
-                        '        For Each runningOrder In lastExecutedOrder.AllOrder
-                        '            If runningOrder.TriggerPrice <> Decimal.MinValue AndAlso runningOrder.TriggerPrice <> 0 Then
-                        '                _slPoint = Math.Abs(runningOrder.TriggerPrice - lastExecutedOrder.ParentOrder.TriggerPrice)
-                        '            Else
-                        '                _targetPoint = Math.Abs(runningOrder.Price - lastExecutedOrder.ParentOrder.TriggerPrice)
-                        '            End If
-                        '        Next
-                        '    End If
-                        'End If
                     End If
                 End If
                 If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                        Dim triggerPrice As Decimal = signal.Item2 + buffer
+                        Dim triggerPrice As Decimal = signal.Item2
                         Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
                         If currentTick.LastPrice < triggerPrice Then
@@ -232,7 +214,7 @@ Public Class NFOStrategyInstrument
                                          .Quantity = quantity}
                         End If
                     ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                        Dim triggerPrice As Decimal = signal.Item2 - buffer
+                        Dim triggerPrice As Decimal = signal.Item2
                         Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
                         If currentTick.LastPrice > triggerPrice Then
@@ -441,18 +423,14 @@ Public Class NFOStrategyInstrument
                             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
                             If signal IsNot Nothing AndAlso signal.Item1 Then
                                 If bussinessOrder.ParentOrder.TransactionType = signal.Item4 Then
-                                    Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                                        buffer = 1
-                                    End If
                                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 + buffer AndAlso
-                                            currentTick.LastPrice < signal.Item2 + buffer Then
+                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
+                                            currentTick.LastPrice < signal.Item2 Then
                                             exitTrade = True
                                         End If
                                     ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 - buffer AndAlso
-                                            currentTick.LastPrice > signal.Item2 - buffer Then
+                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
+                                            currentTick.LastPrice > signal.Item2 Then
                                             exitTrade = True
                                         End If
                                     End If
@@ -516,10 +494,18 @@ Public Class NFOStrategyInstrument
         Dim ret As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
         If hkCandle IsNot Nothing Then
             If Math.Round(hkCandle.HighPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                If buyLevel = hkCandle.HighPrice.Value Then
+                    Dim buffer As Decimal = CalculateBuffer(buyLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    buyLevel = buyLevel + buffer
+                End If
                 ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
             ElseIf Math.Round(hkCandle.LowPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                If sellLevel = hkCandle.LowPrice.Value Then
+                    Dim buffer As Decimal = CalculateBuffer(sellLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    sellLevel = sellLevel - buffer
+                End If
                 ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
             End If
         End If
