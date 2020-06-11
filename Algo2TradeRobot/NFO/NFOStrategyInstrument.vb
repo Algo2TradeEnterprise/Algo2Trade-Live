@@ -542,7 +542,8 @@ Public Class NFOStrategyInstrument
                                                                                   End If
                                                                               End Function)
             If todayHighestATR <> Decimal.MinValue Then
-                ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
+                'ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
+                ret = (todayHighestATR + Me.PreviousDayHighestATR) / 2
             End If
         End If
         Return ret
