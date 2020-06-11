@@ -456,6 +456,8 @@ Public Class MCXStrategyInstrument
                                             exitTrade = True
                                         End If
                                     End If
+                                ElseIf bussinessOrder.ParentOrder.TransactionType <> signal.Item4 Then
+                                    exitTrade = True
                                 End If
                             End If
                             If exitTrade Then
