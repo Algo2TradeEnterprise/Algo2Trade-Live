@@ -16,11 +16,13 @@ Public Class MCXStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _slPoint As Decimal = Decimal.MinValue
-    Private _targetPoint As Decimal = Decimal.MinValue
+    Private _lastSLPoint As Decimal = Decimal.MinValue
+    Private _lastTargetPoint As Decimal = Decimal.MinValue
+
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
+    Private _todayHighestATR As Decimal = Decimal.MinValue
     Public ReadOnly Multiplier As Decimal = 0
     Public ReadOnly PreviousDayHighestATR As Decimal = 0
 
@@ -151,7 +153,7 @@ Public Class MCXStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     Dim highestATR As Decimal = GetHighestATR(atrConsumer, runningCandlePayload)
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Total PL:{7}, Current Time:{8}, Current Tick:{9}, TradingSymbol:{10}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Today Highest ATR:{7}, Total PL:{8}, Stock PL:{9}, Number of Trade:{10}, Current Time:{11}, Current Tick:{12}, TradingSymbol:{13}",
                                 runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -159,7 +161,10 @@ Public Class MCXStrategyInstrument
                                 IsActiveInstrument(),
                                 IsAnyTradeTargetReached(),
                                 If(highestATR <> Decimal.MinValue, Math.Round(highestATR, 4), "∞"),
+                                If(_todayHighestATR <> Decimal.MinValue, Math.Round(_todayHighestATR, 4), "∞"),
                                 Me.ParentStrategy.GetTotalPLAfterBrokerage(),
+                                Me.GetOverallPLAfterBrokerage(),
+                                Me.GetTotalExecutedOrders(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -182,43 +187,62 @@ Public Class MCXStrategyInstrument
             Dim hkCandle As OHLCPayload = hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
             If signal IsNot Nothing AndAlso signal.Item1 Then
-                Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                    buffer = 1
-                End If
                 Dim signalCandle As OHLCPayload = Nothing
-                Dim quantity As Integer = Integer.MinValue
                 If lastExecutedOrder Is Nothing Then
                     signalCandle = signal.Item3
-                    _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, runningCandlePayload), Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    If _slPoint <> Decimal.MinValue Then
-                        quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
-                        _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
-                    End If
-                    '_slPoint = 20
-                    'quantity = Me.TradableInstrument.LotSize
-                    '_targetPoint = 100
+                    _todayHighestATR = ConvertFloorCeling(GetHighestATR(atrConsumer, runningCandlePayload), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
                     If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
                         signalCandle = signal.Item3
-                        quantity = lastExecutedOrder.ParentOrder.Quantity * 2
-                        'If _slPoint = Decimal.MinValue OrElse _targetPoint = Decimal.MinValue Then
-                        '    If lastExecutedOrder.AllOrder IsNot Nothing AndAlso lastExecutedOrder.AllOrder.Count > 0 Then
-                        '        For Each runningOrder In lastExecutedOrder.AllOrder
-                        '            If runningOrder.TriggerPrice <> Decimal.MinValue AndAlso runningOrder.TriggerPrice <> 0 Then
-                        '                _slPoint = Math.Abs(runningOrder.TriggerPrice - lastExecutedOrder.ParentOrder.TriggerPrice)
-                        '            Else
-                        '                _targetPoint = Math.Abs(runningOrder.Price - lastExecutedOrder.ParentOrder.TriggerPrice)
-                        '            End If
-                        '        Next
-                        '    End If
-                        'End If
                     End If
                 End If
-                If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
+                If signalCandle IsNot Nothing AndAlso _todayHighestATR <> Decimal.MinValue Then
+                    Dim ultimateRemark As String = ""
+                    Dim slRemarkDetails As String = ""
+                    Dim slRemark As String = ""
+                    Dim slType As String = ""
+                    Dim slPoint As Decimal = ConvertFloorCeling(signalCandle.CandleRange, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    slRemark = "Candle Range"
+                    slType = "CR"
+                    slRemarkDetails = String.Format("Candle Range({0})", slPoint)
+                    If slPoint > _todayHighestATR Then
+                        slPoint = _todayHighestATR
+                        slRemark = "Highest ATR"
+                        slType = "ATR"
+                        slRemarkDetails = String.Format("{0} > Highest ATR({1})", slRemarkDetails, _todayHighestATR)
+                    Else
+                        slRemarkDetails = String.Format("{0} < Highest ATR({1})", slRemarkDetails, _todayHighestATR)
+                    End If
+                    Dim quantity As Integer = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - slPoint, userSettings.MaxProfitPerTrade)
+                    If quantity * signal.Item2 > 100000 Then
+                        slRemarkDetails = String.Format("{0}.So Stoploss:{1}({2}). Turnover:{3}>100000", slRemarkDetails, slPoint, slRemarkDetails, (quantity * signal.Item2))
+                        For i As Decimal = slPoint To Decimal.MaxValue Step Me.TradableInstrument.TickSize
+                            quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - i, userSettings.MaxProfitPerTrade)
+                            If quantity * signal.Item2 <= 100000 Then
+                                slPoint = i
+                                If slRemark = "Highest ATR" Then
+                                    slType = "ATR Extemsion"
+                                Else
+                                    slType = "CR Extention"
+                                End If
+                                slRemark = "Virtual SL"
+                                Exit For
+                            End If
+                        Next
+                        ultimateRemark = String.Format("{0}.So Final Stoploss:{1}({2}). Turnover:{3}", slRemarkDetails, slPoint, slRemark, (quantity * signal.Item2))
+                    Else
+                        ultimateRemark = String.Format("{0}.So Final Stoploss:{1}({2}). Turnover:{3}", slRemarkDetails, slPoint, slRemark, (quantity * signal.Item2))
+                    End If
+
+                    Dim expectedLoss As Decimal = Math.Pow(2, Me.GetTotalExecutedOrders()) * userSettings.MaxProfitPerTrade
+                    quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - slPoint, expectedLoss)
+                    Dim targetPoint As Decimal = CalculateTargetFromPL(signal.Item2, quantity, expectedLoss) - signal.Item2
+                    Dim remark As String = String.Format("[{5}] -> {0},Trade Number:{1}, Expected Loss:{2}, Quantity:{3}, Target Point:{4}",
+                                                         ultimateRemark, GetTotalExecutedOrders() + 1, expectedLoss, quantity, targetPoint, slType)
+
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                        Dim triggerPrice As Decimal = signal.Item2 + buffer
+                        Dim triggerPrice As Decimal = signal.Item2
                         Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
                         If currentTick.LastPrice < triggerPrice Then
@@ -226,13 +250,14 @@ Public Class MCXStrategyInstrument
                                         {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                          .TriggerPrice = triggerPrice,
                                          .Price = price,
-                                         .StoplossValue = _slPoint,
-                                         .SquareOffValue = _targetPoint,
+                                         .StoplossValue = slPoint,
+                                         .SquareOffValue = targetPoint,
                                          .OrderType = IOrder.TypeOfOrder.SL,
-                                         .Quantity = quantity}
+                                         .Quantity = quantity,
+                                         .Supporting = New List(Of Object) From {remark}}
                         End If
                     ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                        Dim triggerPrice As Decimal = signal.Item2 - buffer
+                        Dim triggerPrice As Decimal = signal.Item2
                         Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
 
                         If currentTick.LastPrice > triggerPrice Then
@@ -240,10 +265,11 @@ Public Class MCXStrategyInstrument
                                         {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                          .TriggerPrice = triggerPrice,
                                          .Price = price,
-                                         .StoplossValue = _slPoint,
-                                         .SquareOffValue = _targetPoint,
+                                         .StoplossValue = slPoint,
+                                         .SquareOffValue = targetPoint,
                                          .OrderType = IOrder.TypeOfOrder.SL,
-                                         .Quantity = quantity}
+                                         .Quantity = quantity,
+                                         .Supporting = New List(Of Object) From {remark}}
                         End If
                     End If
                 End If
@@ -255,7 +281,16 @@ Public Class MCXStrategyInstrument
             Try
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
-                    logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                    logger.Debug("PlaceOrder Parameters-> Direction:{0}, Trigger Price:{1}, Price:{2}, Stoploss Value:{3}, Squareoff Value:{4}, Quantity:{5}, Order Type:{6}, Remark:{7}, Trading Symbol:{8}",
+                                 parameters.EntryDirection.ToString,
+                                 parameters.TriggerPrice,
+                                 parameters.Price,
+                                 parameters.StoplossValue,
+                                 parameters.SquareOffValue,
+                                 parameters.Quantity,
+                                 parameters.OrderType.ToString,
+                                 parameters.Supporting.FirstOrDefault,
+                                 Me.TradableInstrument.TradingSymbol)
                 End If
             Catch ex As Exception
                 logger.Error(ex)
@@ -322,6 +357,10 @@ Public Class MCXStrategyInstrument
                 ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
             End If
         End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+            _lastSLPoint = ret.FirstOrDefault.Item2.StoplossValue
+            _lastTargetPoint = ret.FirstOrDefault.Item2.SquareOffValue
+        End If
         Return ret
     End Function
     Protected Overrides Async Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
@@ -338,9 +377,9 @@ Public Class MCXStrategyInstrument
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
                             Dim triggerPrice As Decimal = Decimal.MinValue
                             If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                triggerPrice = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing) - _slPoint
+                                triggerPrice = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing) - _lastSLPoint
                             ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                triggerPrice = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Floor) + _slPoint
+                                triggerPrice = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Floor) + _lastSLPoint
                             End If
                             If triggerPrice <> Decimal.MinValue AndAlso runningSLOrder.TriggerPrice <> triggerPrice Then
                                 'Below portion have to be done in every modify stoploss order trigger
@@ -383,9 +422,9 @@ Public Class MCXStrategyInstrument
                             Not runningTargetOrder.Status = IOrder.TypeOfStatus.Rejected Then
                             Dim price As Decimal = Decimal.MinValue
                             If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                price = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing) + _targetPoint
+                                price = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Celing) + _lastTargetPoint
                             ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                price = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Floor) - _targetPoint
+                                price = ConvertFloorCeling(parentBussinessOrder.ParentOrder.AveragePrice, Me.TradableInstrument.TickSize, RoundOfType.Floor) - _lastTargetPoint
                             End If
                             If price <> Decimal.MinValue AndAlso runningTargetOrder.Price <> price Then
                                 'Below portion have to be done in every modify target order trigger
@@ -440,24 +479,12 @@ Public Class MCXStrategyInstrument
                             Dim exitTrade As Boolean = False
                             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
                             If signal IsNot Nothing AndAlso signal.Item1 Then
-                                If bussinessOrder.ParentOrder.TransactionType = signal.Item4 Then
-                                    Dim buffer As Decimal = CalculateBuffer(signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.MCX Then
-                                        buffer = 1
+                                Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(bussinessOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                                If signalCandle IsNot Nothing Then
+                                    If (signalCandle.SnapshotDateTime <> signal.Item3.SnapshotDateTime) OrElse
+                                        (bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2) Then
+                                        exitTrade = True
                                     End If
-                                    If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 + buffer AndAlso
-                                            currentTick.LastPrice < signal.Item2 + buffer Then
-                                            exitTrade = True
-                                        End If
-                                    ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 - buffer AndAlso
-                                            currentTick.LastPrice > signal.Item2 - buffer Then
-                                            exitTrade = True
-                                        End If
-                                    End If
-                                ElseIf bussinessOrder.ParentOrder.TransactionType <> signal.Item4 Then
-                                    exitTrade = True
                                 End If
                             End If
                             If exitTrade Then
@@ -516,10 +543,18 @@ Public Class MCXStrategyInstrument
         Dim ret As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
         If hkCandle IsNot Nothing Then
             If Math.Round(hkCandle.HighPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                If buyLevel = hkCandle.HighPrice.Value Then
+                    Dim buffer As Decimal = CalculateBuffer(buyLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    buyLevel = buyLevel + buffer
+                End If
                 ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
             ElseIf Math.Round(hkCandle.LowPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                If sellLevel = hkCandle.LowPrice.Value Then
+                    Dim buffer As Decimal = CalculateBuffer(sellLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    sellLevel = sellLevel - buffer
+                End If
                 ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
             End If
         End If
@@ -544,7 +579,7 @@ Public Class MCXStrategyInstrument
                                                                                   End If
                                                                               End Function)
             If todayHighestATR <> Decimal.MinValue Then
-                ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
+                ret = todayHighestATR
             End If
         End If
         Return ret
@@ -552,7 +587,7 @@ Public Class MCXStrategyInstrument
 
     Private Function IsAnyTradeTargetReached() As Boolean
         Dim ret As Boolean = False
-        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 AndAlso _slPoint <> Decimal.MinValue Then
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             For Each parentOrder In OrderDetails.Keys
                 Dim bussinessOrder As IBusinessOrder = OrderDetails(parentOrder)
                 If bussinessOrder.AllOrder IsNot Nothing AndAlso bussinessOrder.AllOrder.Count > 0 Then
@@ -564,7 +599,7 @@ Public Class MCXStrategyInstrument
                             ElseIf bussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                 target = bussinessOrder.ParentOrder.AveragePrice - order.AveragePrice
                             End If
-                            If target >= _slPoint Then
+                            If target >= _lastSLPoint Then
                                 ret = True
                                 Exit For
                             End If
