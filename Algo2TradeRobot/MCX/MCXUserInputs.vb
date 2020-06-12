@@ -13,6 +13,7 @@ Public Class MCXUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
+    Public Property MaxTurnoverPerTrade As Decimal
     Public Property MaxProfitPerTrade As Decimal
     Public Property NumberOfTradePerStock As Integer
     Public Property OverallMaxProfitPerDay As Decimal

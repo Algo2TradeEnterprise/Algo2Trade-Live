@@ -61,6 +61,8 @@ Partial Class frmMCXSettings
         Me.lblMaxPrice = New System.Windows.Forms.Label()
         Me.txtMinPrice = New System.Windows.Forms.TextBox()
         Me.lblMinPrice = New System.Windows.Forms.Label()
+        Me.txtMaxTurnoverPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxTurnoverPerTrade = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpStockSelection.SuspendLayout()
         Me.SuspendLayout()
@@ -94,12 +96,14 @@ Partial Class frmMCXSettings
         Me.chkbAutoSelectStock.Location = New System.Drawing.Point(502, 19)
         Me.chkbAutoSelectStock.Name = "chkbAutoSelectStock"
         Me.chkbAutoSelectStock.Size = New System.Drawing.Size(141, 21)
-        Me.chkbAutoSelectStock.TabIndex = 47
+        Me.chkbAutoSelectStock.TabIndex = 13
         Me.chkbAutoSelectStock.Text = "Auto Select Stock"
         Me.chkbAutoSelectStock.UseVisualStyleBackColor = True
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMaxTurnoverPerTrade)
+        Me.GroupBox1.Controls.Add(Me.lblMaxTurnoverPerTrade)
         Me.GroupBox1.Controls.Add(Me.txtNumberOfStock)
         Me.GroupBox1.Controls.Add(Me.lblNumberOfStock)
         Me.GroupBox1.Controls.Add(Me.txtMaxTargetToStoplossMultiplier)
@@ -127,23 +131,23 @@ Partial Class frmMCXSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 397)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 434)
         Me.GroupBox1.TabIndex = 48
         Me.GroupBox1.TabStop = False
         '
         'txtNumberOfStock
         '
-        Me.txtNumberOfStock.Location = New System.Drawing.Point(227, 368)
+        Me.txtNumberOfStock.Location = New System.Drawing.Point(227, 401)
         Me.txtNumberOfStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfStock.Name = "txtNumberOfStock"
         Me.txtNumberOfStock.Size = New System.Drawing.Size(242, 22)
-        Me.txtNumberOfStock.TabIndex = 11
+        Me.txtNumberOfStock.TabIndex = 12
         Me.txtNumberOfStock.Tag = "Number Of Stock"
         '
         'lblNumberOfStock
         '
         Me.lblNumberOfStock.AutoSize = True
-        Me.lblNumberOfStock.Location = New System.Drawing.Point(8, 371)
+        Me.lblNumberOfStock.Location = New System.Drawing.Point(8, 404)
         Me.lblNumberOfStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblNumberOfStock.Name = "lblNumberOfStock"
         Me.lblNumberOfStock.Size = New System.Drawing.Size(116, 17)
@@ -170,16 +174,16 @@ Partial Class frmMCXSettings
         '
         'txtMaxProfitPerTrade
         '
-        Me.txtMaxProfitPerTrade.Location = New System.Drawing.Point(227, 195)
+        Me.txtMaxProfitPerTrade.Location = New System.Drawing.Point(227, 228)
         Me.txtMaxProfitPerTrade.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxProfitPerTrade.Name = "txtMaxProfitPerTrade"
         Me.txtMaxProfitPerTrade.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxProfitPerTrade.TabIndex = 6
+        Me.txtMaxProfitPerTrade.TabIndex = 7
         '
         'lblMaxProfitPerTrade
         '
         Me.lblMaxProfitPerTrade.AutoSize = True
-        Me.lblMaxProfitPerTrade.Location = New System.Drawing.Point(9, 198)
+        Me.lblMaxProfitPerTrade.Location = New System.Drawing.Point(9, 231)
         Me.lblMaxProfitPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxProfitPerTrade.Name = "lblMaxProfitPerTrade"
         Me.lblMaxProfitPerTrade.Size = New System.Drawing.Size(138, 17)
@@ -188,16 +192,16 @@ Partial Class frmMCXSettings
         '
         'txtOverallMaxProfitPerDay
         '
-        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(227, 300)
+        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(227, 333)
         Me.txtOverallMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxProfitPerDay.Name = "txtOverallMaxProfitPerDay"
         Me.txtOverallMaxProfitPerDay.Size = New System.Drawing.Size(243, 22)
-        Me.txtOverallMaxProfitPerDay.TabIndex = 9
+        Me.txtOverallMaxProfitPerDay.TabIndex = 10
         '
         'lblOverallMaxProfitPerDay
         '
         Me.lblOverallMaxProfitPerDay.AutoSize = True
-        Me.lblOverallMaxProfitPerDay.Location = New System.Drawing.Point(9, 303)
+        Me.lblOverallMaxProfitPerDay.Location = New System.Drawing.Point(9, 336)
         Me.lblOverallMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblOverallMaxProfitPerDay.Name = "lblOverallMaxProfitPerDay"
         Me.lblOverallMaxProfitPerDay.Size = New System.Drawing.Size(174, 17)
@@ -206,16 +210,16 @@ Partial Class frmMCXSettings
         '
         'txtOverallMaxLossPerDay
         '
-        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(227, 265)
+        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(227, 298)
         Me.txtOverallMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxLossPerDay.Name = "txtOverallMaxLossPerDay"
         Me.txtOverallMaxLossPerDay.Size = New System.Drawing.Size(243, 22)
-        Me.txtOverallMaxLossPerDay.TabIndex = 8
+        Me.txtOverallMaxLossPerDay.TabIndex = 9
         '
         'lblOverallMaxLossPerDay
         '
         Me.lblOverallMaxLossPerDay.AutoSize = True
-        Me.lblOverallMaxLossPerDay.Location = New System.Drawing.Point(9, 269)
+        Me.lblOverallMaxLossPerDay.Location = New System.Drawing.Point(9, 302)
         Me.lblOverallMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblOverallMaxLossPerDay.Name = "lblOverallMaxLossPerDay"
         Me.lblOverallMaxLossPerDay.Size = New System.Drawing.Size(171, 17)
@@ -224,17 +228,17 @@ Partial Class frmMCXSettings
         '
         'txtNumberOfTradePerStock
         '
-        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(227, 229)
+        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(227, 262)
         Me.txtNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfTradePerStock.Name = "txtNumberOfTradePerStock"
         Me.txtNumberOfTradePerStock.Size = New System.Drawing.Size(243, 22)
-        Me.txtNumberOfTradePerStock.TabIndex = 7
+        Me.txtNumberOfTradePerStock.TabIndex = 8
         Me.txtNumberOfTradePerStock.Tag = "Max Loss Per Day"
         '
         'lblNumberOfTradePerStock
         '
         Me.lblNumberOfTradePerStock.AutoSize = True
-        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(8, 233)
+        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(8, 266)
         Me.lblNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblNumberOfTradePerStock.Name = "lblNumberOfTradePerStock"
         Me.lblNumberOfTradePerStock.Size = New System.Drawing.Size(184, 17)
@@ -304,27 +308,27 @@ Partial Class frmMCXSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(428, 334)
+        Me.btnBrowse.Location = New System.Drawing.Point(428, 367)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
-        Me.btnBrowse.TabIndex = 10
+        Me.btnBrowse.TabIndex = 11
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 335)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 368)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(194, 22)
-        Me.txtInstrumentDetalis.TabIndex = 10
+        Me.txtInstrumentDetalis.TabIndex = 11
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 338)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 371)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -373,7 +377,7 @@ Partial Class frmMCXSettings
         Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
         Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxBlankCandlePer.TabIndex = 16
+        Me.txtMaxBlankCandlePer.TabIndex = 17
         Me.txtMaxBlankCandlePer.Tag = "Min Price"
         '
         'lblMaxBlankCandlePer
@@ -392,7 +396,7 @@ Partial Class frmMCXSettings
         Me.txtATRPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtATRPercentage.Name = "txtATRPercentage"
         Me.txtATRPercentage.Size = New System.Drawing.Size(201, 22)
-        Me.txtATRPercentage.TabIndex = 15
+        Me.txtATRPercentage.TabIndex = 16
         Me.txtATRPercentage.Tag = "ATR %"
         '
         'lblATR
@@ -411,7 +415,7 @@ Partial Class frmMCXSettings
         Me.txtMaxPrice.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxPrice.Name = "txtMaxPrice"
         Me.txtMaxPrice.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxPrice.TabIndex = 14
+        Me.txtMaxPrice.TabIndex = 15
         Me.txtMaxPrice.Tag = "Max Price"
         '
         'lblMaxPrice
@@ -430,7 +434,7 @@ Partial Class frmMCXSettings
         Me.txtMinPrice.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinPrice.Name = "txtMinPrice"
         Me.txtMinPrice.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinPrice.TabIndex = 13
+        Me.txtMinPrice.TabIndex = 14
         Me.txtMinPrice.Tag = "Min Price"
         '
         'lblMinPrice
@@ -443,11 +447,29 @@ Partial Class frmMCXSettings
         Me.lblMinPrice.TabIndex = 35
         Me.lblMinPrice.Text = "Min Price"
         '
+        'txtMaxTurnoverPerTrade
+        '
+        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(227, 194)
+        Me.txtMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxTurnoverPerTrade.Name = "txtMaxTurnoverPerTrade"
+        Me.txtMaxTurnoverPerTrade.Size = New System.Drawing.Size(243, 22)
+        Me.txtMaxTurnoverPerTrade.TabIndex = 6
+        '
+        'lblMaxTurnoverPerTrade
+        '
+        Me.lblMaxTurnoverPerTrade.AutoSize = True
+        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(9, 197)
+        Me.lblMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxTurnoverPerTrade.Name = "lblMaxTurnoverPerTrade"
+        Me.lblMaxTurnoverPerTrade.Size = New System.Drawing.Size(163, 17)
+        Me.lblMaxTurnoverPerTrade.TabIndex = 57
+        Me.lblMaxTurnoverPerTrade.Text = "Max Turnover Per Trade"
+        '
         'frmMCXSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(852, 400)
+        Me.ClientSize = New System.Drawing.Size(852, 438)
         Me.Controls.Add(Me.chkbAutoSelectStock)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.grpStockSelection)
@@ -503,4 +525,6 @@ Partial Class frmMCXSettings
     Friend WithEvents lblMaxPrice As Label
     Friend WithEvents txtMinPrice As TextBox
     Friend WithEvents lblMinPrice As Label
+    Friend WithEvents txtMaxTurnoverPerTrade As TextBox
+    Friend WithEvents lblMaxTurnoverPerTrade As Label
 End Class

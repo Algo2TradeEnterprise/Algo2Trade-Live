@@ -225,11 +225,11 @@ Public Class MCXStrategyInstrument
                         slRemarkDetails = String.Format("{0} < Highest ATR({1})", slRemarkDetails, _todayHighestATR)
                     End If
                     Dim quantity As Integer = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - slPoint, userSettings.MaxProfitPerTrade)
-                    If quantity * signal.Item2 > 100000 Then
-                        slRemarkDetails = String.Format("{0}.So Stoploss:{1}({2}). Turnover:{3}>100000", slRemarkDetails, slPoint, slRemarkDetails, (quantity * signal.Item2))
+                    If quantity * signal.Item2 > userSettings.MaxTurnoverPerTrade Then
+                        slRemarkDetails = String.Format("{0}.So Stoploss:{1}({2}). Turnover:{3}>{4}", slRemarkDetails, slPoint, slRemarkDetails, (quantity * signal.Item2), userSettings.MaxTurnoverPerTrade)
                         For i As Decimal = slPoint To Decimal.MaxValue Step Me.TradableInstrument.TickSize
                             quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - i, userSettings.MaxProfitPerTrade)
-                            If quantity * signal.Item2 <= 100000 Then
+                            If quantity * signal.Item2 <= userSettings.MaxTurnoverPerTrade Then
                                 slPoint = i
                                 If slRemark = "Highest ATR" Then
                                     slType = "ATR Extemsion"

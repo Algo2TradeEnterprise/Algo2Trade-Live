@@ -41,6 +41,7 @@ Public Class frmMCXSettings
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtMaxTargetToStoplossMultiplier.Text = _settings.MaxTargetToStoplossMultiplier
+            txtMaxTurnoverPerTrade.Text = _settings.MaxTurnoverPerTrade
             txtMaxProfitPerTrade.Text = _settings.MaxProfitPerTrade
             txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
             txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
@@ -61,6 +62,7 @@ Public Class frmMCXSettings
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.MaxTargetToStoplossMultiplier = txtMaxTargetToStoplossMultiplier.Text
+        _settings.MaxTurnoverPerTrade = Math.Abs(CDec(txtMaxTurnoverPerTrade.Text))
         _settings.MaxProfitPerTrade = Math.Abs(CDec(txtMaxProfitPerTrade.Text))
         _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
         _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
