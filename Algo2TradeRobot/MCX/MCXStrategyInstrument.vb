@@ -238,9 +238,8 @@ Public Class MCXStrategyInstrument
                     Dim expectedLoss As Decimal = Math.Pow(2, Me.GetTotalExecutedOrders()) * userSettings.MaxProfitPerTrade
                     quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - slPoint, expectedLoss)
                     Dim targetPoint As Decimal = CalculateTargetFromPL(signal.Item2, quantity, expectedLoss) - signal.Item2
-                    Dim remark As String = String.Format("[{5}] -> {0},Trade Number:{1}, Expected Loss:{2}, Quantity:{3}, Target Point:{4}",
-                                                         ultimateRemark, GetTotalExecutedOrders() + 1, expectedLoss, quantity, targetPoint, slType)
-
+                    Dim remark As String = String.Format("[{0}] -> {1},Trade Number:{2}, Expected Loss:{3}, Quantity:{4}, Target Point:{5}, Stoploss Point:{6}, Ratio:{7}",
+                                                         slType, ultimateRemark, GetTotalExecutedOrders() + 1, expectedLoss, quantity, targetPoint, slPoint, Math.Round(targetPoint / slPoint, 3))
                     If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
                         Dim triggerPrice As Decimal = signal.Item2
                         Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)

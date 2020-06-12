@@ -151,7 +151,7 @@ Public Class NFOStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     Dim highestATR As Decimal = GetHighestATR(atrConsumer, runningCandlePayload)
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", hkConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Total PL:{7}, Current Time:{8}, Current Tick:{9}, TradingSymbol:{10}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Total PL:{7}, Stock PL:{8}, Number of Trade:{9}, Current Time:{10}, Current Tick:{11}, TradingSymbol:{12}",
                                 runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -160,6 +160,8 @@ Public Class NFOStrategyInstrument
                                 IsAnyTradeTargetReached(),
                                 If(highestATR <> Decimal.MinValue, Math.Round(highestATR, 4), "∞"),
                                 Me.ParentStrategy.GetTotalPLAfterBrokerage(),
+                                Me.GetOverallPLAfterBrokerage(),
+                                Me.GetTotalExecutedOrders(),
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
