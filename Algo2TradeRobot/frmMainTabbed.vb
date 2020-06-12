@@ -791,7 +791,7 @@ Public Class frmMainTabbed
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
                 Debug.WriteLine("Restart for permission")
                 logger.Debug("Restarting the application again as there is premission issue")
-                btnNFOStart_Click(sender, e)
+                btnMCXStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
                 If CType(_lastException, ForceExitException).RestartWithDelay Then
                     Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
@@ -804,12 +804,12 @@ Public Class frmMainTabbed
                     End While
                     Debug.WriteLine("Restart for dead state end")
                     logger.Debug("Restarting the application again for dead state end")
-                    btnNFOStart_Click(sender, e)
+                    btnMCXStart_Click(sender, e)
                 Else
                     Debug.WriteLine("Restart for daily refresh")
                     logger.Debug("Restarting the application again for daily refresh")
                     PreviousDayCleanup(True)
-                    btnNFOStart_Click(sender, e)
+                    btnMCXStart_Click(sender, e)
                 End If
             End If
         End If
