@@ -458,7 +458,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoDashboadList = New BindingList(Of ActivityDashboard)(_nfoStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
-                                                                                                                                            Return x.SignalGeneratedTime
+                                                                                                                                            Return x.EntryRequestTime
                                                                                                                                         End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, _nfoDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
@@ -727,7 +727,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _mcxDashboadList = New BindingList(Of ActivityDashboard)(_mcxStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
-                                                                                                                                            Return x.SignalGeneratedTime
+                                                                                                                                            Return x.EntryRequestTime
                                                                                                                                         End Function).ToList)
             SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, _mcxDashboadList)
             SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMCXMainDashboard)
