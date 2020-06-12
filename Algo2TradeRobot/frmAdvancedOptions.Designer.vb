@@ -392,7 +392,7 @@ Partial Class frmAdvancedOptions
         Me.chkbLstTradingDays.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.chkbLstTradingDays.MultiColumn = True
         Me.chkbLstTradingDays.Name = "chkbLstTradingDays"
-        Me.chkbLstTradingDays.Size = New System.Drawing.Size(383, 99)
+        Me.chkbLstTradingDays.Size = New System.Drawing.Size(383, 118)
         Me.chkbLstTradingDays.TabIndex = 0
         '
         'dtpckrDeadStateEndTime

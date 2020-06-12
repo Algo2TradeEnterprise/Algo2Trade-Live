@@ -57,10 +57,10 @@ Partial Class frmNFOSettings
         Me.lblMaxProfitPerTrade = New System.Windows.Forms.Label()
         Me.txtMaxProfitPerTrade = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtMaxTargetToStoplossMultiplier = New System.Windows.Forms.TextBox()
-        Me.lblMaxTargetToStoplossMultiplier = New System.Windows.Forms.Label()
         Me.txtNumberOfStock = New System.Windows.Forms.TextBox()
         Me.lblNumberOfStock = New System.Windows.Forms.Label()
+        Me.txtMaxTargetToStoplossMultiplier = New System.Windows.Forms.TextBox()
+        Me.lblMaxTargetToStoplossMultiplier = New System.Windows.Forms.Label()
         Me.grpStockSelection.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
@@ -70,7 +70,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(736, 334)
+        Me.btnSave.Location = New System.Drawing.Point(736, 340)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -406,24 +406,6 @@ Partial Class frmNFOSettings
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
-        'txtMaxTargetToStoplossMultiplier
-        '
-        Me.txtMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(227, 161)
-        Me.txtMaxTargetToStoplossMultiplier.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxTargetToStoplossMultiplier.Name = "txtMaxTargetToStoplossMultiplier"
-        Me.txtMaxTargetToStoplossMultiplier.Size = New System.Drawing.Size(244, 22)
-        Me.txtMaxTargetToStoplossMultiplier.TabIndex = 5
-        '
-        'lblMaxTargetToStoplossMultiplier
-        '
-        Me.lblMaxTargetToStoplossMultiplier.AutoSize = True
-        Me.lblMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(10, 164)
-        Me.lblMaxTargetToStoplossMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxTargetToStoplossMultiplier.Name = "lblMaxTargetToStoplossMultiplier"
-        Me.lblMaxTargetToStoplossMultiplier.Size = New System.Drawing.Size(218, 17)
-        Me.lblMaxTargetToStoplossMultiplier.TabIndex = 55
-        Me.lblMaxTargetToStoplossMultiplier.Text = "Max Target To Stoploss Multiplier"
-        '
         'txtNumberOfStock
         '
         Me.txtNumberOfStock.Location = New System.Drawing.Point(227, 368)
@@ -442,6 +424,24 @@ Partial Class frmNFOSettings
         Me.lblNumberOfStock.Size = New System.Drawing.Size(116, 17)
         Me.lblNumberOfStock.TabIndex = 48
         Me.lblNumberOfStock.Text = "Number Of Stock"
+        '
+        'txtMaxTargetToStoplossMultiplier
+        '
+        Me.txtMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(227, 161)
+        Me.txtMaxTargetToStoplossMultiplier.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxTargetToStoplossMultiplier.Name = "txtMaxTargetToStoplossMultiplier"
+        Me.txtMaxTargetToStoplossMultiplier.Size = New System.Drawing.Size(244, 22)
+        Me.txtMaxTargetToStoplossMultiplier.TabIndex = 5
+        '
+        'lblMaxTargetToStoplossMultiplier
+        '
+        Me.lblMaxTargetToStoplossMultiplier.AutoSize = True
+        Me.lblMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(10, 164)
+        Me.lblMaxTargetToStoplossMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxTargetToStoplossMultiplier.Name = "lblMaxTargetToStoplossMultiplier"
+        Me.lblMaxTargetToStoplossMultiplier.Size = New System.Drawing.Size(218, 17)
+        Me.lblMaxTargetToStoplossMultiplier.TabIndex = 55
+        Me.lblMaxTargetToStoplossMultiplier.Text = "Max Target To Stoploss Multiplier"
         '
         'frmNFOSettings
         '

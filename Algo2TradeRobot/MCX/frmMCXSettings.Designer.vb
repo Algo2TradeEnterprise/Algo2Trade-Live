@@ -29,6 +29,8 @@ Partial Class frmMCXSettings
         Me.btnSave = New System.Windows.Forms.Button()
         Me.chkbAutoSelectStock = New System.Windows.Forms.CheckBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMaxTurnoverPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxTurnoverPerTrade = New System.Windows.Forms.Label()
         Me.txtNumberOfStock = New System.Windows.Forms.TextBox()
         Me.lblNumberOfStock = New System.Windows.Forms.Label()
         Me.txtMaxTargetToStoplossMultiplier = New System.Windows.Forms.TextBox()
@@ -61,8 +63,6 @@ Partial Class frmMCXSettings
         Me.lblMaxPrice = New System.Windows.Forms.Label()
         Me.txtMinPrice = New System.Windows.Forms.TextBox()
         Me.lblMinPrice = New System.Windows.Forms.Label()
-        Me.txtMaxTurnoverPerTrade = New System.Windows.Forms.TextBox()
-        Me.lblMaxTurnoverPerTrade = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpStockSelection.SuspendLayout()
         Me.SuspendLayout()
@@ -81,7 +81,7 @@ Partial Class frmMCXSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(736, 339)
+        Me.btnSave.Location = New System.Drawing.Point(736, 377)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -134,6 +134,24 @@ Partial Class frmMCXSettings
         Me.GroupBox1.Size = New System.Drawing.Size(477, 434)
         Me.GroupBox1.TabIndex = 48
         Me.GroupBox1.TabStop = False
+        '
+        'txtMaxTurnoverPerTrade
+        '
+        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(227, 194)
+        Me.txtMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxTurnoverPerTrade.Name = "txtMaxTurnoverPerTrade"
+        Me.txtMaxTurnoverPerTrade.Size = New System.Drawing.Size(243, 22)
+        Me.txtMaxTurnoverPerTrade.TabIndex = 6
+        '
+        'lblMaxTurnoverPerTrade
+        '
+        Me.lblMaxTurnoverPerTrade.AutoSize = True
+        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(9, 197)
+        Me.lblMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxTurnoverPerTrade.Name = "lblMaxTurnoverPerTrade"
+        Me.lblMaxTurnoverPerTrade.Size = New System.Drawing.Size(163, 17)
+        Me.lblMaxTurnoverPerTrade.TabIndex = 57
+        Me.lblMaxTurnoverPerTrade.Text = "Max Turnover Per Trade"
         '
         'txtNumberOfStock
         '
@@ -446,24 +464,6 @@ Partial Class frmMCXSettings
         Me.lblMinPrice.Size = New System.Drawing.Size(66, 17)
         Me.lblMinPrice.TabIndex = 35
         Me.lblMinPrice.Text = "Min Price"
-        '
-        'txtMaxTurnoverPerTrade
-        '
-        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(227, 194)
-        Me.txtMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxTurnoverPerTrade.Name = "txtMaxTurnoverPerTrade"
-        Me.txtMaxTurnoverPerTrade.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxTurnoverPerTrade.TabIndex = 6
-        '
-        'lblMaxTurnoverPerTrade
-        '
-        Me.lblMaxTurnoverPerTrade.AutoSize = True
-        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(9, 197)
-        Me.lblMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxTurnoverPerTrade.Name = "lblMaxTurnoverPerTrade"
-        Me.lblMaxTurnoverPerTrade.Size = New System.Drawing.Size(163, 17)
-        Me.lblMaxTurnoverPerTrade.TabIndex = 57
-        Me.lblMaxTurnoverPerTrade.Text = "Max Turnover Per Trade"
         '
         'frmMCXSettings
         '
