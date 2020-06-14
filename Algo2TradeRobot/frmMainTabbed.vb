@@ -326,6 +326,13 @@ Public Class frmMainTabbed
             End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(NFOStrategy))
 
+            If _commonControllerUserInput IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays.Count > 0 AndAlso
+                Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
+                Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
+            End If
+
             OnHeartbeat("Validating HK Martingale(ATR) user settings")
             If File.Exists(NFOUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(NFOUserInputs.SettingsFileName, FileMode.Open)
@@ -475,6 +482,7 @@ Public Class frmMainTabbed
             End If
         Catch fex As ForceExitException
             logger.Error(fex)
+            OnHeartbeat(fex.Message)
             _lastException = fex
         Catch cx As OperationCanceledException
             logger.Error(cx)
@@ -608,6 +616,13 @@ Public Class frmMainTabbed
                 Await Task.Delay(1000).ConfigureAwait(False)
             End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(MCXStrategy))
+
+            If _commonControllerUserInput IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays.Count > 0 AndAlso
+                Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
+                Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
+            End If
 
             OnHeartbeat("Validating HK Martingale(CR) user settings")
             If File.Exists(MCXUserInputs.SettingsFileName) Then
@@ -758,6 +773,7 @@ Public Class frmMainTabbed
             End If
         Catch fex As ForceExitException
             logger.Error(fex)
+            OnHeartbeat(fex.Message)
             _lastException = fex
         Catch cx As OperationCanceledException
             logger.Error(cx)
