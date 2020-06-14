@@ -32,8 +32,8 @@ Public Class frmAdvancedOptions
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
-            dtpckrDeadStateStartTime.Value = _UserInputs.DeadStateStartTime
-            dtpckrDeadStateEndTime.Value = _UserInputs.DeadStateEndTime
+            dtpckrDeadStateStartTime.Value = _UserInputs.IdleStateStartTime
+            dtpckrDeadStateEndTime.Value = _UserInputs.IdleStateEndTime
             If _UserInputs.TradingDays IsNot Nothing AndAlso _UserInputs.TradingDays.Count > 0 Then
                 For Each runningTradingday In _UserInputs.TradingDays
                     Dim index As Integer = 0
@@ -70,8 +70,8 @@ Public Class frmAdvancedOptions
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
-        _UserInputs.DeadStateStartTime = dtpckrDeadStateStartTime.Value
-        _UserInputs.DeadStateEndTime = dtpckrDeadStateEndTime.Value
+        _UserInputs.IdleStateStartTime = dtpckrDeadStateStartTime.Value
+        _UserInputs.IdleStateEndTime = dtpckrDeadStateEndTime.Value
         _UserInputs.TradingDays = New List(Of DayOfWeek)
         For Each runningTradingday In chkbLstTradingDays.CheckedItems
             Dim day As DayOfWeek = DayOfWeek.Sunday

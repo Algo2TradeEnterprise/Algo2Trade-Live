@@ -326,7 +326,7 @@ Public Class frmMainTabbed
             End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(NFOStrategy))
 
-            OnHeartbeat("Validating user settings")
+            OnHeartbeat("Validating HK Martingale(ATR) user settings")
             If File.Exists(NFOUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(NFOUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -518,23 +518,37 @@ Public Class frmMainTabbed
         Await Task.Run(AddressOf NFOWorkerAsync).ConfigureAwait(False)
 
         If _lastException IsNot Nothing Then
+            SetObjectEnableDisable_ThreadSafe(btnNFOStart, False)
             If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
                 Debug.WriteLine("Restart for permission")
                 logger.Debug("Restarting the application again as there is premission issue")
                 btnNFOStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                If CType(_lastException, ForceExitException).RestartWithDelay Then
-                    Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
-                    logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
+                If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
+                    Debug.WriteLine("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
+                    logger.Debug("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
                     While True
-                        If Now > _commonControllerUserInput.DeadStateEndTime Then
+                        If Now > _commonControllerUserInput.IdleStateEndTime Then
                             Exit While
                         End If
-                        Await Task.Delay(5000).ConfigureAwait(False)
+                        Await Task.Delay(30000).ConfigureAwait(False)
                     End While
-                    Debug.WriteLine("Restart for dead state end")
-                    logger.Debug("Restarting the application again for dead state end")
+                    Debug.WriteLine("Restart for idle state end")
+                    logger.Debug("Restarting the application again for idle state end")
+                    btnNFOStart_Click(sender, e)
+                ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
+                    Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    Dim nonTradingDay As Date = Now.Date
+                    While True
+                        If Now.Date > nonTradingDay.Date Then
+                            Exit While
+                        End If
+                        Await Task.Delay(120000).ConfigureAwait(False)
+                    End While
+                    Debug.WriteLine("Restart for non trading day end")
+                    logger.Debug("Restarting the application again for non trading day end")
                     btnNFOStart_Click(sender, e)
                 Else
                     Debug.WriteLine("Restart for daily refresh")
@@ -595,7 +609,7 @@ Public Class frmMainTabbed
             End While
             EnableDisableUIEx(UIMode.BlockOther, GetType(MCXStrategy))
 
-            OnHeartbeat("Validating user settings")
+            OnHeartbeat("Validating HK Martingale(CR) user settings")
             If File.Exists(MCXUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(MCXUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -787,23 +801,40 @@ Public Class frmMainTabbed
         Await Task.Run(AddressOf MCXWorkerAsync).ConfigureAwait(False)
 
         If _lastException IsNot Nothing Then
+            SetObjectEnableDisable_ThreadSafe(btnMCXStart, False)
             If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Await Task.Delay(5000).ConfigureAwait(False)
                 Debug.WriteLine("Restart for permission")
                 logger.Debug("Restarting the application again as there is premission issue")
                 btnMCXStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                If CType(_lastException, ForceExitException).RestartWithDelay Then
+                If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
                     Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
                     logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
                     While True
-                        If Now > _commonControllerUserInput.DeadStateEndTime Then
+                        If Now > _commonControllerUserInput.IdleStateEndTime Then
                             Exit While
                         End If
-                        Await Task.Delay(5000).ConfigureAwait(False)
+                        Await Task.Delay(30000).ConfigureAwait(False)
                     End While
+                    Await Task.Delay(5000).ConfigureAwait(False)
                     Debug.WriteLine("Restart for dead state end")
                     logger.Debug("Restarting the application again for dead state end")
+                    btnMCXStart_Click(sender, e)
+                ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
+                    Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    Dim nonTradingDay As Date = Now.Date
+                    While True
+                        If Now.Date > nonTradingDay.Date Then
+                            Exit While
+                        End If
+                        Await Task.Delay(120000).ConfigureAwait(False)
+                    End While
+                    Await Task.Delay(5000).ConfigureAwait(False)
+                    Debug.WriteLine("Restart for non trading day end")
+                    logger.Debug("Restarting the application again for non trading day end")
                     btnMCXStart_Click(sender, e)
                 Else
                     Debug.WriteLine("Restart for daily refresh")
