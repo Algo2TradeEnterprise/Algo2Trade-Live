@@ -536,25 +536,16 @@ Public Class frmMainTabbed
                 If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
                     Debug.WriteLine("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
                     logger.Debug("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
-                    While True
-                        If Now > _commonControllerUserInput.IdleStateEndTime Then
-                            Exit While
-                        End If
-                        Await Task.Delay(30000).ConfigureAwait(False)
-                    End While
+                    Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for idle state end")
                     logger.Debug("Restarting the application again for idle state end")
                     btnNFOStart_Click(sender, e)
                 ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
                     Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
                     logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
-                    Dim nonTradingDay As Date = Now.Date
-                    While True
-                        If Now.Date > nonTradingDay.Date Then
-                            Exit While
-                        End If
-                        Await Task.Delay(120000).ConfigureAwait(False)
-                    End While
+                    Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for non trading day end")
                     logger.Debug("Restarting the application again for non trading day end")
                     btnNFOStart_Click(sender, e)
@@ -828,27 +819,16 @@ Public Class frmMainTabbed
                 If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
                     Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
                     logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
-                    While True
-                        If Now > _commonControllerUserInput.IdleStateEndTime Then
-                            Exit While
-                        End If
-                        Await Task.Delay(30000).ConfigureAwait(False)
-                    End While
-                    Await Task.Delay(5000).ConfigureAwait(False)
+                    Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime) + 5000).ConfigureAwait(False)
                     Debug.WriteLine("Restart for dead state end")
                     logger.Debug("Restarting the application again for dead state end")
                     btnMCXStart_Click(sender, e)
                 ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
                     Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
                     logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
-                    Dim nonTradingDay As Date = Now.Date
-                    While True
-                        If Now.Date > nonTradingDay.Date Then
-                            Exit While
-                        End If
-                        Await Task.Delay(120000).ConfigureAwait(False)
-                    End While
-                    Await Task.Delay(5000).ConfigureAwait(False)
+                    Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime) + 5000).ConfigureAwait(False)
                     Debug.WriteLine("Restart for non trading day end")
                     logger.Debug("Restarting the application again for non trading day end")
                     btnMCXStart_Click(sender, e)
