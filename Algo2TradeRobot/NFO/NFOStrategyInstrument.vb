@@ -16,7 +16,10 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _firstTimeCheck As Boolean = False
+    'Private _firstTimeCheck As Boolean = False
+    'Private _lastCancelSignal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
+    'Private _lastCancelOrder As BusinessOrder = Nothing
+
     Private _slPoint As Decimal = Decimal.MinValue
     Private _targetPoint As Decimal = Decimal.MinValue
     Private _lastPrevPayloadPlaceOrder As String = ""
@@ -58,7 +61,7 @@ Public Class NFOStrategyInstrument
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
         End If
-        _firstTimeCheck = True
+        '_firstTimeCheck = True
         Multiplier = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).Multiplier
         PreviousDayHighestATR = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).PreviousDayHighestATR
     End Sub
@@ -252,6 +255,9 @@ Public Class NFOStrategyInstrument
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+
+                    '_lastCancelSignal = Nothing
+                    '_lastCancelOrder = Nothing
                 End If
             Catch ex As Exception
                 logger.Error(ex)
@@ -464,6 +470,11 @@ Public Class NFOStrategyInstrument
                                 End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
                                 ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningOrder, "Invalid signal"))
+
+                                If forcePrint Then
+                                    '_lastCancelSignal = signal
+                                    '_lastCancelOrder = bussinessOrder
+                                End If
                             End If
                         End If
                     Next
@@ -507,42 +518,42 @@ Public Class NFOStrategyInstrument
     Private Function GetSignalCandle(ByVal hkCandle As OHLCPayload, ByVal forcePrint As Boolean) As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)
         Dim ret As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
         If hkCandle IsNot Nothing Then
-            If Not _firstTimeCheck Then
-                If Math.Round(hkCandle.HighPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                    Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    If buyLevel = hkCandle.HighPrice.Value Then
-                        Dim buffer As Decimal = CalculateBuffer(buyLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                        buyLevel = buyLevel + buffer
-                    End If
-                    ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
-                ElseIf Math.Round(hkCandle.LowPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
-                    Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                    If sellLevel = hkCandle.LowPrice.Value Then
-                        Dim buffer As Decimal = CalculateBuffer(sellLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                        sellLevel = sellLevel - buffer
-                    End If
-                    ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
-                End If
-            Else
-                Dim lastBuySignal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetLastHistoricalSignal(hkCandle, IOrder.TypeOfTransaction.Buy)
-                Dim lastSellSignal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetLastHistoricalSignal(hkCandle, IOrder.TypeOfTransaction.Sell)
-                If lastBuySignal IsNot Nothing AndAlso lastSellSignal IsNot Nothing Then
-                    If lastBuySignal.Item3.SnapshotDateTime > lastSellSignal.Item3.SnapshotDateTime Then
-                        ret = lastBuySignal
-                    Else
-                        ret = lastSellSignal
-                    End If
-                ElseIf lastBuySignal IsNot Nothing Then
+            'If Not _firstTimeCheck Then
+            '    If Math.Round(hkCandle.HighPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
+            '        Dim buyLevel As Decimal = ConvertFloorCeling(hkCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+            '        If buyLevel = hkCandle.HighPrice.Value Then
+            '            Dim buffer As Decimal = CalculateBuffer(buyLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            '            buyLevel = buyLevel + buffer
+            '        End If
+            '        ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, buyLevel, hkCandle, IOrder.TypeOfTransaction.Buy)
+            '    ElseIf Math.Round(hkCandle.LowPrice.Value, 4) = Math.Round(hkCandle.OpenPrice.Value, 4) Then
+            '        Dim sellLevel As Decimal = ConvertFloorCeling(hkCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            '        If sellLevel = hkCandle.LowPrice.Value Then
+            '            Dim buffer As Decimal = CalculateBuffer(sellLevel, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+            '            sellLevel = sellLevel - buffer
+            '        End If
+            '        ret = New Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, sellLevel, hkCandle, IOrder.TypeOfTransaction.Sell)
+            '    End If
+            'Else
+            Dim lastBuySignal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetLastHistoricalSignal(hkCandle, IOrder.TypeOfTransaction.Buy)
+            Dim lastSellSignal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetLastHistoricalSignal(hkCandle, IOrder.TypeOfTransaction.Sell)
+            If lastBuySignal IsNot Nothing AndAlso lastSellSignal IsNot Nothing Then
+                If lastBuySignal.Item3.SnapshotDateTime > lastSellSignal.Item3.SnapshotDateTime Then
                     ret = lastBuySignal
-                ElseIf lastSellSignal IsNot Nothing Then
-                    ret = lastSellSignal
                 Else
-                    _firstTimeCheck = False
+                    ret = lastSellSignal
                 End If
+            ElseIf lastBuySignal IsNot Nothing Then
+                ret = lastBuySignal
+            ElseIf lastSellSignal IsNot Nothing Then
+                ret = lastSellSignal
+                'Else
+                '_firstTimeCheck = False
             End If
+            'End If
         End If
         If ret IsNot Nothing AndAlso forcePrint Then
-            _firstTimeCheck = False
+            '_firstTimeCheck = False
             Try
                 logger.Debug("{0}, Direction:{1}, Level:{2}, Trading Symbol:{3}", ret.Item3.ToString, ret.Item4.ToString, ret.Item2, Me.TradableInstrument.TradingSymbol)
             Catch ex As Exception
