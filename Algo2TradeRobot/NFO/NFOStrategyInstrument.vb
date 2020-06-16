@@ -121,7 +121,7 @@ Public Class NFOStrategyInstrument
             For Each runningStrategyInstrument In nfoInstrument.OrderByDescending(Function(x)
                                                                                       Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                                   End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True) >= 2 Then
+                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True) > 2 Then
                     OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
                                               runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                               CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
@@ -152,7 +152,7 @@ Public Class NFOStrategyInstrument
             For Each runningStrategyInstrument In nfoInstrument.OrderBy(Function(x)
                                                                             Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                         End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True) >= 2 Then
+                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True) > 2 Then
                     OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
                                               runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                               CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
@@ -265,7 +265,7 @@ Public Class NFOStrategyInstrument
 
             Dim quantity As Integer = 0
             If userSettings.CalculateQuantityFromCapital Then
-                quantity = CalculateQuantityFromInvestment(currentTick.LastPrice, userSettings.Margin, userSettings.Capital, False)
+                quantity = CalculateQuantityFromInvestment(currentTick.LastPrice, userSettings.MarginMultiplier, userSettings.Capital, False)
             Else
                 quantity = userSettings.Quantity
             End If

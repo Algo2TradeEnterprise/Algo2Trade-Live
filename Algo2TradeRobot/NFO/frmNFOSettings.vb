@@ -43,7 +43,7 @@ Public Class frmNFOSettings
             txtStoplossTrailingPercentage.Text = _settings.StoplossTrailingPercentage
             chbCalculateQuantityFromCapital.Checked = _settings.CalculateQuantityFromCapital
             txtCapital.Text = _settings.Capital
-            txtMargin.Text = _settings.Margin
+            txtMargin.Text = _settings.MarginMultiplier
             txtQuantity.Text = _settings.Quantity
         End If
     End Sub
@@ -55,7 +55,7 @@ Public Class frmNFOSettings
         _settings.StoplossTrailingPercentage = txtStoplossTrailingPercentage.Text
         _settings.CalculateQuantityFromCapital = chbCalculateQuantityFromCapital.Checked
         _settings.Capital = txtCapital.Text
-        _settings.Margin = txtMargin.Text
+        _settings.MarginMultiplier = txtMargin.Text
         _settings.Quantity = txtQuantity.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)

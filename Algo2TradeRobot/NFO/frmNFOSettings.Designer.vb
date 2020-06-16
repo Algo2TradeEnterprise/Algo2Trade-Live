@@ -196,9 +196,9 @@ Partial Class frmNFOSettings
         Me.lblMargin.Location = New System.Drawing.Point(9, 82)
         Me.lblMargin.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMargin.Name = "lblMargin"
-        Me.lblMargin.Size = New System.Drawing.Size(51, 17)
+        Me.lblMargin.Size = New System.Drawing.Size(111, 17)
         Me.lblMargin.TabIndex = 59
-        Me.lblMargin.Text = "Margin"
+        Me.lblMargin.Text = "Margin Multiplier"
         '
         'txtCapital
         '
@@ -252,7 +252,7 @@ Partial Class frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(608, 273)
+        Me.ClientSize = New System.Drawing.Size(608, 275)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)

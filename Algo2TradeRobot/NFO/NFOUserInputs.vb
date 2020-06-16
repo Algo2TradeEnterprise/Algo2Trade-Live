@@ -13,7 +13,7 @@ Public Class NFOUserInputs
     Public Property StoplossTrailingPercentage As Decimal
     Public Property CalculateQuantityFromCapital As Boolean
     Public Property Capital As Decimal
-    Public Property Margin As Decimal
+    Public Property MarginMultiplier As Decimal
     Public Property Quantity As Long
 
     Private _FirstEntryTime As Date
