@@ -166,7 +166,7 @@ Partial Class frmMainTabbed
         Me.tabNFO.Padding = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Size = New System.Drawing.Size(1363, 693)
         Me.tabNFO.TabIndex = 0
-        Me.tabNFO.Text = "HK Martingale(ATR)"
+        Me.tabNFO.Text = "Algo2Trade"
         Me.tabNFO.UseVisualStyleBackColor = True
         '
         'pnlMomentumReversalMainPanelHorizontalSplitter

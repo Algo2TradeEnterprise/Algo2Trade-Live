@@ -19,13 +19,13 @@ Public Class frmNFOSettings
             btnSave.Enabled = False
         End If
         LoadSettings()
-        chkbAutoSelectStock_CheckedChanged(sender, e)
+        chbCalculateQuantityFromCapital_CheckedChanged(sender, e)
     End Sub
+
     Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
         Try
             _cts = New CancellationTokenSource
             If _settings Is Nothing Then _settings = New NFOUserInputs
-            _settings.InstrumentsData = Nothing
             ValidateInputs()
             SaveSettings()
             Me.Close()
@@ -33,49 +33,34 @@ Public Class frmNFOSettings
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         End Try
     End Sub
+
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtSignalTimeFrame.Text = _settings.SignalTimeFrame
-            dtpckrTradeStartTime.Value = _settings.TradeStartTime
-            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
+            dtpckrFirstEntryTime.Value = _settings.FirstEntryTime
+            dtpckrSecondEntryTime.Value = _settings.SecondEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtMaxTargetToStoplossMultiplier.Text = _settings.MaxTargetToStoplossMultiplier
-            txtMaxProfitPerTrade.Text = _settings.MaxProfitPerTrade
-            txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
-            txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
-            txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
-            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            chkbAutoSelectStock.Checked = _settings.AutoSelectStock
-            txtMinPrice.Text = _settings.MinStockPrice
-            txtMaxPrice.Text = _settings.MaxStockPrice
-            txtATRPercentage.Text = _settings.MinATRPercentage
-            txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
-            txtNumberOfStock.Text = _settings.NumberOfStock
+            txtStoplossTrailingPercentage.Text = _settings.StoplossTrailingPercentage
+            chbCalculateQuantityFromCapital.Checked = _settings.CalculateQuantityFromCapital
+            txtCapital.Text = _settings.Capital
+            txtMargin.Text = _settings.Margin
+            txtQuantity.Text = _settings.Quantity
         End If
     End Sub
-    Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeFrame.Text
-        _settings.TradeStartTime = dtpckrTradeStartTime.Value
-        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
-        _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.MaxTargetToStoplossMultiplier = txtMaxTargetToStoplossMultiplier.Text
-        _settings.MaxProfitPerTrade = Math.Abs(CDec(txtMaxProfitPerTrade.Text))
-        _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
-        _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
-        _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))
-        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
-        _settings.AutoSelectStock = chkbAutoSelectStock.Checked
-        _settings.MinStockPrice = txtMinPrice.Text
-        _settings.MaxStockPrice = txtMaxPrice.Text
-        _settings.MinATRPercentage = txtATRPercentage.Text
-        _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
-        _settings.NumberOfStock = txtNumberOfStock.Text
+    Private Sub SaveSettings()
+        _settings.FirstEntryTime = dtpckrFirstEntryTime.Value
+        _settings.SecondEntryTime = dtpckrSecondEntryTime.Value
+        _settings.EODExitTime = dtpckrEODExitTime.Value
+        _settings.StoplossTrailingPercentage = txtStoplossTrailingPercentage.Text
+        _settings.CalculateQuantityFromCapital = chbCalculateQuantityFromCapital.Checked
+        _settings.Capital = txtCapital.Text
+        _settings.Margin = txtMargin.Text
+        _settings.Quantity = txtQuantity.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
+
     Private Function ValidateNumbers(ByVal startNumber As Decimal, ByVal endNumber As Decimal, ByVal inputTB As TextBox, Optional ByVal validateInteger As Boolean = False) As Boolean
         Dim ret As Boolean = False
         If IsNumeric(inputTB.Text) Then
@@ -91,34 +76,29 @@ Public Class frmNFOSettings
         If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
         Return ret
     End Function
-    Private Sub ValidateFile()
-        _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
-    End Sub
+
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-
-        ValidateFile()
+        ValidateNumbers(0.00000001, 100, txtStoplossTrailingPercentage)
+        ValidateNumbers(1, Decimal.MaxValue, txtCapital)
+        ValidateNumbers(1, Decimal.MaxValue, txtMargin)
+        ValidateNumbers(1, Integer.MaxValue, txtQuantity, True)
     End Sub
 
-    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
-        opnFileSettings.Filter = "|*.csv"
-        opnFileSettings.ShowDialog()
-    End Sub
-
-    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
-        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
-        If extension = ".csv" Then
-            txtInstrumentDetalis.Text = opnFileSettings.FileName
+    Private Sub chbCalculateQuantityFromCapital_CheckedChanged(sender As Object, e As EventArgs) Handles chbCalculateQuantityFromCapital.CheckedChanged
+        If chbCalculateQuantityFromCapital.Checked Then
+            lblCapital.Visible = True
+            txtCapital.Visible = True
+            lblMargin.Visible = True
+            txtMargin.Visible = True
+            lblQuantity.Visible = False
+            txtQuantity.Visible = False
         Else
-            MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
-        End If
-    End Sub
-
-    Private Sub chkbAutoSelectStock_CheckedChanged(sender As Object, e As EventArgs) Handles chkbAutoSelectStock.CheckedChanged
-        If chkbAutoSelectStock.Checked Then
-            grpStockSelection.Enabled = True
-        Else
-            grpStockSelection.Enabled = False
+            lblCapital.Visible = False
+            txtCapital.Visible = False
+            lblMargin.Visible = False
+            txtMargin.Visible = False
+            lblQuantity.Visible = True
+            txtQuantity.Visible = True
         End If
     End Sub
 End Class

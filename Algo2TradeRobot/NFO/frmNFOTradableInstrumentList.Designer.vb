@@ -70,14 +70,14 @@ Partial Class frmNFOTradableInstrumentList
         Me.dgvTradableInstruments.RowsDefaultCellStyle = DataGridViewCellStyle4
         Me.dgvTradableInstruments.RowTemplate.Height = 24
         Me.dgvTradableInstruments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect
-        Me.dgvTradableInstruments.Size = New System.Drawing.Size(1184, 312)
+        Me.dgvTradableInstruments.Size = New System.Drawing.Size(769, 312)
         Me.dgvTradableInstruments.TabIndex = 0
         '
         'frmNFOTradableInstrumentList
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1184, 312)
+        Me.ClientSize = New System.Drawing.Size(769, 312)
         Me.Controls.Add(Me.dgvTradableInstruments)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False

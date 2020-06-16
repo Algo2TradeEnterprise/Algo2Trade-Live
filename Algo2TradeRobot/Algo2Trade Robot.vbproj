@@ -15,7 +15,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <IsWebBootstrapper>true</IsWebBootstrapper>
-    <PublishUrl>ftp://ftp.algo2trade.com/HKMartingale/</PublishUrl>
+    <PublishUrl>ftp://ftp.algo2trade.com/Vijay/</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Web</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
@@ -25,13 +25,13 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>true</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <InstallUrl>http://algo2trade.com/Updates/HKMartingale/</InstallUrl>
+    <InstallUrl>http://algo2trade.com/Updates/Vijay/</InstallUrl>
     <ProductName>HeikinAshi Martingale</ProductName>
     <PublisherName>Algo2Trade</PublisherName>
     <MinimumRequiredVersion>1.0.0.0</MinimumRequiredVersion>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>setup.htm</WebPage>
-    <ApplicationRevision>14</ApplicationRevision>
+    <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -222,7 +222,6 @@
     <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\NFOFillInstrumentDetails.vb" />
     <Compile Include="NFO\NFOStrategy.vb" />
     <Compile Include="NFO\NFOStrategyInstrument.vb" />
     <Compile Include="NFO\NFOUserInputs.vb" />
