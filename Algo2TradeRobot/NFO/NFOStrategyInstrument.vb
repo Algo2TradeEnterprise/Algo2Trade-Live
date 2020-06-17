@@ -16,6 +16,8 @@ Public Class NFOStrategyInstrument
 
     Public ReadOnly Property TakeTrade As Boolean = False
 
+    Private ReadOnly _askBidMul As Decimal = 2
+
     Private _gainLossPer As Decimal = Decimal.MinValue
     Private _askToBidRatio As Decimal = Decimal.MinValue
     Private _bidToAskRatio As Decimal = Decimal.MinValue
@@ -47,6 +49,7 @@ Public Class NFOStrategyInstrument
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
             Dim firstEntryDone As Boolean = False
             Dim direction As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
+            Await Task.Delay((Me.ParentStrategy.ParentController.UserInputs.GetInformationDelay + 2) * 1000, _cts.Token).ConfigureAwait(False)
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
@@ -59,6 +62,22 @@ Public Class NFOStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Me.TradableInstrument.LastTick IsNot Nothing Then
+                    'If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now >= userInputs.SecondEntryTime Then
+                    '    For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+                    '        If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                    '            runningStrategyInstrument.MonitorAsync()
+                    '        End If
+                    '    Next
+                    '    Exit While
+                    'ElseIf Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now <= userInputs.SecondEntryTime Then
+                    '    For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+                    '        If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                    '            direction = runningStrategyInstrument.OrderDetails.FirstOrDefault.Value.ParentOrder.TransactionType
+                    '            runningStrategyInstrument.MonitorAsync()
+                    '        End If
+                    '    Next
+                    '    firstEntryDone = True
+                    'End If
                     If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime Then
                         Dim currentTick As ITick = Me.TradableInstrument.LastTick
                         If currentTick.LastPrice > currentTick.Open Then
@@ -121,20 +140,22 @@ Public Class NFOStrategyInstrument
             For Each runningStrategyInstrument In nfoInstrument.OrderByDescending(Function(x)
                                                                                       Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                                   End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True) > 2 Then
-                    OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
-                                              runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
-                    If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                    ret.Add(runningStrategyInstrument)
+                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) >= 0 Then
+                    If CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True) > _askBidMul Then
+                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
+                        If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
+                        ret.Add(runningStrategyInstrument)
 
-                    If ret.Count >= numberOfInstrument Then Exit For
-                Else
-                    OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
-                                              runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
+                        If ret.Count >= numberOfInstrument Then Exit For
+                    Else
+                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
+                    End If
                 End If
             Next
         End If
@@ -152,20 +173,22 @@ Public Class NFOStrategyInstrument
             For Each runningStrategyInstrument In nfoInstrument.OrderBy(Function(x)
                                                                             Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                         End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True) > 2 Then
-                    OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
-                                              runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
-                    If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                    ret.Add(runningStrategyInstrument)
+                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) < 0 Then
+                    If CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True) > _askBidMul Then
+                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
+                        If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
+                        ret.Add(runningStrategyInstrument)
 
-                    If ret.Count >= numberOfInstrument Then Exit For
-                Else
-                    OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
-                                              runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                              CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
+                        If ret.Count >= numberOfInstrument Then Exit For
+                    Else
+                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
+                    End If
                 End If
             Next
         End If
@@ -380,21 +403,35 @@ Public Class NFOStrategyInstrument
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
                             Dim triggerPrice As Decimal = Decimal.MinValue
+                            Dim reason As String = Nothing
+                            Dim entryPrice As Decimal = parentBussinessOrder.ParentOrder.AveragePrice
                             If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                Dim gainLoss As Decimal = ((currentTick.LastPrice - parentBussinessOrder.ParentOrder.AveragePrice) / parentBussinessOrder.ParentOrder.AveragePrice) * 100
+                                Dim gainLoss As Decimal = ((currentTick.LastPrice - entryPrice) / entryPrice) * 100
                                 Dim multiplier As Decimal = Math.Floor(gainLoss / userSettings.StoplossTrailingPercentage)
-                                If multiplier > 0 Then
-                                    Dim buffer As Decimal = CalculateBuffer(currentTick.Open, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    Dim originalStoploss As Decimal = currentTick.Open - buffer
-                                    triggerPrice = originalStoploss + ConvertFloorCeling(originalStoploss * userSettings.StoplossTrailingPercentage * multiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                If multiplier > 1 Then
+                                    Dim stoploss As Decimal = ConvertFloorCeling(entryPrice + entryPrice * 0.1 / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    triggerPrice = stoploss + ConvertFloorCeling(stoploss * userSettings.StoplossTrailingPercentage / 100 * (multiplier - 1), Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    reason = String.Format("Gain:{0}%, So move to {1}%", Math.Round(gainLoss, 2), userSettings.StoplossTrailingPercentage * (multiplier - 1))
+                                ElseIf multiplier > 0 Then
+                                    triggerPrice = ConvertFloorCeling(entryPrice + entryPrice * 0.1 / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    reason = String.Format("Gain:{0}%, So cost to cost movement", Math.Round(gainLoss, 2))
+                                End If
+                                If triggerPrice <> Decimal.MinValue AndAlso triggerPrice <= runningSLOrder.TriggerPrice Then
+                                    triggerPrice = Decimal.MinValue
                                 End If
                             ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                                Dim gainLoss As Decimal = ((parentBussinessOrder.ParentOrder.AveragePrice - currentTick.LastPrice) / parentBussinessOrder.ParentOrder.AveragePrice) * 100
+                                Dim gainLoss As Decimal = ((entryPrice - currentTick.LastPrice) / entryPrice) * 100
                                 Dim multiplier As Decimal = Math.Floor(gainLoss / userSettings.StoplossTrailingPercentage)
-                                If multiplier > 0 Then
-                                    Dim buffer As Decimal = CalculateBuffer(currentTick.Open, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    Dim originalStoploss As Decimal = currentTick.Open + buffer
-                                    triggerPrice = originalStoploss - ConvertFloorCeling(originalStoploss * userSettings.StoplossTrailingPercentage * multiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                If multiplier > 1 Then
+                                    Dim stoploss As Decimal = ConvertFloorCeling(entryPrice - entryPrice * 0.1 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    triggerPrice = stoploss - ConvertFloorCeling(stoploss * userSettings.StoplossTrailingPercentage / 100 * (multiplier - 1), Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    reason = String.Format("Gain:{0}%, So move to {1}%", Math.Round(gainLoss, 2), userSettings.StoplossTrailingPercentage * (multiplier - 1))
+                                ElseIf multiplier > 0 Then
+                                    triggerPrice = ConvertFloorCeling(entryPrice - entryPrice * 0.1 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    reason = String.Format("Gain:{0}%, So cost to cost movement", Math.Round(gainLoss, 2))
+                                End If
+                                If triggerPrice <> Decimal.MinValue AndAlso triggerPrice >= runningSLOrder.TriggerPrice Then
+                                    triggerPrice = Decimal.MinValue
                                 End If
                             End If
 
@@ -411,7 +448,7 @@ Public Class NFOStrategyInstrument
                                     End If
                                 End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, "Sllipage adjustment"))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, reason))
                             End If
                         End If
                     Next
