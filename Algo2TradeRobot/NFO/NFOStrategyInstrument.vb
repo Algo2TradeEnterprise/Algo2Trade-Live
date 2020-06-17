@@ -62,22 +62,22 @@ Public Class NFOStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Me.TradableInstrument.LastTick IsNot Nothing Then
-                    'If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now >= userInputs.SecondEntryTime Then
-                    '    For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
-                    '        If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
-                    '            runningStrategyInstrument.MonitorAsync()
-                    '        End If
-                    '    Next
-                    '    Exit While
-                    'ElseIf Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now <= userInputs.SecondEntryTime Then
-                    '    For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
-                    '        If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
-                    '            direction = runningStrategyInstrument.OrderDetails.FirstOrDefault.Value.ParentOrder.TransactionType
-                    '            runningStrategyInstrument.MonitorAsync()
-                    '        End If
-                    '    Next
-                    '    firstEntryDone = True
-                    'End If
+                    If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now >= userInputs.SecondEntryTime Then
+                        For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+                            If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                                runningStrategyInstrument.MonitorAsync()
+                            End If
+                        Next
+                        Exit While
+                    ElseIf Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now <= userInputs.SecondEntryTime Then
+                        For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+                            If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                                direction = runningStrategyInstrument.OrderDetails.FirstOrDefault.Value.ParentOrder.TransactionType
+                                runningStrategyInstrument.MonitorAsync()
+                            End If
+                        Next
+                        firstEntryDone = True
+                    End If
                     If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime Then
                         Dim currentTick As ITick = Me.TradableInstrument.LastTick
                         If currentTick.LastPrice > currentTick.Open Then
