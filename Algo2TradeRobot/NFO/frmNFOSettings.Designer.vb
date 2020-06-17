@@ -261,7 +261,7 @@ Partial Class frmNFOSettings
         Me.MinimizeBox = False
         Me.Name = "frmNFOSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "NFO Settings"
+        Me.Text = "Settings"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
         Me.grpQuantity.ResumeLayout(False)
