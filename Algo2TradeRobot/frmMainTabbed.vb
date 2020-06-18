@@ -1427,6 +1427,7 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
 
+        tabMain.TabPages.Remove(tabMCX)
         tabMain.TabPages.Remove(tabCDS)
     End Sub
     Private Sub OnTickerClose()
