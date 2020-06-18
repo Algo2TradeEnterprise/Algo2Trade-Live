@@ -65,6 +65,7 @@ Public Class NFOStrategyInstrument
                     If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now >= userInputs.SecondEntryTime Then
                         For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
                             If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                                logger.Debug("Both entry done for instrument: {0}", runningStrategyInstrument.TradableInstrument.TradingSymbol)
                                 runningStrategyInstrument.MonitorAsync()
                             End If
                         Next
@@ -73,10 +74,11 @@ Public Class NFOStrategyInstrument
                         For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
                             If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
                                 direction = runningStrategyInstrument.OrderDetails.FirstOrDefault.Value.ParentOrder.TransactionType
+                                firstEntryDone = True
+                                logger.Debug("First entry done for instrument: {0}", runningStrategyInstrument.TradableInstrument.TradingSymbol)
                                 runningStrategyInstrument.MonitorAsync()
                             End If
                         Next
-                        firstEntryDone = True
                     End If
                     If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime Then
                         Dim currentTick As ITick = Me.TradableInstrument.LastTick
@@ -98,6 +100,7 @@ Public Class NFOStrategyInstrument
                             Next
 
                             firstEntryDone = True
+                            logger.Debug("First Entry done. Now it will check for second entry.")
                         End If
                     End If
 
