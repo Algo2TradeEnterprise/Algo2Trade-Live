@@ -20,7 +20,9 @@ Public Class NFOStrategyInstrument
 
     Private _slPoint As Decimal = Decimal.MinValue
     Private _targetPoint As Decimal = Decimal.MinValue
+    Private _quantity As Integer = Integer.MinValue
     Private _lastPrevPayloadPlaceOrder As String = ""
+    Private _lastPrevPayloadCancelOrder As String = ""
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
     Public ReadOnly Multiplier As Decimal = 0
@@ -102,10 +104,13 @@ Public Class NFOStrategyInstrument
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
                     placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                    Dim placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
-                    If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
-                        placeOrderResponse("data").ContainsKey("order_id") Then
-                        _cancellationDone = False
+                    Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceBOSLMISOrder, Nothing).ConfigureAwait(False)
+                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                        Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                        If placeOrderResponse.ContainsKey("data") AndAlso
+                            placeOrderResponse("data").ContainsKey("order_id") Then
+                            _cancellationDone = False
+                        End If
                     End If
                 End If
                 'Place Order block end
@@ -124,10 +129,13 @@ Public Class NFOStrategyInstrument
                 'Exit Order block start
                 Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                 If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
-                    Dim exitOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
-                    If exitOrderResponse IsNot Nothing AndAlso exitOrderResponse.ContainsKey("data") AndAlso
-                        exitOrderResponse("data").ContainsKey("status") AndAlso exitOrderResponse("data")("status") = "Ok" Then
-                        _cancellationDone = True
+                    Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelBOOrder, Nothing).ConfigureAwait(False)
+                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                        Dim exitOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                        If exitOrderResponse.ContainsKey("data") AndAlso
+                            exitOrderResponse("data").ContainsKey("status") AndAlso exitOrderResponse("data")("status") = "Ok" Then
+                            _cancellationDone = True
+                        End If
                     End If
                 End If
                 'Exit Order block end
@@ -170,7 +178,7 @@ Public Class NFOStrategyInstrument
                                 If(highestATR <> Decimal.MinValue, Math.Round(highestATR, 4), "∞"),
                                 Me.ParentStrategy.GetTotalPLAfterBrokerage(),
                                 Me.GetOverallPLAfterBrokerage(),
-                                Me.GetTotalExecutedOrders(),
+                                GetLogicalTradeCount(),
                                 _cancellationDone,
                                 currentTime.ToString,
                                 currentTick.LastPrice,
@@ -178,14 +186,14 @@ Public Class NFOStrategyInstrument
                 End If
             End If
         Catch ex As Exception
-            logger.Error(ex)
+            logger.Warn(ex)
         End Try
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso currentTime <= userSettings.EODExitTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Me.TradableInstrument.IsHistoricalCompleted AndAlso GetTotalExecutedOrders() < userSettings.NumberOfTradePerStock AndAlso Not IsAnyTradeTargetReached() AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso GetLogicalTradeCount() < userSettings.NumberOfTradePerStock AndAlso Not IsAnyTradeTargetReached() AndAlso
             (Not IsActiveInstrument() OrElse _cancellationDone) AndAlso Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLossPerDay AndAlso
             Me.ParentStrategy.GetTotalPLAfterBrokerage() < userSettings.OverallMaxProfitPerDay AndAlso Not Me.StrategyExitAllTriggerd AndAlso
             hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
@@ -200,25 +208,26 @@ Public Class NFOStrategyInstrument
                     signalCandle = signal.Item3
                     _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, signalCandle), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     If _slPoint <> Decimal.MinValue Then
-                        quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
+                        _quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
+                        quantity = _quantity
                         _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
                     End If
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
-                    If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandlePayload.PreviousPayload.SnapshotDateTime Then
+                    If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> signal.Item3.SnapshotDateTime Then
                         signalCandle = signal.Item3
-                        quantity = lastExecutedOrder.ParentOrder.Quantity * 2
-                        If _slPoint = Decimal.MinValue OrElse _targetPoint = Decimal.MinValue Then
+                        If _slPoint = Decimal.MinValue OrElse _targetPoint = Decimal.MinValue OrElse _quantity = Integer.MinValue Then
                             Dim firstExecutedOrder As IBusinessOrder = GetFirstExecutedOrder()
                             If firstExecutedOrder IsNot Nothing Then
                                 Dim firstTradeSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(firstExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
                                 If firstTradeSignalCandle IsNot Nothing Then
                                     _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, firstTradeSignalCandle), Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                    Dim firstTradeQuantity As Decimal = firstExecutedOrder.ParentOrder.Quantity
-                                    _targetPoint = CalculateTargetFromPL(firstExecutedOrder.ParentOrder.TriggerPrice, firstTradeQuantity, userSettings.MaxProfitPerTrade) - firstExecutedOrder.ParentOrder.TriggerPrice
+                                    _quantity = GetFirstLogicalTradeQuantity(firstTradeSignalCandle)
+                                    _targetPoint = CalculateTargetFromPL(firstExecutedOrder.ParentOrder.TriggerPrice, _quantity, userSettings.MaxProfitPerTrade) - firstExecutedOrder.ParentOrder.TriggerPrice
                                 End If
                             End If
                         End If
+                        quantity = Math.Pow(2, GetLogicalTradeCount()) * _quantity
                     End If
                 End If
                 If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
@@ -260,71 +269,109 @@ Public Class NFOStrategyInstrument
             Try
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
-                    logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                    logger.Debug("PlaceOrder Parameters-> {0}, Turnover:{1}, {2}", parameters.ToString, parameters.Quantity * parameters.TriggerPrice, Me.TradableInstrument.TradingSymbol)
                 End If
             Catch ex As Exception
-                logger.Error(ex)
+                logger.Warn(ex)
             End Try
 
-            Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
-            If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
-                'Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
-                '                                                                                              Return x.EntryActivity.RequestRemarks = parameters.ToString
-                '                                                                                          End Function)
-                Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
-                If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
-                    Dim lastPlacedActivity As ActivityDashboard = placedActivities.OrderBy(Function(x)
-                                                                                               Return x.EntryActivity.RequestTime
-                                                                                           End Function).LastOrDefault
-                    If lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
+            Dim parametersList As List(Of PlaceOrderParameters) = New List(Of PlaceOrderParameters)
+            Dim turnover As Decimal = parameters.Quantity * parameters.TriggerPrice
+            If turnover >= userSettings.MaxTurnoverOfATrade Then
+                Dim split As Integer = Math.Ceiling(turnover / userSettings.MaxTurnoverOfATrade)
+                Dim quantityOfEachSplit As Integer = Math.Ceiling(parameters.Quantity / split)
+                For iteration As Integer = 1 To split
+                    If iteration = split Then
+                        Dim parameter As PlaceOrderParameters = New PlaceOrderParameters(parameters.SignalCandle) With
+                                        {.EntryDirection = parameters.EntryDirection,
+                                         .TriggerPrice = parameters.TriggerPrice,
+                                         .Price = parameters.Price,
+                                         .StoplossValue = parameters.StoplossValue,
+                                         .SquareOffValue = parameters.SquareOffValue,
+                                         .OrderType = parameters.OrderType,
+                                         .Quantity = parameters.Quantity - (quantityOfEachSplit * (split - 1))}
+                        parametersList.Add(parameter)
+                    Else
+                        Dim parameter As PlaceOrderParameters = New PlaceOrderParameters(parameters.SignalCandle) With
+                                        {.EntryDirection = parameters.EntryDirection,
+                                         .TriggerPrice = parameters.TriggerPrice,
+                                         .Price = parameters.Price,
+                                         .StoplossValue = parameters.StoplossValue,
+                                         .SquareOffValue = parameters.SquareOffValue,
+                                         .OrderType = parameters.OrderType,
+                                         .Quantity = quantityOfEachSplit}
+                        parametersList.Add(parameter)
+                    End If
+                Next
+            Else
+                parametersList.Add(parameters)
+            End If
+
+            If parametersList IsNot Nothing AndAlso parametersList.Count > 0 Then
+                For Each runningParameter In parametersList
+                    Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
+                    If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
+                        Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
+                        If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
+                            Dim lastPlacedActivity As ActivityDashboard = placedActivities.OrderBy(Function(x)
+                                                                                                       Return x.EntryActivity.RequestTime
+                                                                                                   End Function).LastOrDefault
+                            If lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
                             lastPlacedActivity.EntryActivity.LastException IsNot Nothing AndAlso
                             lastPlacedActivity.EntryActivity.LastException.Message.ToUpper.Contains("TIME") Then
-                        Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
+                                Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
 
-                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, parameters.ToString))
-                    ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled Then
-                        If lastPlacedActivity.SignalDirection = parameters.EntryDirection Then
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
-                            Try
-                                logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
-                                             parameters.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
-                            Catch ex As Exception
-                                logger.Warn(ex.ToString)
-                            End Try
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, runningParameter, runningParameter.ToString))
+                            ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled Then
+                                If lastPlacedActivity.SignalDirection = runningParameter.EntryDirection Then
+                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, runningParameter, runningParameter.ToString))
+                                    Try
+                                        logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
+                                             runningParameter.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
+                                    Catch ex As Exception
+                                        logger.Warn(ex.ToString)
+                                    End Try
+                                Else
+                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
+                                End If
+                            ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
+                                If lastPlacedActivity.SignalDirection = runningParameter.EntryDirection Then
+                                    If lastPlacedActivity.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
+                                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
+                                    Else
+                                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, runningParameter, runningParameter.ToString))
+                                        Try
+                                            logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
+                                                 runningParameter.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
+                                        Catch ex As Exception
+                                            logger.Warn(ex.ToString)
+                                        End Try
+                                    End If
+                                Else
+                                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
+                                End If
+                            ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, runningParameter, runningParameter.ToString))
+                            Else
+                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
+                            End If
                         Else
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
                         End If
-                    ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
-                        If lastPlacedActivity.SignalDirection = parameters.EntryDirection Then
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
-                            Try
-                                logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
-                                             parameters.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
-                            Catch ex As Exception
-                                logger.Warn(ex.ToString)
-                            End Try
-                        Else
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
-                        End If
-                    ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
-                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
                     Else
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
                     End If
-                Else
-                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
-                End If
-            Else
-                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                Next
             End If
         End If
         Return ret
@@ -430,6 +477,19 @@ Public Class NFOStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
 
+        Dim log As Boolean = False
+        Try
+            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                Me.TradableInstrument.IsHistoricalCompleted Then
+                If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadCancelOrder Then
+                    _lastPrevPayloadCancelOrder = runningCandlePayload.PreviousPayload.ToString
+                    log = True
+                End If
+            End If
+        Catch ex As Exception
+            logger.Warn(ex)
+        End Try
+
         If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso
             hkConsumer.ConsumerPayloads IsNot Nothing AndAlso hkConsumer.ConsumerPayloads.Count > 0 AndAlso
@@ -446,23 +506,65 @@ Public Class NFOStrategyInstrument
                         If runningOrder.Status = IOrder.TypeOfStatus.TriggerPending Then
                             Dim bussinessOrder As IBusinessOrder = OrderDetails(runningOrder.OrderIdentifier)
                             Dim exitTrade As Boolean = False
+                            Dim reason As String = ""
                             Dim signal As Tuple(Of Boolean, Decimal, OHLCPayload, IOrder.TypeOfTransaction) = GetSignalCandle(hkCandle, forcePrint)
                             If signal IsNot Nothing AndAlso signal.Item1 Then
-                                If bussinessOrder.ParentOrder.TransactionType = signal.Item4 Then
-                                    If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
-                                            currentTick.LastPrice < signal.Item2 Then
-                                            exitTrade = True
-                                        End If
-                                    ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
-                                        If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
-                                            currentTick.LastPrice > signal.Item2 Then
-                                            exitTrade = True
-                                        End If
-                                    End If
-                                ElseIf bussinessOrder.ParentOrder.TransactionType <> signal.Item4 Then
-                                    exitTrade = True
+                                Dim validForCancellation As Boolean = False
+                                Dim distance As Decimal = 0
+                                If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
+                                    distance = ((signal.Item2 - currentTick.LastPrice) / currentTick.LastPrice) * 100
+                                ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
+                                    distance = ((currentTick.LastPrice - signal.Item2) / currentTick.LastPrice) * 100
                                 End If
+                                If distance >= userSettings.MinDistancePercentageForCancellation Then
+                                    validForCancellation = True
+                                End If
+                                Try
+                                    If log OrElse forcePrint Then
+                                        OnHeartbeat(String.Format("New signal entry price:{0}, direction:{1}, ltp:{2}, Gap:{3}%, Signal Candle:{4}. So will{5} cancel trade, {6}",
+                                                              signal.Item2,
+                                                              signal.Item4.ToString,
+                                                              currentTick.LastPrice,
+                                                              Math.Round(distance, 3),
+                                                              signal.Item3.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                              If(Not validForCancellation, " not", ""),
+                                                              Me.TradableInstrument.TradingSymbol))
+                                    Else
+                                        logger.Debug(String.Format("New signal entry price:{0}, direction:{1}, ltp:{2}, Gap:{3}%, Signal Candle:{4}. So will{5} cancel trade, {6}",
+                                                              signal.Item2,
+                                                              signal.Item4.ToString,
+                                                              currentTick.LastPrice,
+                                                              Math.Round(distance, 3),
+                                                              signal.Item3.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                              If(Not validForCancellation, " not", ""),
+                                                              Me.TradableInstrument.TradingSymbol))
+                                    End If
+                                Catch ex As Exception
+                                    logger.Warn(ex.ToString)
+                                End Try
+                                If validForCancellation Then
+                                    If bussinessOrder.ParentOrder.TransactionType = signal.Item4 Then
+                                        If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
+                                            If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
+                                                currentTick.LastPrice < signal.Item2 Then
+                                                exitTrade = True
+                                                reason = "New entry signal"
+                                            End If
+                                        ElseIf signal.Item4 = IOrder.TypeOfTransaction.Sell Then
+                                            If bussinessOrder.ParentOrder.TriggerPrice <> signal.Item2 AndAlso
+                                                currentTick.LastPrice > signal.Item2 Then
+                                                exitTrade = True
+                                                reason = "New entry signal"
+                                            End If
+                                        End If
+                                    ElseIf bussinessOrder.ParentOrder.TransactionType <> signal.Item4 Then
+                                        exitTrade = True
+                                        reason = "Opposite direction signal"
+                                    End If
+                                End If
+                                'Else
+                                '    exitTrade = True
+                                '    reason = "Invalid signal"
                             End If
                             If exitTrade Then
                                 'Below portion have to be done in every cancel order trigger
@@ -475,7 +577,7 @@ Public Class NFOStrategyInstrument
                                     End If
                                 End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningOrder, "Invalid signal"))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningOrder, reason))
                             End If
                         End If
                     Next
@@ -485,13 +587,10 @@ Public Class NFOStrategyInstrument
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             Try
                 For Each runningOrder In ret
-                    logger.Debug("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}",
-                                 runningOrder.Item2.OrderIdentifier,
-                                 runningOrder.Item3,
-                                 Me.TradableInstrument.TradingSymbol)
+                    OnHeartbeat(String.Format("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol))
                 Next
             Catch ex As Exception
-                logger.Error(ex)
+                logger.Warn(ex)
             End Try
         End If
         Return ret
@@ -668,6 +767,49 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
             End If
+        End If
+        Return ret
+    End Function
+
+    Private Function GetLogicalTradeCount() As Integer
+        Dim ret As Integer = 0
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            Dim signalCandleList As List(Of Date) = Nothing
+            For Each parentOrderId In OrderDetails.Keys
+                Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                    Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrderId, Me.ParentStrategy.UserSettings.SignalTimeFrame)
+                    If signalCandle IsNot Nothing Then
+                        If signalCandleList Is Nothing Then
+                            signalCandleList = New List(Of Date)
+                            signalCandleList.Add(signalCandle.SnapshotDateTime)
+                        Else
+                            If Not signalCandleList.Contains(signalCandle.SnapshotDateTime) Then
+                                signalCandleList.Add(signalCandle.SnapshotDateTime)
+                            End If
+                        End If
+                    End If
+                End If
+            Next
+            If signalCandleList IsNot Nothing Then
+                ret = signalCandleList.Count
+            End If
+        End If
+        Return ret
+    End Function
+
+    Private Function GetFirstLogicalTradeQuantity(ByVal firstTradeSignalCandle As OHLCPayload) As Integer
+        Dim ret As Integer = 0
+        If firstTradeSignalCandle IsNot Nothing AndAlso OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            For Each parentOrderId In OrderDetails.Keys
+                Dim parentBusinessOrder As IBusinessOrder = OrderDetails(parentOrderId)
+                If parentBusinessOrder.ParentOrder IsNot Nothing AndAlso parentBusinessOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                    Dim signalCandle As OHLCPayload = GetSignalCandleOfAnOrder(parentOrderId, Me.ParentStrategy.UserSettings.SignalTimeFrame)
+                    If signalCandle IsNot Nothing AndAlso signalCandle.SnapshotDateTime = firstTradeSignalCandle.SnapshotDateTime Then
+                        ret += parentBusinessOrder.ParentOrder.Quantity
+                    End If
+                End If
+            Next
         End If
         Return ret
     End Function

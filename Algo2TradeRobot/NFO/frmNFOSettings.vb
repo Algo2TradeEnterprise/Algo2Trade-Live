@@ -46,13 +46,15 @@ Public Class frmNFOSettings
             txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
             txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            txtNumberOfStock.Text = _settings.NumberOfStock
+            txtMaxTurnoverOfATrade.Text = _settings.MaxTurnoverOfATrade
+            txtMinDistancePercentageForCancellation.Text = _settings.MinDistancePercentageForCancellation
 
             chkbAutoSelectStock.Checked = _settings.AutoSelectStock
             txtMinPrice.Text = _settings.MinStockPrice
             txtMaxPrice.Text = _settings.MaxStockPrice
             txtATRPercentage.Text = _settings.MinATRPercentage
             txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
-            txtNumberOfStock.Text = _settings.NumberOfStock
         End If
     End Sub
     Private Sub SaveSettings()
@@ -66,13 +68,15 @@ Public Class frmNFOSettings
         _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
         _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.NumberOfStock = txtNumberOfStock.Text
+        _settings.MaxTurnoverOfATrade = txtMaxTurnoverOfATrade.Text
+        _settings.MinDistancePercentageForCancellation = txtMinDistancePercentageForCancellation.Text
 
         _settings.AutoSelectStock = chkbAutoSelectStock.Checked
         _settings.MinStockPrice = txtMinPrice.Text
         _settings.MaxStockPrice = txtMaxPrice.Text
         _settings.MinATRPercentage = txtATRPercentage.Text
         _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
-        _settings.NumberOfStock = txtNumberOfStock.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub

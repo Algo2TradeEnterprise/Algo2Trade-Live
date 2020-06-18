@@ -345,6 +345,7 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstNFOLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
         Me.lstNFOLog.FormattingEnabled = True
+        Me.lstNFOLog.HorizontalScrollbar = True
         Me.lstNFOLog.ItemHeight = 16
         Me.lstNFOLog.Location = New System.Drawing.Point(4, 439)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)

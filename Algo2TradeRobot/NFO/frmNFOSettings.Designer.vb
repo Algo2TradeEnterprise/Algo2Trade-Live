@@ -57,6 +57,10 @@ Partial Class frmNFOSettings
         Me.lblMaxProfitPerTrade = New System.Windows.Forms.Label()
         Me.txtMaxProfitPerTrade = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMinDistancePercentageForCancellation = New System.Windows.Forms.TextBox()
+        Me.lblMinDistancePercentageForCancellation = New System.Windows.Forms.Label()
+        Me.txtMaxTurnoverOfATrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxTurnoverOfATrade = New System.Windows.Forms.Label()
         Me.txtNumberOfStock = New System.Windows.Forms.TextBox()
         Me.lblNumberOfStock = New System.Windows.Forms.Label()
         Me.txtMaxTargetToStoplossMultiplier = New System.Windows.Forms.TextBox()
@@ -70,7 +74,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(736, 340)
+        Me.btnSave.Location = New System.Drawing.Point(797, 407)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -91,7 +95,7 @@ Partial Class frmNFOSettings
         'chkbAutoSelectStock
         '
         Me.chkbAutoSelectStock.AutoSize = True
-        Me.chkbAutoSelectStock.Location = New System.Drawing.Point(502, 18)
+        Me.chkbAutoSelectStock.Location = New System.Drawing.Point(551, 16)
         Me.chkbAutoSelectStock.Name = "chkbAutoSelectStock"
         Me.chkbAutoSelectStock.Size = New System.Drawing.Size(141, 21)
         Me.chkbAutoSelectStock.TabIndex = 12
@@ -108,7 +112,7 @@ Partial Class frmNFOSettings
         Me.grpStockSelection.Controls.Add(Me.lblMaxPrice)
         Me.grpStockSelection.Controls.Add(Me.txtMinPrice)
         Me.grpStockSelection.Controls.Add(Me.lblMinPrice)
-        Me.grpStockSelection.Location = New System.Drawing.Point(490, 46)
+        Me.grpStockSelection.Location = New System.Drawing.Point(551, 46)
         Me.grpStockSelection.Name = "grpStockSelection"
         Me.grpStockSelection.Size = New System.Drawing.Size(358, 167)
         Me.grpStockSelection.TabIndex = 46
@@ -203,7 +207,7 @@ Partial Class frmNFOSettings
         '
         'txtSignalTimeFrame
         '
-        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(227, 17)
+        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(285, 17)
         Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
         Me.txtSignalTimeFrame.Size = New System.Drawing.Size(242, 22)
@@ -222,7 +226,7 @@ Partial Class frmNFOSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 335)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(285, 335)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -232,7 +236,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(428, 334)
+        Me.btnBrowse.Location = New System.Drawing.Point(486, 334)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
@@ -273,7 +277,7 @@ Partial Class frmNFOSettings
         'dtpckrTradeStartTime
         '
         Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(227, 54)
+        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(285, 54)
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(242, 22)
@@ -283,7 +287,7 @@ Partial Class frmNFOSettings
         'dtpckrLastTradeEntryTime
         '
         Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(227, 91)
+        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(285, 91)
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
@@ -293,7 +297,7 @@ Partial Class frmNFOSettings
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(227, 126)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(285, 126)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(242, 22)
@@ -312,7 +316,7 @@ Partial Class frmNFOSettings
         '
         'txtNumberOfTradePerStock
         '
-        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(227, 229)
+        Me.txtNumberOfTradePerStock.Location = New System.Drawing.Point(285, 229)
         Me.txtNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfTradePerStock.Name = "txtNumberOfTradePerStock"
         Me.txtNumberOfTradePerStock.Size = New System.Drawing.Size(243, 22)
@@ -331,7 +335,7 @@ Partial Class frmNFOSettings
         '
         'txtOverallMaxLossPerDay
         '
-        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(227, 265)
+        Me.txtOverallMaxLossPerDay.Location = New System.Drawing.Point(285, 265)
         Me.txtOverallMaxLossPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxLossPerDay.Name = "txtOverallMaxLossPerDay"
         Me.txtOverallMaxLossPerDay.Size = New System.Drawing.Size(243, 22)
@@ -349,7 +353,7 @@ Partial Class frmNFOSettings
         '
         'txtOverallMaxProfitPerDay
         '
-        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(227, 300)
+        Me.txtOverallMaxProfitPerDay.Location = New System.Drawing.Point(285, 300)
         Me.txtOverallMaxProfitPerDay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtOverallMaxProfitPerDay.Name = "txtOverallMaxProfitPerDay"
         Me.txtOverallMaxProfitPerDay.Size = New System.Drawing.Size(243, 22)
@@ -367,7 +371,7 @@ Partial Class frmNFOSettings
         '
         'txtMaxProfitPerTrade
         '
-        Me.txtMaxProfitPerTrade.Location = New System.Drawing.Point(227, 195)
+        Me.txtMaxProfitPerTrade.Location = New System.Drawing.Point(285, 195)
         Me.txtMaxProfitPerTrade.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxProfitPerTrade.Name = "txtMaxProfitPerTrade"
         Me.txtMaxProfitPerTrade.Size = New System.Drawing.Size(243, 22)
@@ -375,6 +379,10 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMinDistancePercentageForCancellation)
+        Me.GroupBox1.Controls.Add(Me.lblMinDistancePercentageForCancellation)
+        Me.GroupBox1.Controls.Add(Me.txtMaxTurnoverOfATrade)
+        Me.GroupBox1.Controls.Add(Me.lblMaxTurnoverOfATrade)
         Me.GroupBox1.Controls.Add(Me.txtNumberOfStock)
         Me.GroupBox1.Controls.Add(Me.lblNumberOfStock)
         Me.GroupBox1.Controls.Add(Me.txtMaxTargetToStoplossMultiplier)
@@ -402,13 +410,51 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 397)
+        Me.GroupBox1.Size = New System.Drawing.Size(539, 467)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
+        'txtMinDistancePercentageForCancellation
+        '
+        Me.txtMinDistancePercentageForCancellation.Location = New System.Drawing.Point(285, 436)
+        Me.txtMinDistancePercentageForCancellation.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinDistancePercentageForCancellation.Name = "txtMinDistancePercentageForCancellation"
+        Me.txtMinDistancePercentageForCancellation.Size = New System.Drawing.Size(242, 22)
+        Me.txtMinDistancePercentageForCancellation.TabIndex = 58
+        Me.txtMinDistancePercentageForCancellation.Tag = "Min Distance % For Cancellation"
+        '
+        'lblMinDistancePercentageForCancellation
+        '
+        Me.lblMinDistancePercentageForCancellation.AutoSize = True
+        Me.lblMinDistancePercentageForCancellation.Location = New System.Drawing.Point(8, 439)
+        Me.lblMinDistancePercentageForCancellation.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinDistancePercentageForCancellation.Name = "lblMinDistancePercentageForCancellation"
+        Me.lblMinDistancePercentageForCancellation.Size = New System.Drawing.Size(211, 17)
+        Me.lblMinDistancePercentageForCancellation.TabIndex = 59
+        Me.lblMinDistancePercentageForCancellation.Text = "Min Distance % For Cancellation"
+        '
+        'txtMaxTurnoverOfATrade
+        '
+        Me.txtMaxTurnoverOfATrade.Location = New System.Drawing.Point(285, 402)
+        Me.txtMaxTurnoverOfATrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxTurnoverOfATrade.Name = "txtMaxTurnoverOfATrade"
+        Me.txtMaxTurnoverOfATrade.Size = New System.Drawing.Size(242, 22)
+        Me.txtMaxTurnoverOfATrade.TabIndex = 56
+        Me.txtMaxTurnoverOfATrade.Tag = "Max Turnover Of A Trade"
+        '
+        'lblMaxTurnoverOfATrade
+        '
+        Me.lblMaxTurnoverOfATrade.AutoSize = True
+        Me.lblMaxTurnoverOfATrade.Location = New System.Drawing.Point(8, 405)
+        Me.lblMaxTurnoverOfATrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxTurnoverOfATrade.Name = "lblMaxTurnoverOfATrade"
+        Me.lblMaxTurnoverOfATrade.Size = New System.Drawing.Size(169, 17)
+        Me.lblMaxTurnoverOfATrade.TabIndex = 57
+        Me.lblMaxTurnoverOfATrade.Text = "Max Turnover Of A Trade"
+        '
         'txtNumberOfStock
         '
-        Me.txtNumberOfStock.Location = New System.Drawing.Point(227, 368)
+        Me.txtNumberOfStock.Location = New System.Drawing.Point(285, 368)
         Me.txtNumberOfStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfStock.Name = "txtNumberOfStock"
         Me.txtNumberOfStock.Size = New System.Drawing.Size(242, 22)
@@ -427,7 +473,7 @@ Partial Class frmNFOSettings
         '
         'txtMaxTargetToStoplossMultiplier
         '
-        Me.txtMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(227, 161)
+        Me.txtMaxTargetToStoplossMultiplier.Location = New System.Drawing.Point(285, 161)
         Me.txtMaxTargetToStoplossMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxTargetToStoplossMultiplier.Name = "txtMaxTargetToStoplossMultiplier"
         Me.txtMaxTargetToStoplossMultiplier.Size = New System.Drawing.Size(244, 22)
@@ -447,7 +493,7 @@ Partial Class frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(852, 400)
+        Me.ClientSize = New System.Drawing.Size(913, 469)
         Me.Controls.Add(Me.chkbAutoSelectStock)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.grpStockSelection)
@@ -505,4 +551,8 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMaxTargetToStoplossMultiplier As Label
     Friend WithEvents txtNumberOfStock As TextBox
     Friend WithEvents lblNumberOfStock As Label
+    Friend WithEvents txtMinDistancePercentageForCancellation As TextBox
+    Friend WithEvents lblMinDistancePercentageForCancellation As Label
+    Friend WithEvents txtMaxTurnoverOfATrade As TextBox
+    Friend WithEvents lblMaxTurnoverOfATrade As Label
 End Class
