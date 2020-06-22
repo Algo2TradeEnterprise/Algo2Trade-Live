@@ -13,10 +13,9 @@ Public Class NFOStrategy
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
-                   ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, False, Nothing, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -153,7 +152,6 @@ Public Class NFOStrategy
                     tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.CheckSignalAsync, _cts.Token))
                 End If
             Next
-            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -169,11 +167,8 @@ Public Class NFOStrategy
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
     End Function
+
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
-        Dim ret As Tuple(Of Boolean, String) = Nothing
-        If Now >= Me.UserSettings.EODExitTime Then
-            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        End If
-        Return ret
+        Throw New NotImplementedException
     End Function
 End Class

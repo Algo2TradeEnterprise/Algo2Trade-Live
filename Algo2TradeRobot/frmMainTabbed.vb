@@ -299,7 +299,6 @@ Public Class frmMainTabbed
 
 #Region "NFO"
     Private _nfoStrategyRunning As Boolean = False
-    Private _nfoUserInputs As NFOUserInputs = Nothing
     Private _nfoDashboadList As BindingList(Of ActivityDashboard) = Nothing
     Private _nfoTradableInstruments As IEnumerable(Of NFOStrategyInstrument) = Nothing
     Private _nfoStrategyToExecute As NFOStrategy = Nothing
@@ -332,17 +331,6 @@ Public Class frmMainTabbed
                 Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
                 Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
             End If
-
-            OnHeartbeat("Validating user settings")
-            If File.Exists(NFOUserInputs.SettingsFileName) Then
-                Dim fs As Stream = New FileStream(NFOUserInputs.SettingsFileName, FileMode.Open)
-                Dim bf As BinaryFormatter = New BinaryFormatter()
-                _nfoUserInputs = CType(bf.Deserialize(fs), NFOUserInputs)
-                fs.Close()
-            Else
-                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
-            End If
-            logger.Debug(Utilities.Strings.JsonSerialize(_nfoUserInputs))
 
             If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
             Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
@@ -450,7 +438,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 2, _nfoUserInputs, 0, _cts)
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 3, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -458,7 +446,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments"))
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -566,544 +554,8 @@ Public Class frmMainTabbed
         If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _cts.Cancel()
     End Sub
-    Private Sub btnNFOSettings_Click(sender As Object, e As EventArgs) Handles btnNFOSettings.Click
-        Dim newForm As New frmNFOSettings(_nfoUserInputs, _nfoStrategyRunning)
-        newForm.ShowDialog()
-    End Sub
     Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstruments.LinkClicked
         Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
-        newForm.ShowDialog()
-    End Sub
-#End Region
-
-#Region "MCX"
-    Private _mcxStrategyRunning As Boolean = False
-    Private _mcxUserInputs As MCXUserInputs = Nothing
-    Private _mcxDashboadList As BindingList(Of ActivityDashboard) = Nothing
-    Private _mcxTradableInstruments As IEnumerable(Of MCXStrategyInstrument) = Nothing
-    Private _mcxStrategyToExecute As MCXStrategy = Nothing
-    Private Sub sfdgvmcxMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvMCXMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(MCXStrategy))
-    End Sub
-    Private Sub sfdgvmcxMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvMCXMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(MCXStrategy))
-    End Sub
-    Private Async Function MCXWorkerAsync() As Task
-        'If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
-        '    MsgBox("Cannot start as another strategy is loggin in")
-        '    Exit Function
-        'End If
-
-        If _cts Is Nothing Then _cts = New CancellationTokenSource
-        _cts.Token.ThrowIfCancellationRequested()
-        _lastException = Nothing
-
-        Try
-            EnableDisableUIEx(UIMode.Active, GetType(MCXStrategy))
-            While GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
-            EnableDisableUIEx(UIMode.BlockOther, GetType(MCXStrategy))
-
-            If _commonControllerUserInput IsNot Nothing AndAlso
-                _commonControllerUserInput.TradingDays IsNot Nothing AndAlso
-                _commonControllerUserInput.TradingDays.Count > 0 AndAlso
-                Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
-                Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
-            End If
-
-            OnHeartbeat("Validating HK Martingale(CR) user settings")
-            If File.Exists(MCXUserInputs.SettingsFileName) Then
-                Dim fs As Stream = New FileStream(MCXUserInputs.SettingsFileName, FileMode.Open)
-                Dim bf As BinaryFormatter = New BinaryFormatter()
-                _mcxUserInputs = CType(bf.Deserialize(fs), MCXUserInputs)
-                fs.Close()
-                _mcxUserInputs.InstrumentsData = Nothing
-                _mcxUserInputs.FillInstrumentDetails(_mcxUserInputs.InstrumentDetailsFilePath, _cts)
-            Else
-                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
-            End If
-            logger.Debug(Utilities.Strings.JsonSerialize(_mcxUserInputs))
-
-            If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
-            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
-
-            If _commonController IsNot Nothing Then
-                _commonController.RefreshCancellationToken(_cts)
-            Else
-                _commonController = New AliceStrategyController(currentUser, _commonControllerUserInput, _cts)
-
-                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
-                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
-                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
-                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
-                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
-                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
-                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
-                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
-                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
-                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
-                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
-                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
-                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
-                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
-                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
-                RemoveHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
-
-                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
-                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
-                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
-                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
-                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
-                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
-                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
-                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
-                AddHandler _commonController.TickerError, AddressOf OnTickerError
-                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
-                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
-                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
-                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
-                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
-                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
-                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
-                AddHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
-
-                Dim currentAssembly As Assembly = Assembly.GetExecutingAssembly()
-                Dim attribute As GuidAttribute = currentAssembly.GetCustomAttributes(GetType(GuidAttribute), True)(0)
-                Dim toolID As String = attribute.Value
-                Dim toolRunning As Boolean = Await _commonController.IsToolRunning(toolID).ConfigureAwait(False)
-                If Not toolRunning Then Throw New ApplicationException("You version is expired. Please contact Algo2Trade.")
-
-#Region "Login"
-                Dim loginMessage As String = Nothing
-                While True
-                    _cts.Token.ThrowIfCancellationRequested()
-                    _connection = Nothing
-                    loginMessage = Nothing
-                    Try
-                        OnHeartbeat("Attempting to get connection to Zerodha API")
-                        _cts.Token.ThrowIfCancellationRequested()
-                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
-                        _cts.Token.ThrowIfCancellationRequested()
-                    Catch cx As OperationCanceledException
-                        loginMessage = cx.Message
-                        logger.Error(cx)
-                        Exit While
-                    Catch ex As Exception
-                        loginMessage = ex.Message
-                        logger.Error(ex)
-                    End Try
-                    If _connection Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
-                            'No need to retry as its a password failure
-                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
-                            Exit While
-                        Else
-                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
-                            _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
-                            _cts.Token.ThrowIfCancellationRequested()
-                        End If
-                    Else
-                        Exit While
-                    End If
-                End While
-                If _connection Is Nothing Then
-                    If loginMessage IsNot Nothing Then
-                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
-                    Else
-                        Throw New ApplicationException("No connection to Zerodha API could be established")
-                    End If
-                End If
-#End Region
-
-                OnHeartbeat("Completing all pre-automation requirements")
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-
-                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
-            End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, GetType(MCXStrategy))
-
-            _mcxStrategyToExecute = New MCXStrategy(_commonController, 2, _mcxUserInputs, 10, _cts)
-            OnHeartbeatEx(String.Format("Running strategy:{0}", _mcxStrategyToExecute.ToString), New List(Of Object) From {_mcxStrategyToExecute})
-
-            _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(_mcxStrategyToExecute).ConfigureAwait(False)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            _mcxTradableInstruments = _mcxStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblMCXTradableInstruments, String.Format("Tradable Instruments: {0}", _mcxTradableInstruments.Count))
-            SetObjectEnableDisable_ThreadSafe(linklblMCXTradableInstruments, True)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            _mcxDashboadList = New BindingList(Of ActivityDashboard)(_mcxStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
-                                                                                                                                            Return x.EntryRequestTime
-                                                                                                                                        End Function).ToList)
-            SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, _mcxDashboadList)
-            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMCXMainDashboard)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            Await _mcxStrategyToExecute.MonitorAsync().ConfigureAwait(False)
-        Catch aex As AdapterBusinessException
-            logger.Error(aex)
-            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
-                _lastException = aex
-            Else
-                GenerateTelegramMessageAsync(aex.Message)
-                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
-            End If
-        Catch fex As ForceExitException
-            logger.Error(fex)
-            OnHeartbeat(fex.Message)
-            _lastException = fex
-        Catch cx As OperationCanceledException
-            logger.Error(cx)
-            GenerateTelegramMessageAsync(cx.Message)
-            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
-        Catch ex As Exception
-            logger.Error(ex)
-            GenerateTelegramMessageAsync(ex.Message)
-            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
-        Finally
-            ProgressStatus("No pending actions")
-            SetObjectText_ThreadSafe(linklblMCXTradableInstruments, String.Format("Tradable Instruments: {0}", 0))
-            SetObjectEnableDisable_ThreadSafe(linklblMCXTradableInstruments, False)
-            EnableDisableUIEx(UIMode.ReleaseOther, GetType(MCXStrategy))
-            EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
-        End Try
-        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
-        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
-        'and ticker will not work.
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-        _commonController = Nothing
-        _connection = Nothing
-        _cts = Nothing
-        'End If
-    End Function
-    Private Async Sub btnMCXStart_Click(sender As Object, e As EventArgs) Handles btnMCXStart.Click
-        Dim authenticationUserId As String = "AB096403"
-        If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
-            Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
-            (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "DK4056" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "ND0290" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
-            MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-            Exit Sub
-        End If
-
-        PreviousDayCleanup(False)
-        Await Task.Run(AddressOf MCXWorkerAsync).ConfigureAwait(False)
-
-        If _lastException IsNot Nothing Then
-            SetObjectEnableDisable_ThreadSafe(btnMCXStart, False)
-            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
-                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
-                Await Task.Delay(5000).ConfigureAwait(False)
-                Debug.WriteLine("Restart for permission")
-                logger.Debug("Restarting the application again as there is premission issue")
-                btnMCXStart_Click(sender, e)
-            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
-                    Debug.WriteLine("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
-                    logger.Debug("Force exit all process for dead state. Will restart applcation when dead state is over. Waiting ...")
-                    Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
-                    Await Task.Delay(Math.Ceiling(remainingTime) + 5000).ConfigureAwait(False)
-                    Debug.WriteLine("Restart for dead state end")
-                    logger.Debug("Restarting the application again for dead state end")
-                    btnMCXStart_Click(sender, e)
-                ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
-                    Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
-                    logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
-                    Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
-                    Await Task.Delay(Math.Ceiling(remainingTime) + 5000).ConfigureAwait(False)
-                    Debug.WriteLine("Restart for non trading day end")
-                    logger.Debug("Restarting the application again for non trading day end")
-                    btnMCXStart_Click(sender, e)
-                Else
-                    Debug.WriteLine("Restart for daily refresh")
-                    logger.Debug("Restarting the application again for daily refresh")
-                    PreviousDayCleanup(True)
-                    btnMCXStart_Click(sender, e)
-                End If
-            End If
-        End If
-    End Sub
-    Private Sub tmrMCXTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrMCXTickerStatus.Tick
-        FlashTickerBulbEx(GetType(MCXStrategy))
-    End Sub
-    Private Async Sub btnMCXStop_Click(sender As Object, e As EventArgs) Handles btnMCXStop.Click
-        OnEndOfTheDay(_mcxStrategyToExecute)
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-        _cts.Cancel()
-    End Sub
-    Private Sub btnMCXSettings_Click(sender As Object, e As EventArgs) Handles btnMCXSettings.Click
-        Dim newForm As New frmMCXSettings(_mcxUserInputs, _mcxStrategyRunning)
-        newForm.ShowDialog()
-    End Sub
-    Private Sub linklblMCXTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblMCXTradableInstruments.LinkClicked
-        Dim newForm As New frmMCXTradableInstrumentList(_mcxTradableInstruments)
-        newForm.ShowDialog()
-    End Sub
-#End Region
-
-#Region "CDS"
-    Private _cdsStrategyRunning As Boolean = False
-    Private _cdsUserInputs As CDSUserInputs = Nothing
-    Private _cdsDashboadList As BindingList(Of ActivityDashboard) = Nothing
-    Private _cdsTradableInstruments As IEnumerable(Of CDSStrategyInstrument) = Nothing
-    Private _cdsStrategyToExecute As CDSStrategy = Nothing
-    Private Sub sfdgvCDSMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvCDSMainDashboard.FilterPopupShowing
-        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(CDSStrategy))
-    End Sub
-    Private Sub sfdgvCDSMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvCDSMainDashboard.AutoGeneratingColumn
-        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(CDSStrategy))
-    End Sub
-    Private Async Function CDSWorkerAsync() As Task
-        If GetObjectText_ThreadSafe(btnCDSStart) = Common.LOGIN_PENDING Then
-            MsgBox("Cannot start as another strategy is loggin in")
-            Exit Function
-        End If
-
-        If _cts Is Nothing Then _cts = New CancellationTokenSource
-        _cts.Token.ThrowIfCancellationRequested()
-        _lastException = Nothing
-
-        Try
-            EnableDisableUIEx(UIMode.Active, GetType(CDSStrategy))
-            EnableDisableUIEx(UIMode.BlockOther, GetType(CDSStrategy))
-
-            OnHeartbeat("Validating user settings")
-            If File.Exists(CDSUserInputs.SettingsFileName) Then
-                Dim fs As Stream = New FileStream(CDSUserInputs.SettingsFileName, FileMode.Open)
-                Dim bf As BinaryFormatter = New BinaryFormatter()
-                _cdsUserInputs = CType(bf.Deserialize(fs), CDSUserInputs)
-                fs.Close()
-                _cdsUserInputs.InstrumentsData = Nothing
-                _cdsUserInputs.FillInstrumentDetails(_cdsUserInputs.InstrumentDetailsFilePath, _cts)
-            Else
-                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
-            End If
-            logger.Debug(Utilities.Strings.JsonSerialize(_cdsUserInputs))
-
-            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
-            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
-
-            If _commonController IsNot Nothing Then
-                _commonController.RefreshCancellationToken(_cts)
-            Else
-                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
-
-                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
-                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
-                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
-                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
-                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
-                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
-                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
-                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
-                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
-                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
-                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
-                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
-                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
-                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
-                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
-                RemoveHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
-
-                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
-                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
-                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
-                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
-                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
-                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
-                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
-                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
-                AddHandler _commonController.TickerError, AddressOf OnTickerError
-                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
-                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
-                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
-                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
-                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
-                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
-                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
-                AddHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
-
-                Dim currentAssembly As Assembly = Assembly.GetExecutingAssembly()
-                Dim attribute As GuidAttribute = currentAssembly.GetCustomAttributes(GetType(GuidAttribute), True)(0)
-                Dim toolID As String = attribute.Value
-                Dim toolRunning As Boolean = Await _commonController.IsToolRunning(toolID).ConfigureAwait(False)
-                If Not toolRunning Then Throw New ApplicationException("You version is expired. Please contact Algo2Trade.")
-
-#Region "Login"
-                Dim loginMessage As String = Nothing
-                While True
-                    _cts.Token.ThrowIfCancellationRequested()
-                    _connection = Nothing
-                    loginMessage = Nothing
-                    Try
-                        OnHeartbeat("Attempting to get connection to Zerodha API")
-                        _cts.Token.ThrowIfCancellationRequested()
-                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
-                        _cts.Token.ThrowIfCancellationRequested()
-                    Catch cx As OperationCanceledException
-                        loginMessage = cx.Message
-                        logger.Error(cx)
-                        Exit While
-                    Catch ex As Exception
-                        loginMessage = ex.Message
-                        logger.Error(ex)
-                    End Try
-                    If _connection Is Nothing Then
-                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
-                            'No need to retry as its a password failure
-                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
-                            Exit While
-                        Else
-                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
-                            _cts.Token.ThrowIfCancellationRequested()
-                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
-                            _cts.Token.ThrowIfCancellationRequested()
-                        End If
-                    Else
-                        Exit While
-                    End If
-                End While
-                If _connection Is Nothing Then
-                    If loginMessage IsNot Nothing Then
-                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
-                    Else
-                        Throw New ApplicationException("No connection to Zerodha API could be established")
-                    End If
-                End If
-#End Region
-
-                OnHeartbeat("Completing all pre-automation requirements")
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
-                _cts.Token.ThrowIfCancellationRequested()
-
-                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
-            End If 'Common controller
-            EnableDisableUIEx(UIMode.ReleaseOther, GetType(CDSStrategy))
-
-            _cdsStrategyToExecute = New CDSStrategy(_commonController, 3, _cdsUserInputs, 10, _cts)
-            OnHeartbeatEx(String.Format("Running strategy:{0}", _cdsStrategyToExecute.ToString), New List(Of Object) From {_cdsStrategyToExecute})
-
-            _cts.Token.ThrowIfCancellationRequested()
-            Await _commonController.SubscribeStrategyAsync(_cdsStrategyToExecute).ConfigureAwait(False)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            _cdsTradableInstruments = _cdsStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblCDSTradableInstruments, String.Format("Tradable Instruments: {0}", _cdsTradableInstruments.Count))
-            SetObjectEnableDisable_ThreadSafe(linklblCDSTradableInstruments, True)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            _cdsDashboadList = New BindingList(Of ActivityDashboard)(_cdsStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
-                                                                                                                                            Return x.SignalGeneratedTime
-                                                                                                                                        End Function).ToList)
-            SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, _cdsDashboadList)
-            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvCDSMainDashboard)
-            _cts.Token.ThrowIfCancellationRequested()
-
-            Await _cdsStrategyToExecute.MonitorAsync().ConfigureAwait(False)
-        Catch aex As AdapterBusinessException
-            logger.Error(aex)
-            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
-                _lastException = aex
-            Else
-                GenerateTelegramMessageAsync(aex.Message)
-                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
-            End If
-        Catch fex As ForceExitException
-            logger.Error(fex)
-            _lastException = fex
-        Catch cx As OperationCanceledException
-            logger.Error(cx)
-            GenerateTelegramMessageAsync(cx.Message)
-            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
-        Catch ex As Exception
-            logger.Error(ex)
-            GenerateTelegramMessageAsync(ex.Message)
-            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
-        Finally
-            ProgressStatus("No pending actions")
-            EnableDisableUIEx(UIMode.ReleaseOther, GetType(CDSStrategy))
-            EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
-        End Try
-        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
-        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
-        'it will not new object of controller. So orphan exception will throw exception again and information collector, historical data fetcher
-        'and ticker will not work.
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-        _commonController = Nothing
-        _connection = Nothing
-        _cts = Nothing
-        'End If
-    End Function
-    Private Async Sub btnCDSStart_Click(sender As Object, e As EventArgs) Handles btnCDSStart.Click
-        Dim authenticationUserId As String = "SE1516"
-        If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
-            Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
-            (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "DK4056" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "ND0290" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
-            MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
-            Exit Sub
-        End If
-
-        PreviousDayCleanup(False)
-        Await Task.Run(AddressOf CDSWorkerAsync).ConfigureAwait(False)
-
-        If _lastException IsNot Nothing Then
-            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
-                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
-                Debug.WriteLine("Restart for permission")
-                logger.Debug("Restarting the application again as there is premission issue")
-                btnCDSStart_Click(sender, e)
-            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
-                Debug.WriteLine("Restart for daily refresh")
-                logger.Debug("Restarting the application again for daily refresh")
-                PreviousDayCleanup(True)
-                btnCDSStart_Click(sender, e)
-            End If
-        End If
-    End Sub
-    Private Sub tmrCDSTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrCDSTickerStatus.Tick
-        FlashTickerBulbEx(GetType(CDSStrategy))
-    End Sub
-    Private Async Sub btnCDSStop_Click(sender As Object, e As EventArgs) Handles btnCDSStop.Click
-        OnEndOfTheDay(_cdsStrategyToExecute)
-        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
-        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
-        _cts.Cancel()
-    End Sub
-    Private Sub btnCDSSettings_Click(sender As Object, e As EventArgs) Handles btnCDSSettings.Click
-        Dim newForm As New frmCDSSettings(_cdsUserInputs)
-        newForm.ShowDialog()
-    End Sub
-    Private Sub linklblCDSTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblCDSTradableInstruments.LinkClicked
-        Dim newForm As New frmCDSTradableInstrumentList(_cdsTradableInstruments)
         newForm.ShowDialog()
     End Sub
 #End Region
@@ -1127,23 +579,9 @@ Public Class frmMainTabbed
                     'SetObjectEnableDisable_ThreadSafe(btnNFOSettings, False)
                     SetObjectEnableDisable_ThreadSafe(btnNFOStop, True)
                 Case UIMode.BlockOther
-                    If GetObjectText_ThreadSafe(btnMCXStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnMCXStart, Common.LOGIN_PENDING)
-                        'SetObjectText_ThreadSafe(btnMCXStop, Common.LOGIN_PENDING)
-                    End If
-                    If GetObjectText_ThreadSafe(btnCDSStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnCDSStart, Common.LOGIN_PENDING)
-                        'SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
-                    End If
+
                 Case UIMode.ReleaseOther
-                    If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnMCXStart, "Start")
-                        SetObjectText_ThreadSafe(btnMCXStop, "Stop")
-                    End If
-                    If GetObjectText_ThreadSafe(btnCDSStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnCDSStart, "Start")
-                        SetObjectText_ThreadSafe(btnCDSStop, "Stop")
-                    End If
+
                 Case UIMode.Idle
                     _nfoStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnNFOStart, True)
@@ -1151,72 +589,8 @@ Public Class frmMainTabbed
                     SetObjectEnableDisable_ThreadSafe(btnNFOStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, Nothing)
             End Select
-        ElseIf source Is GetType(MCXStrategy) Then
-            Select Case mode
-                Case UIMode.Active
-                    _mcxStrategyRunning = True
-                    SetObjectEnableDisable_ThreadSafe(btnMCXStart, False)
-                    'SetObjectEnableDisable_ThreadSafe(btnMCXSettings, False)
-                    SetObjectEnableDisable_ThreadSafe(btnMCXStop, True)
-                Case UIMode.BlockOther
-                    If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnNFOStart, Common.LOGIN_PENDING)
-                        'SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
-                    End If
-                    If GetObjectText_ThreadSafe(btnCDSStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnCDSStart, Common.LOGIN_PENDING)
-                        'SetObjectText_ThreadSafe(btnCDSStop, Common.LOGIN_PENDING)
-                    End If
-                Case UIMode.ReleaseOther
-                    If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnNFOStart, "Start")
-                        SetObjectText_ThreadSafe(btnNFOStop, "Stop")
-                    End If
-                    If GetObjectText_ThreadSafe(btnCDSStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnCDSStart, "Start")
-                        SetObjectText_ThreadSafe(btnCDSStop, "Stop")
-                    End If
-                Case UIMode.Idle
-                    _mcxStrategyRunning = False
-                    SetObjectEnableDisable_ThreadSafe(btnMCXStart, True)
-                    'SetObjectEnableDisable_ThreadSafe(btnMCXSettings, True)
-                    SetObjectEnableDisable_ThreadSafe(btnMCXStop, False)
-                    SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, Nothing)
-            End Select
-        ElseIf source Is GetType(CDSStrategy) Then
-            Select Case mode
-                Case UIMode.Active
-                    _cdsStrategyRunning = True
-                    SetObjectEnableDisable_ThreadSafe(btnCDSStart, False)
-                    'SetObjectEnableDisable_ThreadSafe(btnCDSSettings, False)
-                    SetObjectEnableDisable_ThreadSafe(btnCDSStop, True)
-                Case UIMode.BlockOther
-                    If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnNFOStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
-                    End If
-                    If GetObjectText_ThreadSafe(btnMCXStart) = "Start" Then
-                        SetObjectText_ThreadSafe(btnMCXStart, Common.LOGIN_PENDING)
-                        SetObjectText_ThreadSafe(btnMCXStop, Common.LOGIN_PENDING)
-                    End If
-                Case UIMode.ReleaseOther
-                    If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnNFOStart, "Start")
-                        SetObjectText_ThreadSafe(btnNFOStop, "Stop")
-                    End If
-                    If GetObjectText_ThreadSafe(btnMCXStart) = Common.LOGIN_PENDING Then
-                        SetObjectText_ThreadSafe(btnMCXStart, "Start")
-                        SetObjectText_ThreadSafe(btnMCXStop, "Stop")
-                    End If
-                Case UIMode.Idle
-                    _cdsStrategyRunning = False
-                    SetObjectEnableDisable_ThreadSafe(btnCDSStart, True)
-                    'SetObjectEnableDisable_ThreadSafe(btnCDSSettings, True)
-                    SetObjectEnableDisable_ThreadSafe(btnCDSStop, False)
-                    SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, Nothing)
-            End Select
         End If
-        _toolRunning = _nfoStrategyRunning OrElse _cdsStrategyRunning OrElse _mcxStrategyRunning
+        _toolRunning = _nfoStrategyRunning
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
@@ -1224,12 +598,6 @@ Public Class frmMainTabbed
         If source Is GetType(NFOStrategy) Then
             blbTickerStatusCommon = blbNFOTickerStatus
             tmrTickerStatusCommon = tmrNFOTickerStatus
-        ElseIf source Is GetType(MCXStrategy) Then
-            blbTickerStatusCommon = blbMCXTickerStatus
-            tmrTickerStatusCommon = tmrMCXTickerStatus
-        ElseIf source Is GetType(CDSStrategy) Then
-            blbTickerStatusCommon = blbCDSTickerStatus
-            tmrTickerStatusCommon = tmrCDSTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
@@ -1247,10 +615,6 @@ Public Class frmMainTabbed
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
         If source Is GetType(NFOStrategy) Then
             blbTickerStatusCommon = blbNFOTickerStatus
-        ElseIf source Is GetType(MCXStrategy) Then
-            blbTickerStatusCommon = blbMCXTickerStatus
-        ElseIf source Is GetType(CDSStrategy) Then
-            blbTickerStatusCommon = blbCDSTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -1264,10 +628,6 @@ Public Class frmMainTabbed
         Dim sfdgvCommon As SfDataGrid = Nothing
         If source Is GetType(NFOStrategy) Then
             sfdgvCommon = sfdgvNFOMainDashboard
-        ElseIf source Is GetType(MCXStrategy) Then
-            sfdgvCommon = sfdgvMCXMainDashboard
-        ElseIf source Is GetType(CDSStrategy) Then
-            sfdgvCommon = sfdgvCDSMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
@@ -1319,22 +679,10 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstNFOLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
-        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(MCXStrategy) Then
-            Select Case mode
-                Case LogMode.One
-                    SetListAddItem_ThreadSafe(lstMCXLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
-            End Select
-        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(CDSStrategy) Then
-            Select Case mode
-                Case LogMode.One
-                    SetListAddItem_ThreadSafe(lstCDSLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
-            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
                     SetListAddItem_ThreadSafe(lstNFOLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
-                    SetListAddItem_ThreadSafe(lstMCXLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
-                    SetListAddItem_ThreadSafe(lstCDSLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1436,29 +784,18 @@ Public Class frmMainTabbed
         pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
-        EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
-        EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
-
-        tabMain.TabPages.Remove(tabMCX)
-        tabMain.TabPages.Remove(tabCDS)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
-        ColorTickerBulbEx(GetType(MCXStrategy), Color.Pink)
-        ColorTickerBulbEx(GetType(CDSStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Lime)
-        ColorTickerBulbEx(GetType(MCXStrategy), Color.Lime)
-        ColorTickerBulbEx(GetType(CDSStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
             ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
-            ColorTickerBulbEx(GetType(MCXStrategy), Color.Pink)
-            ColorTickerBulbEx(GetType(CDSStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1469,8 +806,6 @@ Public Class frmMainTabbed
     End Sub
     Private Sub OnTickerReconnect()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Yellow)
-        ColorTickerBulbEx(GetType(MCXStrategy), Color.Yellow)
-        ColorTickerBulbEx(GetType(CDSStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
@@ -1519,10 +854,6 @@ Public Class frmMainTabbed
             Select Case item.ParentStrategyInstrument.ParentStrategy.GetType
                 Case GetType(NFOStrategy)
                     BindingListAdd_ThreadSafe(_nfoDashboadList, item)
-                Case GetType(MCXStrategy)
-                    BindingListAdd_ThreadSafe(_MCXdashboadList, item)
-                Case GetType(CDSStrategy)
-                    BindingListAdd_ThreadSafe(_CDSDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
@@ -1536,18 +867,6 @@ Public Class frmMainTabbed
                 _nfoDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
                 SetSFGridDataBind_ThreadSafe(sfdgvNFOMainDashboard, _nfoDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
-            Case GetType(MCXStrategy)
-                SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, Nothing)
-                _MCXdashboadList = Nothing
-                _MCXdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, _MCXdashboadList)
-                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMCXMainDashboard)
-            Case GetType(CDSStrategy)
-                SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, Nothing)
-                _CDSDashboadList = Nothing
-                _CDSDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, _CDSDashboadList)
-                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvCDSMainDashboard)
             Case Else
                 Throw New NotImplementedException
         End Select
@@ -1557,10 +876,6 @@ Public Class frmMainTabbed
             Select Case runningStrategy.GetType
                 Case GetType(NFOStrategy)
                     ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("NFO Order Book.csv")))
-                Case GetType(MCXStrategy)
-                    ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("MCX Order Book.csv")))
-                Case GetType(CDSStrategy)
-                    ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("CDS Signal Order Book.csv")))
                 Case Else
                     Throw New NotImplementedException
             End Select
