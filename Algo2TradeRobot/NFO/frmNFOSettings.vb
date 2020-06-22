@@ -38,6 +38,7 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
+            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtStoplossTrailingPercentage.Text = _settings.StoplossTrailingPercentage
             txtBidAskRatio.Text = _settings.BidAskRatio
@@ -50,6 +51,7 @@ Public Class frmNFOSettings
 
     Private Sub SaveSettings()
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
+        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.StoplossTrailingPercentage = txtStoplossTrailingPercentage.Text
         _settings.BidAskRatio = txtBidAskRatio.Text

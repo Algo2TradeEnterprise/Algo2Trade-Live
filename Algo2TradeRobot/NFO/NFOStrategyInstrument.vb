@@ -64,7 +64,7 @@ Public Class NFOStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Me.TradableInstrument.LastTick IsNot Nothing Then
-                    If Now >= userInputs.TradeStartTime Then
+                    If Now >= userInputs.TradeStartTime AndAlso Now <= userInputs.LastTradeEntryTime Then
                         Dim nfoStrategyInstruments As IEnumerable(Of StrategyInstrument) =
                             Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
                                                                                     Return x.TradableInstrument.TradingSymbol <> Me.TradableInstrument.TradingSymbol AndAlso
@@ -204,7 +204,7 @@ Public Class NFOStrategyInstrument
 
         Dim parameter1 As PlaceOrderParameters = Nothing
         Dim parameter2 As PlaceOrderParameters = Nothing
-        If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.EODExitTime AndAlso currentTick IsNot Nothing AndAlso
+        If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.LastTradeEntryTime AndAlso currentTick IsNot Nothing AndAlso
             GetTotalExecutedOrders() < 1 AndAlso Not IsActiveInstrument() AndAlso Not Me.StrategyExitAllTriggerd Then
             Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
             signalCandle.SnapshotDateTime = Now
