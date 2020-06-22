@@ -144,20 +144,28 @@ Public Class NFOStrategyInstrument
                                                                                       Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                                   End Function)
                 If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) >= 0 Then
-                    If CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True) > _askBidMul Then
-                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
+                    Dim bidAskRatio As Decimal = CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True)
+                    If bidAskRatio <> Decimal.MinValue Then
+                        If bidAskRatio > _askBidMul Then
+                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
                                                   runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                                   CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
-                        If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                        ret.Add(runningStrategyInstrument)
+                                                  bidAskRatio))
+                            If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
+                            ret.Add(runningStrategyInstrument)
 
-                        If ret.Count >= numberOfInstrument Then Exit For
+                            If ret.Count >= numberOfInstrument Then Exit For
+                        Else
+                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  bidAskRatio))
+                        End If
                     Else
                         OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
                                                   runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                                   CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(False)))
+                                                  "∞"))
                     End If
                 End If
             Next
@@ -177,20 +185,28 @@ Public Class NFOStrategyInstrument
                                                                             Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
                                                                         End Function)
                 If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) < 0 Then
-                    If CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True) > _askBidMul Then
-                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
+                    Dim askBidRatio As Decimal = CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True)
+                    If askBidRatio <> Decimal.MinValue Then
+                        If askBidRatio > _askBidMul Then
+                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
                                                   runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                                   CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
-                        If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                        ret.Add(runningStrategyInstrument)
+                                                  askBidRatio))
+                            If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
+                            ret.Add(runningStrategyInstrument)
 
-                        If ret.Count >= numberOfInstrument Then Exit For
+                            If ret.Count >= numberOfInstrument Then Exit For
+                        Else
+                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
+                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
+                                                  askBidRatio))
+                        End If
                     Else
                         OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
                                                   runningStrategyInstrument.TradableInstrument.TradingSymbol,
                                                   CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(False)))
+                                                  "∞"))
                     End If
                 End If
             Next
@@ -218,7 +234,10 @@ Public Class NFOStrategyInstrument
     Public Function GetAskToBidRatio(ByVal freshCheck As Boolean) As Decimal
         If (freshCheck OrElse _askToBidRatio = Decimal.MinValue) AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
             Dim lastTick As ITick = Me.TradableInstrument.LastTick
-            _askToBidRatio = Math.Round(lastTick.SellQuantity / lastTick.BuyQuantity, 4)
+            If lastTick.BuyQuantity <> UInteger.MaxValue AndAlso lastTick.BuyQuantity <> UInteger.MinValue AndAlso lastTick.BuyQuantity <> 0 AndAlso
+                lastTick.SellQuantity <> UInteger.MaxValue AndAlso lastTick.SellQuantity <> UInteger.MinValue AndAlso lastTick.SellQuantity <> 0 Then
+                _askToBidRatio = Math.Round(lastTick.SellQuantity / lastTick.BuyQuantity, 4)
+            End If
         End If
         Return _askToBidRatio
     End Function
@@ -226,7 +245,10 @@ Public Class NFOStrategyInstrument
     Public Function GetBidToAskRatio(ByVal freshCheck As Boolean) As Decimal
         If (freshCheck OrElse _bidToAskRatio = Decimal.MinValue) AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
             Dim lastTick As ITick = Me.TradableInstrument.LastTick
-            _bidToAskRatio = Math.Round(lastTick.BuyQuantity / lastTick.SellQuantity, 4)
+            If lastTick.BuyQuantity <> UInteger.MaxValue AndAlso lastTick.BuyQuantity <> UInteger.MinValue AndAlso lastTick.BuyQuantity <> 0 AndAlso
+                lastTick.SellQuantity <> UInteger.MaxValue AndAlso lastTick.SellQuantity <> UInteger.MinValue AndAlso lastTick.SellQuantity <> 0 Then
+                _bidToAskRatio = Math.Round(lastTick.BuyQuantity / lastTick.SellQuantity, 4)
+            End If
         End If
         Return _bidToAskRatio
     End Function
