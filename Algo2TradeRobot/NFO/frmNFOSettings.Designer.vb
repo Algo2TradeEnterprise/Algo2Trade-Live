@@ -27,13 +27,13 @@ Partial Class frmNFOSettings
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.lblFirstEntryTime = New System.Windows.Forms.Label()
-        Me.lblSecondEntryTime = New System.Windows.Forms.Label()
+        Me.lblTradeStartTime = New System.Windows.Forms.Label()
         Me.lblEODExitTime = New System.Windows.Forms.Label()
-        Me.dtpckrFirstEntryTime = New System.Windows.Forms.DateTimePicker()
-        Me.dtpckrSecondEntryTime = New System.Windows.Forms.DateTimePicker()
+        Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtBidAskRatio = New System.Windows.Forms.TextBox()
+        Me.lblBidAskRatio = New System.Windows.Forms.Label()
         Me.grpQuantity = New System.Windows.Forms.GroupBox()
         Me.txtQuantity = New System.Windows.Forms.TextBox()
         Me.lblQuantity = New System.Windows.Forms.Label()
@@ -44,6 +44,8 @@ Partial Class frmNFOSettings
         Me.chbCalculateQuantityFromCapital = New System.Windows.Forms.CheckBox()
         Me.txtStoplossTrailingPercentage = New System.Windows.Forms.TextBox()
         Me.lblStoplossTrailingPercentage = New System.Windows.Forms.Label()
+        Me.txtHardClosePercentage = New System.Windows.Forms.TextBox()
+        Me.lblHardClosePercentage = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpQuantity.SuspendLayout()
         Me.SuspendLayout()
@@ -68,84 +70,85 @@ Partial Class frmNFOSettings
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
-        'lblFirstEntryTime
+        'lblTradeStartTime
         '
-        Me.lblFirstEntryTime.AutoSize = True
-        Me.lblFirstEntryTime.Location = New System.Drawing.Point(9, 20)
-        Me.lblFirstEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblFirstEntryTime.Name = "lblFirstEntryTime"
-        Me.lblFirstEntryTime.Size = New System.Drawing.Size(107, 17)
-        Me.lblFirstEntryTime.TabIndex = 19
-        Me.lblFirstEntryTime.Text = "First Entry Time"
-        '
-        'lblSecondEntryTime
-        '
-        Me.lblSecondEntryTime.AutoSize = True
-        Me.lblSecondEntryTime.Location = New System.Drawing.Point(9, 56)
-        Me.lblSecondEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblSecondEntryTime.Name = "lblSecondEntryTime"
-        Me.lblSecondEntryTime.Size = New System.Drawing.Size(128, 17)
-        Me.lblSecondEntryTime.TabIndex = 21
-        Me.lblSecondEntryTime.Text = "Second Entry Time"
+        Me.lblTradeStartTime.AutoSize = True
+        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 20)
+        Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTradeStartTime.Name = "lblTradeStartTime"
+        Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
+        Me.lblTradeStartTime.TabIndex = 19
+        Me.lblTradeStartTime.Text = "Trade Start Time"
         '
         'lblEODExitTime
         '
         Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 91)
+        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 54)
         Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODExitTime.Name = "lblEODExitTime"
         Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
         Me.lblEODExitTime.TabIndex = 23
         Me.lblEODExitTime.Text = "EOD Exit Time"
         '
-        'dtpckrFirstEntryTime
+        'dtpckrTradeStartTime
         '
-        Me.dtpckrFirstEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrFirstEntryTime.Location = New System.Drawing.Point(227, 18)
-        Me.dtpckrFirstEntryTime.Name = "dtpckrFirstEntryTime"
-        Me.dtpckrFirstEntryTime.ShowUpDown = True
-        Me.dtpckrFirstEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrFirstEntryTime.TabIndex = 2
-        Me.dtpckrFirstEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'dtpckrSecondEntryTime
-        '
-        Me.dtpckrSecondEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrSecondEntryTime.Location = New System.Drawing.Point(227, 55)
-        Me.dtpckrSecondEntryTime.Name = "dtpckrSecondEntryTime"
-        Me.dtpckrSecondEntryTime.ShowUpDown = True
-        Me.dtpckrSecondEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrSecondEntryTime.TabIndex = 3
-        Me.dtpckrSecondEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(227, 18)
+        Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
+        Me.dtpckrTradeStartTime.ShowUpDown = True
+        Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(242, 22)
+        Me.dtpckrTradeStartTime.TabIndex = 1
+        Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(227, 90)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(227, 53)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrEODExitTime.TabIndex = 4
+        Me.dtpckrEODExitTime.TabIndex = 2
         Me.dtpckrEODExitTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtHardClosePercentage)
+        Me.GroupBox1.Controls.Add(Me.lblHardClosePercentage)
+        Me.GroupBox1.Controls.Add(Me.txtBidAskRatio)
+        Me.GroupBox1.Controls.Add(Me.lblBidAskRatio)
         Me.GroupBox1.Controls.Add(Me.grpQuantity)
         Me.GroupBox1.Controls.Add(Me.txtStoplossTrailingPercentage)
         Me.GroupBox1.Controls.Add(Me.lblStoplossTrailingPercentage)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrSecondEntryTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrFirstEntryTime)
+        Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
         Me.GroupBox1.Controls.Add(Me.lblEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.lblSecondEntryTime)
-        Me.GroupBox1.Controls.Add(Me.lblFirstEntryTime)
+        Me.GroupBox1.Controls.Add(Me.lblTradeStartTime)
         Me.GroupBox1.Location = New System.Drawing.Point(5, -2)
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 272)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 303)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
+        '
+        'txtBidAskRatio
+        '
+        Me.txtBidAskRatio.Location = New System.Drawing.Point(227, 122)
+        Me.txtBidAskRatio.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtBidAskRatio.Name = "txtBidAskRatio"
+        Me.txtBidAskRatio.Size = New System.Drawing.Size(242, 22)
+        Me.txtBidAskRatio.TabIndex = 4
+        Me.txtBidAskRatio.Tag = "Bid Ask Ratio"
+        '
+        'lblBidAskRatio
+        '
+        Me.lblBidAskRatio.AutoSize = True
+        Me.lblBidAskRatio.Location = New System.Drawing.Point(9, 125)
+        Me.lblBidAskRatio.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblBidAskRatio.Name = "lblBidAskRatio"
+        Me.lblBidAskRatio.Size = New System.Drawing.Size(92, 17)
+        Me.lblBidAskRatio.TabIndex = 58
+        Me.lblBidAskRatio.Text = "Bid Ask Ratio"
         '
         'grpQuantity
         '
@@ -156,7 +159,7 @@ Partial Class frmNFOSettings
         Me.grpQuantity.Controls.Add(Me.txtCapital)
         Me.grpQuantity.Controls.Add(Me.lblCapital)
         Me.grpQuantity.Controls.Add(Me.chbCalculateQuantityFromCapital)
-        Me.grpQuantity.Location = New System.Drawing.Point(0, 158)
+        Me.grpQuantity.Location = New System.Drawing.Point(0, 188)
         Me.grpQuantity.Name = "grpQuantity"
         Me.grpQuantity.Size = New System.Drawing.Size(477, 112)
         Me.grpQuantity.TabIndex = 56
@@ -168,7 +171,7 @@ Partial Class frmNFOSettings
         Me.txtQuantity.Margin = New System.Windows.Forms.Padding(4)
         Me.txtQuantity.Name = "txtQuantity"
         Me.txtQuantity.Size = New System.Drawing.Size(242, 22)
-        Me.txtQuantity.TabIndex = 60
+        Me.txtQuantity.TabIndex = 7
         Me.txtQuantity.Tag = "Quantity"
         '
         'lblQuantity
@@ -187,7 +190,7 @@ Partial Class frmNFOSettings
         Me.txtMargin.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMargin.Name = "txtMargin"
         Me.txtMargin.Size = New System.Drawing.Size(242, 22)
-        Me.txtMargin.TabIndex = 58
+        Me.txtMargin.TabIndex = 8
         Me.txtMargin.Tag = "Margin"
         '
         'lblMargin
@@ -225,34 +228,53 @@ Partial Class frmNFOSettings
         Me.chbCalculateQuantityFromCapital.Location = New System.Drawing.Point(12, 19)
         Me.chbCalculateQuantityFromCapital.Name = "chbCalculateQuantityFromCapital"
         Me.chbCalculateQuantityFromCapital.Size = New System.Drawing.Size(228, 21)
-        Me.chbCalculateQuantityFromCapital.TabIndex = 0
+        Me.chbCalculateQuantityFromCapital.TabIndex = 6
         Me.chbCalculateQuantityFromCapital.Text = "Calculate Quantity From Capital"
         Me.chbCalculateQuantityFromCapital.UseVisualStyleBackColor = True
         '
         'txtStoplossTrailingPercentage
         '
-        Me.txtStoplossTrailingPercentage.Location = New System.Drawing.Point(227, 125)
+        Me.txtStoplossTrailingPercentage.Location = New System.Drawing.Point(227, 88)
         Me.txtStoplossTrailingPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtStoplossTrailingPercentage.Name = "txtStoplossTrailingPercentage"
         Me.txtStoplossTrailingPercentage.Size = New System.Drawing.Size(242, 22)
-        Me.txtStoplossTrailingPercentage.TabIndex = 5
+        Me.txtStoplossTrailingPercentage.TabIndex = 3
         Me.txtStoplossTrailingPercentage.Tag = "Stoploss Trailing %"
         '
         'lblStoplossTrailingPercentage
         '
         Me.lblStoplossTrailingPercentage.AutoSize = True
-        Me.lblStoplossTrailingPercentage.Location = New System.Drawing.Point(9, 128)
+        Me.lblStoplossTrailingPercentage.Location = New System.Drawing.Point(9, 91)
         Me.lblStoplossTrailingPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblStoplossTrailingPercentage.Name = "lblStoplossTrailingPercentage"
         Me.lblStoplossTrailingPercentage.Size = New System.Drawing.Size(129, 17)
         Me.lblStoplossTrailingPercentage.TabIndex = 55
         Me.lblStoplossTrailingPercentage.Text = "Stoploss Trailing %"
         '
+        'txtHardClosePercentage
+        '
+        Me.txtHardClosePercentage.Location = New System.Drawing.Point(227, 157)
+        Me.txtHardClosePercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtHardClosePercentage.Name = "txtHardClosePercentage"
+        Me.txtHardClosePercentage.Size = New System.Drawing.Size(242, 22)
+        Me.txtHardClosePercentage.TabIndex = 5
+        Me.txtHardClosePercentage.Tag = "Hard Close %"
+        '
+        'lblHardClosePercentage
+        '
+        Me.lblHardClosePercentage.AutoSize = True
+        Me.lblHardClosePercentage.Location = New System.Drawing.Point(9, 160)
+        Me.lblHardClosePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblHardClosePercentage.Name = "lblHardClosePercentage"
+        Me.lblHardClosePercentage.Size = New System.Drawing.Size(94, 17)
+        Me.lblHardClosePercentage.TabIndex = 60
+        Me.lblHardClosePercentage.Text = "Hard Close %"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(608, 275)
+        Me.ClientSize = New System.Drawing.Size(608, 306)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -273,11 +295,9 @@ Partial Class frmNFOSettings
     Friend WithEvents btnSave As Button
     Friend WithEvents ImageList1 As ImageList
     Friend WithEvents opnFileSettings As OpenFileDialog
-    Friend WithEvents lblFirstEntryTime As Label
-    Friend WithEvents lblSecondEntryTime As Label
+    Friend WithEvents lblTradeStartTime As Label
     Friend WithEvents lblEODExitTime As Label
-    Friend WithEvents dtpckrFirstEntryTime As DateTimePicker
-    Friend WithEvents dtpckrSecondEntryTime As DateTimePicker
+    Friend WithEvents dtpckrTradeStartTime As DateTimePicker
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents GroupBox1 As GroupBox
     Friend WithEvents txtStoplossTrailingPercentage As TextBox
@@ -290,4 +310,8 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMargin As Label
     Friend WithEvents txtCapital As TextBox
     Friend WithEvents lblCapital As Label
+    Friend WithEvents txtBidAskRatio As TextBox
+    Friend WithEvents lblBidAskRatio As Label
+    Friend WithEvents txtHardClosePercentage As TextBox
+    Friend WithEvents lblHardClosePercentage As Label
 End Class

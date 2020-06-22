@@ -15,12 +15,7 @@ Public Class NFOStrategyInstrument
 #End Region
 
     Public ReadOnly Property TakeTrade As Boolean = False
-
-    Private ReadOnly _askBidMul As Decimal = 2
-
-    Private _gainLossPer As Decimal = Decimal.MinValue
-    Private _askToBidRatio As Decimal = Decimal.MinValue
-    Private _bidToAskRatio As Decimal = Decimal.MinValue
+    Public Property DirectionToTrade As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -47,9 +42,16 @@ Public Class NFOStrategyInstrument
     Public Async Function CheckSignalAsync() As Task
         Try
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
-            Dim firstEntryDone As Boolean = False
-            Dim direction As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
             Await Task.Delay((Me.ParentStrategy.ParentController.UserInputs.GetInformationDelay + 2) * 1000, _cts.Token).ConfigureAwait(False)
+            If Now >= userInputs.TradeStartTime Then
+                For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+                    If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
+                        logger.Debug("Entry done for instrument: {0}", runningStrategyInstrument.TradableInstrument.TradingSymbol)
+                        runningStrategyInstrument.MonitorAsync()
+                    End If
+                Next
+            End If
+
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
@@ -62,67 +64,48 @@ Public Class NFOStrategyInstrument
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Me.TradableInstrument.LastTick IsNot Nothing Then
-                    If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now >= userInputs.SecondEntryTime Then
-                        For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
-                            If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
-                                logger.Debug("Both entry done for instrument: {0}", runningStrategyInstrument.TradableInstrument.TradingSymbol)
-                                runningStrategyInstrument.MonitorAsync()
-                            End If
-                        Next
-                        Exit While
-                    ElseIf Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime AndAlso Now <= userInputs.SecondEntryTime Then
-                        For Each runningStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
-                            If runningStrategyInstrument.OrderDetails IsNot Nothing AndAlso runningStrategyInstrument.OrderDetails.Count > 0 Then
-                                direction = runningStrategyInstrument.OrderDetails.FirstOrDefault.Value.ParentOrder.TransactionType
-                                firstEntryDone = True
-                                logger.Debug("First entry done for instrument: {0}", runningStrategyInstrument.TradableInstrument.TradingSymbol)
-                                runningStrategyInstrument.MonitorAsync()
-                            End If
-                        Next
-                    End If
-                    If Not firstEntryDone AndAlso Now >= userInputs.FirstEntryTime Then
-                        Dim currentTick As ITick = Me.TradableInstrument.LastTick
-                        If currentTick.LastPrice > currentTick.Open Then
-                            direction = IOrder.TypeOfTransaction.Buy
-                        Else
-                            direction = IOrder.TypeOfTransaction.Sell
-                        End If
-                        OnHeartbeat(String.Format("NIFTY direction: {0}", direction.ToString))
-                        Dim strategyInstrumentsToStart As List(Of NFOStrategyInstrument) = Nothing
-                        If direction = IOrder.TypeOfTransaction.Buy Then
-                            strategyInstrumentsToStart = GetTopGainer(2)
-                        ElseIf direction = IOrder.TypeOfTransaction.Sell Then
-                            strategyInstrumentsToStart = GetTopLosser(2)
-                        End If
-                        If strategyInstrumentsToStart IsNot Nothing AndAlso strategyInstrumentsToStart.Count > 0 Then
-                            For Each runningInstrument In strategyInstrumentsToStart
-                                GetSimilarCashStrategyInstrument(runningInstrument.TradableInstrument).MonitorAsync()
+                    If Now >= userInputs.TradeStartTime Then
+                        Dim nfoStrategyInstruments As IEnumerable(Of StrategyInstrument) =
+                            Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
+                                                                                    Return x.TradableInstrument.TradingSymbol <> Me.TradableInstrument.TradingSymbol AndAlso
+                                                                                    x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                End Function)
+                        If nfoStrategyInstruments IsNot Nothing AndAlso nfoStrategyInstruments.Count > 0 Then
+                            For Each runningStrategyInstrument As NFOStrategyInstrument In nfoStrategyInstruments
+                                Dim cashInstrumnet As NFOStrategyInstrument = GetSimilarCashStrategyInstrument(runningStrategyInstrument.TradableInstrument)
+                                If cashInstrumnet IsNot Nothing AndAlso Not cashInstrumnet.TakeTrade Then
+                                    Dim bidAskRatio As Decimal = runningStrategyInstrument.GetBidToAskRatio()
+                                    Dim askBidRatio As Decimal = runningStrategyInstrument.GetAskToBidRatio()
+                                    If bidAskRatio <> Decimal.MinValue AndAlso bidAskRatio > userInputs.BidAskRatio Then
+                                        OnHeartbeat(String.Format("{0} -> BidToAskRatio:{1}, AskToBidRatio:{2}, Will take buy trade in this instrument.",
+                                                                  cashInstrumnet.TradableInstrument.TradingSymbol,
+                                                                  If(bidAskRatio <> Decimal.MinValue, bidAskRatio, "∞"),
+                                                                  If(askBidRatio <> Decimal.MinValue, askBidRatio, "∞")))
+
+                                        cashInstrumnet.DirectionToTrade = IOrder.TypeOfTransaction.Buy
+                                        cashInstrumnet.MonitorAsync()
+                                    ElseIf askBidRatio <> Decimal.MinValue AndAlso askBidRatio > userInputs.BidAskRatio Then
+                                        OnHeartbeat(String.Format("{0} -> BidToAskRatio:{1}, AskToBidRatio:{2}, Will take sell trade in this instrument.",
+                                                                  cashInstrumnet.TradableInstrument.TradingSymbol,
+                                                                  If(bidAskRatio <> Decimal.MinValue, bidAskRatio, "∞"),
+                                                                  If(askBidRatio <> Decimal.MinValue, askBidRatio, "∞")))
+
+                                        cashInstrumnet.DirectionToTrade = IOrder.TypeOfTransaction.Sell
+                                        cashInstrumnet.MonitorAsync()
+                                    Else
+                                        OnHeartbeat(String.Format("{0} -> BidToAskRatio:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
+                                                                  cashInstrumnet.TradableInstrument.TradingSymbol,
+                                                                  If(bidAskRatio <> Decimal.MinValue, bidAskRatio, "∞"),
+                                                                  If(askBidRatio <> Decimal.MinValue, askBidRatio, "∞")))
+                                    End If
+                                End If
                             Next
-
-                            firstEntryDone = True
-                            logger.Debug("First Entry done. Now it will check for second entry.")
-                        End If
-                    End If
-
-                    If firstEntryDone AndAlso Now >= userInputs.SecondEntryTime AndAlso direction <> IOrder.TypeOfTransaction.None Then
-                        Dim strategyInstrumentsToStart As List(Of NFOStrategyInstrument) = Nothing
-                        If direction = IOrder.TypeOfTransaction.Sell Then
-                            strategyInstrumentsToStart = GetTopGainer(1)
-                        ElseIf direction = IOrder.TypeOfTransaction.Buy Then
-                            strategyInstrumentsToStart = GetTopLosser(1)
-                        End If
-                        If strategyInstrumentsToStart IsNot Nothing AndAlso strategyInstrumentsToStart.Count > 0 Then
-                            For Each runningInstrument In strategyInstrumentsToStart
-                                GetSimilarCashStrategyInstrument(runningInstrument.TradableInstrument).MonitorAsync()
-                            Next
-
-                            Exit While
                         End If
                     End If
                 End If
 
                 _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                Await Task.Delay(1000 * 60, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
@@ -130,88 +113,6 @@ Public Class NFOStrategyInstrument
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         End Try
-    End Function
-
-    Private Function GetTopGainer(ByVal numberOfInstrument As Integer) As List(Of NFOStrategyInstrument)
-        Dim ret As List(Of NFOStrategyInstrument) = Nothing
-        Dim nfoInstrument As IEnumerable(Of StrategyInstrument) =
-            Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
-                                                                    Return x.TradableInstrument.TradingSymbol <> Me.TradableInstrument.TradingSymbol AndAlso
-                                                                    x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures
-                                                                End Function)
-        If nfoInstrument IsNot Nothing AndAlso nfoInstrument.Count > 0 Then
-            For Each runningStrategyInstrument In nfoInstrument.OrderByDescending(Function(x)
-                                                                                      Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
-                                                                                  End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) >= 0 Then
-                    Dim bidAskRatio As Decimal = CType(runningStrategyInstrument, NFOStrategyInstrument).GetBidToAskRatio(True)
-                    If bidAskRatio <> Decimal.MinValue Then
-                        If bidAskRatio > _askBidMul Then
-                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  bidAskRatio))
-                            If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                            ret.Add(runningStrategyInstrument)
-
-                            If ret.Count >= numberOfInstrument Then Exit For
-                        Else
-                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  bidAskRatio))
-                        End If
-                    Else
-                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, BidToAskRatio:{2}, Will not take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  "∞"))
-                    End If
-                End If
-            Next
-        End If
-        Return ret
-    End Function
-
-    Private Function GetTopLosser(ByVal numberOfInstrument As Integer) As List(Of NFOStrategyInstrument)
-        Dim ret As List(Of NFOStrategyInstrument) = Nothing
-        Dim nfoInstrument As IEnumerable(Of StrategyInstrument) =
-            Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
-                                                                    Return x.TradableInstrument.TradingSymbol <> Me.TradableInstrument.TradingSymbol AndAlso
-                                                                    x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures
-                                                                End Function)
-        If nfoInstrument IsNot Nothing AndAlso nfoInstrument.Count > 0 Then
-            For Each runningStrategyInstrument In nfoInstrument.OrderBy(Function(x)
-                                                                            Return CType(x, NFOStrategyInstrument).GetGainLossPercentage(True)
-                                                                        End Function)
-                If CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False) < 0 Then
-                    Dim askBidRatio As Decimal = CType(runningStrategyInstrument, NFOStrategyInstrument).GetAskToBidRatio(True)
-                    If askBidRatio <> Decimal.MinValue Then
-                        If askBidRatio > _askBidMul Then
-                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  askBidRatio))
-                            If ret Is Nothing Then ret = New List(Of NFOStrategyInstrument)
-                            ret.Add(runningStrategyInstrument)
-
-                            If ret.Count >= numberOfInstrument Then Exit For
-                        Else
-                            OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  askBidRatio))
-                        End If
-                    Else
-                        OnHeartbeat(String.Format("{0} GainLoss%:{1}, AskToBidRatio:{2}, Will not take trade in this instrument.",
-                                                  runningStrategyInstrument.TradableInstrument.TradingSymbol,
-                                                  CType(runningStrategyInstrument, NFOStrategyInstrument).GetGainLossPercentage(False),
-                                                  "∞"))
-                    End If
-                End If
-            Next
-        End If
-        Return ret
     End Function
 
     Private Function GetSimilarCashStrategyInstrument(ByVal futureInstrument As IInstrument) As NFOStrategyInstrument
@@ -223,34 +124,28 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Public Function GetGainLossPercentage(ByVal freshCheck As Boolean) As Decimal
-        If (freshCheck OrElse _gainLossPer = Decimal.MinValue) AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
-            Dim lastTick As ITick = Me.TradableInstrument.LastTick
-            _gainLossPer = Math.Round(((lastTick.LastPrice - lastTick.Close) / lastTick.LastPrice) * 100, 4)
-        End If
-        Return _gainLossPer
-    End Function
-
-    Public Function GetAskToBidRatio(ByVal freshCheck As Boolean) As Decimal
-        If (freshCheck OrElse _askToBidRatio = Decimal.MinValue) AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
+    Public Function GetAskToBidRatio() As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If Me.TradableInstrument.LastTick IsNot Nothing Then
             Dim lastTick As ITick = Me.TradableInstrument.LastTick
             If lastTick.BuyQuantity <> UInteger.MaxValue AndAlso lastTick.BuyQuantity <> UInteger.MinValue AndAlso lastTick.BuyQuantity <> 0 AndAlso
                 lastTick.SellQuantity <> UInteger.MaxValue AndAlso lastTick.SellQuantity <> UInteger.MinValue AndAlso lastTick.SellQuantity <> 0 Then
-                _askToBidRatio = Math.Round(lastTick.SellQuantity / lastTick.BuyQuantity, 4)
+                ret = Math.Round(lastTick.SellQuantity / lastTick.BuyQuantity, 4)
             End If
         End If
-        Return _askToBidRatio
+        Return ret
     End Function
 
-    Public Function GetBidToAskRatio(ByVal freshCheck As Boolean) As Decimal
-        If (freshCheck OrElse _bidToAskRatio = Decimal.MinValue) AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
+    Public Function GetBidToAskRatio() As Decimal
+        Dim ret As Decimal = Decimal.MinValue
+        If Me.TradableInstrument.LastTick IsNot Nothing Then
             Dim lastTick As ITick = Me.TradableInstrument.LastTick
             If lastTick.BuyQuantity <> UInteger.MaxValue AndAlso lastTick.BuyQuantity <> UInteger.MinValue AndAlso lastTick.BuyQuantity <> 0 AndAlso
                 lastTick.SellQuantity <> UInteger.MaxValue AndAlso lastTick.SellQuantity <> UInteger.MinValue AndAlso lastTick.SellQuantity <> 0 Then
-                _bidToAskRatio = Math.Round(lastTick.BuyQuantity / lastTick.SellQuantity, 4)
+                ret = Math.Round(lastTick.BuyQuantity / lastTick.SellQuantity, 4)
             End If
         End If
-        Return _bidToAskRatio
+        Return ret
     End Function
 #End Region
 
@@ -282,7 +177,13 @@ Public Class NFOStrategyInstrument
                     Await ExecuteCommandAsync(ExecuteCommands.ModifyStoplossOrder, Nothing).ConfigureAwait(False)
                 End If
                 'Modify Order block end
-
+                _cts.Token.ThrowIfCancellationRequested()
+                'Exit Order block start
+                Dim exitOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                If exitOrderTrigger IsNot Nothing AndAlso exitOrderTrigger.Count > 0 Then
+                    Await ExecuteCommandAsync(ExecuteCommands.CancelCOOrder, Nothing).ConfigureAwait(False)
+                End If
+                'Exit Order block end
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While
@@ -301,8 +202,9 @@ Public Class NFOStrategyInstrument
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
 
-        Dim parameters As PlaceOrderParameters = Nothing
-        If currentTime >= userSettings.FirstEntryTime AndAlso currentTime <= userSettings.EODExitTime AndAlso currentTick IsNot Nothing AndAlso
+        Dim parameter1 As PlaceOrderParameters = Nothing
+        Dim parameter2 As PlaceOrderParameters = Nothing
+        If currentTime >= userSettings.TradeStartTime AndAlso currentTime <= userSettings.EODExitTime AndAlso currentTick IsNot Nothing AndAlso
             GetTotalExecutedOrders() < 1 AndAlso Not IsActiveInstrument() AndAlso Not Me.StrategyExitAllTriggerd Then
             Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
             signalCandle.SnapshotDateTime = Now
@@ -319,31 +221,50 @@ Public Class NFOStrategyInstrument
             End If
 
             Dim buffer As Decimal = CalculateBuffer(currentTick.Open, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-            If quantity <> 0 AndAlso currentTick.LastPrice > currentTick.Close Then
+            If quantity <> 0 AndAlso DirectionToTrade = IOrder.TypeOfTransaction.Buy Then
                 Dim triggerPrice As Decimal = currentTick.Open - buffer
+                Dim modifiedQuantity As Integer = Math.Ceiling(quantity / 2)
 
-                parameters = New PlaceOrderParameters(signalCandle) With
+                parameter1 = New PlaceOrderParameters(signalCandle) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .TriggerPrice = triggerPrice,
                                  .OrderType = IOrder.TypeOfOrder.Market,
-                                 .Quantity = quantity}
-            ElseIf quantity <> 0 AndAlso currentTick.LastPrice < currentTick.Close Then
-                Dim triggerPrice As Decimal = currentTick.Open + buffer
+                                 .Quantity = modifiedQuantity}
 
-                parameters = New PlaceOrderParameters(signalCandle) With
+                If quantity - modifiedQuantity > 0 Then
+                    parameter2 = New PlaceOrderParameters(signalCandle) With
+                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                 .TriggerPrice = triggerPrice,
+                                 .OrderType = IOrder.TypeOfOrder.Market,
+                                 .Quantity = quantity - modifiedQuantity}
+                End If
+            ElseIf quantity <> 0 AndAlso DirectionToTrade = IOrder.TypeOfTransaction.Sell Then
+                Dim triggerPrice As Decimal = currentTick.Open + buffer
+                Dim modifiedQuantity As Integer = Math.Ceiling(quantity / 2)
+
+                parameter1 = New PlaceOrderParameters(signalCandle) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .TriggerPrice = triggerPrice,
                                      .OrderType = IOrder.TypeOfOrder.Market,
-                                     .Quantity = quantity}
+                                     .Quantity = modifiedQuantity}
+
+                If quantity - modifiedQuantity > 0 Then
+                    parameter2 = New PlaceOrderParameters(signalCandle) With
+                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                     .TriggerPrice = triggerPrice,
+                                     .OrderType = IOrder.TypeOfOrder.Market,
+                                     .Quantity = quantity - modifiedQuantity}
+                End If
             End If
         End If
 
         'Below portion have to be done in every place order trigger
-        If parameters IsNot Nothing Then
+        If parameter1 IsNot Nothing Then
             Try
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
-                    logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                    logger.Debug("PlaceOrder Parameters-> {0},{1}", parameter1.ToString, Me.TradableInstrument.TradingSymbol)
+                    If parameter2 IsNot Nothing Then logger.Debug("PlaceOrder Parameters-> {0},{1}", parameter2.ToString, Me.TradableInstrument.TradingSymbol)
                 End If
             Catch ex As Exception
                 logger.Error(ex)
@@ -365,49 +286,58 @@ Public Class NFOStrategyInstrument
                         Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
 
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, parameters.ToString))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameter1, parameter1.ToString))
+                        If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameter2, parameter2.ToString))
                     ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled Then
-                        If lastPlacedActivity.SignalDirection = parameters.EntryDirection Then
+                        If lastPlacedActivity.SignalDirection = parameter1.EntryDirection Then
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter1, parameter1.ToString))
+                            If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter1, parameter1.ToString))
                             Try
                                 logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
-                                             parameters.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
+                                             parameter1.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
                             Catch ex As Exception
                                 logger.Warn(ex.ToString)
                             End Try
                         Else
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter1, parameter1.ToString))
+                            If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter2, parameter2.ToString))
                         End If
                     ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
-                        If lastPlacedActivity.SignalDirection = parameters.EntryDirection Then
+                        If lastPlacedActivity.SignalDirection = parameter1.EntryDirection Then
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter1, parameter1.ToString))
+                            If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter2, parameter2.ToString))
                             Try
                                 logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
-                                             parameters.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
+                                             parameter1.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
                             Catch ex As Exception
                                 logger.Warn(ex.ToString)
                             End Try
                         Else
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter1, parameter1.ToString))
+                            If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter2, parameter2.ToString))
                         End If
                     ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter1, parameter1.ToString))
+                        If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameter2, parameter2.ToString))
                     Else
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter1, parameter1.ToString))
+                        If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter2, parameter2.ToString))
                     End If
                 Else
                     If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter1, parameter1.ToString))
+                    If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter2, parameter2.ToString))
                 End If
             Else
                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
+                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter1, parameter1.ToString))
+                If parameter2 IsNot Nothing Then ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameter2, parameter2.ToString))
             End If
         End If
         Return ret
@@ -488,6 +418,74 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+            Dim currentTick As ITick = Me.TradableInstrument.LastTick
+            Dim parentBussinessOrder As IBusinessOrder = Nothing
+            If OrderDetails.Count = 2 Then
+                If OrderDetails.FirstOrDefault.Value.ParentOrder.Quantity > OrderDetails.LastOrDefault.Value.ParentOrder.Quantity Then
+                    parentBussinessOrder = OrderDetails.FirstOrDefault.Value
+                Else
+                    parentBussinessOrder = OrderDetails.LastOrDefault.Value
+                End If
+            Else
+                parentBussinessOrder = OrderDetails.FirstOrDefault.Value
+            End If
+            If parentBussinessOrder IsNot Nothing AndAlso parentBussinessOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+               parentBussinessOrder.SLOrder IsNot Nothing AndAlso parentBussinessOrder.SLOrder.Count > 0 Then
+                For Each runningSLOrder In parentBussinessOrder.SLOrder
+                    If Not runningSLOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                       Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
+                       Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
+                        Dim exitTrade As Boolean = False
+                        Dim reason As String = Nothing
+                        Dim entryPrice As Decimal = parentBussinessOrder.ParentOrder.AveragePrice
+                        If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                            Dim gainLoss As Decimal = ((currentTick.LastPrice - entryPrice) / entryPrice) * 100
+                            If gainLoss >= userSettings.HardClosePercentage Then
+                                exitTrade = True
+                                reason = String.Format("Gain:{0}%. So hard close.", Math.Round(gainLoss, 2))
+                            End If
+                        ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                            Dim gainLoss As Decimal = ((entryPrice - currentTick.LastPrice) / entryPrice) * 100
+                            If gainLoss >= userSettings.HardClosePercentage Then
+                                exitTrade = True
+                                reason = String.Format("Gain:{0}%. So hard close.", Math.Round(gainLoss, 2))
+                            End If
+                        End If
+
+                        If exitTrade Then
+                            'Below portion have to be done in every cancel order trigger
+                            Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(runningSLOrder.Tag)
+                            If currentSignalActivities IsNot Nothing Then
+                                If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                                   currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                   currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                    Continue For
+                                End If
+                            End If
+                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, runningSLOrder, reason))
+                        End If
+                    End If
+                Next
+            End If
+        End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
+            Try
+                For Each runningOrder In ret
+                    OnHeartbeat(String.Format("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol))
+                Next
+            Catch ex As Exception
+                logger.Warn(ex)
+            End Try
+        End If
+        Return ret
+    End Function
+
     Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
         If order IsNot Nothing AndAlso Not order.Status = IOrder.TypeOfStatus.Complete AndAlso
             Not order.Status = IOrder.TypeOfStatus.Cancelled AndAlso
@@ -511,10 +509,6 @@ Public Class NFOStrategyInstrument
     End Function
 
     Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
-        Throw New NotImplementedException
-    End Function
-
-    Protected Overrides Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Throw New NotImplementedException
     End Function
 
