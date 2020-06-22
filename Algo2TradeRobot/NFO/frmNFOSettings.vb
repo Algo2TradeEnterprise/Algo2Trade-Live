@@ -41,7 +41,6 @@ Public Class frmNFOSettings
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtStoplossTrailingPercentage.Text = _settings.StoplossTrailingPercentage
             txtBidAskRatio.Text = _settings.BidAskRatio
-            txtHardClosePercentage.Text = _settings.HardClosePercentage
             chbCalculateQuantityFromCapital.Checked = _settings.CalculateQuantityFromCapital
             txtCapital.Text = _settings.Capital
             txtMargin.Text = _settings.MarginMultiplier
@@ -54,7 +53,6 @@ Public Class frmNFOSettings
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.StoplossTrailingPercentage = txtStoplossTrailingPercentage.Text
         _settings.BidAskRatio = txtBidAskRatio.Text
-        _settings.HardClosePercentage = txtHardClosePercentage.Text
         _settings.CalculateQuantityFromCapital = chbCalculateQuantityFromCapital.Checked
         _settings.Capital = txtCapital.Text
         _settings.MarginMultiplier = txtMargin.Text
@@ -82,7 +80,6 @@ Public Class frmNFOSettings
     Private Sub ValidateInputs()
         ValidateNumbers(0.00000001, 100, txtStoplossTrailingPercentage)
         ValidateNumbers(0.00000001, Decimal.MaxValue, txtBidAskRatio)
-        ValidateNumbers(0.00000001, 100, txtHardClosePercentage)
         ValidateNumbers(1, Decimal.MaxValue, txtCapital)
         ValidateNumbers(1, Decimal.MaxValue, txtMargin)
         ValidateNumbers(1, Integer.MaxValue, txtQuantity, True)

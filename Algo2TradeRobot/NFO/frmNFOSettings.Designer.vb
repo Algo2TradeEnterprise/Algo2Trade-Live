@@ -44,8 +44,6 @@ Partial Class frmNFOSettings
         Me.chbCalculateQuantityFromCapital = New System.Windows.Forms.CheckBox()
         Me.txtStoplossTrailingPercentage = New System.Windows.Forms.TextBox()
         Me.lblStoplossTrailingPercentage = New System.Windows.Forms.Label()
-        Me.txtHardClosePercentage = New System.Windows.Forms.TextBox()
-        Me.lblHardClosePercentage = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.grpQuantity.SuspendLayout()
         Me.SuspendLayout()
@@ -112,8 +110,6 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtHardClosePercentage)
-        Me.GroupBox1.Controls.Add(Me.lblHardClosePercentage)
         Me.GroupBox1.Controls.Add(Me.txtBidAskRatio)
         Me.GroupBox1.Controls.Add(Me.lblBidAskRatio)
         Me.GroupBox1.Controls.Add(Me.grpQuantity)
@@ -127,7 +123,7 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 303)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 261)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
@@ -159,7 +155,7 @@ Partial Class frmNFOSettings
         Me.grpQuantity.Controls.Add(Me.txtCapital)
         Me.grpQuantity.Controls.Add(Me.lblCapital)
         Me.grpQuantity.Controls.Add(Me.chbCalculateQuantityFromCapital)
-        Me.grpQuantity.Location = New System.Drawing.Point(0, 188)
+        Me.grpQuantity.Location = New System.Drawing.Point(0, 147)
         Me.grpQuantity.Name = "grpQuantity"
         Me.grpQuantity.Size = New System.Drawing.Size(477, 112)
         Me.grpQuantity.TabIndex = 56
@@ -247,34 +243,15 @@ Partial Class frmNFOSettings
         Me.lblStoplossTrailingPercentage.Location = New System.Drawing.Point(9, 91)
         Me.lblStoplossTrailingPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblStoplossTrailingPercentage.Name = "lblStoplossTrailingPercentage"
-        Me.lblStoplossTrailingPercentage.Size = New System.Drawing.Size(129, 17)
+        Me.lblStoplossTrailingPercentage.Size = New System.Drawing.Size(214, 17)
         Me.lblStoplossTrailingPercentage.TabIndex = 55
-        Me.lblStoplossTrailingPercentage.Text = "Stoploss Trailing %"
-        '
-        'txtHardClosePercentage
-        '
-        Me.txtHardClosePercentage.Location = New System.Drawing.Point(227, 157)
-        Me.txtHardClosePercentage.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtHardClosePercentage.Name = "txtHardClosePercentage"
-        Me.txtHardClosePercentage.Size = New System.Drawing.Size(242, 22)
-        Me.txtHardClosePercentage.TabIndex = 5
-        Me.txtHardClosePercentage.Tag = "Hard Close %"
-        '
-        'lblHardClosePercentage
-        '
-        Me.lblHardClosePercentage.AutoSize = True
-        Me.lblHardClosePercentage.Location = New System.Drawing.Point(9, 160)
-        Me.lblHardClosePercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblHardClosePercentage.Name = "lblHardClosePercentage"
-        Me.lblHardClosePercentage.Size = New System.Drawing.Size(94, 17)
-        Me.lblHardClosePercentage.TabIndex = 60
-        Me.lblHardClosePercentage.Text = "Hard Close %"
+        Me.lblStoplossTrailingPercentage.Text = "First Target / Stoploss Trailing %"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(608, 306)
+        Me.ClientSize = New System.Drawing.Size(608, 262)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -312,6 +289,4 @@ Partial Class frmNFOSettings
     Friend WithEvents lblCapital As Label
     Friend WithEvents txtBidAskRatio As TextBox
     Friend WithEvents lblBidAskRatio As Label
-    Friend WithEvents txtHardClosePercentage As TextBox
-    Friend WithEvents lblHardClosePercentage As Label
 End Class

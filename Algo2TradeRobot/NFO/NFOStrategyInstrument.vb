@@ -445,13 +445,13 @@ Public Class NFOStrategyInstrument
                         Dim entryPrice As Decimal = parentBussinessOrder.ParentOrder.AveragePrice
                         If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
                             Dim gainLoss As Decimal = ((currentTick.LastPrice - entryPrice) / entryPrice) * 100
-                            If gainLoss >= userSettings.HardClosePercentage Then
+                            If gainLoss >= userSettings.StoplossTrailingPercentage Then
                                 exitTrade = True
                                 reason = String.Format("Gain:{0}%. So hard close.", Math.Round(gainLoss, 2))
                             End If
                         ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                             Dim gainLoss As Decimal = ((entryPrice - currentTick.LastPrice) / entryPrice) * 100
-                            If gainLoss >= userSettings.HardClosePercentage Then
+                            If gainLoss >= userSettings.StoplossTrailingPercentage Then
                                 exitTrade = True
                                 reason = String.Format("Gain:{0}%. So hard close.", Math.Round(gainLoss, 2))
                             End If

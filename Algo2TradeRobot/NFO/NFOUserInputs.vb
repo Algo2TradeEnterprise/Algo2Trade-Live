@@ -11,7 +11,6 @@ Public Class NFOUserInputs
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Algo2Trade.Strategy.a2t")
 
     Public Property StoplossTrailingPercentage As Decimal
-    Public Property HardClosePercentage As Decimal
     Public Property BidAskRatio As Decimal
     Public Property CalculateQuantityFromCapital As Boolean
     Public Property Capital As Decimal
