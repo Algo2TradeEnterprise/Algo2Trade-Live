@@ -65,7 +65,7 @@ Public Class NFOStrategyInstrument
                         If currentTick IsNot Nothing Then
                             If currentTick.Timestamp >= runningStrategyInstrument.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
                                 currentTick.Timestamp <= runningStrategyInstrument.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
-                                WriteToCSV(filename, runningStrategyInstrument.TradableInstrument.TradingSymbol, currentTick.Timestamp.Value, currentTick.BuyQuantity, currentTick.SellQuantity)
+                                WriteToCSV(filename, runningStrategyInstrument.TradableInstrument.TradingSymbol, currentTick)
                             End If
                         End If
                     Next
@@ -82,23 +82,35 @@ Public Class NFOStrategyInstrument
         End Try
     End Function
 
-    Private Sub WriteToCSV(ByVal filename As String, ByVal instrumentName As String, ByVal candleTime As Date, ByVal bidQuantity As UInteger, ByVal askQuantity As UInteger)
+    Private Sub WriteToCSV(ByVal filename As String, ByVal instrumentName As String, ByVal currentTick As ITick)
         Dim sb As StringBuilder = New StringBuilder
         sb.AppendLine()
         sb.Append(instrumentName)
         sb.Append(",")
-        sb.Append(candleTime.ToString("dd-MMM-yyyy HH:mm:ss"))
+        sb.Append(currentTick.Timestamp.Value.ToString("dd-MMM-yyyy HH:mm:ss"))
         sb.Append(",")
-        sb.Append(bidQuantity)
+        sb.Append(currentTick.Open)
         sb.Append(",")
-        sb.Append(askQuantity)
+        sb.Append(currentTick.Low)
         sb.Append(",")
-        If askQuantity <> UInteger.MaxValue AndAlso askQuantity <> UInteger.MinValue AndAlso askQuantity <> 0 Then
-            sb.Append(bidQuantity / askQuantity)
+        sb.Append(currentTick.High)
+        sb.Append(",")
+        sb.Append(currentTick.Close)
+        sb.Append(",")
+        sb.Append(currentTick.LastPrice)
+        sb.Append(",")
+        sb.Append(currentTick.Volume)
+        sb.Append(",")
+        sb.Append(currentTick.BuyQuantity)
+        sb.Append(",")
+        sb.Append(currentTick.SellQuantity)
+        sb.Append(",")
+        If currentTick.SellQuantity <> UInteger.MaxValue AndAlso currentTick.SellQuantity <> UInteger.MinValue AndAlso currentTick.SellQuantity <> 0 Then
+            sb.Append(currentTick.BuyQuantity / currentTick.SellQuantity)
         End If
         sb.Append(",")
-        If bidQuantity <> UInteger.MaxValue AndAlso bidQuantity <> UInteger.MinValue AndAlso bidQuantity <> 0 Then
-            sb.Append(askQuantity / bidQuantity)
+        If currentTick.BuyQuantity <> UInteger.MaxValue AndAlso currentTick.BuyQuantity <> UInteger.MinValue AndAlso currentTick.BuyQuantity <> 0 Then
+            sb.Append(currentTick.SellQuantity / currentTick.BuyQuantity)
         End If
 
         File.AppendAllText(filename, sb.ToString())
@@ -110,6 +122,18 @@ Public Class NFOStrategyInstrument
             sb.Append("Instrument Name")
             sb.Append(",")
             sb.Append("Date Time")
+            sb.Append(",")
+            sb.Append("Open")
+            sb.Append(",")
+            sb.Append("Low")
+            sb.Append(",")
+            sb.Append("High")
+            sb.Append(",")
+            sb.Append("Close")
+            sb.Append(",")
+            sb.Append("LTP")
+            sb.Append(",")
+            sb.Append("Volume")
             sb.Append(",")
             sb.Append("Bid Quantity")
             sb.Append(",")
