@@ -54,10 +54,7 @@ Public Class NFOStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
 
-                Dim allStrategyInstruments As IEnumerable(Of StrategyInstrument) =
-                    Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
-                                                                            Return x.TradableInstrument.TradingSymbol <> Me.TradableInstrument.TradingSymbol
-                                                                        End Function)
+                Dim allStrategyInstruments As IEnumerable(Of StrategyInstrument) = Me.ParentStrategy.TradableStrategyInstruments
                 If allStrategyInstruments IsNot Nothing AndAlso allStrategyInstruments.Count > 0 Then
                     For Each runningStrategyInstrument In allStrategyInstruments
                         _cts.Token.ThrowIfCancellationRequested()

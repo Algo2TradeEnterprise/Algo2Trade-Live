@@ -72,6 +72,11 @@ Public Class NFOStrategy
                             retTradableInstrumentsAsPerStrategy.Add(niftyInstrument)
                             ret = True
                         End If
+                        Dim bankniftyInstrument As IInstrument = GetCurrentContract("BANKNIFTY", allInstruments.ToList)
+                        If bankniftyInstrument IsNot Nothing Then
+                            retTradableInstrumentsAsPerStrategy.Add(bankniftyInstrument)
+                            ret = True
+                        End If
                     End If
                 End If
             End If
