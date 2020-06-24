@@ -109,6 +109,8 @@ Public Class NFOStrategyInstrument
         If currentTick.BuyQuantity <> UInteger.MaxValue AndAlso currentTick.BuyQuantity <> UInteger.MinValue AndAlso currentTick.BuyQuantity <> 0 Then
             sb.Append(currentTick.SellQuantity / currentTick.BuyQuantity)
         End If
+        sb.Append(",")
+        sb.Append(currentTick.OI)
 
         File.AppendAllText(filename, sb.ToString())
     End Sub
@@ -139,6 +141,8 @@ Public Class NFOStrategyInstrument
             sb.Append("Bid To Ask Ratio")
             sb.Append(",")
             sb.Append("Ask To Bid Ratio")
+            sb.Append(",")
+            sb.Append("OI")
 
             File.AppendAllText(filename, sb.ToString())
         End If
