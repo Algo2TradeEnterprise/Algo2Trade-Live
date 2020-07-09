@@ -714,12 +714,18 @@ Namespace Controller
                     If jString IsNot Nothing Then
                         Dim multiplierMap As String = Utilities.Strings.GetTextBetween("COMMODITY_MULTIPLIER_MAP=", "}", jString)
                         If multiplierMap IsNot Nothing Then
+                            If multiplierMap.EndsWith(",") Then
+                                multiplierMap = multiplierMap.Substring(0, multiplierMap.Count - 1)
+                            End If
                             multiplierMap = multiplierMap & "}"
                             commodityMultiplierMap = Utilities.Strings.JsonDeserialize(multiplierMap)
                         End If
 
                         Dim groupMap As String = Utilities.Strings.GetTextBetween("COMMODITY_GROUP_MAP=", "}", jString)
                         If groupMap IsNot Nothing Then
+                            If groupMap.EndsWith(",") Then
+                                groupMap = groupMap.Substring(0, groupMap.Count - 1)
+                            End If
                             groupMap = groupMap & "}"
                             commodityGroupMap = Utilities.Strings.JsonDeserialize(groupMap)
                         End If
@@ -735,7 +741,8 @@ Namespace Controller
 
                             If instrument.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
                                 instrument.ExchangeDetails.ExchangeType = Enums.TypeOfExchage.MCX Then
-                                Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
+                                'Dim stockName As String = instrument.TradingSymbol.Remove(instrument.TradingSymbol.Count - 8)
+                                Dim stockName As String = CType(instrument, ZerodhaInstrument).WrappedInstrument.Name
                                 If commodityMultiplierMap.ContainsKey(stockName) Then
                                     instrument.QuantityMultiplier = Val(commodityMultiplierMap(stockName).ToString.Substring(0, commodityMultiplierMap(stockName).ToString.Length - 1))
                                     instrument.BrokerageCategory = commodityMultiplierMap(stockName).ToString.Substring(commodityMultiplierMap(stockName).ToString.Length - 1)
