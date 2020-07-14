@@ -210,7 +210,7 @@ Public Class NFOStrategyInstrument
                     If _slPoint <> Decimal.MinValue Then
                         _quantity = CalculateQuantityFromStoploss(signal.Item2, signal.Item2 - _slPoint, userSettings.MaxProfitPerTrade)
                         quantity = _quantity
-                        _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade) - signal.Item2
+                        _targetPoint = CalculateTargetFromPL(signal.Item2, quantity, userSettings.MaxProfitPerTrade * Me.Multiplier) - signal.Item2
                     End If
                 Else
                     Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
@@ -223,11 +223,12 @@ Public Class NFOStrategyInstrument
                                 If firstTradeSignalCandle IsNot Nothing Then
                                     _slPoint = ConvertFloorCeling(GetHighestATR(atrConsumer, firstTradeSignalCandle), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                                     _quantity = GetFirstLogicalTradeQuantity(firstTradeSignalCandle)
-                                    _targetPoint = CalculateTargetFromPL(firstExecutedOrder.ParentOrder.TriggerPrice, _quantity, userSettings.MaxProfitPerTrade) - firstExecutedOrder.ParentOrder.TriggerPrice
+                                    _targetPoint = CalculateTargetFromPL(firstExecutedOrder.ParentOrder.TriggerPrice, _quantity, userSettings.MaxProfitPerTrade * Me.Multiplier) - firstExecutedOrder.ParentOrder.TriggerPrice
                                 End If
                             End If
                         End If
-                        quantity = Math.Pow(2, GetLogicalTradeCount()) * _quantity
+                        'quantity = Math.Pow(2, GetLogicalTradeCount()) * _quantity
+                        quantity = _quantity
                     End If
                 End If
                 If signalCandle IsNot Nothing AndAlso _slPoint <> Decimal.MinValue AndAlso _targetPoint <> Decimal.MinValue AndAlso quantity <> Integer.MinValue AndAlso _targetPoint >= _slPoint Then
@@ -649,21 +650,22 @@ Public Class NFOStrategyInstrument
     End Function
 
     Private Function GetHighestATR(ByVal atrConsumer As ATRConsumer, ByVal signalCandle As OHLCPayload) As Decimal
-        Dim ret As Decimal = Decimal.MinValue
-        If atrConsumer IsNot Nothing AndAlso atrConsumer.ConsumerPayloads IsNot Nothing AndAlso atrConsumer.ConsumerPayloads.Count > 0 AndAlso signalCandle IsNot Nothing Then
-            Dim todayHighestATR As Decimal = atrConsumer.ConsumerPayloads.Max(Function(x)
-                                                                                  If x.Key.Date = Now.Date AndAlso x.Key <= signalCandle.SnapshotDateTime Then
-                                                                                      Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
-                                                                                  Else
-                                                                                      Return Decimal.MinValue
-                                                                                  End If
-                                                                              End Function)
-            If todayHighestATR <> Decimal.MinValue Then
-                'ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
-                ret = (todayHighestATR + Me.PreviousDayHighestATR) / 2
-            End If
-        End If
-        Return ret
+        'Dim ret As Decimal = Decimal.MinValue
+        'If atrConsumer IsNot Nothing AndAlso atrConsumer.ConsumerPayloads IsNot Nothing AndAlso atrConsumer.ConsumerPayloads.Count > 0 AndAlso signalCandle IsNot Nothing Then
+        '    Dim todayHighestATR As Decimal = atrConsumer.ConsumerPayloads.Max(Function(x)
+        '                                                                          If x.Key.Date = Now.Date AndAlso x.Key <= signalCandle.SnapshotDateTime Then
+        '                                                                              Return CType(x.Value, ATRConsumer.ATRPayload).ATR.Value
+        '                                                                          Else
+        '                                                                              Return Decimal.MinValue
+        '                                                                          End If
+        '                                                                      End Function)
+        '    If todayHighestATR <> Decimal.MinValue Then
+        '        'ret = Math.Min(todayHighestATR, Me.PreviousDayHighestATR)
+        '        ret = (todayHighestATR + Me.PreviousDayHighestATR) / 2
+        '    End If
+        'End If
+        'Return ret
+        Return Me.PreviousDayHighestATR
     End Function
 
     Private Function IsAnyTradeTargetReached() As Boolean
