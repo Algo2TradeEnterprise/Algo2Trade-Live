@@ -10,6 +10,7 @@ Public Class CDSUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Supertrend_CDS.Strategy.a2t")
 
+    Public Property MiddleTimeframe As Integer
     Public Property HigherTimeframe As Integer
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)

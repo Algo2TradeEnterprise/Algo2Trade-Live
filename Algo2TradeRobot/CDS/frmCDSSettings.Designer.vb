@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class frmCDSSettings
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class frmCDSSettings
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmCDSSettings))
@@ -33,6 +33,8 @@ Partial Class frmCDSSettings
         Me.txtSupertrendPeriod = New System.Windows.Forms.TextBox()
         Me.lblSupertrendPeriod = New System.Windows.Forms.Label()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMiddleTimeframe = New System.Windows.Forms.TextBox()
+        Me.lblMiddleTimeFrame = New System.Windows.Forms.Label()
         Me.txtHigherTimeframe = New System.Windows.Forms.TextBox()
         Me.lblHigherTF = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
@@ -44,8 +46,8 @@ Partial Class frmCDSSettings
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
-        Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
-        Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
+        Me.txtLowerTimeframe = New System.Windows.Forms.TextBox()
+        Me.lblLowerTimeFrame = New System.Windows.Forms.Label()
         Me.grpSupertrend.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
@@ -79,7 +81,7 @@ Partial Class frmCDSSettings
         Me.grpSupertrend.Controls.Add(Me.lblSupertrendMultiplier)
         Me.grpSupertrend.Controls.Add(Me.txtSupertrendPeriod)
         Me.grpSupertrend.Controls.Add(Me.lblSupertrendPeriod)
-        Me.grpSupertrend.Location = New System.Drawing.Point(5, 241)
+        Me.grpSupertrend.Location = New System.Drawing.Point(5, 254)
         Me.grpSupertrend.Name = "grpSupertrend"
         Me.grpSupertrend.Size = New System.Drawing.Size(451, 90)
         Me.grpSupertrend.TabIndex = 26
@@ -92,7 +94,7 @@ Partial Class frmCDSSettings
         Me.txtSupertrendMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
         Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendMultiplier.TabIndex = 8
+        Me.txtSupertrendMultiplier.TabIndex = 9
         Me.txtSupertrendMultiplier.Tag = "Multiplier"
         '
         'lblSupertrendMultiplier
@@ -111,7 +113,7 @@ Partial Class frmCDSSettings
         Me.txtSupertrendPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
         Me.txtSupertrendPeriod.Size = New System.Drawing.Size(241, 22)
-        Me.txtSupertrendPeriod.TabIndex = 7
+        Me.txtSupertrendPeriod.TabIndex = 8
         Me.txtSupertrendPeriod.Tag = "Period"
         '
         'lblSupertrendPeriod
@@ -126,6 +128,8 @@ Partial Class frmCDSSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMiddleTimeframe)
+        Me.GroupBox1.Controls.Add(Me.lblMiddleTimeFrame)
         Me.GroupBox1.Controls.Add(Me.txtHigherTimeframe)
         Me.GroupBox1.Controls.Add(Me.lblHigherTF)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
@@ -137,29 +141,49 @@ Partial Class frmCDSSettings
         Me.GroupBox1.Controls.Add(Me.btnBrowse)
         Me.GroupBox1.Controls.Add(Me.txtInstrumentDetalis)
         Me.GroupBox1.Controls.Add(Me.lblInstrumentDetails)
-        Me.GroupBox1.Controls.Add(Me.txtSignalTimeFrame)
-        Me.GroupBox1.Controls.Add(Me.lblSignalTimeFrame)
+        Me.GroupBox1.Controls.Add(Me.txtLowerTimeframe)
+        Me.GroupBox1.Controls.Add(Me.lblLowerTimeFrame)
         Me.GroupBox1.Location = New System.Drawing.Point(5, 3)
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(451, 231)
+        Me.GroupBox1.Size = New System.Drawing.Size(451, 249)
         Me.GroupBox1.TabIndex = 25
         Me.GroupBox1.TabStop = False
         '
+        'txtMiddleTimeframe
+        '
+        Me.txtMiddleTimeframe.Location = New System.Drawing.Point(189, 47)
+        Me.txtMiddleTimeframe.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMiddleTimeframe.Name = "txtMiddleTimeframe"
+        Me.txtMiddleTimeframe.Size = New System.Drawing.Size(241, 22)
+        Me.txtMiddleTimeframe.TabIndex = 2
+        Me.txtMiddleTimeframe.Tag = "Middle Timeframe"
+        '
+        'lblMiddleTimeFrame
+        '
+        Me.lblMiddleTimeFrame.AutoSize = True
+        Me.lblMiddleTimeFrame.Location = New System.Drawing.Point(9, 50)
+        Me.lblMiddleTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMiddleTimeFrame.Name = "lblMiddleTimeFrame"
+        Me.lblMiddleTimeFrame.Size = New System.Drawing.Size(160, 17)
+        Me.lblMiddleTimeFrame.TabIndex = 27
+        Me.lblMiddleTimeFrame.Tag = ""
+        Me.lblMiddleTimeFrame.Text = "Middle Time Frame(min)"
+        '
         'txtHigherTimeframe
         '
-        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 49)
+        Me.txtHigherTimeframe.Location = New System.Drawing.Point(189, 79)
         Me.txtHigherTimeframe.Margin = New System.Windows.Forms.Padding(4)
         Me.txtHigherTimeframe.Name = "txtHigherTimeframe"
         Me.txtHigherTimeframe.Size = New System.Drawing.Size(241, 22)
-        Me.txtHigherTimeframe.TabIndex = 2
+        Me.txtHigherTimeframe.TabIndex = 3
         Me.txtHigherTimeframe.Tag = "Higher Timeframe"
         '
         'lblHigherTF
         '
         Me.lblHigherTF.AutoSize = True
-        Me.lblHigherTF.Location = New System.Drawing.Point(9, 52)
+        Me.lblHigherTF.Location = New System.Drawing.Point(9, 82)
         Me.lblHigherTF.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblHigherTF.Name = "lblHigherTF"
         Me.lblHigherTF.Size = New System.Drawing.Size(161, 17)
@@ -170,37 +194,37 @@ Partial Class frmCDSSettings
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(189, 153)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(189, 183)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(241, 22)
-        Me.dtpckrEODExitTime.TabIndex = 5
+        Me.dtpckrEODExitTime.TabIndex = 6
         Me.dtpckrEODExitTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrLastTradeEntryTime
         '
         Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(189, 118)
+        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(189, 148)
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 4
+        Me.dtpckrLastTradeEntryTime.TabIndex = 5
         Me.dtpckrLastTradeEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrTradeStartTime
         '
         Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(189, 83)
+        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(189, 113)
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(241, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 3
+        Me.dtpckrTradeStartTime.TabIndex = 4
         Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblEODExitTime
         '
         Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 154)
+        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 184)
         Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODExitTime.Name = "lblEODExitTime"
         Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
@@ -210,7 +234,7 @@ Partial Class frmCDSSettings
         'lblLastTradeEntryTime
         '
         Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 119)
+        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 149)
         Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
         Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(149, 17)
@@ -220,7 +244,7 @@ Partial Class frmCDSSettings
         'lblTradeStartTime
         '
         Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 85)
+        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 115)
         Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTradeStartTime.Name = "lblTradeStartTime"
         Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
@@ -230,58 +254,58 @@ Partial Class frmCDSSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 190)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 220)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 6
+        Me.btnBrowse.TabIndex = 7
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 191)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(189, 221)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
-        Me.txtInstrumentDetalis.TabIndex = 6
+        Me.txtInstrumentDetalis.TabIndex = 7
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 194)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 224)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
         Me.lblInstrumentDetails.TabIndex = 8
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
-        'txtSignalTimeFrame
+        'txtLowerTimeframe
         '
-        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(189, 15)
-        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
-        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(241, 22)
-        Me.txtSignalTimeFrame.TabIndex = 1
-        Me.txtSignalTimeFrame.Tag = "Signal Timeframe"
+        Me.txtLowerTimeframe.Location = New System.Drawing.Point(189, 15)
+        Me.txtLowerTimeframe.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtLowerTimeframe.Name = "txtLowerTimeframe"
+        Me.txtLowerTimeframe.Size = New System.Drawing.Size(241, 22)
+        Me.txtLowerTimeframe.TabIndex = 1
+        Me.txtLowerTimeframe.Tag = "Lower Timeframe"
         '
-        'lblSignalTimeFrame
+        'lblLowerTimeFrame
         '
-        Me.lblSignalTimeFrame.AutoSize = True
-        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(9, 18)
-        Me.lblSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblSignalTimeFrame.Name = "lblSignalTimeFrame"
-        Me.lblSignalTimeFrame.Size = New System.Drawing.Size(158, 17)
-        Me.lblSignalTimeFrame.TabIndex = 3
-        Me.lblSignalTimeFrame.Tag = ""
-        Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
+        Me.lblLowerTimeFrame.AutoSize = True
+        Me.lblLowerTimeFrame.Location = New System.Drawing.Point(9, 18)
+        Me.lblLowerTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblLowerTimeFrame.Name = "lblLowerTimeFrame"
+        Me.lblLowerTimeFrame.Size = New System.Drawing.Size(157, 17)
+        Me.lblLowerTimeFrame.TabIndex = 3
+        Me.lblLowerTimeFrame.Tag = ""
+        Me.lblLowerTimeFrame.Text = "Lower Time Frame(min)"
         '
         'frmCDSSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(576, 334)
+        Me.ClientSize = New System.Drawing.Size(576, 346)
         Me.Controls.Add(Me.grpSupertrend)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
@@ -305,6 +329,8 @@ Partial Class frmCDSSettings
     Friend WithEvents txtSupertrendPeriod As TextBox
     Friend WithEvents lblSupertrendPeriod As Label
     Friend WithEvents GroupBox1 As GroupBox
+    Friend WithEvents txtMiddleTimeframe As TextBox
+    Friend WithEvents lblMiddleTimeFrame As Label
     Friend WithEvents txtHigherTimeframe As TextBox
     Friend WithEvents lblHigherTF As Label
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
@@ -316,6 +342,6 @@ Partial Class frmCDSSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
-    Friend WithEvents txtSignalTimeFrame As TextBox
-    Friend WithEvents lblSignalTimeFrame As Label
+    Friend WithEvents txtLowerTimeframe As TextBox
+    Friend WithEvents lblLowerTimeFrame As Label
 End Class

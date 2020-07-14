@@ -1329,19 +1329,20 @@ Public Class frmMainTabbed
     End Function
 
     Private Async Function SendNotificationAsync(ByVal message As String) As Task
-        Try
-            _cts.Token.ThrowIfCancellationRequested()
-            If message.Contains("&") Then
-                message = message.Replace("&", "_")
-            End If
-            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-            Using tSender As New Utilities.Notification.Telegram("700121864:AAHjes45V0kEPBDLIfnZzsatH5NhRwIjciw", "-456916116", _cts)
-                Dim encodedString As String = Utilities.Strings.EncodeString(message)
-                Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-            End Using
-        Catch ex As Exception
-            'No exception can be thrown
-        End Try
+        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+        'Try
+        '    _cts.Token.ThrowIfCancellationRequested()
+        '    If message.Contains("&") Then
+        '        message = message.Replace("&", "_")
+        '    End If
+        '    Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+        '    Using tSender As New Utilities.Notification.Telegram("700121864:AAHjes45V0kEPBDLIfnZzsatH5NhRwIjciw", "-456916116", _cts)
+        '        Dim encodedString As String = Utilities.Strings.EncodeString(message)
+        '        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+        '    End Using
+        'Catch ex As Exception
+        '    'No exception can be thrown
+        'End Try
     End Function
 #End Region
 

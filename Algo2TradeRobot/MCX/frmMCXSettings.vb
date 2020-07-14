@@ -30,7 +30,8 @@ Public Class frmMCXSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of MCXUserInputs)(_settingsFilename)
-            txtSignalTimeFrame.Text = _settings.SignalTimeFrame
+            txtLowerTimeframe.Text = _settings.SignalTimeFrame
+            txtMiddleTimeframe.Text = _settings.MiddleTimeframe
             txtHigherTimeframe.Text = _settings.HigherTimeframe
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
@@ -42,7 +43,8 @@ Public Class frmMCXSettings
         End If
     End Sub
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeFrame.Text
+        _settings.SignalTimeFrame = txtLowerTimeframe.Text
+        _settings.MiddleTimeframe = txtMiddleTimeframe.Text
         _settings.HigherTimeframe = txtHigherTimeframe.Text
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
@@ -73,13 +75,17 @@ Public Class frmMCXSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 60, txtSignalTimeFrame, True)
+        ValidateNumbers(1, 60, txtLowerTimeframe, True)
+        ValidateNumbers(1, 180, txtMiddleTimeframe, True)
         ValidateNumbers(1, 180, txtHigherTimeframe, True)
         ValidateNumbers(0, Integer.MaxValue, txtSupertrendPeriod, True)
         ValidateNumbers(0, Decimal.MaxValue, txtSupertrendMultiplier, False)
 
-        If Val(txtHigherTimeframe.Text) <= Val(txtSignalTimeFrame.Text) Then
-            Throw New ApplicationException("Higher timeframe can not be lower than or equal to Signal timeframe")
+        If Val(txtMiddleTimeframe.Text) <= Val(txtLowerTimeframe.Text) Then
+            Throw New ApplicationException("Middle timeframe can not be lower than or equal to Lower timeframe")
+        End If
+        If Val(txtHigherTimeframe.Text) <= Val(txtMiddleTimeframe.Text) Then
+            Throw New ApplicationException("Higher timeframe can not be lower than or equal to Middle timeframe")
         End If
 
         ValidateFile()
