@@ -18,14 +18,30 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
+
+        Dim itemValues As Array = System.Enum.GetValues(GetType(NFOUserInputs.TypeOfRanges))
+        Dim itemNames As Array = System.Enum.GetNames(GetType(NFOUserInputs.TypeOfRanges))
+
+        For i As Integer = 0 To itemNames.Length - 1
+            Dim name As String = itemNames(i)
+            If name.StartsWith("C_") Then
+                name = name.Substring(2)
+            End If
+            name = name.Replace("_", " ")
+            Dim item As KeyValuePair(Of String, NFOUserInputs.TypeOfRanges) = New KeyValuePair(Of String, NFOUserInputs.TypeOfRanges)(name, itemValues(i))
+            cmbRangeBreakout.Items.Add(item)
+        Next
+        cmbRangeBreakout.DisplayMember = "Key"
+        cmbRangeBreakout.ValueMember = "Value"
+
         LoadSettings()
-        chbCalculateQuantityFromCapital_CheckedChanged(sender, e)
     End Sub
 
     Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
         Try
             _cts = New CancellationTokenSource
             If _settings Is Nothing Then _settings = New NFOUserInputs
+            _settings.InstrumentsData = Nothing
             ValidateInputs()
             SaveSettings()
             Me.Close()
@@ -37,28 +53,68 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            dtpckrTradeStartTime.Value = _settings.TradeStartTime
-            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
+
+            cmbRangeBreakout.SelectedIndex = GetIndex(cmbRangeBreakout, _settings.RangeType)
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtStoplossTrailingPercentage.Text = _settings.StoplossTrailingPercentage
-            txtBidAskRatio.Text = _settings.BidAskRatio
-            chbCalculateQuantityFromCapital.Checked = _settings.CalculateQuantityFromCapital
-            txtCapital.Text = _settings.Capital
-            txtMargin.Text = _settings.MarginMultiplier
-            txtQuantity.Text = _settings.Quantity
+            cmbNumberOfTradePerStock.SelectedIndex = GetIndex(cmbNumberOfTradePerStock, _settings.NumberOfTradePerStock)
+            txtMTMProfit.Text = _settings.MTMProfit
+            txtMTMLoss.Text = _settings.MTMLoss
+            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
     End Sub
 
+    Private Function GetIndex(ByVal cmbBox As ComboBox, ByVal value As Object) As Integer
+        Dim ret As Integer = -1
+        If cmbBox IsNot Nothing AndAlso cmbBox.Items IsNot Nothing AndAlso cmbBox.Items.Count > 0 Then
+            For index As Integer = 0 To cmbBox.Items.Count - 1
+                If value.GetType = GetType(Integer) Then
+                    If cmbBox.Items(index) = value Then
+                        ret = index
+                        Exit For
+                    End If
+                Else
+                    If cmbBox.Items(index).Value = value Then
+                        ret = index
+                        Exit For
+                    End If
+                End If
+            Next
+        End If
+        Return ret
+    End Function
+
     Private Sub SaveSettings()
-        _settings.TradeStartTime = dtpckrTradeStartTime.Value
-        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
+        _settings.RangeType = cmbRangeBreakout.SelectedItem.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.StoplossTrailingPercentage = txtStoplossTrailingPercentage.Text
-        _settings.BidAskRatio = txtBidAskRatio.Text
-        _settings.CalculateQuantityFromCapital = chbCalculateQuantityFromCapital.Checked
-        _settings.Capital = txtCapital.Text
-        _settings.MarginMultiplier = txtMargin.Text
-        _settings.Quantity = txtQuantity.Text
+        _settings.NumberOfTradePerStock = cmbNumberOfTradePerStock.SelectedItem
+        _settings.MTMProfit = Math.Abs(Val(txtMTMProfit.Text))
+        _settings.MTMLoss = Math.Abs(Val(txtMTMLoss.Text)) * -1
+        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+
+        Select Case _settings.RangeType
+            Case NFOUserInputs.TypeOfRanges.C_1_Minute
+                _settings.SignalTimeFrame = 1
+            Case NFOUserInputs.TypeOfRanges.C_2_Minute
+                _settings.SignalTimeFrame = 2
+            Case NFOUserInputs.TypeOfRanges.C_3_Minute
+                _settings.SignalTimeFrame = 3
+            Case NFOUserInputs.TypeOfRanges.C_4_Minute
+                _settings.SignalTimeFrame = 4
+            Case NFOUserInputs.TypeOfRanges.C_5_Minute
+                _settings.SignalTimeFrame = 5
+            Case NFOUserInputs.TypeOfRanges.C_10_Minute
+                _settings.SignalTimeFrame = 10
+            Case NFOUserInputs.TypeOfRanges.C_15_Minute
+                _settings.SignalTimeFrame = 15
+            Case NFOUserInputs.TypeOfRanges.C_30_Minute
+                _settings.SignalTimeFrame = 30
+            Case NFOUserInputs.TypeOfRanges.C_60_Minute
+                _settings.SignalTimeFrame = 60
+            Case NFOUserInputs.TypeOfRanges.Previous_Day
+                _settings.SignalTimeFrame = 1
+            Case Else
+                Throw New NotImplementedException
+        End Select
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -79,29 +135,28 @@ Public Class frmNFOSettings
         Return ret
     End Function
 
-    Private Sub ValidateInputs()
-        ValidateNumbers(0.00000001, 100, txtStoplossTrailingPercentage)
-        ValidateNumbers(0.00000001, Decimal.MaxValue, txtBidAskRatio)
-        ValidateNumbers(1, Decimal.MaxValue, txtCapital)
-        ValidateNumbers(1, Decimal.MaxValue, txtMargin)
-        ValidateNumbers(1, Integer.MaxValue, txtQuantity, True)
+    Private Sub ValidateFile()
+        _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
 
-    Private Sub chbCalculateQuantityFromCapital_CheckedChanged(sender As Object, e As EventArgs) Handles chbCalculateQuantityFromCapital.CheckedChanged
-        If chbCalculateQuantityFromCapital.Checked Then
-            lblCapital.Visible = True
-            txtCapital.Visible = True
-            lblMargin.Visible = True
-            txtMargin.Visible = True
-            lblQuantity.Visible = False
-            txtQuantity.Visible = False
+    Private Sub ValidateInputs()
+        ValidateNumbers(0, Decimal.MaxValue, txtMTMProfit)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMTMLoss)
+
+        ValidateFile()
+    End Sub
+
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
+        opnFileSettings.Filter = "|*.csv"
+        opnFileSettings.ShowDialog()
+    End Sub
+
+    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
+        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
+        If extension = ".csv" Then
+            txtInstrumentDetalis.Text = opnFileSettings.FileName
         Else
-            lblCapital.Visible = False
-            txtCapital.Visible = False
-            lblMargin.Visible = False
-            txtMargin.Visible = False
-            lblQuantity.Visible = True
-            txtQuantity.Visible = True
+            MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
         End If
     End Sub
 End Class

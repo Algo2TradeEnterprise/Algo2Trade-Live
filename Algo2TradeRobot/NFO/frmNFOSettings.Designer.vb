@@ -27,27 +27,21 @@ Partial Class frmNFOSettings
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.lblTradeStartTime = New System.Windows.Forms.Label()
         Me.lblEODExitTime = New System.Windows.Forms.Label()
-        Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtBidAskRatio = New System.Windows.Forms.TextBox()
-        Me.lblBidAskRatio = New System.Windows.Forms.Label()
-        Me.grpQuantity = New System.Windows.Forms.GroupBox()
-        Me.txtQuantity = New System.Windows.Forms.TextBox()
-        Me.lblQuantity = New System.Windows.Forms.Label()
-        Me.txtMargin = New System.Windows.Forms.TextBox()
-        Me.lblMargin = New System.Windows.Forms.Label()
-        Me.txtCapital = New System.Windows.Forms.TextBox()
-        Me.lblCapital = New System.Windows.Forms.Label()
-        Me.chbCalculateQuantityFromCapital = New System.Windows.Forms.CheckBox()
-        Me.txtStoplossTrailingPercentage = New System.Windows.Forms.TextBox()
-        Me.lblStoplossTrailingPercentage = New System.Windows.Forms.Label()
-        Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
-        Me.lblLastTradeEntryTime = New System.Windows.Forms.Label()
+        Me.lblRangeBreakout = New System.Windows.Forms.Label()
+        Me.cmbRangeBreakout = New System.Windows.Forms.ComboBox()
+        Me.cmbNumberOfTradePerStock = New System.Windows.Forms.ComboBox()
+        Me.lblNumberOfTradePerStock = New System.Windows.Forms.Label()
+        Me.lblMTMProfit = New System.Windows.Forms.Label()
+        Me.txtMTMProfit = New System.Windows.Forms.TextBox()
+        Me.txtMTMLoss = New System.Windows.Forms.TextBox()
+        Me.lblMTMLoss = New System.Windows.Forms.Label()
+        Me.btnBrowse = New System.Windows.Forms.Button()
+        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
+        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
-        Me.grpQuantity.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -70,40 +64,23 @@ Partial Class frmNFOSettings
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
-        'lblTradeStartTime
+        'opnFileSettings
         '
-        Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 20)
-        Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTradeStartTime.Name = "lblTradeStartTime"
-        Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
-        Me.lblTradeStartTime.TabIndex = 19
-        Me.lblTradeStartTime.Text = "Trade Start Time"
         '
         'lblEODExitTime
         '
         Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 86)
+        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 52)
         Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODExitTime.Name = "lblEODExitTime"
         Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
         Me.lblEODExitTime.TabIndex = 23
         Me.lblEODExitTime.Text = "EOD Exit Time"
         '
-        'dtpckrTradeStartTime
-        '
-        Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(227, 18)
-        Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
-        Me.dtpckrTradeStartTime.ShowUpDown = True
-        Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 0
-        Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
         'dtpckrEODExitTime
         '
         Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(227, 85)
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(227, 51)
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(242, 22)
@@ -112,170 +89,137 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.lblLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.txtBidAskRatio)
-        Me.GroupBox1.Controls.Add(Me.lblBidAskRatio)
-        Me.GroupBox1.Controls.Add(Me.grpQuantity)
-        Me.GroupBox1.Controls.Add(Me.txtStoplossTrailingPercentage)
-        Me.GroupBox1.Controls.Add(Me.lblStoplossTrailingPercentage)
+        Me.GroupBox1.Controls.Add(Me.btnBrowse)
+        Me.GroupBox1.Controls.Add(Me.txtInstrumentDetalis)
+        Me.GroupBox1.Controls.Add(Me.lblInstrumentDetails)
+        Me.GroupBox1.Controls.Add(Me.txtMTMLoss)
+        Me.GroupBox1.Controls.Add(Me.lblMTMLoss)
+        Me.GroupBox1.Controls.Add(Me.txtMTMProfit)
+        Me.GroupBox1.Controls.Add(Me.lblMTMProfit)
+        Me.GroupBox1.Controls.Add(Me.cmbNumberOfTradePerStock)
+        Me.GroupBox1.Controls.Add(Me.lblNumberOfTradePerStock)
+        Me.GroupBox1.Controls.Add(Me.cmbRangeBreakout)
+        Me.GroupBox1.Controls.Add(Me.lblRangeBreakout)
         Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
         Me.GroupBox1.Controls.Add(Me.lblEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.lblTradeStartTime)
         Me.GroupBox1.Location = New System.Drawing.Point(5, -2)
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 307)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 221)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
-        'txtBidAskRatio
+        'lblRangeBreakout
         '
-        Me.txtBidAskRatio.Location = New System.Drawing.Point(227, 154)
-        Me.txtBidAskRatio.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtBidAskRatio.Name = "txtBidAskRatio"
-        Me.txtBidAskRatio.Size = New System.Drawing.Size(242, 22)
-        Me.txtBidAskRatio.TabIndex = 4
-        Me.txtBidAskRatio.Tag = "Bid Ask Ratio"
+        Me.lblRangeBreakout.AutoSize = True
+        Me.lblRangeBreakout.Location = New System.Drawing.Point(9, 19)
+        Me.lblRangeBreakout.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRangeBreakout.Name = "lblRangeBreakout"
+        Me.lblRangeBreakout.Size = New System.Drawing.Size(111, 17)
+        Me.lblRangeBreakout.TabIndex = 24
+        Me.lblRangeBreakout.Text = "Range Breakout"
         '
-        'lblBidAskRatio
+        'cmbRangeBreakout
         '
-        Me.lblBidAskRatio.AutoSize = True
-        Me.lblBidAskRatio.Location = New System.Drawing.Point(9, 157)
-        Me.lblBidAskRatio.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblBidAskRatio.Name = "lblBidAskRatio"
-        Me.lblBidAskRatio.Size = New System.Drawing.Size(92, 17)
-        Me.lblBidAskRatio.TabIndex = 58
-        Me.lblBidAskRatio.Text = "Bid Ask Ratio"
+        Me.cmbRangeBreakout.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbRangeBreakout.FormattingEnabled = True
+        Me.cmbRangeBreakout.Location = New System.Drawing.Point(227, 16)
+        Me.cmbRangeBreakout.Name = "cmbRangeBreakout"
+        Me.cmbRangeBreakout.Size = New System.Drawing.Size(242, 24)
+        Me.cmbRangeBreakout.TabIndex = 1
         '
-        'grpQuantity
+        'cmbNumberOfTradePerStock
         '
-        Me.grpQuantity.Controls.Add(Me.txtQuantity)
-        Me.grpQuantity.Controls.Add(Me.lblQuantity)
-        Me.grpQuantity.Controls.Add(Me.txtMargin)
-        Me.grpQuantity.Controls.Add(Me.lblMargin)
-        Me.grpQuantity.Controls.Add(Me.txtCapital)
-        Me.grpQuantity.Controls.Add(Me.lblCapital)
-        Me.grpQuantity.Controls.Add(Me.chbCalculateQuantityFromCapital)
-        Me.grpQuantity.Location = New System.Drawing.Point(0, 190)
-        Me.grpQuantity.Name = "grpQuantity"
-        Me.grpQuantity.Size = New System.Drawing.Size(477, 112)
-        Me.grpQuantity.TabIndex = 56
-        Me.grpQuantity.TabStop = False
+        Me.cmbNumberOfTradePerStock.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbNumberOfTradePerStock.FormattingEnabled = True
+        Me.cmbNumberOfTradePerStock.Items.AddRange(New Object() {"1", "2"})
+        Me.cmbNumberOfTradePerStock.Location = New System.Drawing.Point(227, 85)
+        Me.cmbNumberOfTradePerStock.Name = "cmbNumberOfTradePerStock"
+        Me.cmbNumberOfTradePerStock.Size = New System.Drawing.Size(242, 24)
+        Me.cmbNumberOfTradePerStock.TabIndex = 3
         '
-        'txtQuantity
+        'lblNumberOfTradePerStock
         '
-        Me.txtQuantity.Location = New System.Drawing.Point(227, 49)
-        Me.txtQuantity.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtQuantity.Name = "txtQuantity"
-        Me.txtQuantity.Size = New System.Drawing.Size(242, 22)
-        Me.txtQuantity.TabIndex = 7
-        Me.txtQuantity.Tag = "Quantity"
+        Me.lblNumberOfTradePerStock.AutoSize = True
+        Me.lblNumberOfTradePerStock.Location = New System.Drawing.Point(9, 88)
+        Me.lblNumberOfTradePerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblNumberOfTradePerStock.Name = "lblNumberOfTradePerStock"
+        Me.lblNumberOfTradePerStock.Size = New System.Drawing.Size(184, 17)
+        Me.lblNumberOfTradePerStock.TabIndex = 26
+        Me.lblNumberOfTradePerStock.Text = "Number Of Trade Per Stock"
         '
-        'lblQuantity
+        'lblMTMProfit
         '
-        Me.lblQuantity.AutoSize = True
-        Me.lblQuantity.Location = New System.Drawing.Point(9, 52)
-        Me.lblQuantity.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblQuantity.Name = "lblQuantity"
-        Me.lblQuantity.Size = New System.Drawing.Size(61, 17)
-        Me.lblQuantity.TabIndex = 61
-        Me.lblQuantity.Text = "Quantity"
+        Me.lblMTMProfit.AutoSize = True
+        Me.lblMTMProfit.Location = New System.Drawing.Point(9, 124)
+        Me.lblMTMProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMTMProfit.Name = "lblMTMProfit"
+        Me.lblMTMProfit.Size = New System.Drawing.Size(76, 17)
+        Me.lblMTMProfit.TabIndex = 28
+        Me.lblMTMProfit.Text = "MTM Profit"
         '
-        'txtMargin
+        'txtMTMProfit
         '
-        Me.txtMargin.Location = New System.Drawing.Point(227, 79)
-        Me.txtMargin.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMargin.Name = "txtMargin"
-        Me.txtMargin.Size = New System.Drawing.Size(242, 22)
-        Me.txtMargin.TabIndex = 8
-        Me.txtMargin.Tag = "Margin"
+        Me.txtMTMProfit.Location = New System.Drawing.Point(227, 121)
+        Me.txtMTMProfit.Name = "txtMTMProfit"
+        Me.txtMTMProfit.Size = New System.Drawing.Size(242, 22)
+        Me.txtMTMProfit.TabIndex = 4
+        Me.txtMTMProfit.Tag = "MTM Profit"
         '
-        'lblMargin
+        'txtMTMLoss
         '
-        Me.lblMargin.AutoSize = True
-        Me.lblMargin.Location = New System.Drawing.Point(9, 82)
-        Me.lblMargin.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMargin.Name = "lblMargin"
-        Me.lblMargin.Size = New System.Drawing.Size(111, 17)
-        Me.lblMargin.TabIndex = 59
-        Me.lblMargin.Text = "Margin Multiplier"
+        Me.txtMTMLoss.Location = New System.Drawing.Point(227, 154)
+        Me.txtMTMLoss.Name = "txtMTMLoss"
+        Me.txtMTMLoss.Size = New System.Drawing.Size(242, 22)
+        Me.txtMTMLoss.TabIndex = 5
+        Me.txtMTMLoss.Tag = "MTM Loss"
         '
-        'txtCapital
+        'lblMTMLoss
         '
-        Me.txtCapital.Location = New System.Drawing.Point(227, 49)
-        Me.txtCapital.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtCapital.Name = "txtCapital"
-        Me.txtCapital.Size = New System.Drawing.Size(242, 22)
-        Me.txtCapital.TabIndex = 56
-        Me.txtCapital.Tag = "Capital"
+        Me.lblMTMLoss.AutoSize = True
+        Me.lblMTMLoss.Location = New System.Drawing.Point(9, 157)
+        Me.lblMTMLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMTMLoss.Name = "lblMTMLoss"
+        Me.lblMTMLoss.Size = New System.Drawing.Size(73, 17)
+        Me.lblMTMLoss.TabIndex = 30
+        Me.lblMTMLoss.Text = "MTM Loss"
         '
-        'lblCapital
+        'btnBrowse
         '
-        Me.lblCapital.AutoSize = True
-        Me.lblCapital.Location = New System.Drawing.Point(9, 52)
-        Me.lblCapital.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblCapital.Name = "lblCapital"
-        Me.lblCapital.Size = New System.Drawing.Size(51, 17)
-        Me.lblCapital.TabIndex = 57
-        Me.lblCapital.Text = "Capital"
+        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnBrowse.Location = New System.Drawing.Point(438, 189)
+        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.btnBrowse.Name = "btnBrowse"
+        Me.btnBrowse.Size = New System.Drawing.Size(31, 23)
+        Me.btnBrowse.TabIndex = 6
+        Me.btnBrowse.Text = "..."
+        Me.btnBrowse.UseVisualStyleBackColor = True
         '
-        'chbCalculateQuantityFromCapital
+        'txtInstrumentDetalis
         '
-        Me.chbCalculateQuantityFromCapital.AutoSize = True
-        Me.chbCalculateQuantityFromCapital.Location = New System.Drawing.Point(12, 19)
-        Me.chbCalculateQuantityFromCapital.Name = "chbCalculateQuantityFromCapital"
-        Me.chbCalculateQuantityFromCapital.Size = New System.Drawing.Size(228, 21)
-        Me.chbCalculateQuantityFromCapital.TabIndex = 6
-        Me.chbCalculateQuantityFromCapital.Text = "Calculate Quantity From Capital"
-        Me.chbCalculateQuantityFromCapital.UseVisualStyleBackColor = True
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 189)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
+        Me.txtInstrumentDetalis.ReadOnly = True
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(204, 22)
+        Me.txtInstrumentDetalis.TabIndex = 6
         '
-        'txtStoplossTrailingPercentage
+        'lblInstrumentDetails
         '
-        Me.txtStoplossTrailingPercentage.Location = New System.Drawing.Point(227, 120)
-        Me.txtStoplossTrailingPercentage.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtStoplossTrailingPercentage.Name = "txtStoplossTrailingPercentage"
-        Me.txtStoplossTrailingPercentage.Size = New System.Drawing.Size(242, 22)
-        Me.txtStoplossTrailingPercentage.TabIndex = 3
-        Me.txtStoplossTrailingPercentage.Tag = "Stoploss Trailing %"
-        '
-        'lblStoplossTrailingPercentage
-        '
-        Me.lblStoplossTrailingPercentage.AutoSize = True
-        Me.lblStoplossTrailingPercentage.Location = New System.Drawing.Point(9, 123)
-        Me.lblStoplossTrailingPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblStoplossTrailingPercentage.Name = "lblStoplossTrailingPercentage"
-        Me.lblStoplossTrailingPercentage.Size = New System.Drawing.Size(214, 17)
-        Me.lblStoplossTrailingPercentage.TabIndex = 55
-        Me.lblStoplossTrailingPercentage.Text = "First Target / Stoploss Trailing %"
-        '
-        'dtpckrLastTradeEntryTime
-        '
-        Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(227, 52)
-        Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
-        Me.dtpckrLastTradeEntryTime.ShowUpDown = True
-        Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 1
-        Me.dtpckrLastTradeEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'lblLastTradeEntryTime
-        '
-        Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 53)
-        Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
-        Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(149, 17)
-        Me.lblLastTradeEntryTime.TabIndex = 60
-        Me.lblLastTradeEntryTime.Text = "Last Trade Entry Time"
+        Me.lblInstrumentDetails.AutoSize = True
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 191)
+        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
+        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
+        Me.lblInstrumentDetails.TabIndex = 34
+        Me.lblInstrumentDetails.Text = "Instrument Details"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(608, 308)
+        Me.ClientSize = New System.Drawing.Size(608, 224)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -287,8 +231,6 @@ Partial Class frmNFOSettings
         Me.Text = "Settings"
         Me.GroupBox1.ResumeLayout(False)
         Me.GroupBox1.PerformLayout()
-        Me.grpQuantity.ResumeLayout(False)
-        Me.grpQuantity.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
@@ -296,23 +238,18 @@ Partial Class frmNFOSettings
     Friend WithEvents btnSave As Button
     Friend WithEvents ImageList1 As ImageList
     Friend WithEvents opnFileSettings As OpenFileDialog
-    Friend WithEvents lblTradeStartTime As Label
     Friend WithEvents lblEODExitTime As Label
-    Friend WithEvents dtpckrTradeStartTime As DateTimePicker
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents GroupBox1 As GroupBox
-    Friend WithEvents txtStoplossTrailingPercentage As TextBox
-    Friend WithEvents lblStoplossTrailingPercentage As Label
-    Friend WithEvents grpQuantity As GroupBox
-    Friend WithEvents chbCalculateQuantityFromCapital As CheckBox
-    Friend WithEvents txtQuantity As TextBox
-    Friend WithEvents lblQuantity As Label
-    Friend WithEvents txtMargin As TextBox
-    Friend WithEvents lblMargin As Label
-    Friend WithEvents txtCapital As TextBox
-    Friend WithEvents lblCapital As Label
-    Friend WithEvents txtBidAskRatio As TextBox
-    Friend WithEvents lblBidAskRatio As Label
-    Friend WithEvents dtpckrLastTradeEntryTime As DateTimePicker
-    Friend WithEvents lblLastTradeEntryTime As Label
+    Friend WithEvents cmbRangeBreakout As ComboBox
+    Friend WithEvents lblRangeBreakout As Label
+    Friend WithEvents cmbNumberOfTradePerStock As ComboBox
+    Friend WithEvents lblNumberOfTradePerStock As Label
+    Friend WithEvents txtMTMProfit As TextBox
+    Friend WithEvents lblMTMProfit As Label
+    Friend WithEvents txtMTMLoss As TextBox
+    Friend WithEvents lblMTMLoss As Label
+    Friend WithEvents btnBrowse As Button
+    Friend WithEvents txtInstrumentDetalis As TextBox
+    Friend WithEvents lblInstrumentDetails As Label
 End Class
