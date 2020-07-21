@@ -39,44 +39,34 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            Dim allfnoInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
-                                                                                              Return x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso x.RawExchange = "NFO"
-                                                                                          End Function)
-            If allfnoInstruments IsNot Nothing AndAlso allfnoInstruments.Count > 0 Then
-                Dim uniquefnoInstruments As List(Of String) = New List(Of String)
-                For Each runningInstrument In allfnoInstruments
-                    If Not uniquefnoInstruments.Contains(runningInstrument.RawInstrumentName.ToUpper) Then
-                        uniquefnoInstruments.Add(runningInstrument.RawInstrumentName.ToUpper)
+            Dim userInputs As NFOUserInputs = Me.UserSettings
+            If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
+                Dim ignoredStocklist As List(Of String) = Nothing
+                For Each instrument In userInputs.InstrumentsData
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim runningTradableInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                                  Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                                              End Function)
+                    If runningTradableInstrument IsNot Nothing Then
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                        ret = True
+                    Else
+                        If ignoredStocklist Is Nothing Then ignoredStocklist = New List(Of String)
+                        ignoredStocklist.Add(instrument.Key)
                     End If
                 Next
-                If uniquefnoInstruments IsNot Nothing AndAlso uniquefnoInstruments.Count > 0 Then
-                    Dim allCashInstrument As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                    Return x.InstrumentType = IInstrument.TypeOfInstrument.Cash AndAlso
-                                                                                                    x.Segment = "NSE"
-                                                                                                End Function)
-
-                    For Each instrument As IInstrument In allCashInstrument
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If uniquefnoInstruments.Contains(instrument.TradingSymbol.ToUpper) Then
-                            'Dim runningTradableInstrument As IInstrument = GetCurrentContract(instrument.TradingSymbol, allInstruments.ToList)
-                            '_cts.Token.ThrowIfCancellationRequested()
-                            'If runningTradableInstrument IsNot Nothing Then
-                            '    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            '    retTradableInstrumentsAsPerStrategy.Add(instrument)
-                            '    retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                            'End If
-                        End If
+                If ignoredStocklist IsNot Nothing AndAlso ignoredStocklist.Count > 0 Then
+                    Dim stocksName As String = Nothing
+                    For Each runningStock In ignoredStocklist
+                        stocksName = String.Format("{0},{1}", stocksName, runningStock)
                     Next
-                    If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
-                        'Dim niftyInstrument As IInstrument = GetCurrentContract("NIFTY", allInstruments.ToList)
-                        'If niftyInstrument IsNot Nothing Then
-                        '    retTradableInstrumentsAsPerStrategy.Add(niftyInstrument)
-                        '    ret = True
-                        'End If
-                    End If
+
+                    MessageBox.Show(String.Format("Unable to fetch '{0}' these stocks", stocksName.Substring(1).ToUpper), "Stock Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 End If
+                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
-            TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
         End If
 
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
