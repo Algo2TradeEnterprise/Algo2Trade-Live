@@ -142,10 +142,10 @@ Public Class NFOStrategyInstrument
             Not Me.StrategyExitAllTriggerd AndAlso _eligibleToTakeTrade Then
             Dim signal As Tuple(Of Boolean, Decimal, Decimal) = GetEntrySignal(runningCandlePayload, userSettings)
             If signal IsNot Nothing AndAlso signal.Item1 Then
-                If buyActiveOrder Is Nothing OrElse buyActiveOrder.Count > 0 Then
+                If buyActiveOrder Is Nothing OrElse buyActiveOrder.Count = 0 Then
                     Dim triggerPrice As Decimal = signal.Item2
                     Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
-                    Dim slPoint As Decimal = ConvertFloorCeling(signal.Item2 - signal.Item2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    Dim slPoint As Decimal = ConvertFloorCeling(signal.Item2 - signal.Item3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim quantity As Integer = CalculateQuantityFromStoploss(triggerPrice, triggerPrice - slPoint, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).MaxLossPerStock / userSettings.NumberOfTradePerStock)
                     If quantity <> 0 AndAlso currentTick.LastPrice < triggerPrice Then
@@ -274,7 +274,7 @@ Public Class NFOStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        If userSettings.NumberOfTradePerStock = 1 And IsActiveInstrument() Then
+        If GetTotalExecutedOrders() >= userSettings.NumberOfTradePerStock Then
             Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
             If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
                 Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected Then
