@@ -41,6 +41,8 @@ Public Class NFOStrategyInstrument
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             If Me.ParentStrategy.UserSettings.SignalTimeFrame > 0 Then
                 Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(Me.ParentStrategy.UserSettings.SignalTimeFrame)
+
+                Me.RawPayloadDependentConsumers.Add(chartConsumer)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
