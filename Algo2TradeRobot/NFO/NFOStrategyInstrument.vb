@@ -102,6 +102,8 @@ Public Class NFOStrategyInstrument
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
+        Dim buyActiveOrder As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
+        Dim sellActiveOrder As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
 
         Try
             If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
@@ -109,21 +111,20 @@ Public Class NFOStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    'logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Is Active Trades:{4}, Is Any Trade Target Reached:{5}, Highest ATR:{6}, Today Highest ATR:{7}, Total PL:{8}, Stock PL:{9}, Number of Trade:{10}, Current Time:{11}, Current Tick:{12}, TradingSymbol:{13}",
-                    '            runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
-                    '            runningCandlePayload.PayloadGeneratedBy.ToString,
-                    '            Me.TradableInstrument.IsHistoricalCompleted,
-                    '            Me.ParentStrategy.IsFirstTimeInformationCollected,
-                    '            IsActiveInstrument(),
-                    '            IsAnyTradeTargetReached(),
-                    '            If(highestATR <> Decimal.MinValue, Math.Round(highestATR, 4), "∞"),
-                    '            If(_todayHighestATR <> Decimal.MinValue, Math.Round(_todayHighestATR, 4), "∞"),
-                    '            Me.ParentStrategy.GetTotalPLAfterBrokerage(),
-                    '            Me.GetOverallPLAfterBrokerage(),
-                    '            Me.GetTotalExecutedOrders(),
-                    '            currentTime.ToString,
-                    '            currentTick.LastPrice,
-                    '            Me.TradableInstrument.TradingSymbol)
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Buy Active Trades:{4}, Sell Active Trades:{5}, Number Of Trades:{6}, Total PL:{7}, Strategy Exit All Triggered:{8}, Eligible To Take Trade:{9}, Current Time:{10}, Current Tick:{11}, TradingSymbol:{12}",
+                                runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
+                                runningCandlePayload.PayloadGeneratedBy.ToString,
+                                Me.TradableInstrument.IsHistoricalCompleted,
+                                Me.ParentStrategy.IsFirstTimeInformationCollected,
+                                If(buyActiveOrder Is Nothing, 0, buyActiveOrder.Count),
+                                If(sellActiveOrder Is Nothing, 0, sellActiveOrder.Count),
+                                Me.GetTotalExecutedOrders(),
+                                Me.ParentStrategy.GetTotalPLAfterBrokerage(),
+                                Me.StrategyExitAllTriggerd,
+                                _eligibleToTakeTrade,
+                                currentTime.ToString,
+                                currentTick.LastPrice,
+                                Me.TradableInstrument.TradingSymbol)
                 End If
             End If
         Catch ex As Exception
@@ -139,7 +140,6 @@ Public Class NFOStrategyInstrument
             Not Me.StrategyExitAllTriggerd AndAlso _eligibleToTakeTrade Then
             Dim signal As Tuple(Of Boolean, Decimal, Decimal) = GetEntrySignal(runningCandlePayload, userSettings)
             If signal IsNot Nothing AndAlso signal.Item1 Then
-                Dim buyActiveOrder As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Buy)
                 If buyActiveOrder Is Nothing OrElse buyActiveOrder.Count > 0 Then
                     Dim triggerPrice As Decimal = signal.Item2
                     Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
@@ -160,7 +160,6 @@ Public Class NFOStrategyInstrument
                         parameterList.Add(parameter)
                     End If
                 End If
-                Dim sellActiveOrder As List(Of IOrder) = GetAllActiveOrders(IOrder.TypeOfTransaction.Sell)
                 If sellActiveOrder Is Nothing OrElse sellActiveOrder.Count = 0 Then
                     Dim triggerPrice As Decimal = signal.Item3
                     Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)

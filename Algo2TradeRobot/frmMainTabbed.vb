@@ -339,6 +339,8 @@ Public Class frmMainTabbed
                 Dim bf As BinaryFormatter = New BinaryFormatter()
                 _nfoUserInputs = CType(bf.Deserialize(fs), NFOUserInputs)
                 fs.Close()
+                _nfoUserInputs.InstrumentsData = Nothing
+                _nfoUserInputs.FillInstrumentDetails(_nfoUserInputs.InstrumentDetailsFilePath, _cts)
             Else
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If
@@ -510,11 +512,11 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        Dim authenticationUserId As String = "XB6057"
+        Dim authenticationUserId As String = "AB096403"
         If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
             (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "DK4056" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
             "ND0290" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
             MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
             Exit Sub
