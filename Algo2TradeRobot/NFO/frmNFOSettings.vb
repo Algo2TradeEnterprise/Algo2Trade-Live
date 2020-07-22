@@ -57,6 +57,7 @@ Public Class frmNFOSettings
             cmbRangeBreakout.SelectedIndex = GetIndex(cmbRangeBreakout, _settings.RangeType)
             dtpckrEODExitTime.Value = _settings.EODExitTime
             cmbNumberOfTradePerStock.SelectedIndex = GetIndex(cmbNumberOfTradePerStock, _settings.NumberOfTradePerStock)
+            txtRangeStoplossPercentage.Text = _settings.RangeStoplossPercentage
             txtMTMProfit.Text = _settings.MTMProfit
             txtMTMLoss.Text = _settings.MTMLoss
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
@@ -87,6 +88,7 @@ Public Class frmNFOSettings
         _settings.RangeType = cmbRangeBreakout.SelectedItem.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.NumberOfTradePerStock = cmbNumberOfTradePerStock.SelectedItem
+        _settings.RangeStoplossPercentage = txtRangeStoplossPercentage.Text
         _settings.MTMProfit = Math.Abs(Val(txtMTMProfit.Text))
         _settings.MTMLoss = Math.Abs(Val(txtMTMLoss.Text)) * -1
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
@@ -140,6 +142,7 @@ Public Class frmNFOSettings
     End Sub
 
     Private Sub ValidateInputs()
+        ValidateNumbers(0, 100, txtRangeStoplossPercentage)
         ValidateNumbers(0, Decimal.MaxValue, txtMTMProfit)
         ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMTMLoss)
 

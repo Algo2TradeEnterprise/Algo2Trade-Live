@@ -30,17 +30,19 @@ Partial Class frmNFOSettings
         Me.lblEODExitTime = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.lblRangeBreakout = New System.Windows.Forms.Label()
-        Me.cmbRangeBreakout = New System.Windows.Forms.ComboBox()
-        Me.cmbNumberOfTradePerStock = New System.Windows.Forms.ComboBox()
-        Me.lblNumberOfTradePerStock = New System.Windows.Forms.Label()
-        Me.lblMTMProfit = New System.Windows.Forms.Label()
-        Me.txtMTMProfit = New System.Windows.Forms.TextBox()
-        Me.txtMTMLoss = New System.Windows.Forms.TextBox()
-        Me.lblMTMLoss = New System.Windows.Forms.Label()
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtMTMLoss = New System.Windows.Forms.TextBox()
+        Me.lblMTMLoss = New System.Windows.Forms.Label()
+        Me.txtMTMProfit = New System.Windows.Forms.TextBox()
+        Me.lblMTMProfit = New System.Windows.Forms.Label()
+        Me.cmbNumberOfTradePerStock = New System.Windows.Forms.ComboBox()
+        Me.lblNumberOfTradePerStock = New System.Windows.Forms.Label()
+        Me.cmbRangeBreakout = New System.Windows.Forms.ComboBox()
+        Me.lblRangeBreakout = New System.Windows.Forms.Label()
+        Me.txtRangeStoplossPercentage = New System.Windows.Forms.TextBox()
+        Me.lblRangeStoplossPercentage = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -89,6 +91,8 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtRangeStoplossPercentage)
+        Me.GroupBox1.Controls.Add(Me.lblRangeStoplossPercentage)
         Me.GroupBox1.Controls.Add(Me.btnBrowse)
         Me.GroupBox1.Controls.Add(Me.txtInstrumentDetalis)
         Me.GroupBox1.Controls.Add(Me.lblInstrumentDetails)
@@ -106,28 +110,75 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(477, 221)
+        Me.GroupBox1.Size = New System.Drawing.Size(477, 258)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
-        'lblRangeBreakout
+        'btnBrowse
         '
-        Me.lblRangeBreakout.AutoSize = True
-        Me.lblRangeBreakout.Location = New System.Drawing.Point(9, 19)
-        Me.lblRangeBreakout.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblRangeBreakout.Name = "lblRangeBreakout"
-        Me.lblRangeBreakout.Size = New System.Drawing.Size(111, 17)
-        Me.lblRangeBreakout.TabIndex = 24
-        Me.lblRangeBreakout.Text = "Range Breakout"
+        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnBrowse.Location = New System.Drawing.Point(438, 224)
+        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.btnBrowse.Name = "btnBrowse"
+        Me.btnBrowse.Size = New System.Drawing.Size(31, 23)
+        Me.btnBrowse.TabIndex = 7
+        Me.btnBrowse.Text = "..."
+        Me.btnBrowse.UseVisualStyleBackColor = True
         '
-        'cmbRangeBreakout
+        'txtInstrumentDetalis
         '
-        Me.cmbRangeBreakout.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbRangeBreakout.FormattingEnabled = True
-        Me.cmbRangeBreakout.Location = New System.Drawing.Point(227, 16)
-        Me.cmbRangeBreakout.Name = "cmbRangeBreakout"
-        Me.cmbRangeBreakout.Size = New System.Drawing.Size(242, 24)
-        Me.cmbRangeBreakout.TabIndex = 1
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 224)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
+        Me.txtInstrumentDetalis.ReadOnly = True
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(204, 22)
+        Me.txtInstrumentDetalis.TabIndex = 7
+        '
+        'lblInstrumentDetails
+        '
+        Me.lblInstrumentDetails.AutoSize = True
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 226)
+        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
+        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
+        Me.lblInstrumentDetails.TabIndex = 34
+        Me.lblInstrumentDetails.Text = "Instrument Details"
+        '
+        'txtMTMLoss
+        '
+        Me.txtMTMLoss.Location = New System.Drawing.Point(227, 189)
+        Me.txtMTMLoss.Name = "txtMTMLoss"
+        Me.txtMTMLoss.Size = New System.Drawing.Size(242, 22)
+        Me.txtMTMLoss.TabIndex = 6
+        Me.txtMTMLoss.Tag = "MTM Loss"
+        '
+        'lblMTMLoss
+        '
+        Me.lblMTMLoss.AutoSize = True
+        Me.lblMTMLoss.Location = New System.Drawing.Point(9, 192)
+        Me.lblMTMLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMTMLoss.Name = "lblMTMLoss"
+        Me.lblMTMLoss.Size = New System.Drawing.Size(73, 17)
+        Me.lblMTMLoss.TabIndex = 30
+        Me.lblMTMLoss.Text = "MTM Loss"
+        '
+        'txtMTMProfit
+        '
+        Me.txtMTMProfit.Location = New System.Drawing.Point(227, 155)
+        Me.txtMTMProfit.Name = "txtMTMProfit"
+        Me.txtMTMProfit.Size = New System.Drawing.Size(242, 22)
+        Me.txtMTMProfit.TabIndex = 5
+        Me.txtMTMProfit.Tag = "MTM Profit"
+        '
+        'lblMTMProfit
+        '
+        Me.lblMTMProfit.AutoSize = True
+        Me.lblMTMProfit.Location = New System.Drawing.Point(9, 158)
+        Me.lblMTMProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMTMProfit.Name = "lblMTMProfit"
+        Me.lblMTMProfit.Size = New System.Drawing.Size(76, 17)
+        Me.lblMTMProfit.TabIndex = 28
+        Me.lblMTMProfit.Text = "MTM Profit"
         '
         'cmbNumberOfTradePerStock
         '
@@ -149,77 +200,48 @@ Partial Class frmNFOSettings
         Me.lblNumberOfTradePerStock.TabIndex = 26
         Me.lblNumberOfTradePerStock.Text = "Number Of Trade Per Stock"
         '
-        'lblMTMProfit
+        'cmbRangeBreakout
         '
-        Me.lblMTMProfit.AutoSize = True
-        Me.lblMTMProfit.Location = New System.Drawing.Point(9, 124)
-        Me.lblMTMProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMTMProfit.Name = "lblMTMProfit"
-        Me.lblMTMProfit.Size = New System.Drawing.Size(76, 17)
-        Me.lblMTMProfit.TabIndex = 28
-        Me.lblMTMProfit.Text = "MTM Profit"
+        Me.cmbRangeBreakout.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbRangeBreakout.FormattingEnabled = True
+        Me.cmbRangeBreakout.Location = New System.Drawing.Point(227, 16)
+        Me.cmbRangeBreakout.Name = "cmbRangeBreakout"
+        Me.cmbRangeBreakout.Size = New System.Drawing.Size(242, 24)
+        Me.cmbRangeBreakout.TabIndex = 1
         '
-        'txtMTMProfit
+        'lblRangeBreakout
         '
-        Me.txtMTMProfit.Location = New System.Drawing.Point(227, 121)
-        Me.txtMTMProfit.Name = "txtMTMProfit"
-        Me.txtMTMProfit.Size = New System.Drawing.Size(242, 22)
-        Me.txtMTMProfit.TabIndex = 4
-        Me.txtMTMProfit.Tag = "MTM Profit"
+        Me.lblRangeBreakout.AutoSize = True
+        Me.lblRangeBreakout.Location = New System.Drawing.Point(9, 19)
+        Me.lblRangeBreakout.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRangeBreakout.Name = "lblRangeBreakout"
+        Me.lblRangeBreakout.Size = New System.Drawing.Size(111, 17)
+        Me.lblRangeBreakout.TabIndex = 24
+        Me.lblRangeBreakout.Text = "Range Breakout"
         '
-        'txtMTMLoss
+        'txtRangeStoplossPercentage
         '
-        Me.txtMTMLoss.Location = New System.Drawing.Point(227, 154)
-        Me.txtMTMLoss.Name = "txtMTMLoss"
-        Me.txtMTMLoss.Size = New System.Drawing.Size(242, 22)
-        Me.txtMTMLoss.TabIndex = 5
-        Me.txtMTMLoss.Tag = "MTM Loss"
+        Me.txtRangeStoplossPercentage.Location = New System.Drawing.Point(227, 121)
+        Me.txtRangeStoplossPercentage.Name = "txtRangeStoplossPercentage"
+        Me.txtRangeStoplossPercentage.Size = New System.Drawing.Size(242, 22)
+        Me.txtRangeStoplossPercentage.TabIndex = 4
+        Me.txtRangeStoplossPercentage.Tag = "Range Stoploss %"
         '
-        'lblMTMLoss
+        'lblRangeStoplossPercentage
         '
-        Me.lblMTMLoss.AutoSize = True
-        Me.lblMTMLoss.Location = New System.Drawing.Point(9, 157)
-        Me.lblMTMLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMTMLoss.Name = "lblMTMLoss"
-        Me.lblMTMLoss.Size = New System.Drawing.Size(73, 17)
-        Me.lblMTMLoss.TabIndex = 30
-        Me.lblMTMLoss.Text = "MTM Loss"
-        '
-        'btnBrowse
-        '
-        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(438, 189)
-        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
-        Me.btnBrowse.Name = "btnBrowse"
-        Me.btnBrowse.Size = New System.Drawing.Size(31, 23)
-        Me.btnBrowse.TabIndex = 6
-        Me.btnBrowse.Text = "..."
-        Me.btnBrowse.UseVisualStyleBackColor = True
-        '
-        'txtInstrumentDetalis
-        '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 189)
-        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
-        Me.txtInstrumentDetalis.ReadOnly = True
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(204, 22)
-        Me.txtInstrumentDetalis.TabIndex = 6
-        '
-        'lblInstrumentDetails
-        '
-        Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 191)
-        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
-        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
-        Me.lblInstrumentDetails.TabIndex = 34
-        Me.lblInstrumentDetails.Text = "Instrument Details"
+        Me.lblRangeStoplossPercentage.AutoSize = True
+        Me.lblRangeStoplossPercentage.Location = New System.Drawing.Point(9, 124)
+        Me.lblRangeStoplossPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRangeStoplossPercentage.Name = "lblRangeStoplossPercentage"
+        Me.lblRangeStoplossPercentage.Size = New System.Drawing.Size(124, 17)
+        Me.lblRangeStoplossPercentage.TabIndex = 36
+        Me.lblRangeStoplossPercentage.Text = "Range Stoploss %"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(608, 224)
+        Me.ClientSize = New System.Drawing.Size(608, 261)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -252,4 +274,6 @@ Partial Class frmNFOSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
+    Friend WithEvents txtRangeStoplossPercentage As TextBox
+    Friend WithEvents lblRangeStoplossPercentage As Label
 End Class

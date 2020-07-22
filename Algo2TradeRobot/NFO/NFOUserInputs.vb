@@ -25,6 +25,7 @@ Public Class NFOUserInputs
 
     Public Property RangeType As TypeOfRanges
     Public Property NumberOfTradePerStock As Integer
+    Public Property RangeStoplossPercentage As Decimal
     Public Property MTMProfit As Decimal
     Public Property MTMLoss As Decimal
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)

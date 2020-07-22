@@ -145,7 +145,7 @@ Public Class NFOStrategyInstrument
                 If buyActiveOrder Is Nothing OrElse buyActiveOrder.Count = 0 Then
                     Dim triggerPrice As Decimal = signal.Item2
                     Dim price As Decimal = triggerPrice + ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
-                    Dim slPoint As Decimal = ConvertFloorCeling(signal.Item2 - signal.Item3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    Dim slPoint As Decimal = ConvertFloorCeling((signal.Item2 - signal.Item3) * userSettings.RangeStoplossPercentage / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim quantity As Integer = CalculateQuantityFromStoploss(triggerPrice, triggerPrice - slPoint, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).MaxLossPerStock / userSettings.NumberOfTradePerStock)
                     If quantity <> 0 AndAlso currentTick.LastPrice < triggerPrice Then
@@ -165,7 +165,7 @@ Public Class NFOStrategyInstrument
                 If sellActiveOrder Is Nothing OrElse sellActiveOrder.Count = 0 Then
                     Dim triggerPrice As Decimal = signal.Item3
                     Dim price As Decimal = triggerPrice - ConvertFloorCeling(triggerPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
-                    Dim slPoint As Decimal = ConvertFloorCeling(signal.Item2 - signal.Item3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                    Dim slPoint As Decimal = ConvertFloorCeling((signal.Item2 - signal.Item3) * userSettings.RangeStoplossPercentage / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                     Dim quantity As Integer = CalculateQuantityFromStoploss(triggerPrice + slPoint, triggerPrice, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).MaxLossPerStock / userSettings.NumberOfTradePerStock)
                     If quantity <> 0 AndAlso currentTick.LastPrice > triggerPrice Then
