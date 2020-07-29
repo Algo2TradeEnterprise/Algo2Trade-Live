@@ -460,7 +460,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments"))
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -512,7 +512,7 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        Dim authenticationUserId As String = "AB096403"
+        Dim authenticationUserId As String = "AB164624"
         If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
             (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
