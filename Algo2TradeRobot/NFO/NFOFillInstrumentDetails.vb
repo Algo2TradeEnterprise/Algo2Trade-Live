@@ -41,13 +41,13 @@ Public Class NFOFillInstrumentDetails
     Private ReadOnly _userInputs As NFOUserInputs
     Private ReadOnly AliceEODHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
     Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
-    Private ReadOnly tradingDay As Date = Date.MinValue
+    Private ReadOnly _tradingDay As Date = Date.MinValue
     Private ReadOnly _APIAdapter As APIAdapter
     Public Sub New(ByVal canceller As CancellationTokenSource, ByVal parentStrategy As NFOStrategy)
         _cts = canceller
         _parentStrategy = parentStrategy
         _userInputs = _parentStrategy.UserSettings
-        tradingDay = Now
+        _tradingDay = Now
 
         Select Case _parentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
@@ -194,7 +194,7 @@ Public Class NFOFillInstrumentDetails
                                                                                                        If rawCashInstrument IsNot Nothing Then
                                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                                            'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                           Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
+                                                                                                           Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, _tradingDay.AddDays(-300), _tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                                            If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 100 Then
                                                                                                                _cts.Token.ThrowIfCancellationRequested()
@@ -206,8 +206,12 @@ Public Class NFOFillInstrumentDetails
                                                                                                                    lastTradingDay = eodHistoricalData.LastOrDefault.Key
                                                                                                                    Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
                                                                                                                    If atrPercentage >= _userInputs.MinATRPercentage Then
-                                                                                                                       If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
-                                                                                                                       highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice})
+                                                                                                                       Dim eodHKPayload As Dictionary(Of Date, OHLCPayload) = Nothing
+                                                                                                                       ConvertToHeikenAshi(eodHistoricalData, eodHKPayload)
+                                                                                                                       If eodHKPayload IsNot Nothing AndAlso eodHKPayload.Count > 0 Then
+                                                                                                                           If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
+                                                                                                                           highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice, eodHKPayload.LastOrDefault.Value.OpenPrice.Value, eodHKPayload.LastOrDefault.Value.LowPrice.Value, eodHKPayload.LastOrDefault.Value.HighPrice.Value, eodHKPayload.LastOrDefault.Value.ClosePrice.Value})
+                                                                                                                       End If
                                                                                                                    End If
                                                                                                                End If
                                                                                                            End If
@@ -299,7 +303,7 @@ Public Class NFOFillInstrumentDetails
                         If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
                             _cts.Token.ThrowIfCancellationRequested()
                             'Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
-                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), _tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
                             If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 100 Then
                                 Dim intradayHKPayload As Dictionary(Of Date, OHLCPayload) = Nothing
                                 ConvertToHeikenAshi(intradayHistoricalData, intradayHKPayload)
@@ -313,6 +317,10 @@ Public Class NFOFillInstrumentDetails
                                      .Slab = CalculateSlab(stock.Value(1), stock.Value(0)),
                                      .BlankCandlePercentage = blankCandlePercentage,
                                      .PreviousDayHighestATR = GetHighestATR(intradayATRPayload, lastTradingDay),
+                                     .PreviousDayHKOpen = stock.Value(2),
+                                     .PreviousDayHKLow = stock.Value(3),
+                                     .PreviousDayHKHigh = stock.Value(4),
+                                     .PreviousDayHKClose = stock.Value(5),
                                      .Instrument = tradingStock}
                                 If capableStocks Is Nothing Then capableStocks = New Dictionary(Of String, InstrumentDetails)
                                 capableStocks.Add(tradingStock.TradingSymbol, instrumentData)
@@ -346,19 +354,27 @@ Public Class NFOFillInstrumentDetails
                                 File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Dim eligibleStocks As Dictionary(Of String, Decimal) = Nothing
                                 For Each runningStock In todayStockList
-                                    Dim highestATR As Decimal = capableStocks(runningStock).PreviousDayHighestATR
-                                    Dim price As Decimal = capableStocks(runningStock).Price
-                                    Dim instrument As IInstrument = capableStocks(runningStock).Instrument
-                                    Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
-                                    Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Celing)
-                                    Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
-                                    Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
-                                    Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
-                                    If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
-                                        If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
-                                        eligibleStocks.Add(runningStock, multiplier)
+                                    Dim hkOpen As Decimal = Math.Round(capableStocks(runningStock).PreviousDayHKOpen, 2)
+                                    Dim hkLow As Decimal = Math.Round(capableStocks(runningStock).PreviousDayHKLow, 2)
+                                    Dim hkHigh As Decimal = Math.Round(capableStocks(runningStock).PreviousDayHKHigh, 2)
+                                    Dim hkClose As Decimal = Math.Round(capableStocks(runningStock).PreviousDayHKClose, 2)
+                                    If hkOpen = hkHigh OrElse hkOpen = hkLow Then
+                                        Dim highestATR As Decimal = capableStocks(runningStock).PreviousDayHighestATR
+                                        Dim price As Decimal = capableStocks(runningStock).Price
+                                        Dim instrument As IInstrument = capableStocks(runningStock).Instrument
+                                        Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
+                                        Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Celing)
+                                        Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
+                                        Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
+                                        Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
+                                        If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
+                                            If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
+                                            eligibleStocks.Add(runningStock, multiplier)
+                                        Else
+                                            Console.WriteLine(String.Format("Neglect for multiplier,{0},{1}", runningStock, multiplier))
+                                        End If
                                     Else
-                                        Console.WriteLine(String.Format("{0},{1}", runningStock, multiplier))
+                                        Console.WriteLine(String.Format("Neglect for hk storng candle,{0},{1},{2},{3}", runningStock, hkOpen, hkLow, hkHigh, hkClose))
                                     End If
                                 Next
 
@@ -366,14 +382,24 @@ Public Class NFOFillInstrumentDetails
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
-                                    allStockData.Columns.Add("TRADING SYMBOL")
-                                    allStockData.Columns.Add("MULTIPLIER")
-                                    allStockData.Columns.Add("HIGHEST ATR")
+                                    allStockData.Columns.Add("Trading Symbol")
+                                    allStockData.Columns.Add("Multiplier")
+                                    allStockData.Columns.Add("Previous Day Highest ATR")
+                                    allStockData.Columns.Add("Previous Day HK Open")
+                                    allStockData.Columns.Add("Previous Day HK Low")
+                                    allStockData.Columns.Add("Previous Day HK High")
+                                    allStockData.Columns.Add("Previous Day HK Close")
+
                                     For Each stock In eligibleStocks
                                         Dim row As DataRow = allStockData.NewRow
-                                        row("TRADING SYMBOL") = stock.Key
-                                        row("MULTIPLIER") = stock.Value
-                                        row("HIGHEST ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
+                                        row("Trading Symbol") = stock.Key
+                                        row("Multiplier") = stock.Value
+                                        row("Previous Day Highest ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
+                                        row("Previous Day HK Open") = Math.Round(capableStocks(stock.Key).PreviousDayHKOpen, 2)
+                                        row("Previous Day HK Low") = Math.Round(capableStocks(stock.Key).PreviousDayHKLow, 2)
+                                        row("Previous Day HK High") = Math.Round(capableStocks(stock.Key).PreviousDayHKHigh, 2)
+                                        row("Previous Day HK Close") = Math.Round(capableStocks(stock.Key).PreviousDayHKClose, 2)
+
                                         allStockData.Rows.Add(row)
                                     Next
 
@@ -551,6 +577,10 @@ Public Class NFOFillInstrumentDetails
         Public BlankCandlePercentage As Decimal
         Public Instrument As IInstrument
         Public PreviousDayHighestATR As Decimal
+        Public PreviousDayHKOpen As Decimal
+        Public PreviousDayHKLow As Decimal
+        Public PreviousDayHKHigh As Decimal
+        Public PreviousDayHKClose As Decimal
     End Class
 
     Enum TypeOfData

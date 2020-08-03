@@ -33,6 +33,10 @@ Public Class NFOUserInputs
         Public Property TradingSymbol As String
         Public Property Multiplier As Decimal
         Public Property PreviousDayHighestATR As Decimal
+        Public Property PreviousDayHKOpen As Decimal
+        Public Property PreviousDayHKLow As Decimal
+        Public Property PreviousDayHKHigh As Decimal
+        Public Property PreviousDayHKClose As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -45,9 +49,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "HIGHEST ATR"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "PREVIOUS DAY HIGHEST ATR", "PREVIOUS DAY HK OPEN", "PREVIOUS DAY HK LOW", "PREVIOUS DAY HK HIGH", "PREVIOUS DAY HK CLOSE"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 6
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -60,6 +64,10 @@ Public Class NFOUserInputs
                             Dim instrumentName As String = Nothing
                             Dim mul As Decimal = 0
                             Dim hgstATR As Decimal = 0
+                            Dim hkOpen As Decimal = 0
+                            Dim hkLow As Decimal = 0
+                            Dim hkHigh As Decimal = 0
+                            Dim hkClose As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -87,10 +95,54 @@ Public Class NFOUserInputs
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
                                             hgstATR = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Highest ATR can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                            Throw New ApplicationException(String.Format("Previous Day Highest ATR can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Highest ATR can not be null. RowNumber: {0}", rowCtr))
+                                        Throw New ApplicationException(String.Format("Previous Day Highest ATR can not be null. RowNumber: {0}", rowCtr))
+                                    End If
+                                ElseIf columnCtr = 3 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            hkOpen = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Previous Day HK Open can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Previous Day HK Open can not be null. RowNumber: {0}", rowCtr))
+                                    End If
+                                ElseIf columnCtr = 4 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            hkLow = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Previous Day HK Low can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Previous Day HK Low can not be null. RowNumber: {0}", rowCtr))
+                                    End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            hkHigh = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Previous Day HK High can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Previous Day HK Close can not be null. RowNumber: {0}", rowCtr))
+                                    End If
+                                ElseIf columnCtr = 6 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            hkClose = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Previous Day HK Close can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Previous Day HK Close can not be null. RowNumber: {0}", rowCtr))
                                     End If
                                 End If
                             Next
@@ -100,6 +152,10 @@ Public Class NFOUserInputs
                                     .TradingSymbol = instrumentName.ToUpper
                                     .Multiplier = mul
                                     .PreviousDayHighestATR = hgstATR
+                                    .PreviousDayHKOpen = hkOpen
+                                    .PreviousDayHKLow = hkLow
+                                    .PreviousDayHKHigh = hkHigh
+                                    .PreviousDayHKClose = hkClose
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then
