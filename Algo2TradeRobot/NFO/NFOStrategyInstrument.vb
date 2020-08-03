@@ -208,6 +208,9 @@ Public Class NFOStrategyInstrument
                     signalCandle = signal.Item3
                     Dim highestATR As Decimal = ConvertFloorCeling(GetHighestATR(atrConsumer, signalCandle), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                     Dim candleRange As Decimal = ConvertFloorCeling(signalCandle.CandleRange, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    If candleRange < highestATR / 2 Then
+                        candleRange = ConvertFloorCeling(highestATR / 2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    End If
 
                     _slPoint = Math.Min(highestATR, candleRange)
                     If _slPoint <> Decimal.MinValue Then
@@ -226,6 +229,9 @@ Public Class NFOStrategyInstrument
                                 If firstTradeSignalCandle IsNot Nothing Then
                                     Dim highestATR As Decimal = ConvertFloorCeling(GetHighestATR(atrConsumer, firstTradeSignalCandle), Me.TradableInstrument.TickSize, RoundOfType.Celing)
                                     Dim candleRange As Decimal = ConvertFloorCeling(firstTradeSignalCandle.CandleRange, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    If candleRange < highestATR / 2 Then
+                                        candleRange = ConvertFloorCeling(highestATR / 2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    End If
 
                                     _slPoint = Math.Min(highestATR, candleRange)
                                     _quantity = GetFirstLogicalTradeQuantity(firstExecutedOrder.ParentOrder.TimeStamp)
