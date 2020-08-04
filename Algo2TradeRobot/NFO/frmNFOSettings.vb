@@ -48,7 +48,6 @@ Public Class frmNFOSettings
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
             txtNumberOfStock.Text = _settings.NumberOfStock
             txtMaxTurnoverOfATrade.Text = _settings.MaxTurnoverOfATrade
-            txtMinDistancePercentageForCancellation.Text = _settings.MinDistancePercentageForCancellation
 
             chkbAutoSelectStock.Checked = _settings.AutoSelectStock
             txtMinPrice.Text = _settings.MinStockPrice
@@ -70,7 +69,6 @@ Public Class frmNFOSettings
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
         _settings.NumberOfStock = txtNumberOfStock.Text
         _settings.MaxTurnoverOfATrade = txtMaxTurnoverOfATrade.Text
-        _settings.MinDistancePercentageForCancellation = txtMinDistancePercentageForCancellation.Text
 
         _settings.AutoSelectStock = chkbAutoSelectStock.Checked
         _settings.MinStockPrice = txtMinPrice.Text

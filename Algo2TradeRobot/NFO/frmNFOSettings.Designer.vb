@@ -57,8 +57,6 @@ Partial Class frmNFOSettings
         Me.lblMaxProfitPerTrade = New System.Windows.Forms.Label()
         Me.txtMaxProfitPerTrade = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtMinDistancePercentageForCancellation = New System.Windows.Forms.TextBox()
-        Me.lblMinDistancePercentageForCancellation = New System.Windows.Forms.Label()
         Me.txtMaxTurnoverOfATrade = New System.Windows.Forms.TextBox()
         Me.lblMaxTurnoverOfATrade = New System.Windows.Forms.Label()
         Me.txtNumberOfStock = New System.Windows.Forms.TextBox()
@@ -74,7 +72,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(797, 407)
+        Me.btnSave.Location = New System.Drawing.Point(797, 375)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -379,8 +377,6 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
-        Me.GroupBox1.Controls.Add(Me.txtMinDistancePercentageForCancellation)
-        Me.GroupBox1.Controls.Add(Me.lblMinDistancePercentageForCancellation)
         Me.GroupBox1.Controls.Add(Me.txtMaxTurnoverOfATrade)
         Me.GroupBox1.Controls.Add(Me.lblMaxTurnoverOfATrade)
         Me.GroupBox1.Controls.Add(Me.txtNumberOfStock)
@@ -410,28 +406,9 @@ Partial Class frmNFOSettings
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(539, 467)
+        Me.GroupBox1.Size = New System.Drawing.Size(539, 436)
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
-        '
-        'txtMinDistancePercentageForCancellation
-        '
-        Me.txtMinDistancePercentageForCancellation.Location = New System.Drawing.Point(285, 436)
-        Me.txtMinDistancePercentageForCancellation.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinDistancePercentageForCancellation.Name = "txtMinDistancePercentageForCancellation"
-        Me.txtMinDistancePercentageForCancellation.Size = New System.Drawing.Size(242, 22)
-        Me.txtMinDistancePercentageForCancellation.TabIndex = 58
-        Me.txtMinDistancePercentageForCancellation.Tag = "Min Distance % For Cancellation"
-        '
-        'lblMinDistancePercentageForCancellation
-        '
-        Me.lblMinDistancePercentageForCancellation.AutoSize = True
-        Me.lblMinDistancePercentageForCancellation.Location = New System.Drawing.Point(8, 439)
-        Me.lblMinDistancePercentageForCancellation.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinDistancePercentageForCancellation.Name = "lblMinDistancePercentageForCancellation"
-        Me.lblMinDistancePercentageForCancellation.Size = New System.Drawing.Size(211, 17)
-        Me.lblMinDistancePercentageForCancellation.TabIndex = 59
-        Me.lblMinDistancePercentageForCancellation.Text = "Min Distance % For Cancellation"
         '
         'txtMaxTurnoverOfATrade
         '
@@ -493,7 +470,7 @@ Partial Class frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(913, 469)
+        Me.ClientSize = New System.Drawing.Size(913, 440)
         Me.Controls.Add(Me.chkbAutoSelectStock)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.grpStockSelection)
@@ -551,8 +528,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMaxTargetToStoplossMultiplier As Label
     Friend WithEvents txtNumberOfStock As TextBox
     Friend WithEvents lblNumberOfStock As Label
-    Friend WithEvents txtMinDistancePercentageForCancellation As TextBox
-    Friend WithEvents lblMinDistancePercentageForCancellation As Label
     Friend WithEvents txtMaxTurnoverOfATrade As TextBox
     Friend WithEvents lblMaxTurnoverOfATrade As Label
 End Class
