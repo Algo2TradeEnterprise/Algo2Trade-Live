@@ -333,7 +333,7 @@ Public Class frmMainTabbed
                 Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
             End If
 
-            OnHeartbeat("Validating HK Martingale(ATR) user settings")
+            OnHeartbeat("Validating strategy user settings")
             If File.Exists(NFOUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(NFOUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()

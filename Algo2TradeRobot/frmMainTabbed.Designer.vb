@@ -166,7 +166,7 @@ Partial Class frmMainTabbed
         Me.tabNFO.Padding = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Size = New System.Drawing.Size(1363, 693)
         Me.tabNFO.TabIndex = 0
-        Me.tabNFO.Text = "HK Martingale(ATR)"
+        Me.tabNFO.Text = "Pre Day HK Trend EMA Martingale"
         Me.tabNFO.UseVisualStyleBackColor = True
         '
         'pnlMomentumReversalMainPanelHorizontalSplitter
@@ -380,7 +380,7 @@ Partial Class frmMainTabbed
         Me.tabMCX.Padding = New System.Windows.Forms.Padding(4)
         Me.tabMCX.Size = New System.Drawing.Size(1363, 693)
         Me.tabMCX.TabIndex = 1
-        Me.tabMCX.Text = "HK Martingale(CR)"
+        Me.tabMCX.Text = "MCX"
         Me.tabMCX.UseVisualStyleBackColor = True
         '
         'pnlOHLMainPanelHorizontalSplitter
