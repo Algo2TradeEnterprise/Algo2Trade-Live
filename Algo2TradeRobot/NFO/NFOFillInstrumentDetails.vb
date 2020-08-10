@@ -351,7 +351,6 @@ Public Class NFOFillInstrumentDetails
                             Dim allStockData As DataTable = Nothing
                             If _userInputs.InstrumentDetailsFilePath IsNot Nothing AndAlso
                                 File.Exists(_userInputs.InstrumentDetailsFilePath) Then
-                                File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Dim eligibleStocks As Dictionary(Of String, Decimal) = Nothing
                                 For Each runningStock In todayStockList
                                     Dim hkOpen As Decimal = Math.Round(capableStocks(runningStock).PreviousDayHKOpen, 2)
@@ -379,6 +378,7 @@ Public Class NFOFillInstrumentDetails
                                 Next
 
 
+                                File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
@@ -390,18 +390,20 @@ Public Class NFOFillInstrumentDetails
                                     allStockData.Columns.Add("Previous Day HK High")
                                     allStockData.Columns.Add("Previous Day HK Close")
 
-                                    For Each stock In eligibleStocks
-                                        Dim row As DataRow = allStockData.NewRow
-                                        row("Trading Symbol") = stock.Key
-                                        row("Multiplier") = stock.Value
-                                        row("Previous Day Highest ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
-                                        row("Previous Day HK Open") = Math.Round(capableStocks(stock.Key).PreviousDayHKOpen, 2)
-                                        row("Previous Day HK Low") = Math.Round(capableStocks(stock.Key).PreviousDayHKLow, 2)
-                                        row("Previous Day HK High") = Math.Round(capableStocks(stock.Key).PreviousDayHKHigh, 2)
-                                        row("Previous Day HK Close") = Math.Round(capableStocks(stock.Key).PreviousDayHKClose, 2)
+                                    If eligibleStocks IsNot Nothing AndAlso eligibleStocks.Count > 0 Then
+                                        For Each stock In eligibleStocks
+                                            Dim row As DataRow = allStockData.NewRow
+                                            row("Trading Symbol") = stock.Key
+                                            row("Multiplier") = stock.Value
+                                            row("Previous Day Highest ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
+                                            row("Previous Day HK Open") = Math.Round(capableStocks(stock.Key).PreviousDayHKOpen, 2)
+                                            row("Previous Day HK Low") = Math.Round(capableStocks(stock.Key).PreviousDayHKLow, 2)
+                                            row("Previous Day HK High") = Math.Round(capableStocks(stock.Key).PreviousDayHKHigh, 2)
+                                            row("Previous Day HK Close") = Math.Round(capableStocks(stock.Key).PreviousDayHKClose, 2)
 
-                                        allStockData.Rows.Add(row)
-                                    Next
+                                            allStockData.Rows.Add(row)
+                                        Next
+                                    End If
 
                                     csv.GetCSVFromDataTable(allStockData)
                                 End Using
