@@ -16,6 +16,7 @@
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
             dt.Columns.Add("Historical")
+            dt.Columns.Add("Multiplier")
             dt.Columns.Add("Direction")
             For Each instrument In _TradableInstruments
                 Dim userSettings As NFOUserInputs = instrument.ParentStrategy.UserSettings
@@ -34,6 +35,7 @@
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
                 row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
+                row("Multiplier") = userSettings.InstrumentsData(instrument.TradableInstrument.TradingSymbol).Multiplier
                 row("Direction") = direction
                 dt.Rows.Add(row)
             Next
