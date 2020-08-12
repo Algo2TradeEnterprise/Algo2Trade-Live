@@ -366,12 +366,9 @@ Public Class NFOFillInstrumentDetails
                                         Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
                                         Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
                                         Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
-                                        If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
-                                            If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
-                                            eligibleStocks.Add(runningStock, multiplier)
-                                        Else
-                                            Console.WriteLine(String.Format("Neglect for multiplier,{0},{1}", runningStock, multiplier))
-                                        End If
+
+                                        If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
+                                        eligibleStocks.Add(runningStock, multiplier)
                                     Else
                                         Console.WriteLine(String.Format("Neglect for hk storng candle,{0},{1},{2},{3}", runningStock, hkOpen, hkLow, hkHigh, hkClose))
                                     End If

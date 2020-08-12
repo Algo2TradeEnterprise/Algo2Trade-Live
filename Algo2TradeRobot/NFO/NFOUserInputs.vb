@@ -17,7 +17,6 @@ Public Class NFOUserInputs
     Public Property NumberOfTradePerStock As Integer
     Public Property OverallMaxProfitPerDay As Decimal
     Public Property OverallMaxLossPerDay As Decimal
-    Public Property MaxTargetToStoplossMultiplier As Decimal
     Public Property MaxTurnoverOfATrade As Decimal
 
     Public Property AutoSelectStock As Boolean

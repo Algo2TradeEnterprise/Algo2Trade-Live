@@ -48,7 +48,9 @@ Public Class NFOStrategy
             End If
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                For Each instrument In userInputs.InstrumentsData
+                For Each instrument In userInputs.InstrumentsData.OrderBy(Function(x)
+                                                                              Return x.Value.Multiplier
+                                                                          End Function)
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
                                                                                                 Return x.TradingSymbol = instrument.Value.TradingSymbol
