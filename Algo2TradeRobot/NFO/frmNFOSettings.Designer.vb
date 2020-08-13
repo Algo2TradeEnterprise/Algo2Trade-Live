@@ -232,7 +232,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(486, 334)
+        Me.btnBrowse.Location = New System.Drawing.Point(490, 300)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
@@ -408,7 +408,7 @@ Partial Class frmNFOSettings
         '
         'txtMaxTurnoverOfATrade
         '
-        Me.txtMaxTurnoverOfATrade.Location = New System.Drawing.Point(285, 368)
+        Me.txtMaxTurnoverOfATrade.Location = New System.Drawing.Point(285, 370)
         Me.txtMaxTurnoverOfATrade.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxTurnoverOfATrade.Name = "txtMaxTurnoverOfATrade"
         Me.txtMaxTurnoverOfATrade.Size = New System.Drawing.Size(242, 22)
@@ -418,7 +418,7 @@ Partial Class frmNFOSettings
         'lblMaxTurnoverOfATrade
         '
         Me.lblMaxTurnoverOfATrade.AutoSize = True
-        Me.lblMaxTurnoverOfATrade.Location = New System.Drawing.Point(8, 371)
+        Me.lblMaxTurnoverOfATrade.Location = New System.Drawing.Point(8, 373)
         Me.lblMaxTurnoverOfATrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxTurnoverOfATrade.Name = "lblMaxTurnoverOfATrade"
         Me.lblMaxTurnoverOfATrade.Size = New System.Drawing.Size(169, 17)
@@ -427,7 +427,7 @@ Partial Class frmNFOSettings
         '
         'txtNumberOfStock
         '
-        Me.txtNumberOfStock.Location = New System.Drawing.Point(285, 334)
+        Me.txtNumberOfStock.Location = New System.Drawing.Point(285, 336)
         Me.txtNumberOfStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtNumberOfStock.Name = "txtNumberOfStock"
         Me.txtNumberOfStock.Size = New System.Drawing.Size(242, 22)
@@ -437,7 +437,7 @@ Partial Class frmNFOSettings
         'lblNumberOfStock
         '
         Me.lblNumberOfStock.AutoSize = True
-        Me.lblNumberOfStock.Location = New System.Drawing.Point(8, 337)
+        Me.lblNumberOfStock.Location = New System.Drawing.Point(8, 339)
         Me.lblNumberOfStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblNumberOfStock.Name = "lblNumberOfStock"
         Me.lblNumberOfStock.Size = New System.Drawing.Size(116, 17)
