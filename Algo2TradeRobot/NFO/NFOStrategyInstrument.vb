@@ -221,13 +221,11 @@ Public Class NFOStrategyInstrument
                         Dim quantity As Integer = signal.Item3
 
                         If signalCandle IsNot Nothing AndAlso quantity > 0 Then
-                            If signal.Item4 = IOrder.TypeOfTransaction.Buy Then
-                                parameters = New PlaceOrderParameters(signalCandle) With
-                                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                                 .OrderType = IOrder.TypeOfOrder.Market,
-                                                 .Quantity = quantity,
-                                                 .Supporting = New List(Of Object) From {signal.Item4}}
-                            End If
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                            {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                             .OrderType = IOrder.TypeOfOrder.Market,
+                                             .Quantity = quantity,
+                                             .Supporting = New List(Of Object) From {signal.Item4}}
                         End If
                     End If
                 End If
@@ -248,7 +246,7 @@ Public Class NFOStrategyInstrument
             End Try
 
             If parameters IsNot Nothing Then
-                Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
+                Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
                 If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
                     Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
                     If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
@@ -262,26 +260,6 @@ Public Class NFOStrategyInstrument
 
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
                             ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, parameters.ToString))
-                        ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled Then
-                            If lastPlacedActivity.SignalDirection = parameters.EntryDirection Then
-                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
-                                Try
-                                    logger.Debug("Will not take this trade as similar previous trade detected. Current Trade->{0}, Last Activity Direction:{1}, Last Activity Status:{2}, Trading Symbol:{3}",
-                                             parameters.ToString, lastPlacedActivity.SignalDirection, lastPlacedActivity.EntryActivity.RequestStatus, Me.TradableInstrument.TradingSymbol)
-                                Catch ex As Exception
-                                    logger.Warn(ex.ToString)
-                                End Try
-                            Else
-                                If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
-                            End If
-                        ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated Then
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
-                        ElseIf lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Rejected Then
-                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.DonotTake, parameters, parameters.ToString))
                         Else
                             If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
                             ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
