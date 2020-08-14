@@ -180,10 +180,10 @@ Public Class NFOFillInstrumentDetails
                                                                                            Return x.Value.Volume.Value
                                                                                        End Function)
                             _cts.Token.ThrowIfCancellationRequested()
-                            If runningIntrument.Value.ClosePrice.Value < 30 Then
+                            If runningIntrument.Value.ClosePrice.Value < _userInputs.MaxStockPrice Then
                                 Dim instrument As IInstrument = currentContracts.ToList.Find(Function(y)
-                                                                                             Return y.InstrumentIdentifier = runningIntrument.Key
-                                                                                         End Function)
+                                                                                                 Return y.InstrumentIdentifier = runningIntrument.Key
+                                                                                             End Function)
                                 If instrument IsNot Nothing Then
                                     If ret Is Nothing Then ret = New List(Of IInstrument)
                                     ret.Add(instrument)
