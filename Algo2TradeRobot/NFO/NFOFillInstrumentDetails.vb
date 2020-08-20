@@ -188,7 +188,7 @@ Public Class NFOFillInstrumentDetails
                                     If ret Is Nothing Then ret = New List(Of IInstrument)
                                     ret.Add(instrument)
 
-                                    If ret.Count >= 2 Then Exit For
+                                    If ret.Count >= _userInputs.NumberOfStockToTrade Then Exit For
                                 End If
                             End If
                         Next
