@@ -101,7 +101,17 @@ Public Class NFOStrategyInstrument
                             If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
                                 _targetReached = True
                             End If
-                            OnHeartbeat(String.Format("Trade Placed. Signal Candle: {0}", placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss")))
+
+                            Dim potentialTarget As String = ""
+                            If placeOrderTriggers.FirstOrDefault.Item2.Supporting IsNot Nothing AndAlso placeOrderTriggers.FirstOrDefault.Item2.Supporting.Count > 0 Then
+                                potentialTarget = placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault
+                            End If
+
+                            OnHeartbeat(String.Format("Trade Placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}, Potential Target:{3}",
+                                                      placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                      placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
+                                                      placeOrderTriggers.FirstOrDefault.Item2.Quantity,
+                                                      potentialTarget))
                         End If
                     End If
                 End If
@@ -140,7 +150,7 @@ Public Class NFOStrategyInstrument
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Fractal High:{4}, Fractal Low:{5}, Target Price:{6}, Target Reached:{7}, Total PL:{8}, Stock PL:{9}, Lock:{10}, Current Time:{11}, Current Tick:{12}, TradingSymbol:{13}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: Running Candle:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Fractal High:{4}, Fractal Low:{5}, Target Price:{6}, Target Reached:{7}, Total PL:{8}, Stock PL:{9}, Lock:{10}, Last Day Fractal Changed:{11}, Current Time:{12}, Current Tick:{13}, TradingSymbol:{14}",
                                 runningCandlePayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -152,6 +162,7 @@ Public Class NFOStrategyInstrument
                                 Me.ParentStrategy.GetTotalPLAfterBrokerage(),
                                 Me.GetOverallPLAfterBrokerage(),
                                 CType(Me.ParentStrategy, NFOStrategy).TakeTradeLock,
+                                _lastDayFractalChanged,
                                 currentTime.ToString,
                                 currentTick.LastPrice,
                                 Me.TradableInstrument.TradingSymbol)
@@ -335,6 +346,15 @@ Public Class NFOStrategyInstrument
                             End If
                             If quantity > 0 Then
                                 ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal)(True, signalCandle, quantity, targetPrice)
+
+                                If forcePrint Then
+                                    Try
+                                        logger.Debug("Signal Candle:{0}, Potential Entry:{1}, Potential Target:{2}, Quantity:{3}",
+                                                 signalCandle.SnapshotDateTime.ToString("HH:mm:ss"), entryPrice, targetPrice, quantity)
+                                    Catch ex As Exception
+                                        logger.Warn(ex.ToString)
+                                    End Try
+                                End If
                             End If
                         End If
                     End If
