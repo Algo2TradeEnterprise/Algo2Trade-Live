@@ -245,24 +245,51 @@ Public Class NFOStrategyInstrument
                 logger.Warn(ex)
             End Try
 
-            If parameters IsNot Nothing Then
-                Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
-                If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
-                    Dim lastPlacedActivity As ActivityDashboard = currentSignalActivities.OrderBy(Function(x)
-                                                                                                      Return x.EntryActivity.RequestTime
-                                                                                                  End Function).LastOrDefault
-                    If lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
+            Dim parametersList As List(Of PlaceOrderParameters) = New List(Of PlaceOrderParameters)
+            If parameters.Quantity > 2500 Then
+                Dim split As Integer = Math.Ceiling(parameters.Quantity / 2500)
+                Dim quantityOfEachSplit As Integer = Math.Ceiling(parameters.Quantity / split)
+                For iteration As Integer = 1 To split
+                    If iteration = split Then
+                        Dim parameter As PlaceOrderParameters = New PlaceOrderParameters(parameters.SignalCandle) With
+                                        {.EntryDirection = parameters.EntryDirection,
+                                         .OrderType = parameters.OrderType,
+                                         .Supporting = parameters.Supporting,
+                                         .Quantity = parameters.Quantity - (quantityOfEachSplit * (split - 1))}
+                        parametersList.Add(parameter)
+                    Else
+                        Dim parameter As PlaceOrderParameters = New PlaceOrderParameters(parameters.SignalCandle) With
+                                        {.EntryDirection = parameters.EntryDirection,
+                                         .OrderType = parameters.OrderType,
+                                         .Supporting = parameters.Supporting,
+                                         .Quantity = quantityOfEachSplit}
+                        parametersList.Add(parameter)
+                    End If
+                Next
+            Else
+                parametersList.Add(parameters)
+            End If
+
+            If parametersList IsNot Nothing AndAlso parametersList.Count > 0 Then
+                For Each runningParameter In parametersList
+                    Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(runningParameter.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
+                    If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
+                        Dim lastPlacedActivity As ActivityDashboard = currentSignalActivities.OrderBy(Function(x)
+                                                                                                          Return x.EntryActivity.RequestTime
+                                                                                                      End Function).LastOrDefault
+                        If lastPlacedActivity.EntryActivity.RequestStatus = ActivityDashboard.SignalStatusType.Discarded AndAlso
                             lastPlacedActivity.EntryActivity.LastException IsNot Nothing AndAlso
                             lastPlacedActivity.EntryActivity.LastException.Message.ToUpper.Contains("TIME") Then
-                        Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
+                            Await Task.Delay(Me.ParentStrategy.ParentController.UserInputs.BackToBackOrderCoolOffDelay * 1000, _cts.Token).ConfigureAwait(False)
 
+                            If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
+                            ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, runningParameter, runningParameter.ToString))
+                        End If
+                    Else
                         If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.WaitAndTake, parameters, parameters.ToString))
+                        ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, runningParameter, runningParameter.ToString))
                     End If
-                Else
-                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String))
-                    ret.Add(New Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)(ExecuteCommandAction.Take, parameters, parameters.ToString))
-                End If
+                Next
             End If
         End If
         Return ret
