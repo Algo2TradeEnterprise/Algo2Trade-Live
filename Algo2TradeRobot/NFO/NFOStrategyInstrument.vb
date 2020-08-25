@@ -249,6 +249,9 @@ Public Class NFOStrategyInstrument
             If parameters.Quantity > 2500 Then
                 Dim split As Integer = Math.Ceiling(parameters.Quantity / 2500)
                 Dim quantityOfEachSplit As Integer = Math.Ceiling(parameters.Quantity / split)
+                If quantityOfEachSplit Mod Me.TradableInstrument.LotSize <> 0 Then
+                    quantityOfEachSplit = Math.Min(Math.Ceiling(quantityOfEachSplit / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize, 2500)
+                End If
                 For iteration As Integer = 1 To split
                     If iteration = split Then
                         Dim parameter As PlaceOrderParameters = New PlaceOrderParameters(parameters.SignalCandle) With
