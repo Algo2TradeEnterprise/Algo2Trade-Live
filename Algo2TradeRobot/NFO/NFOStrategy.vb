@@ -43,7 +43,6 @@ Public Class NFOStrategy
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
-                Dim fillInstrument As NFOFillInstrumentDetails = New NFOFillInstrumentDetails(_cts, Me)
                 For Each runningStock In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     If (runningStock.InstrumentType.ToUpper = "NSE" AndAlso userInputs.RunNSE) OrElse

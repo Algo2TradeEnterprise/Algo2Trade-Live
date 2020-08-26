@@ -15,6 +15,7 @@
         dt.Columns.Add("Lot Size")
         dt.Columns.Add("Tick Size")
         dt.Columns.Add("Historical")
+        dt.Columns.Add("Pre Processing")
 
         If _TradableInstruments IsNot Nothing AndAlso _TradableInstruments.Count > 0 Then
             For Each instrument In _TradableInstruments
@@ -26,6 +27,7 @@
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
                 row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
+                row("Pre Processing") = instrument.PreProcessingDone
                 dt.Rows.Add(row)
             Next
         End If

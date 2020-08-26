@@ -1423,6 +1423,10 @@ Public Class frmMainTabbed
             formRemarks = _commonControllerUserInput.FormRemarks.Trim
         End If
         Me.Text = String.Format("Algo2Trade Robot v{0}{1}", My.Application.Info.Version, If(formRemarks IsNot Nothing, String.Format(" - {0}", formRemarks), ""))
+
+        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
