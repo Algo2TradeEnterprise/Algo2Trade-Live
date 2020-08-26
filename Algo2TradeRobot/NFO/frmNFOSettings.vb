@@ -39,16 +39,16 @@ Public Class frmNFOSettings
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            txtMaxLossPerTrade.Text = _settings.MaxLossPerTrade
-            txtTargetMultiplier.Text = _settings.TargetMultiplier
             chkbNSE.Checked = _settings.RunNSE
             chkbNFO.Checked = _settings.RunNFO
             chkbMCX.Checked = _settings.RunMCX
+            txtTargetMultiplier.Text = _settings.TargetMultiplier
+            txtTargetToLeftMovementPercentage.Text = _settings.TargetToLeftMovementPercentage
 
             txtTelegramAPIKey.Text = _settings.TelegramAPIKey
             txtTelegramChatID.Text = _settings.TelegramChatID
 
-            txtATRPeriod.Text = _settings.ATRPeriod
+            txtDayCloseATRPeriod.Text = _settings.DayClose_ATRPeriod
             txtVWAPEMAPeriod.Text = _settings.VWAP_EMAPeriod
             txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
         End If
@@ -57,16 +57,16 @@ Public Class frmNFOSettings
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        _settings.MaxLossPerTrade = Math.Abs(Val(txtMaxLossPerTrade.Text)) * -1
-        _settings.TargetMultiplier = txtTargetMultiplier.Text
         _settings.RunNSE = chkbNSE.Checked
         _settings.RunNFO = chkbNFO.Checked
         _settings.RunMCX = chkbMCX.Checked
+        _settings.TargetMultiplier = txtTargetMultiplier.Text
+        _settings.TargetToLeftMovementPercentage = txtTargetToLeftMovementPercentage.Text
 
         _settings.TelegramAPIKey = txtTelegramAPIKey.Text
         _settings.TelegramChatID = txtTelegramChatID.Text
 
-        _settings.ATRPeriod = txtATRPeriod.Text
+        _settings.DayClose_ATRPeriod = txtDayCloseATRPeriod.Text
         _settings.VWAP_EMAPeriod = txtVWAPEMAPeriod.Text
         _settings.DayClose_SMAPeriod = txtDayCloseSMAPeriod.Text
 
@@ -91,9 +91,9 @@ Public Class frmNFOSettings
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerTrade)
+        ValidateNumbers(0, 100, txtTargetToLeftMovementPercentage)
         ValidateNumbers(0, Decimal.MaxValue, txtTargetMultiplier)
-        ValidateNumbers(1, Integer.MaxValue, txtATRPeriod, True)
+        ValidateNumbers(1, Integer.MaxValue, txtDayCloseATRPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtVWAPEMAPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
 

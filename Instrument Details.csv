@@ -1,5 +1,5 @@
-Instrument Name,Instrument Type,Range
-JINDALSTEL,NSE,
-NIFTY,NFO,
+Instrument Name,Instrument Type,Range(INR for equity;PL Point for futures)
+JINDALSTEL,NSE,200
+NIFTY,NFO,50
 NATURALGAS,MCX,1
-M&MFIN,NFO,
+M&MFIN,NFO,1

@@ -13,15 +13,16 @@ Public Class NFOUserInputs
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As List(Of InstrumentDetails)
 
-    Public Property MaxLossPerTrade As Decimal
     Public Property RunNSE As Boolean
     Public Property RunNFO As Boolean
     Public Property RunMCX As Boolean
 
+    Public Property TargetToLeftMovementPercentage As Decimal
+
     'Indicator
-    Public Property ATRPeriod As Integer
     Public Property VWAP_EMAPeriod As Integer
     Public Property DayClose_SMAPeriod As Integer
+    Public Property DayClose_ATRPeriod As Integer
 
     'Telegram
     Public Property TelegramAPIKey As String
@@ -44,7 +45,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "INSTRUMENT TYPE", "RANGE"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "INSTRUMENT TYPE", "RANGE(INR FOR EQUITY;PL POINT FOR FUTURES)"}
 
                         For colCtr = 0 To 2
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -85,6 +86,8 @@ Public Class NFOUserInputs
                                         Else
                                             Throw New ApplicationException(String.Format("Range cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                         End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Range cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, trdngSymbl))
                                     End If
                                 End If
                             Next

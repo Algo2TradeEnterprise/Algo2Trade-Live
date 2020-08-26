@@ -36,8 +36,8 @@ Partial Class frmNFOSettings
         Me.lblDayCloseSMAPeriod = New System.Windows.Forms.Label()
         Me.txtVWAPEMAPeriod = New System.Windows.Forms.TextBox()
         Me.lblVWAPEMAPeriod = New System.Windows.Forms.Label()
-        Me.txtATRPeriod = New System.Windows.Forms.TextBox()
-        Me.lblATRPeriod = New System.Windows.Forms.Label()
+        Me.txtDayCloseATRPeriod = New System.Windows.Forms.TextBox()
+        Me.lblDayCloseATRPeriod = New System.Windows.Forms.Label()
         Me.grpOther = New System.Windows.Forms.GroupBox()
         Me.chkbMCX = New System.Windows.Forms.CheckBox()
         Me.chkbNFO = New System.Windows.Forms.CheckBox()
@@ -48,8 +48,8 @@ Partial Class frmNFOSettings
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.txtTargetMultiplier = New System.Windows.Forms.TextBox()
         Me.lblTargetMultiplier = New System.Windows.Forms.Label()
-        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
-        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
+        Me.txtTargetToLeftMovementPercentage = New System.Windows.Forms.TextBox()
+        Me.lblTargetToLeftMovementPercentage = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
@@ -135,8 +135,8 @@ Partial Class frmNFOSettings
         Me.grpIndicator.Controls.Add(Me.lblDayCloseSMAPeriod)
         Me.grpIndicator.Controls.Add(Me.txtVWAPEMAPeriod)
         Me.grpIndicator.Controls.Add(Me.lblVWAPEMAPeriod)
-        Me.grpIndicator.Controls.Add(Me.txtATRPeriod)
-        Me.grpIndicator.Controls.Add(Me.lblATRPeriod)
+        Me.grpIndicator.Controls.Add(Me.txtDayCloseATRPeriod)
+        Me.grpIndicator.Controls.Add(Me.lblDayCloseATRPeriod)
         Me.grpIndicator.Location = New System.Drawing.Point(554, 107)
         Me.grpIndicator.Name = "grpIndicator"
         Me.grpIndicator.Size = New System.Drawing.Size(538, 135)
@@ -165,7 +165,7 @@ Partial Class frmNFOSettings
         '
         'txtVWAPEMAPeriod
         '
-        Me.txtVWAPEMAPeriod.Location = New System.Drawing.Point(178, 62)
+        Me.txtVWAPEMAPeriod.Location = New System.Drawing.Point(178, 25)
         Me.txtVWAPEMAPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtVWAPEMAPeriod.Name = "txtVWAPEMAPeriod"
         Me.txtVWAPEMAPeriod.Size = New System.Drawing.Size(348, 22)
@@ -175,31 +175,31 @@ Partial Class frmNFOSettings
         'lblVWAPEMAPeriod
         '
         Me.lblVWAPEMAPeriod.AutoSize = True
-        Me.lblVWAPEMAPeriod.Location = New System.Drawing.Point(7, 65)
+        Me.lblVWAPEMAPeriod.Location = New System.Drawing.Point(7, 28)
         Me.lblVWAPEMAPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblVWAPEMAPeriod.Name = "lblVWAPEMAPeriod"
         Me.lblVWAPEMAPeriod.Size = New System.Drawing.Size(132, 17)
         Me.lblVWAPEMAPeriod.TabIndex = 57
         Me.lblVWAPEMAPeriod.Text = "EMA Period(VWAP)"
         '
-        'txtATRPeriod
+        'txtDayCloseATRPeriod
         '
-        Me.txtATRPeriod.Location = New System.Drawing.Point(178, 27)
-        Me.txtATRPeriod.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtATRPeriod.Name = "txtATRPeriod"
-        Me.txtATRPeriod.Size = New System.Drawing.Size(348, 22)
-        Me.txtATRPeriod.TabIndex = 0
-        Me.txtATRPeriod.Tag = "ATR Period"
+        Me.txtDayCloseATRPeriod.Location = New System.Drawing.Point(178, 62)
+        Me.txtDayCloseATRPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtDayCloseATRPeriod.Name = "txtDayCloseATRPeriod"
+        Me.txtDayCloseATRPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtDayCloseATRPeriod.TabIndex = 0
+        Me.txtDayCloseATRPeriod.Tag = "ATR Period(Day Close)"
         '
-        'lblATRPeriod
+        'lblDayCloseATRPeriod
         '
-        Me.lblATRPeriod.AutoSize = True
-        Me.lblATRPeriod.Location = New System.Drawing.Point(7, 30)
-        Me.lblATRPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblATRPeriod.Name = "lblATRPeriod"
-        Me.lblATRPeriod.Size = New System.Drawing.Size(81, 17)
-        Me.lblATRPeriod.TabIndex = 55
-        Me.lblATRPeriod.Text = "ATR Period"
+        Me.lblDayCloseATRPeriod.AutoSize = True
+        Me.lblDayCloseATRPeriod.Location = New System.Drawing.Point(7, 65)
+        Me.lblDayCloseATRPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDayCloseATRPeriod.Name = "lblDayCloseATRPeriod"
+        Me.lblDayCloseATRPeriod.Size = New System.Drawing.Size(155, 17)
+        Me.lblDayCloseATRPeriod.TabIndex = 55
+        Me.lblDayCloseATRPeriod.Text = "ATR Period(Day Close)"
         '
         'grpOther
         '
@@ -212,8 +212,8 @@ Partial Class frmNFOSettings
         Me.grpOther.Controls.Add(Me.lblInstrumentDetails)
         Me.grpOther.Controls.Add(Me.txtTargetMultiplier)
         Me.grpOther.Controls.Add(Me.lblTargetMultiplier)
-        Me.grpOther.Controls.Add(Me.txtMaxLossPerTrade)
-        Me.grpOther.Controls.Add(Me.lblMaxLossPerTrade)
+        Me.grpOther.Controls.Add(Me.txtTargetToLeftMovementPercentage)
+        Me.grpOther.Controls.Add(Me.lblTargetToLeftMovementPercentage)
         Me.grpOther.Controls.Add(Me.txtSignalTimeFrame)
         Me.grpOther.Controls.Add(Me.lblSignalTimeFrame)
         Me.grpOther.Location = New System.Drawing.Point(8, 2)
@@ -226,37 +226,37 @@ Partial Class frmNFOSettings
         'chkbMCX
         '
         Me.chkbMCX.AutoSize = True
-        Me.chkbMCX.Location = New System.Drawing.Point(398, 168)
+        Me.chkbMCX.Location = New System.Drawing.Point(399, 97)
         Me.chkbMCX.Name = "chkbMCX"
         Me.chkbMCX.Size = New System.Drawing.Size(59, 21)
-        Me.chkbMCX.TabIndex = 6
+        Me.chkbMCX.TabIndex = 4
         Me.chkbMCX.Text = "MCX"
         Me.chkbMCX.UseVisualStyleBackColor = True
         '
         'chkbNFO
         '
         Me.chkbNFO.AutoSize = True
-        Me.chkbNFO.Location = New System.Drawing.Point(334, 168)
+        Me.chkbNFO.Location = New System.Drawing.Point(335, 97)
         Me.chkbNFO.Name = "chkbNFO"
         Me.chkbNFO.Size = New System.Drawing.Size(59, 21)
-        Me.chkbNFO.TabIndex = 5
+        Me.chkbNFO.TabIndex = 3
         Me.chkbNFO.Text = "NFO"
         Me.chkbNFO.UseVisualStyleBackColor = True
         '
         'chkbNSE
         '
         Me.chkbNSE.AutoSize = True
-        Me.chkbNSE.Location = New System.Drawing.Point(270, 168)
+        Me.chkbNSE.Location = New System.Drawing.Point(271, 97)
         Me.chkbNSE.Name = "chkbNSE"
         Me.chkbNSE.Size = New System.Drawing.Size(58, 21)
-        Me.chkbNSE.TabIndex = 4
+        Me.chkbNSE.TabIndex = 2
         Me.chkbNSE.Text = "NSE"
         Me.chkbNSE.UseVisualStyleBackColor = True
         '
         'lblRunInstruments
         '
         Me.lblRunInstruments.AutoSize = True
-        Me.lblRunInstruments.Location = New System.Drawing.Point(6, 170)
+        Me.lblRunInstruments.Location = New System.Drawing.Point(7, 99)
         Me.lblRunInstruments.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblRunInstruments.Name = "lblRunInstruments"
         Me.lblRunInstruments.Size = New System.Drawing.Size(111, 17)
@@ -299,7 +299,7 @@ Partial Class frmNFOSettings
         Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtTargetMultiplier.Name = "txtTargetMultiplier"
         Me.txtTargetMultiplier.Size = New System.Drawing.Size(255, 22)
-        Me.txtTargetMultiplier.TabIndex = 3
+        Me.txtTargetMultiplier.TabIndex = 5
         Me.txtTargetMultiplier.Tag = "Target Multiplier"
         '
         'lblTargetMultiplier
@@ -312,24 +312,24 @@ Partial Class frmNFOSettings
         Me.lblTargetMultiplier.TabIndex = 67
         Me.lblTargetMultiplier.Text = "Target Multiplier"
         '
-        'txtMaxLossPerTrade
+        'txtTargetToLeftMovementPercentage
         '
-        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(269, 95)
-        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
-        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(255, 22)
-        Me.txtMaxLossPerTrade.TabIndex = 2
-        Me.txtMaxLossPerTrade.Tag = "Max Loss Per Trade"
+        Me.txtTargetToLeftMovementPercentage.Location = New System.Drawing.Point(269, 168)
+        Me.txtTargetToLeftMovementPercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTargetToLeftMovementPercentage.Name = "txtTargetToLeftMovementPercentage"
+        Me.txtTargetToLeftMovementPercentage.Size = New System.Drawing.Size(255, 22)
+        Me.txtTargetToLeftMovementPercentage.TabIndex = 6
+        Me.txtTargetToLeftMovementPercentage.Tag = "Target To Left Movement %"
         '
-        'lblMaxLossPerTrade
+        'lblTargetToLeftMovementPercentage
         '
-        Me.lblMaxLossPerTrade.AutoSize = True
-        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(7, 98)
-        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
-        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxLossPerTrade.TabIndex = 66
-        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
+        Me.lblTargetToLeftMovementPercentage.AutoSize = True
+        Me.lblTargetToLeftMovementPercentage.Location = New System.Drawing.Point(7, 171)
+        Me.lblTargetToLeftMovementPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTargetToLeftMovementPercentage.Name = "lblTargetToLeftMovementPercentage"
+        Me.lblTargetToLeftMovementPercentage.Size = New System.Drawing.Size(184, 17)
+        Me.lblTargetToLeftMovementPercentage.TabIndex = 66
+        Me.lblTargetToLeftMovementPercentage.Text = "Target To Left Movement %"
         '
         'txtSignalTimeFrame
         '
@@ -389,15 +389,15 @@ Partial Class frmNFOSettings
     Friend WithEvents grpIndicator As GroupBox
     Friend WithEvents txtVWAPEMAPeriod As TextBox
     Friend WithEvents lblVWAPEMAPeriod As Label
-    Friend WithEvents txtATRPeriod As TextBox
-    Friend WithEvents lblATRPeriod As Label
+    Friend WithEvents txtDayCloseATRPeriod As TextBox
+    Friend WithEvents lblDayCloseATRPeriod As Label
     Friend WithEvents txtDayCloseSMAPeriod As TextBox
     Friend WithEvents lblDayCloseSMAPeriod As Label
     Friend WithEvents grpOther As GroupBox
     Friend WithEvents txtTargetMultiplier As TextBox
     Friend WithEvents lblTargetMultiplier As Label
-    Friend WithEvents txtMaxLossPerTrade As TextBox
-    Friend WithEvents lblMaxLossPerTrade As Label
+    Friend WithEvents txtTargetToLeftMovementPercentage As TextBox
+    Friend WithEvents lblTargetToLeftMovementPercentage As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblSignalTimeFrame As Label
     Friend WithEvents btnBrowse As Button
