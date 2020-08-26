@@ -174,7 +174,7 @@ Public Class NFOStrategyInstrument
                                         If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
                                             Dim takeTrade As Boolean = True
                                             message = String.Format("{0} VWAP({1})>MVWAP({2}).",
-                                                                    message, vwap.VWAP.Value, vwapEMA.EMA.Value)
+                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Green)
                                             message = String.Format("{0} Signal Candle Color:{1}.",
@@ -186,24 +186,24 @@ Public Class NFOStrategyInstrument
 
                                             takeTrade = takeTrade And (signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
                                             message = String.Format("{0} Signal Candle High:{1}, Previous Candle High:{2}.",
-                                                                    message, signalCandle.HighPrice.Value, signalCandle.PreviousPayload.HighPrice.Value)
+                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
                                             message = String.Format("{0} Signal Candle Low:{1}, Previous Candle Low:{2}.",
-                                                                    message, signalCandle.LowPrice.Value, signalCandle.PreviousPayload.LowPrice.Value)
+                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
                                             message = String.Format("{0} Signal Candle Close:{1}, VWAP:{2}.",
-                                                                    message, signalCandle.ClosePrice.Value, vwap.VWAP.Value)
+                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2), Math.Round(vwap.VWAP.Value, 2))
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value > pivots.Pivot.Value)
                                             message = String.Format("{0} VWAP:{1}, Central Pivot:{2}.",
-                                                                    message, vwap.VWAP.Value, pivots.Pivot.Value)
+                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(pivots.Pivot.Value, 2))
 
                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                 takeTrade = takeTrade And (currentTick.LastPrice > _lastDayMA)
                                                 message = String.Format("{0} LTP:{1}, Last Day MA:{2}.",
-                                                                    message, currentTick.LastPrice, If(_lastDayMA = Decimal.MinValue, "∞", _lastDayMA))
+                                                                    message, currentTick.LastPrice, Math.Round(_lastDayMA, 2))
                                             End If
 
                                             If takeTrade Then
@@ -258,7 +258,7 @@ Public Class NFOStrategyInstrument
                                                         takeTrade = False
                                                     End If
                                                     message = String.Format("{0} Target Point:{1}, Day Low:{2}, Moved:{3}, Last Day ATR:{4}, Movement left:{5}.",
-                                                                        message, targetPoint, currentTick.Low, moved, _lastDayATR, leftOverMovement)
+                                                                        message, targetPoint, currentTick.Low, moved, Math.Round(_lastDayATR, 2), leftOverMovement)
 
                                                     If takeTrade Then
                                                         Dim quantity As Integer = Me.TradableInstrument.LotSize
@@ -274,7 +274,7 @@ Public Class NFOStrategyInstrument
                                         ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
                                             Dim takeTrade As Boolean = True
                                             message = String.Format("{0} VWAP({1})<MVWAP({2}).",
-                                                                    message, vwap.VWAP.Value, vwapEMA.EMA.Value)
+                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Red)
                                             message = String.Format("{0} Signal Candle Color:{1}.",
@@ -286,24 +286,24 @@ Public Class NFOStrategyInstrument
 
                                             takeTrade = takeTrade And (signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
                                             message = String.Format("{0} Signal Candle High:{1}, Previous Candle High:{2}.",
-                                                                    message, signalCandle.HighPrice.Value, signalCandle.PreviousPayload.HighPrice.Value)
+                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
                                             message = String.Format("{0} Signal Candle Low:{1}, Previous Candle Low:{2}.",
-                                                                    message, signalCandle.LowPrice.Value, signalCandle.PreviousPayload.LowPrice.Value)
+                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
                                             message = String.Format("{0} Signal Candle Close:{1}, VWAP:{2}.",
-                                                                    message, signalCandle.ClosePrice.Value, vwap.VWAP.Value)
+                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2), Math.Round(vwap.VWAP.Value, 2))
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value < pivots.Pivot.Value)
                                             message = String.Format("{0} VWAP:{1}, Central Pivot:{2}.",
-                                                                    message, vwap.VWAP.Value, pivots.Pivot.Value)
+                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(pivots.Pivot.Value, 2))
 
                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                 takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
                                                 message = String.Format("{0} LTP:{1}, Last Day MA:{2}.",
-                                                                    message, currentTick.LastPrice, If(_lastDayMA = Decimal.MinValue, "∞", _lastDayMA))
+                                                                    message, currentTick.LastPrice, Math.Round(_lastDayMA, 2))
                                             End If
 
                                             If takeTrade Then
@@ -358,7 +358,7 @@ Public Class NFOStrategyInstrument
                                                         takeTrade = False
                                                     End If
                                                     message = String.Format("{0} Target Point:{1}, Day Low:{2}, Moved:{3}, Last Day ATR:{4}, Movement left:{5}.",
-                                                                        message, targetPoint, currentTick.Low, moved, _lastDayATR, leftOverMovement)
+                                                                        message, targetPoint, currentTick.Low, moved, Math.Round(_lastDayATR, 2), leftOverMovement)
 
                                                     If takeTrade Then
                                                         Dim quantity As Integer = Me.TradableInstrument.LotSize
@@ -509,10 +509,10 @@ Public Class NFOStrategyInstrument
         Dim historicalDataURL As String = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
         Dim proxyToBeUsed As HttpProxy = Nothing
         Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            'AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            'AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+            'AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+            'AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
 
             Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
             headers.Add("X-Authorization-Token", Me.ParentStrategy.ParentController.APIConnection.ENCToken)
@@ -524,14 +524,14 @@ Public Class NFOStrategyInstrument
             If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
                 historicalCandlesJSONDict = l.Item2
             End If
-            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+
+            'RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            'RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
+            'RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
+            'RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         End Using
         If historicalCandlesJSONDict.ContainsKey("data") Then
             Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
-            OnHeartbeat(String.Format("Generating Payload for {0}", instrument.TradingSymbol))
             Dim previousPayload As OHLCPayload = Nothing
             For Each historicalCandle In historicalCandles
                 _cts.Token.ThrowIfCancellationRequested()
