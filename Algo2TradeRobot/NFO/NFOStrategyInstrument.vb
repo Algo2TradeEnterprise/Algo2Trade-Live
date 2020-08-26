@@ -178,37 +178,45 @@ Public Class NFOStrategyInstrument
 
                                         If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
                                             Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})>MVWAP({2}).",
+                                            message = String.Format("{0} VWAP({1})>MVWAP({2})[BUY].",
                                                                     message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Green)
-                                            message = String.Format("{0} Signal Candle Color:{1}.",
-                                                                    message, signalCandle.CandleColor.Name)
+                                            message = String.Format("{0} Signal Candle Color({1})=Green[{2}].",
+                                                                    message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Green)
 
                                             takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Red)
-                                            message = String.Format("{0} Previous Candle Color:{1}.",
-                                                                    message, signalCandle.PreviousPayload.CandleColor.Name)
+                                            message = String.Format("{0} Previous Candle Color({1})=Red[{2}].",
+                                                                    message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Red)
 
                                             takeTrade = takeTrade And (signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
-                                            message = String.Format("{0} Signal Candle High:{1}, Previous Candle High:{2}.",
-                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2))
+                                            message = String.Format("{0} Signal Candle High({1})>Previous Candle High({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
+                                                                    Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
+                                                                    signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
 
                                             takeTrade = takeTrade And (signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
-                                            message = String.Format("{0} Signal Candle Low:{1}, Previous Candle Low:{2}.",
-                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2))
+                                            message = String.Format("{0} Signal Candle Low:({1})>Previous Candle Low({2})[{3}]",
+                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
+                                                                    Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
+                                                                    signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
 
                                             takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle Close:{1}, VWAP:{2}.",
-                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2), Math.Round(vwap.VWAP.Value, 2))
+                                            message = String.Format("{0} Signal Candle Close({1})>VWAP({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                                                    Math.Round(vwap.VWAP.Value, 2),
+                                                                    signalCandle.ClosePrice.Value > vwap.VWAP.Value)
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value > pivots.Pivot.Value)
-                                            message = String.Format("{0} VWAP:{1}, Central Pivot:{2}.",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(pivots.Pivot.Value, 2))
+                                            message = String.Format("{0} VWAP({1})>Central Pivot({2})[{3}].",
+                                                                    message, Math.Round(vwap.VWAP.Value, 2),
+                                                                    Math.Round(pivots.Pivot.Value, 2),
+                                                                    vwap.VWAP.Value > pivots.Pivot.Value)
 
                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                 takeTrade = takeTrade And (currentTick.LastPrice > _lastDayMA)
-                                                message = String.Format("{0} LTP:{1}, Last Day MA:{2}.",
-                                                                    message, currentTick.LastPrice, Math.Round(_lastDayMA, 2))
+                                                message = String.Format("{0} LTP({1})>Last Day MA({2})[{3}].",
+                                                                        message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice > _lastDayMA)
                                             End If
 
                                             If takeTrade Then
@@ -288,37 +296,45 @@ Public Class NFOStrategyInstrument
                                             End If
                                         ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
                                             Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})<MVWAP({2}).",
+                                            message = String.Format("{0} VWAP({1})<MVWAP({2})[SELL].",
                                                                     message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Red)
-                                            message = String.Format("{0} Signal Candle Color:{1}.",
-                                                                    message, signalCandle.CandleColor.Name)
+                                            message = String.Format("{0} Signal Candle Color({1})=Red[{2}].",
+                                                                    message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Red)
 
                                             takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Green)
-                                            message = String.Format("{0} Previous Candle Color:{1}.",
-                                                                    message, signalCandle.PreviousPayload.CandleColor.Name)
+                                            message = String.Format("{0} Previous Candle Color({1})=Green[{2}].",
+                                                                    message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Green)
 
                                             takeTrade = takeTrade And (signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
-                                            message = String.Format("{0} Signal Candle High:{1}, Previous Candle High:{2}.",
-                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2))
+                                            message = String.Format("{0} Signal Candle High({1})<Previous Candle High({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
+                                                                    Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
+                                                                    signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
 
                                             takeTrade = takeTrade And (signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
-                                            message = String.Format("{0} Signal Candle Low:{1}, Previous Candle Low:{2}.",
-                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2), Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2))
+                                            message = String.Format("{0} Signal Candle Low:({1})<Previous Candle Low({2})[{3}]",
+                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
+                                                                    Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
+                                                                    signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
 
                                             takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle Close:{1}, VWAP:{2}.",
-                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2), Math.Round(vwap.VWAP.Value, 2))
+                                            message = String.Format("{0} Signal Candle Close({1})<VWAP({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                                                    Math.Round(vwap.VWAP.Value, 2),
+                                                                    signalCandle.ClosePrice.Value < vwap.VWAP.Value)
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value < pivots.Pivot.Value)
-                                            message = String.Format("{0} VWAP:{1}, Central Pivot:{2}.",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(pivots.Pivot.Value, 2))
+                                            message = String.Format("{0} VWAP({1})<Central Pivot({2})[{3}].",
+                                                                    message, Math.Round(vwap.VWAP.Value, 2),
+                                                                    Math.Round(pivots.Pivot.Value, 2),
+                                                                    vwap.VWAP.Value < pivots.Pivot.Value)
 
                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                 takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
-                                                message = String.Format("{0} LTP:{1}, Last Day MA:{2}.",
-                                                                    message, currentTick.LastPrice, Math.Round(_lastDayMA, 2))
+                                                message = String.Format("{0} LTP({1})>Last Day MA({2})[{3}].",
+                                                                        message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice < _lastDayMA)
                                             End If
 
                                             If takeTrade Then
