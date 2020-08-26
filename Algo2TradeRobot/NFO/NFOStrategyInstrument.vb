@@ -82,40 +82,7 @@ Public Class NFOStrategyInstrument
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
-                If Me._RMSException IsNot Nothing AndAlso
-                    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                    Throw Me._RMSException
-                End If
                 _cts.Token.ThrowIfCancellationRequested()
-
-                'Place Order block start
-                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
-                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                    Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
-                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                        Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                        If placeOrderResponse.ContainsKey("data") AndAlso
-                            placeOrderResponse("data").ContainsKey("order_id") Then
-                            If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
-                                _targetReached = True
-                            End If
-
-                            Dim potentialTarget As String = ""
-                            If placeOrderTriggers.FirstOrDefault.Item2.Supporting IsNot Nothing AndAlso placeOrderTriggers.FirstOrDefault.Item2.Supporting.Count > 0 Then
-                                potentialTarget = placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault
-                            End If
-
-                            OnHeartbeat(String.Format("Trade Placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}, Potential Target:{3}",
-                                                      placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                      placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
-                                                      placeOrderTriggers.FirstOrDefault.Item2.Quantity,
-                                                      potentialTarget))
-                        End If
-                    End If
-                End If
-                'Place Order block end
 
                 _cts.Token.ThrowIfCancellationRequested()
                 Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
@@ -141,7 +108,7 @@ Public Class NFOStrategyInstrument
         Dim targetPrice As Decimal = Decimal.MinValue
         Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
         If lastExecutedOrder IsNot Nothing Then
-            targetPrice = GetTargetPrice(lastExecutedOrder.ParentOrder.AveragePrice)
+            targetPrice = 1
         End If
 
         Try
@@ -175,7 +142,7 @@ Public Class NFOStrategyInstrument
         Dim checkOfEntryOrder As Boolean = False
         If runningCandlePayload IsNot Nothing AndAlso targetPrice <> Decimal.MinValue Then
             If Not _targetReached AndAlso (currentTick.LastPrice >= targetPrice OrElse runningCandlePayload.HighPrice.Value >= targetPrice) Then
-                Dim totalQuantity As Long = GetTotalQuantityTraded()
+                Dim totalQuantity As Long = 1
                 If totalQuantity > 0 Then
                     parameters = New PlaceOrderParameters(runningCandlePayload) With
                                            {.EntryDirection = IOrder.TypeOfTransaction.Sell,
@@ -190,7 +157,7 @@ Public Class NFOStrategyInstrument
         End If
         If Not _targetReached AndAlso checkOfEntryOrder AndAlso currentTime > userSettings.EODExitTime Then
             checkOfEntryOrder = False
-            Dim totalQuantity As Long = GetTotalQuantityTraded()
+            Dim totalQuantity As Long = 1
             If totalQuantity > 0 Then
                 parameters = New PlaceOrderParameters(runningCandlePayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Sell,
@@ -204,7 +171,7 @@ Public Class NFOStrategyInstrument
             Try
                 'Check Lock
                 If forcePrint Then
-                    While parentStrategy.TakeTradeLock >= userSettings.NumberOfStockToTrade
+                    While parentStrategy.TakeTradeLock >= 1
                         _cts.Token.ThrowIfCancellationRequested()
                         Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
                     End While
@@ -215,7 +182,7 @@ Public Class NFOStrategyInstrument
                     runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso Not _targetReached AndAlso
                     runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
                     Me.TradableInstrument.IsHistoricalCompleted AndAlso fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.Count > 0 Then
-                    Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = GetEntrySignal(runningCandlePayload, currentTick, forcePrint)
+                    Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Nothing
                     If signal IsNot Nothing AndAlso signal.Item1 Then
                         Dim signalCandle As OHLCPayload = signal.Item2
                         Dim quantity As Integer = signal.Item3
@@ -322,181 +289,8 @@ Public Class NFOStrategyInstrument
         Throw New NotImplementedException()
     End Function
 
-    Protected Overrides Async Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
-        If order IsNot Nothing AndAlso Not order.Status = IOrder.TypeOfStatus.Complete AndAlso
-            Not order.Status = IOrder.TypeOfStatus.Cancelled AndAlso
-            Not order.Status = IOrder.TypeOfStatus.Rejected Then
-            Dim cancellableOrder As New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
-            {
-                New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, order, reason)
-            }
-
-            Await ExecuteCommandAsync(ExecuteCommands.ForceCancelRegularOrder, cancellableOrder).ConfigureAwait(False)
-        End If
-    End Function
-
-    Private Function GetEntrySignal(ByVal runningCandle As OHLCPayload, ByVal currentTick As ITick, ByVal forcePrint As Boolean) As Tuple(Of Boolean, OHLCPayload, Integer, Decimal)
-        Dim ret As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Nothing
-        If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
-            Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-            Dim fractalData As FractalConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyFractalConsumer)
-            _lastDayFractalChanged = IsLastDayFractalChanged(fractalData, runningCandle)
-            If _lastDayFractalChanged Then
-                Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
-                If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
-                    Dim fractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
-                    If runningCandle.PreviousPayload.ClosePrice.Value < fractal.FractalLow.Value Then
-                        Dim signalCandle As OHLCPayload = Nothing
-                        If lastExecutedOrder IsNot Nothing Then
-                            Dim targetPrice As Decimal = GetTargetPrice(lastExecutedOrder.ParentOrder.AveragePrice)
-                            If targetPrice <> Decimal.MinValue Then
-                                Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
-                                If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
-                                    If fractalData.ConsumerPayloads.ContainsKey(lastOrderSignalCandle.SnapshotDateTime) Then
-                                        Dim lastFractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(lastOrderSignalCandle.SnapshotDateTime)
-                                        If lastFractal.FractalLow.Value <> fractal.FractalLow.Value AndAlso targetPrice <> fractal.FractalHigh.Value Then
-                                            signalCandle = runningCandle.PreviousPayload
-                                        End If
-                                    End If
-                                End If
-                            End If
-                        Else
-                            signalCandle = runningCandle.PreviousPayload
-                        End If
-
-                        If signalCandle IsNot Nothing Then
-                            Dim entryPrice As Decimal = currentTick.LastPrice
-                            Dim targetPrice As Decimal = fractal.FractalHigh.Value
-                            Dim quantity As Integer = CalculateQuantity(entryPrice, targetPrice, userSettings.MaxProfitPerStock)
-                            If quantity * entryPrice > userSettings.MaxTurnoverPerTrade Then
-                                While quantity * entryPrice > userSettings.MaxTurnoverPerTrade
-                                    targetPrice += Me.TradableInstrument.TickSize
-                                    quantity = CalculateQuantity(entryPrice, targetPrice, userSettings.MaxProfitPerStock)
-                                End While
-                            End If
-                            If quantity > 0 Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal)(True, signalCandle, quantity, targetPrice)
-
-                                If forcePrint Then
-                                    Try
-                                        logger.Debug("Signal Candle:{0}, Potential Entry:{1}, Potential Target:{2}, Quantity:{3}",
-                                                 signalCandle.SnapshotDateTime.ToString("HH:mm:ss"), entryPrice, targetPrice, quantity)
-                                    Catch ex As Exception
-                                        logger.Warn(ex.ToString)
-                                    End Try
-                                End If
-                            End If
-                        End If
-                    End If
-                End If
-            End If
-        End If
-        Return ret
-    End Function
-
-    Private Function CalculateQuantity(ByVal entryPrice As Decimal, ByVal targetPrice As Decimal, ByVal targetPL As Decimal) As Integer
-        Dim ret As Integer = 0
-        Dim unrealizedPL As Decimal = 0
-        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-            For Each runningOrder In Me.OrderDetails.Values
-                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy AndAlso
-                    runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                    unrealizedPL += _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, runningOrder.ParentOrder.AveragePrice, targetPrice, runningOrder.ParentOrder.Quantity)
-                End If
-            Next
-        End If
-        Dim plToAchive As Decimal = targetPL - unrealizedPL
-        If plToAchive > 0 Then
-            Dim qty As Integer = CalculateQuantityFromTarget(entryPrice, targetPrice, targetPL)
-            ret = Math.Ceiling(qty / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize
-        End If
-        Return ret
-    End Function
-
-    Private Function GetTargetPrice(ByVal lastTradeEntryPrice As Decimal) As Decimal
-        Dim ret As Decimal = Decimal.MinValue
-        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-            Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-            For target As Decimal = lastTradeEntryPrice To Decimal.MaxValue Step Me.TradableInstrument.TickSize
-                Dim plAfterBrokerage As Decimal = 0
-                For Each runningOrder In Me.OrderDetails.Values
-                    If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy AndAlso
-                        runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                        plAfterBrokerage += _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, runningOrder.ParentOrder.AveragePrice, target, runningOrder.ParentOrder.Quantity)
-                    End If
-                Next
-                If plAfterBrokerage >= userSettings.MaxProfitPerStock Then
-                    ret = target
-                    Exit For
-                End If
-            Next
-        End If
-        Return ret
-    End Function
-
-    Private Function GetTotalQuantityTraded() As Long
-        Dim ret As Long = 0
-        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-            For Each runningOrder In Me.OrderDetails.Values
-                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                    If runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                        ret += runningOrder.ParentOrder.Quantity
-                    ElseIf runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                        ret -= runningOrder.ParentOrder.Quantity
-                    End If
-                End If
-            Next
-        End If
-        Return ret
-    End Function
-
-    Private Function IsLastDayFractalChanged(ByVal fractaldata As FractalConsumer, ByVal runningCandle As OHLCPayload) As Boolean
-        Dim ret As Boolean = _lastDayFractalChanged
-        If Not _lastDayFractalChanged AndAlso runningCandle.PreviousPayload IsNot Nothing Then
-            If _lastDayFractalLow = Decimal.MinValue Then
-                Dim firstCandleOfTheDay As OHLCPayload = GetXMinuteFirstCandleOfTheDay(Me.ParentStrategy.UserSettings.SignalTimeFrame)
-                If firstCandleOfTheDay IsNot Nothing AndAlso firstCandleOfTheDay.PreviousPayload IsNot Nothing Then
-                    If fractaldata.ConsumerPayloads IsNot Nothing AndAlso fractaldata.ConsumerPayloads.ContainsKey(firstCandleOfTheDay.PreviousPayload.SnapshotDateTime) Then
-                        Dim fractal As FractalConsumer.FractalPayload = fractaldata.ConsumerPayloads(firstCandleOfTheDay.PreviousPayload.SnapshotDateTime)
-                        _lastDayFractalLow = fractal.FractalLow.Value
-                    End If
-                End If
-            End If
-            If _lastDayFractalLow <> Decimal.MinValue Then
-                If Me.RawPayloadDependentConsumers IsNot Nothing AndAlso Me.RawPayloadDependentConsumers.Count > 0 Then
-                    Dim XMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.Find(Function(x)
-                                                                                                                 If x.GetType Is GetType(PayloadToChartConsumer) Then
-                                                                                                                     Return CType(x, PayloadToChartConsumer).Timeframe = Me.ParentStrategy.UserSettings.SignalTimeFrame
-                                                                                                                 Else
-                                                                                                                     Return Nothing
-                                                                                                                 End If
-                                                                                                             End Function)
-
-                    If XMinutePayloadConsumer IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
-                        Dim currentDayPayloads As IEnumerable(Of KeyValuePair(Of Date, IPayload)) = XMinutePayloadConsumer.ConsumerPayloads.Where(Function(y)
-                                                                                                                                                      Return y.Key.Date = Now.Date
-                                                                                                                                                  End Function)
-
-                        If currentDayPayloads IsNot Nothing AndAlso currentDayPayloads.Count > 0 Then
-                            For Each runningPayload In currentDayPayloads.OrderBy(Function(x)
-                                                                                      Return x.Key
-                                                                                  End Function)
-                                If runningPayload.Key <= runningCandle.PreviousPayload.SnapshotDateTime Then
-                                    If fractaldata.ConsumerPayloads.ContainsKey(runningPayload.Key) Then
-                                        Dim fractal As FractalConsumer.FractalPayload = fractaldata.ConsumerPayloads(runningPayload.Key)
-                                        If fractal.FractalLow.Value <> _lastDayFractalLow Then
-                                            ret = True
-                                            Exit For
-                                        End If
-                                    End If
-                                End If
-                            Next
-                        End If
-                    End If
-                End If
-            End If
-        End If
-        Return ret
+    Protected Overrides Function ForceExitSpecificTradeAsync(order As IOrder, ByVal reason As String) As Task
+        Throw New NotImplementedException()
     End Function
 
 #Region "IDisposable Support"

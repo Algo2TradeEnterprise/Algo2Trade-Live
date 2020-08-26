@@ -42,24 +42,58 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.StockList IsNot Nothing AndAlso userInputs.StockList.Count > 0 Then
+            If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim fillInstrument As NFOFillInstrumentDetails = New NFOFillInstrumentDetails(_cts, Me)
-                For Each runningStock In userInputs.StockList
+                For Each runningStock In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim optionInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                    Return x.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
-                                                                                                    x.TradingSymbol.Split(" ")(0).Trim.ToUpper = runningStock
-                                                                                                End Function)
+                    If (runningStock.InstrumentType.ToUpper = "NSE" AndAlso userInputs.RunNSE) OrElse
+                        (runningStock.InstrumentType.ToUpper = "NFO" AndAlso userInputs.RunNFO) OrElse
+                        (runningStock.InstrumentType.ToUpper = "MCX" AndAlso userInputs.RunMCX) Then
+                        Dim allTradableInstruments As List(Of IInstrument) = Nothing
+                        If runningStock.InstrumentType.ToUpper = "NSE" Then
+                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
+                                                                                       Return x.TradingSymbol.ToUpper = runningStock.InstrumentName.ToUpper AndAlso
+                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Cash AndAlso
+                                                                                        x.RawExchange = "NSE"
+                                                                                   End Function)
+                        ElseIf runningStock.InstrumentType.ToUpper = "NFO" Then
+                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
+                                                                                       Return x.RawInstrumentName = runningStock.InstrumentName.ToUpper AndAlso
+                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
+                                                                                        x.RawExchange = "NFO"
+                                                                                   End Function)
+                        ElseIf runningStock.InstrumentType.ToUpper = "MCX" Then
+                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
+                                                                                       Return x.RawInstrumentName = runningStock.InstrumentName.ToUpper AndAlso
+                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
+                                                                                        x.RawExchange = "MCX"
+                                                                                   End Function)
+                        End If
 
-                    Dim intrumentToCheck As List(Of IInstrument) = Await fillInstrument.GetInstrumentData(optionInstruments).ConfigureAwait(False)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If intrumentToCheck IsNot Nothing AndAlso intrumentToCheck.Count > 0 Then
-                        For Each runningInstrument In intrumentToCheck
+                        If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
+                            Dim runningInstrument As IInstrument = Nothing
+                            If runningStock.InstrumentType.ToUpper <> "NSE" Then
+                                Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
+                                                                                       If x.Expiry.Value.Date > Now.Date Then
+                                                                                           Return x.Expiry.Value
+                                                                                       Else
+                                                                                           Return Date.MaxValue
+                                                                                       End If
+                                                                                   End Function)
+
+                                runningInstrument = allTradableInstruments.Find(Function(x)
+                                                                                    Return x.Expiry = minExpiry
+                                                                                End Function)
+                            Else
+                                runningInstrument = allTradableInstruments.FirstOrDefault
+                            End If
                             _cts.Token.ThrowIfCancellationRequested()
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                            ret = True
-                        Next
+                            If runningInstrument IsNot Nothing Then
+                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                                ret = True
+                            End If
+                        End If
                     End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy

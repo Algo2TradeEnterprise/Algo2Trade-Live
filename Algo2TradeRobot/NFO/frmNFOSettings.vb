@@ -25,6 +25,7 @@ Public Class frmNFOSettings
         Try
             _cts = New CancellationTokenSource
             If _settings Is Nothing Then _settings = New NFOUserInputs
+            _settings.InstrumentsData = Nothing
             ValidateInputs()
             SaveSettings()
             Me.Close()
@@ -37,44 +38,37 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
-            dtpckrTradeStartTime.Value = _settings.TradeStartTime
-            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
-            dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtMaxProfitPerStock.Text = _settings.MaxProfitPerStock
-            txtNumberOfStockToTrade.Text = _settings.NumberOfStockToTrade
-            txtMaxTurnoverPerTrade.Text = _settings.MaxTurnoverPerTrade
+            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            txtMaxLossPerTrade.Text = _settings.MaxLossPerTrade
+            txtTargetMultiplier.Text = _settings.TargetMultiplier
+            chkbNSE.Checked = _settings.RunNSE
+            chkbNFO.Checked = _settings.RunNFO
+            chkbMCX.Checked = _settings.RunMCX
 
-            txtMaxStockPrice.Text = _settings.MaxStockPrice
-            If _settings.StockList IsNot Nothing And _settings.StockList.Count > 0 Then
-                Dim stocks As String = Nothing
-                For Each runningStock In _settings.StockList
-                    stocks = String.Format("{0},{1}", stocks, runningStock.Trim.ToUpper)
-                Next
+            txtTelegramAPIKey.Text = _settings.TelegramAPIKey
+            txtTelegramChatID.Text = _settings.TelegramChatID
 
-                txtStockList.Text = stocks.Substring(1)
-            End If
+            txtATRPeriod.Text = _settings.ATRPeriod
+            txtVWAPEMAPeriod.Text = _settings.VWAP_EMAPeriod
+            txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
-        _settings.TradeStartTime = dtpckrTradeStartTime.Value
-        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
-        _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.MaxProfitPerStock = Math.Abs(CDec(txtMaxProfitPerStock.Text))
-        _settings.NumberOfStockToTrade = txtNumberOfStockToTrade.Text
-        _settings.MaxTurnoverPerTrade = txtMaxTurnoverPerTrade.Text
+        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.MaxLossPerTrade = Math.Abs(Val(txtMaxLossPerTrade.Text)) * -1
+        _settings.TargetMultiplier = txtTargetMultiplier.Text
+        _settings.RunNSE = chkbNSE.Checked
+        _settings.RunNFO = chkbNFO.Checked
+        _settings.RunMCX = chkbMCX.Checked
 
-        _settings.MaxStockPrice = txtMaxStockPrice.Text
-        If txtStockList.Text IsNot Nothing And txtStockList.Text.Count > 0 Then
-            Dim stocks() As String = txtStockList.Text.Trim.Split(",")
-            If stocks IsNot Nothing AndAlso stocks.Count > 0 Then
-                _settings.StockList = New List(Of String)
-                For i = 0 To stocks.Count - 1
-                    _settings.StockList.Add(stocks(i).Trim.ToUpper)
-                Next
-            End If
-        End If
+        _settings.TelegramAPIKey = txtTelegramAPIKey.Text
+        _settings.TelegramChatID = txtTelegramChatID.Text
+
+        _settings.ATRPeriod = txtATRPeriod.Text
+        _settings.VWAP_EMAPeriod = txtVWAPEMAPeriod.Text
+        _settings.DayClose_SMAPeriod = txtDayCloseSMAPeriod.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -97,8 +91,30 @@ Public Class frmNFOSettings
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(1, Decimal.MaxValue, txtMaxProfitPerStock)
-        ValidateNumbers(1, Decimal.MaxValue, txtMaxTurnoverPerTrade)
-        ValidateNumbers(1, Integer.MaxValue, txtNumberOfStockToTrade, True)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerTrade)
+        ValidateNumbers(0, Decimal.MaxValue, txtTargetMultiplier)
+        ValidateNumbers(1, Integer.MaxValue, txtATRPeriod, True)
+        ValidateNumbers(1, Integer.MaxValue, txtVWAPEMAPeriod, True)
+        ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
+
+        ValidateFile()
+    End Sub
+
+    Private Sub ValidateFile()
+        _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
+    End Sub
+
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
+        opnFileSettings.Filter = "|*.csv"
+        opnFileSettings.ShowDialog()
+    End Sub
+
+    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
+        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
+        If extension = ".csv" Then
+            txtInstrumentDetalis.Text = opnFileSettings.FileName
+        Else
+            MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
+        End If
     End Sub
 End Class

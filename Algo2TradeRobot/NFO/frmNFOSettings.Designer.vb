@@ -26,29 +26,36 @@ Partial Class frmNFOSettings
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmNFOSettings))
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.grpStockSelection = New System.Windows.Forms.GroupBox()
-        Me.txtStockList = New System.Windows.Forms.TextBox()
-        Me.lblStockList = New System.Windows.Forms.Label()
-        Me.txtMaxStockPrice = New System.Windows.Forms.TextBox()
-        Me.lblMaxStockPrice = New System.Windows.Forms.Label()
-        Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
+        Me.grpTelegram = New System.Windows.Forms.GroupBox()
+        Me.txtTelegramChatID = New System.Windows.Forms.TextBox()
+        Me.lblTelegramChatID = New System.Windows.Forms.Label()
+        Me.txtTelegramAPIKey = New System.Windows.Forms.TextBox()
+        Me.lblTelegramAPIKey = New System.Windows.Forms.Label()
+        Me.grpIndicator = New System.Windows.Forms.GroupBox()
+        Me.txtDayCloseSMAPeriod = New System.Windows.Forms.TextBox()
+        Me.lblDayCloseSMAPeriod = New System.Windows.Forms.Label()
+        Me.txtVWAPEMAPeriod = New System.Windows.Forms.TextBox()
+        Me.lblVWAPEMAPeriod = New System.Windows.Forms.Label()
+        Me.txtATRPeriod = New System.Windows.Forms.TextBox()
+        Me.lblATRPeriod = New System.Windows.Forms.Label()
+        Me.grpOther = New System.Windows.Forms.GroupBox()
+        Me.chkbMCX = New System.Windows.Forms.CheckBox()
+        Me.chkbNFO = New System.Windows.Forms.CheckBox()
+        Me.chkbNSE = New System.Windows.Forms.CheckBox()
+        Me.lblRunInstruments = New System.Windows.Forms.Label()
+        Me.btnBrowse = New System.Windows.Forms.Button()
+        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
+        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtTargetMultiplier = New System.Windows.Forms.TextBox()
+        Me.lblTargetMultiplier = New System.Windows.Forms.Label()
+        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
-        Me.lblTradeStartTime = New System.Windows.Forms.Label()
-        Me.lblLastTradeEntryTime = New System.Windows.Forms.Label()
-        Me.lblEODExitTime = New System.Windows.Forms.Label()
-        Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
-        Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
-        Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
-        Me.lblMaxProfitPerStock = New System.Windows.Forms.Label()
-        Me.txtMaxProfitPerStock = New System.Windows.Forms.TextBox()
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtMaxTurnoverPerTrade = New System.Windows.Forms.TextBox()
-        Me.lblMaxTurnoverPerTrade = New System.Windows.Forms.Label()
-        Me.txtNumberOfStockToTrade = New System.Windows.Forms.TextBox()
-        Me.lblNumberOfStockToTrade = New System.Windows.Forms.Label()
-        Me.toolTipStockList = New System.Windows.Forms.ToolTip(Me.components)
-        Me.grpStockSelection.SuspendLayout()
-        Me.GroupBox1.SuspendLayout()
+        Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
+        Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
+        Me.grpTelegram.SuspendLayout()
+        Me.grpIndicator.SuspendLayout()
+        Me.grpOther.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -56,7 +63,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(797, 213)
+        Me.btnSave.Location = New System.Drawing.Point(980, 249)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -71,229 +78,289 @@ Partial Class frmNFOSettings
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
-        'grpStockSelection
+        'grpTelegram
         '
-        Me.grpStockSelection.Controls.Add(Me.txtStockList)
-        Me.grpStockSelection.Controls.Add(Me.lblStockList)
-        Me.grpStockSelection.Controls.Add(Me.txtMaxStockPrice)
-        Me.grpStockSelection.Controls.Add(Me.lblMaxStockPrice)
-        Me.grpStockSelection.Location = New System.Drawing.Point(551, -2)
-        Me.grpStockSelection.Name = "grpStockSelection"
-        Me.grpStockSelection.Size = New System.Drawing.Size(358, 167)
-        Me.grpStockSelection.TabIndex = 46
-        Me.grpStockSelection.TabStop = False
-        Me.grpStockSelection.Text = "Stock Selection Settings"
+        Me.grpTelegram.Controls.Add(Me.txtTelegramChatID)
+        Me.grpTelegram.Controls.Add(Me.lblTelegramChatID)
+        Me.grpTelegram.Controls.Add(Me.txtTelegramAPIKey)
+        Me.grpTelegram.Controls.Add(Me.lblTelegramAPIKey)
+        Me.grpTelegram.Location = New System.Drawing.Point(554, 3)
+        Me.grpTelegram.Name = "grpTelegram"
+        Me.grpTelegram.Size = New System.Drawing.Size(538, 97)
+        Me.grpTelegram.TabIndex = 2
+        Me.grpTelegram.TabStop = False
+        Me.grpTelegram.Text = "Telegram Details"
         '
-        'txtStockList
+        'txtTelegramChatID
         '
-        Me.txtStockList.Location = New System.Drawing.Point(147, 55)
-        Me.txtStockList.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtStockList.Multiline = True
-        Me.txtStockList.Name = "txtStockList"
-        Me.txtStockList.Size = New System.Drawing.Size(201, 105)
-        Me.txtStockList.TabIndex = 9
-        Me.txtStockList.Tag = "Stock List"
-        Me.toolTipStockList.SetToolTip(Me.txtStockList, "Add core stock name seperated by comma. Options stocks will be selected automatic" &
-        "ally from core stock name.")
+        Me.txtTelegramChatID.Location = New System.Drawing.Point(178, 62)
+        Me.txtTelegramChatID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTelegramChatID.Name = "txtTelegramChatID"
+        Me.txtTelegramChatID.Size = New System.Drawing.Size(348, 22)
+        Me.txtTelegramChatID.TabIndex = 1
+        Me.txtTelegramChatID.Tag = "Telegram Chat ID"
         '
-        'lblStockList
+        'lblTelegramChatID
         '
-        Me.lblStockList.AutoSize = True
-        Me.lblStockList.Location = New System.Drawing.Point(10, 58)
-        Me.lblStockList.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblStockList.Name = "lblStockList"
-        Me.lblStockList.Size = New System.Drawing.Size(69, 17)
-        Me.lblStockList.TabIndex = 39
-        Me.lblStockList.Text = "Stock List"
-        Me.toolTipStockList.SetToolTip(Me.lblStockList, "Add core stock name seperated by comma. Options stocks will be selected automatic" &
-        "ally from core stock name.")
+        Me.lblTelegramChatID.AutoSize = True
+        Me.lblTelegramChatID.Location = New System.Drawing.Point(9, 65)
+        Me.lblTelegramChatID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTelegramChatID.Name = "lblTelegramChatID"
+        Me.lblTelegramChatID.Size = New System.Drawing.Size(54, 17)
+        Me.lblTelegramChatID.TabIndex = 61
+        Me.lblTelegramChatID.Text = "Chat ID"
         '
-        'txtMaxStockPrice
+        'txtTelegramAPIKey
         '
-        Me.txtMaxStockPrice.Location = New System.Drawing.Point(146, 21)
-        Me.txtMaxStockPrice.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxStockPrice.Name = "txtMaxStockPrice"
-        Me.txtMaxStockPrice.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxStockPrice.TabIndex = 8
-        Me.txtMaxStockPrice.Tag = "Max Stock Price"
+        Me.txtTelegramAPIKey.Location = New System.Drawing.Point(178, 26)
+        Me.txtTelegramAPIKey.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTelegramAPIKey.Name = "txtTelegramAPIKey"
+        Me.txtTelegramAPIKey.Size = New System.Drawing.Size(348, 22)
+        Me.txtTelegramAPIKey.TabIndex = 0
+        Me.txtTelegramAPIKey.Tag = "Telegram API Key"
         '
-        'lblMaxStockPrice
+        'lblTelegramAPIKey
         '
-        Me.lblMaxStockPrice.AutoSize = True
-        Me.lblMaxStockPrice.Location = New System.Drawing.Point(9, 24)
-        Me.lblMaxStockPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxStockPrice.Name = "lblMaxStockPrice"
-        Me.lblMaxStockPrice.Size = New System.Drawing.Size(108, 17)
-        Me.lblMaxStockPrice.TabIndex = 37
-        Me.lblMaxStockPrice.Text = "Max Stock Price"
+        Me.lblTelegramAPIKey.AutoSize = True
+        Me.lblTelegramAPIKey.Location = New System.Drawing.Point(10, 29)
+        Me.lblTelegramAPIKey.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTelegramAPIKey.Name = "lblTelegramAPIKey"
+        Me.lblTelegramAPIKey.Size = New System.Drawing.Size(57, 17)
+        Me.lblTelegramAPIKey.TabIndex = 60
+        Me.lblTelegramAPIKey.Text = "API Key"
+        '
+        'grpIndicator
+        '
+        Me.grpIndicator.Controls.Add(Me.txtDayCloseSMAPeriod)
+        Me.grpIndicator.Controls.Add(Me.lblDayCloseSMAPeriod)
+        Me.grpIndicator.Controls.Add(Me.txtVWAPEMAPeriod)
+        Me.grpIndicator.Controls.Add(Me.lblVWAPEMAPeriod)
+        Me.grpIndicator.Controls.Add(Me.txtATRPeriod)
+        Me.grpIndicator.Controls.Add(Me.lblATRPeriod)
+        Me.grpIndicator.Location = New System.Drawing.Point(554, 107)
+        Me.grpIndicator.Name = "grpIndicator"
+        Me.grpIndicator.Size = New System.Drawing.Size(538, 135)
+        Me.grpIndicator.TabIndex = 3
+        Me.grpIndicator.TabStop = False
+        Me.grpIndicator.Text = "Indicator Details"
+        '
+        'txtDayCloseSMAPeriod
+        '
+        Me.txtDayCloseSMAPeriod.Location = New System.Drawing.Point(178, 97)
+        Me.txtDayCloseSMAPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtDayCloseSMAPeriod.Name = "txtDayCloseSMAPeriod"
+        Me.txtDayCloseSMAPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtDayCloseSMAPeriod.TabIndex = 2
+        Me.txtDayCloseSMAPeriod.Tag = "SMA Period(Day Close)"
+        '
+        'lblDayCloseSMAPeriod
+        '
+        Me.lblDayCloseSMAPeriod.AutoSize = True
+        Me.lblDayCloseSMAPeriod.Location = New System.Drawing.Point(7, 100)
+        Me.lblDayCloseSMAPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDayCloseSMAPeriod.Name = "lblDayCloseSMAPeriod"
+        Me.lblDayCloseSMAPeriod.Size = New System.Drawing.Size(156, 17)
+        Me.lblDayCloseSMAPeriod.TabIndex = 59
+        Me.lblDayCloseSMAPeriod.Text = "SMA Period(Day Close)"
+        '
+        'txtVWAPEMAPeriod
+        '
+        Me.txtVWAPEMAPeriod.Location = New System.Drawing.Point(178, 62)
+        Me.txtVWAPEMAPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtVWAPEMAPeriod.Name = "txtVWAPEMAPeriod"
+        Me.txtVWAPEMAPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtVWAPEMAPeriod.TabIndex = 1
+        Me.txtVWAPEMAPeriod.Tag = "EMA Period(VWAP)"
+        '
+        'lblVWAPEMAPeriod
+        '
+        Me.lblVWAPEMAPeriod.AutoSize = True
+        Me.lblVWAPEMAPeriod.Location = New System.Drawing.Point(7, 65)
+        Me.lblVWAPEMAPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblVWAPEMAPeriod.Name = "lblVWAPEMAPeriod"
+        Me.lblVWAPEMAPeriod.Size = New System.Drawing.Size(132, 17)
+        Me.lblVWAPEMAPeriod.TabIndex = 57
+        Me.lblVWAPEMAPeriod.Text = "EMA Period(VWAP)"
+        '
+        'txtATRPeriod
+        '
+        Me.txtATRPeriod.Location = New System.Drawing.Point(178, 27)
+        Me.txtATRPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtATRPeriod.Name = "txtATRPeriod"
+        Me.txtATRPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtATRPeriod.TabIndex = 0
+        Me.txtATRPeriod.Tag = "ATR Period"
+        '
+        'lblATRPeriod
+        '
+        Me.lblATRPeriod.AutoSize = True
+        Me.lblATRPeriod.Location = New System.Drawing.Point(7, 30)
+        Me.lblATRPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblATRPeriod.Name = "lblATRPeriod"
+        Me.lblATRPeriod.Size = New System.Drawing.Size(81, 17)
+        Me.lblATRPeriod.TabIndex = 55
+        Me.lblATRPeriod.Text = "ATR Period"
+        '
+        'grpOther
+        '
+        Me.grpOther.Controls.Add(Me.chkbMCX)
+        Me.grpOther.Controls.Add(Me.chkbNFO)
+        Me.grpOther.Controls.Add(Me.chkbNSE)
+        Me.grpOther.Controls.Add(Me.lblRunInstruments)
+        Me.grpOther.Controls.Add(Me.btnBrowse)
+        Me.grpOther.Controls.Add(Me.txtInstrumentDetalis)
+        Me.grpOther.Controls.Add(Me.lblInstrumentDetails)
+        Me.grpOther.Controls.Add(Me.txtTargetMultiplier)
+        Me.grpOther.Controls.Add(Me.lblTargetMultiplier)
+        Me.grpOther.Controls.Add(Me.txtMaxLossPerTrade)
+        Me.grpOther.Controls.Add(Me.lblMaxLossPerTrade)
+        Me.grpOther.Controls.Add(Me.txtSignalTimeFrame)
+        Me.grpOther.Controls.Add(Me.lblSignalTimeFrame)
+        Me.grpOther.Location = New System.Drawing.Point(8, 2)
+        Me.grpOther.Name = "grpOther"
+        Me.grpOther.Size = New System.Drawing.Size(540, 240)
+        Me.grpOther.TabIndex = 1
+        Me.grpOther.TabStop = False
+        Me.grpOther.Text = "Other Details"
+        '
+        'chkbMCX
+        '
+        Me.chkbMCX.AutoSize = True
+        Me.chkbMCX.Location = New System.Drawing.Point(398, 168)
+        Me.chkbMCX.Name = "chkbMCX"
+        Me.chkbMCX.Size = New System.Drawing.Size(59, 21)
+        Me.chkbMCX.TabIndex = 6
+        Me.chkbMCX.Text = "MCX"
+        Me.chkbMCX.UseVisualStyleBackColor = True
+        '
+        'chkbNFO
+        '
+        Me.chkbNFO.AutoSize = True
+        Me.chkbNFO.Location = New System.Drawing.Point(334, 168)
+        Me.chkbNFO.Name = "chkbNFO"
+        Me.chkbNFO.Size = New System.Drawing.Size(59, 21)
+        Me.chkbNFO.TabIndex = 5
+        Me.chkbNFO.Text = "NFO"
+        Me.chkbNFO.UseVisualStyleBackColor = True
+        '
+        'chkbNSE
+        '
+        Me.chkbNSE.AutoSize = True
+        Me.chkbNSE.Location = New System.Drawing.Point(270, 168)
+        Me.chkbNSE.Name = "chkbNSE"
+        Me.chkbNSE.Size = New System.Drawing.Size(58, 21)
+        Me.chkbNSE.TabIndex = 4
+        Me.chkbNSE.Text = "NSE"
+        Me.chkbNSE.UseVisualStyleBackColor = True
+        '
+        'lblRunInstruments
+        '
+        Me.lblRunInstruments.AutoSize = True
+        Me.lblRunInstruments.Location = New System.Drawing.Point(6, 170)
+        Me.lblRunInstruments.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRunInstruments.Name = "lblRunInstruments"
+        Me.lblRunInstruments.Size = New System.Drawing.Size(111, 17)
+        Me.lblRunInstruments.TabIndex = 72
+        Me.lblRunInstruments.Text = "Run Instruments"
+        '
+        'btnBrowse
+        '
+        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnBrowse.Location = New System.Drawing.Point(484, 60)
+        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.btnBrowse.Name = "btnBrowse"
+        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
+        Me.btnBrowse.TabIndex = 1
+        Me.btnBrowse.Text = "..."
+        Me.btnBrowse.UseVisualStyleBackColor = True
+        '
+        'txtInstrumentDetalis
+        '
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(269, 61)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
+        Me.txtInstrumentDetalis.ReadOnly = True
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
+        Me.txtInstrumentDetalis.TabIndex = 1
+        '
+        'lblInstrumentDetails
+        '
+        Me.lblInstrumentDetails.AutoSize = True
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(7, 64)
+        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
+        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
+        Me.lblInstrumentDetails.TabIndex = 70
+        Me.lblInstrumentDetails.Text = "Instrument Details"
+        '
+        'txtTargetMultiplier
+        '
+        Me.txtTargetMultiplier.Location = New System.Drawing.Point(269, 131)
+        Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTargetMultiplier.Name = "txtTargetMultiplier"
+        Me.txtTargetMultiplier.Size = New System.Drawing.Size(255, 22)
+        Me.txtTargetMultiplier.TabIndex = 3
+        Me.txtTargetMultiplier.Tag = "Target Multiplier"
+        '
+        'lblTargetMultiplier
+        '
+        Me.lblTargetMultiplier.AutoSize = True
+        Me.lblTargetMultiplier.Location = New System.Drawing.Point(6, 134)
+        Me.lblTargetMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTargetMultiplier.Name = "lblTargetMultiplier"
+        Me.lblTargetMultiplier.Size = New System.Drawing.Size(110, 17)
+        Me.lblTargetMultiplier.TabIndex = 67
+        Me.lblTargetMultiplier.Text = "Target Multiplier"
+        '
+        'txtMaxLossPerTrade
+        '
+        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(269, 95)
+        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
+        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxLossPerTrade.TabIndex = 2
+        Me.txtMaxLossPerTrade.Tag = "Max Loss Per Trade"
+        '
+        'lblMaxLossPerTrade
+        '
+        Me.lblMaxLossPerTrade.AutoSize = True
+        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(7, 98)
+        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
+        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
+        Me.lblMaxLossPerTrade.TabIndex = 66
+        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
+        '
+        'txtSignalTimeFrame
+        '
+        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(269, 26)
+        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
+        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(255, 22)
+        Me.txtSignalTimeFrame.TabIndex = 0
+        Me.txtSignalTimeFrame.Tag = "Signal Time Frame"
         '
         'lblSignalTimeFrame
         '
         Me.lblSignalTimeFrame.AutoSize = True
-        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(9, 20)
+        Me.lblSignalTimeFrame.Location = New System.Drawing.Point(7, 29)
         Me.lblSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblSignalTimeFrame.Name = "lblSignalTimeFrame"
         Me.lblSignalTimeFrame.Size = New System.Drawing.Size(158, 17)
-        Me.lblSignalTimeFrame.TabIndex = 3
+        Me.lblSignalTimeFrame.TabIndex = 61
         Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
         '
-        'txtSignalTimeFrame
+        'opnFileSettings
         '
-        Me.txtSignalTimeFrame.Location = New System.Drawing.Point(285, 17)
-        Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
-        Me.txtSignalTimeFrame.Size = New System.Drawing.Size(242, 22)
-        Me.txtSignalTimeFrame.TabIndex = 1
-        Me.txtSignalTimeFrame.Tag = "Signal Time Frame"
-        '
-        'lblTradeStartTime
-        '
-        Me.lblTradeStartTime.AutoSize = True
-        Me.lblTradeStartTime.Location = New System.Drawing.Point(9, 56)
-        Me.lblTradeStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTradeStartTime.Name = "lblTradeStartTime"
-        Me.lblTradeStartTime.Size = New System.Drawing.Size(115, 17)
-        Me.lblTradeStartTime.TabIndex = 19
-        Me.lblTradeStartTime.Text = "Trade Start Time"
-        '
-        'lblLastTradeEntryTime
-        '
-        Me.lblLastTradeEntryTime.AutoSize = True
-        Me.lblLastTradeEntryTime.Location = New System.Drawing.Point(9, 92)
-        Me.lblLastTradeEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblLastTradeEntryTime.Name = "lblLastTradeEntryTime"
-        Me.lblLastTradeEntryTime.Size = New System.Drawing.Size(149, 17)
-        Me.lblLastTradeEntryTime.TabIndex = 21
-        Me.lblLastTradeEntryTime.Text = "Last Trade Entry Time"
-        '
-        'lblEODExitTime
-        '
-        Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(9, 127)
-        Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblEODExitTime.Name = "lblEODExitTime"
-        Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
-        Me.lblEODExitTime.TabIndex = 23
-        Me.lblEODExitTime.Text = "EOD Exit Time"
-        '
-        'dtpckrTradeStartTime
-        '
-        Me.dtpckrTradeStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeStartTime.Location = New System.Drawing.Point(285, 54)
-        Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
-        Me.dtpckrTradeStartTime.ShowUpDown = True
-        Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 2
-        Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'dtpckrLastTradeEntryTime
-        '
-        Me.dtpckrLastTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastTradeEntryTime.Location = New System.Drawing.Point(285, 91)
-        Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
-        Me.dtpckrLastTradeEntryTime.ShowUpDown = True
-        Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 3
-        Me.dtpckrLastTradeEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'dtpckrEODExitTime
-        '
-        Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(285, 126)
-        Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
-        Me.dtpckrEODExitTime.ShowUpDown = True
-        Me.dtpckrEODExitTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrEODExitTime.TabIndex = 4
-        Me.dtpckrEODExitTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
-        '
-        'lblMaxProfitPerStock
-        '
-        Me.lblMaxProfitPerStock.AutoSize = True
-        Me.lblMaxProfitPerStock.Location = New System.Drawing.Point(9, 164)
-        Me.lblMaxProfitPerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxProfitPerStock.Name = "lblMaxProfitPerStock"
-        Me.lblMaxProfitPerStock.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxProfitPerStock.TabIndex = 53
-        Me.lblMaxProfitPerStock.Text = "Max Profit Per Stock"
-        '
-        'txtMaxProfitPerStock
-        '
-        Me.txtMaxProfitPerStock.Location = New System.Drawing.Point(285, 161)
-        Me.txtMaxProfitPerStock.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxProfitPerStock.Name = "txtMaxProfitPerStock"
-        Me.txtMaxProfitPerStock.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxProfitPerStock.TabIndex = 5
-        Me.txtMaxProfitPerStock.Tag = "Max Profit Per Stock"
-        '
-        'GroupBox1
-        '
-        Me.GroupBox1.Controls.Add(Me.txtMaxTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.lblMaxTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.txtNumberOfStockToTrade)
-        Me.GroupBox1.Controls.Add(Me.lblNumberOfStockToTrade)
-        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPerStock)
-        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPerStock)
-        Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
-        Me.GroupBox1.Controls.Add(Me.lblEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.lblLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.lblTradeStartTime)
-        Me.GroupBox1.Controls.Add(Me.txtSignalTimeFrame)
-        Me.GroupBox1.Controls.Add(Me.lblSignalTimeFrame)
-        Me.GroupBox1.Location = New System.Drawing.Point(5, -2)
-        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(539, 273)
-        Me.GroupBox1.TabIndex = 44
-        Me.GroupBox1.TabStop = False
-        '
-        'txtMaxTurnoverPerTrade
-        '
-        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(285, 197)
-        Me.txtMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxTurnoverPerTrade.Name = "txtMaxTurnoverPerTrade"
-        Me.txtMaxTurnoverPerTrade.Size = New System.Drawing.Size(242, 22)
-        Me.txtMaxTurnoverPerTrade.TabIndex = 6
-        Me.txtMaxTurnoverPerTrade.Tag = "Max Turnover Per Trade"
-        '
-        'lblMaxTurnoverPerTrade
-        '
-        Me.lblMaxTurnoverPerTrade.AutoSize = True
-        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(8, 200)
-        Me.lblMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxTurnoverPerTrade.Name = "lblMaxTurnoverPerTrade"
-        Me.lblMaxTurnoverPerTrade.Size = New System.Drawing.Size(163, 17)
-        Me.lblMaxTurnoverPerTrade.TabIndex = 57
-        Me.lblMaxTurnoverPerTrade.Text = "Max Turnover Per Trade"
-        '
-        'txtNumberOfStockToTrade
-        '
-        Me.txtNumberOfStockToTrade.Location = New System.Drawing.Point(285, 233)
-        Me.txtNumberOfStockToTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtNumberOfStockToTrade.Name = "txtNumberOfStockToTrade"
-        Me.txtNumberOfStockToTrade.Size = New System.Drawing.Size(242, 22)
-        Me.txtNumberOfStockToTrade.TabIndex = 7
-        Me.txtNumberOfStockToTrade.Tag = "Number Of Stock To Trade"
-        '
-        'lblNumberOfStockToTrade
-        '
-        Me.lblNumberOfStockToTrade.AutoSize = True
-        Me.lblNumberOfStockToTrade.Location = New System.Drawing.Point(8, 236)
-        Me.lblNumberOfStockToTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblNumberOfStockToTrade.Name = "lblNumberOfStockToTrade"
-        Me.lblNumberOfStockToTrade.Size = New System.Drawing.Size(179, 17)
-        Me.lblNumberOfStockToTrade.TabIndex = 48
-        Me.lblNumberOfStockToTrade.Text = "Number Of Stock To Trade"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(913, 274)
-        Me.Controls.Add(Me.GroupBox1)
-        Me.Controls.Add(Me.grpStockSelection)
+        Me.ClientSize = New System.Drawing.Size(1096, 312)
+        Me.Controls.Add(Me.grpOther)
+        Me.Controls.Add(Me.grpIndicator)
+        Me.Controls.Add(Me.grpTelegram)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Margin = New System.Windows.Forms.Padding(4)
@@ -301,36 +368,44 @@ Partial Class frmNFOSettings
         Me.MinimizeBox = False
         Me.Name = "frmNFOSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "NFO Settings"
-        Me.grpStockSelection.ResumeLayout(False)
-        Me.grpStockSelection.PerformLayout()
-        Me.GroupBox1.ResumeLayout(False)
-        Me.GroupBox1.PerformLayout()
+        Me.Text = "Settings"
+        Me.grpTelegram.ResumeLayout(False)
+        Me.grpTelegram.PerformLayout()
+        Me.grpIndicator.ResumeLayout(False)
+        Me.grpIndicator.PerformLayout()
+        Me.grpOther.ResumeLayout(False)
+        Me.grpOther.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
 
     Friend WithEvents btnSave As Button
     Friend WithEvents ImageList1 As ImageList
-    Friend WithEvents grpStockSelection As GroupBox
-    Friend WithEvents txtMaxStockPrice As TextBox
-    Friend WithEvents lblMaxStockPrice As Label
-    Friend WithEvents lblSignalTimeFrame As Label
+    Friend WithEvents grpTelegram As GroupBox
+    Friend WithEvents txtTelegramChatID As TextBox
+    Friend WithEvents lblTelegramChatID As Label
+    Friend WithEvents txtTelegramAPIKey As TextBox
+    Friend WithEvents lblTelegramAPIKey As Label
+    Friend WithEvents grpIndicator As GroupBox
+    Friend WithEvents txtVWAPEMAPeriod As TextBox
+    Friend WithEvents lblVWAPEMAPeriod As Label
+    Friend WithEvents txtATRPeriod As TextBox
+    Friend WithEvents lblATRPeriod As Label
+    Friend WithEvents txtDayCloseSMAPeriod As TextBox
+    Friend WithEvents lblDayCloseSMAPeriod As Label
+    Friend WithEvents grpOther As GroupBox
+    Friend WithEvents txtTargetMultiplier As TextBox
+    Friend WithEvents lblTargetMultiplier As Label
+    Friend WithEvents txtMaxLossPerTrade As TextBox
+    Friend WithEvents lblMaxLossPerTrade As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
-    Friend WithEvents lblTradeStartTime As Label
-    Friend WithEvents lblLastTradeEntryTime As Label
-    Friend WithEvents lblEODExitTime As Label
-    Friend WithEvents dtpckrTradeStartTime As DateTimePicker
-    Friend WithEvents dtpckrLastTradeEntryTime As DateTimePicker
-    Friend WithEvents dtpckrEODExitTime As DateTimePicker
-    Friend WithEvents lblMaxProfitPerStock As Label
-    Friend WithEvents txtMaxProfitPerStock As TextBox
-    Friend WithEvents GroupBox1 As GroupBox
-    Friend WithEvents txtNumberOfStockToTrade As TextBox
-    Friend WithEvents lblNumberOfStockToTrade As Label
-    Friend WithEvents txtMaxTurnoverPerTrade As TextBox
-    Friend WithEvents lblMaxTurnoverPerTrade As Label
-    Friend WithEvents txtStockList As TextBox
-    Friend WithEvents lblStockList As Label
-    Friend WithEvents toolTipStockList As ToolTip
+    Friend WithEvents lblSignalTimeFrame As Label
+    Friend WithEvents btnBrowse As Button
+    Friend WithEvents txtInstrumentDetalis As TextBox
+    Friend WithEvents lblInstrumentDetails As Label
+    Friend WithEvents opnFileSettings As OpenFileDialog
+    Friend WithEvents chkbMCX As CheckBox
+    Friend WithEvents chkbNFO As CheckBox
+    Friend WithEvents chkbNSE As CheckBox
+    Friend WithEvents lblRunInstruments As Label
 End Class
