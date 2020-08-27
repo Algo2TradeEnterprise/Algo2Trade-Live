@@ -178,7 +178,7 @@ Public Class NFOStrategyInstrument
 
                                         If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
                                             Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})>MVWAP({2})[BUY].",
+                                            message = String.Format("{0} VWAP({1})>MVWAP({2})[BUY]. [INFO1] [INFO2]",
                                                                     message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Green)
@@ -256,47 +256,57 @@ Public Class NFOStrategyInstrument
                                                     slRemark = "Support3"
                                                 End If
 
+                                                message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
+
                                                 Dim slPoint As Decimal = entryPrice - stoploss
-                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash AndAlso slPoint > instrumentData.Range Then
-                                                    takeTrade = False
+                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                    takeTrade = takeTrade And (slPoint < instrumentData.Range)
+
+                                                    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
                                                 End If
-                                                message = String.Format("{0} Entry:{1}, Stoploss:{2}({3}), SL Point:{4}, Range:{5}.",
-                                                                    message, entryPrice, stoploss, slRemark, slPoint, If(instrumentData.Range = Decimal.MinValue, "∞", instrumentData.Range))
 
                                                 If takeTrade Then
                                                     Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                    Dim target As Decimal = entryPrice + targetPoint
                                                     Dim moved As Decimal = entryPrice - currentTick.Low
+
+                                                    message = message.Replace("[INFO2]", String.Format("Target:{0}, Day Low:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.Low, moved, Math.Round(_lastDayATR, 2)))
+
                                                     Dim leftOverMovement As Decimal = _lastDayATR - moved
-                                                    If targetPoint > leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100 Then
-                                                        takeTrade = False
-                                                    End If
-                                                    message = String.Format("{0} Target Point:{1}, Day Low:{2}, Moved:{3}, Last Day ATR:{4}, Movement left:{5}.",
-                                                                        message, targetPoint, currentTick.Low, moved, Math.Round(_lastDayATR, 2), leftOverMovement)
+                                                    takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                    message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
+                                                                            message,
+                                                                            targetPoint,
+                                                                            userSettings.TargetToLeftMovementPercentage,
+                                                                            Math.Round(leftOverMovement, 2),
+                                                                            targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
 
                                                     If takeTrade Then
                                                         Dim quantity As Integer = Me.TradableInstrument.LotSize
                                                         If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                            quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, instrumentData.Range)
+                                                            quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
                                                         End If
-                                                        message = String.Format("{0} Target:{1}, Quantity:{2}. BUY",
-                                                                            message, entryPrice + targetPoint, quantity)
 
                                                         _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}({3}) - Target:{4} - Quantity:{5} - Signal Candle:{6}.{7}{8}",
                                                                                      Me.TradableInstrument.TradingSymbol,
                                                                                      entryPrice,
                                                                                      stoploss,
                                                                                      slRemark,
-                                                                                     entryPrice + targetPoint,
+                                                                                     target,
                                                                                      quantity,
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,
                                                                                      _ChartURL)
                                                     End If
                                                 End If
+                                            Else
+                                                message = message.Replace("[INFO1]", "")
                                             End If
                                         ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
                                             Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})<MVWAP({2})[SELL].",
+                                            message = String.Format("{0} VWAP({1})<MVWAP({2})[SELL]. [INFO1] [INFO2]",
                                                                     message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
                                             takeTrade = takeTrade And (signalCandle.CandleColor = Color.Red)
@@ -374,37 +384,45 @@ Public Class NFOStrategyInstrument
                                                     slRemark = "Support3"
                                                 End If
 
+                                                message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
+
                                                 Dim slPoint As Decimal = stoploss - entryPrice
-                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash AndAlso slPoint > instrumentData.Range Then
-                                                    takeTrade = False
+                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                    takeTrade = takeTrade And (slPoint < instrumentData.Range)
+
+                                                    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
                                                 End If
-                                                message = String.Format("{0} Entry:{1}, Stoploss:{2}({3}), SL Point:{4}, Range:{5}.",
-                                                                    message, entryPrice, stoploss, slRemark, slPoint, If(instrumentData.Range = Decimal.MinValue, "∞", instrumentData.Range))
 
                                                 If takeTrade Then
                                                     Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                    Dim target As Decimal = entryPrice - targetPoint
                                                     Dim moved As Decimal = currentTick.High - entryPrice
+
+                                                    message = message.Replace("[INFO2]", String.Format("Target:{0}, Day High:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.High, moved, Math.Round(_lastDayATR, 2)))
+
                                                     Dim leftOverMovement As Decimal = _lastDayATR - moved
-                                                    If targetPoint > leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100 Then
-                                                        takeTrade = False
-                                                    End If
-                                                    message = String.Format("{0} Target Point:{1}, Day Low:{2}, Moved:{3}, Last Day ATR:{4}, Movement left:{5}.",
-                                                                        message, targetPoint, currentTick.Low, moved, Math.Round(_lastDayATR, 2), leftOverMovement)
+                                                    takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                    message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
+                                                                            message,
+                                                                            targetPoint,
+                                                                            userSettings.TargetToLeftMovementPercentage,
+                                                                            Math.Round(leftOverMovement, 2),
+                                                                            targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
 
                                                     If takeTrade Then
                                                         Dim quantity As Integer = Me.TradableInstrument.LotSize
                                                         If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                            quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, instrumentData.Range)
+                                                            quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
                                                         End If
-                                                        message = String.Format("{0} Target:{1}, Quantity:{2}. SELL",
-                                                                            message, entryPrice - targetPoint, quantity)
 
                                                         _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}({3}) - Target:{4} - Quantity:{5} - Signal Candle:{6}.{7}{8}",
                                                                                      Me.TradableInstrument.TradingSymbol,
                                                                                      entryPrice,
                                                                                      stoploss,
                                                                                      slRemark,
-                                                                                     entryPrice - targetPoint,
+                                                                                     target,
                                                                                      quantity,
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,
@@ -426,12 +444,12 @@ Public Class NFOStrategyInstrument
         End If
 
         If _lastMessage IsNot Nothing AndAlso _lastMessage.Trim <> "" Then
-            If _lastMessageSend = Date.MinValue Then
+            If _lastMessageSend = Now.Date Then
                 _lastMessageSend = Now
                 Await SendTradeAlertMessageAsync(_lastMessage).ConfigureAwait(False)
             Else
                 If currentTime >= _lastMessageSend.AddSeconds(10) Then
-                    _lastMessageSend = Date.MinValue
+                    _lastMessageSend = Now.Date
                     Await SendTradeAlertMessageAsync(_lastMessage).ConfigureAwait(False)
                     _lastMessage = ""
                 End If
@@ -464,9 +482,9 @@ Public Class NFOStrategyInstrument
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If message.Contains("&") Then
-                message = message.Replace("&", "_")
-            End If
+            'If message.Contains("&") Then
+            '    message = message.Replace("&", "_")
+            'End If
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
             If userInputs.TelegramAPIKey IsNot Nothing AndAlso Not userInputs.TelegramAPIKey.Trim = "" AndAlso
                 userInputs.TelegramChatID IsNot Nothing AndAlso Not userInputs.TelegramChatID.Trim = "" Then
