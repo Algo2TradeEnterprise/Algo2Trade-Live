@@ -32,7 +32,7 @@ Public Class NFOStrategyInstrument
     Private _lastPrevPayload As OHLCPayload = Nothing
     Private _lastPrevPayloadString As String = ""
     Private _lastMessage As String = ""
-    Private _lastMessageSend As Date = Date.MinValue
+    Private _lastMessageSend As Date = Now.Date
 
     Private ReadOnly _ChartRawURL As String = "https://ant.aliceblueonline.com/ext/chart/?token={0}&id={1}&exchange={2}&symbol={3}&fullscreen=true"
     Private _ChartURL As String
@@ -493,10 +493,13 @@ Public Class NFOStrategyInstrument
                 _lastMessageSend = Now
                 Await SendTradeAlertMessageAsync(_lastMessage).ConfigureAwait(False)
             Else
-                If currentTime >= _lastMessageSend.AddSeconds(10) Then
+                If currentTime >= _lastMessageSend.AddSeconds(20) Then
+                    Dim teleMsg As String = _lastMessage
+
                     _lastMessageSend = Now.Date
-                    Await SendTradeAlertMessageAsync(_lastMessage).ConfigureAwait(False)
                     _lastMessage = ""
+
+                    Await SendTradeAlertMessageAsync(teleMsg).ConfigureAwait(False)
                 End If
             End If
         End If
