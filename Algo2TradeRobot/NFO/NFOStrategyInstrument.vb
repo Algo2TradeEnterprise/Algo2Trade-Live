@@ -167,7 +167,7 @@ Public Class NFOStrategyInstrument
                         _lastPrevPayloadString = runningCandlePayload.PreviousPayload.ToString
                     End If
                 Else
-                    If runningCandlePayload.PreviousPayload.SnapshotDateTime <> _lastPrevPayload.SnapshotDateTime Then
+                    If _lastPrevPayload Is Nothing OrElse runningCandlePayload.PreviousPayload.SnapshotDateTime <> _lastPrevPayload.SnapshotDateTime Then
                         checkSignal = True
                         _lastPrevPayload = runningCandlePayload.PreviousPayload
                     End If
@@ -322,6 +322,7 @@ Public Class NFOStrategyInstrument
                                                 End If
                                             Else
                                                 message = message.Replace("[INFO1]", "")
+                                                message = message.Replace("[INFO2]", "")
                                             End If
                                         ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
                                             Dim takeTrade As Boolean = True
@@ -362,7 +363,7 @@ Public Class NFOStrategyInstrument
 
                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                 takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
-                                                message = String.Format("{0} LTP({1})>Last Day MA({2})[{3}].",
+                                                message = String.Format("{0} LTP({1})<Last Day MA({2})[{3}].",
                                                                         message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice < _lastDayMA)
                                             End If
 
@@ -454,6 +455,7 @@ Public Class NFOStrategyInstrument
                                                 End If
                                             Else
                                                 message = message.Replace("[INFO1]", "")
+                                                message = message.Replace("[INFO2]", "")
                                             End If
                                         End If
                                         If message IsNot Nothing AndAlso message.Trim <> "" Then
