@@ -175,6 +175,7 @@ Public Class NFOStrategyInstrument
                                         Dim message As String = String.Format("{0} ->Signal Candle Time:{1}.",
                                                                               Me.TradableInstrument.TradingSymbol,
                                                                               signalCandle.SnapshotDateTime.ToString("HH:mm:ss"))
+                                        Dim positiveSignal As Boolean = False
 
                                         If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
                                             Dim takeTrade As Boolean = True
@@ -299,6 +300,8 @@ Public Class NFOStrategyInstrument
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,
                                                                                      _ChartURL)
+
+                                                        positiveSignal = True
                                                     End If
                                                 End If
                                             Else
@@ -427,12 +430,32 @@ Public Class NFOStrategyInstrument
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,
                                                                                      _ChartURL)
+
+                                                        positiveSignal = True
                                                     End If
                                                 End If
                                             End If
                                         End If
                                         If message IsNot Nothing AndAlso message.Trim <> "" Then
-                                            OnHeartbeat(message)
+                                            Select Case userSettings.DisplayLogType
+                                                Case NFOUserInputs.TypeOfDisplayLog.All
+                                                    OnHeartbeat(message)
+                                                Case NFOUserInputs.TypeOfDisplayLog.Negative
+                                                    If Not positiveSignal Then
+                                                        OnHeartbeat(message)
+                                                    Else
+                                                        logger.Debug(message)
+                                                    End If
+                                                Case NFOUserInputs.TypeOfDisplayLog.Positive
+                                                    If positiveSignal Then
+                                                        OnHeartbeat(message)
+                                                    Else
+                                                        logger.Debug(message)
+                                                    End If
+                                                Case Else
+                                                    logger.Debug(message)
+                                                    Throw New NotImplementedException
+                                            End Select
                                         End If
                                     End If
                                 End If

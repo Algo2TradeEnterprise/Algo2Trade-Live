@@ -18,6 +18,8 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
+        cmbDisplayLogType.SelectedIndex = 0
+        cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
         LoadSettings()
     End Sub
 
@@ -44,6 +46,19 @@ Public Class frmNFOSettings
             chkbMCX.Checked = _settings.RunMCX
             txtTargetMultiplier.Text = _settings.TargetMultiplier
             txtTargetToLeftMovementPercentage.Text = _settings.TargetToLeftMovementPercentage
+            Select Case _settings.DisplayLogType
+                Case NFOUserInputs.TypeOfDisplayLog.All
+                    cmbDisplayLogType.SelectedIndex = 0
+                Case NFOUserInputs.TypeOfDisplayLog.Negative
+                    cmbDisplayLogType.SelectedIndex = 1
+                Case NFOUserInputs.TypeOfDisplayLog.Positive
+                    cmbDisplayLogType.SelectedIndex = 2
+            End Select
+            If _settings.RepeatSignalOnHistoricalRefresh Then
+                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
+            Else
+                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 1
+            End If
 
             txtTelegramAPIKey.Text = _settings.TelegramAPIKey
             txtTelegramChatID.Text = _settings.TelegramChatID
@@ -62,6 +77,20 @@ Public Class frmNFOSettings
         _settings.RunMCX = chkbMCX.Checked
         _settings.TargetMultiplier = txtTargetMultiplier.Text
         _settings.TargetToLeftMovementPercentage = txtTargetToLeftMovementPercentage.Text
+        Select Case cmbDisplayLogType.SelectedIndex
+            Case 0
+                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.All
+            Case 1
+                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Negative
+            Case 2
+                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Positive
+        End Select
+        Select Case cmbRepeatSignalOnHistoricalRefresh.SelectedIndex
+            Case 0
+                _settings.RepeatSignalOnHistoricalRefresh = True
+            Case 1
+                _settings.RepeatSignalOnHistoricalRefresh = False
+        End Select
 
         _settings.TelegramAPIKey = txtTelegramAPIKey.Text
         _settings.TelegramChatID = txtTelegramChatID.Text

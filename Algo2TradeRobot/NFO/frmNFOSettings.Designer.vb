@@ -53,6 +53,10 @@ Partial Class frmNFOSettings
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
+        Me.lblDisplayLogType = New System.Windows.Forms.Label()
+        Me.cmbDisplayLogType = New System.Windows.Forms.ComboBox()
+        Me.cmbRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.ComboBox()
+        Me.lblRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpIndicator.SuspendLayout()
         Me.grpOther.SuspendLayout()
@@ -203,6 +207,10 @@ Partial Class frmNFOSettings
         '
         'grpOther
         '
+        Me.grpOther.Controls.Add(Me.cmbRepeatSignalOnHistoricalRefresh)
+        Me.grpOther.Controls.Add(Me.lblRepeatSignalOnHistoricalRefresh)
+        Me.grpOther.Controls.Add(Me.cmbDisplayLogType)
+        Me.grpOther.Controls.Add(Me.lblDisplayLogType)
         Me.grpOther.Controls.Add(Me.chkbMCX)
         Me.grpOther.Controls.Add(Me.chkbNFO)
         Me.grpOther.Controls.Add(Me.chkbNSE)
@@ -218,7 +226,7 @@ Partial Class frmNFOSettings
         Me.grpOther.Controls.Add(Me.lblSignalTimeFrame)
         Me.grpOther.Location = New System.Drawing.Point(8, 2)
         Me.grpOther.Name = "grpOther"
-        Me.grpOther.Size = New System.Drawing.Size(540, 240)
+        Me.grpOther.Size = New System.Drawing.Size(540, 305)
         Me.grpOther.TabIndex = 1
         Me.grpOther.TabStop = False
         Me.grpOther.Text = "Other Details"
@@ -353,6 +361,46 @@ Partial Class frmNFOSettings
         'opnFileSettings
         '
         '
+        'lblDisplayLogType
+        '
+        Me.lblDisplayLogType.AutoSize = True
+        Me.lblDisplayLogType.Location = New System.Drawing.Point(7, 207)
+        Me.lblDisplayLogType.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDisplayLogType.Name = "lblDisplayLogType"
+        Me.lblDisplayLogType.Size = New System.Drawing.Size(118, 17)
+        Me.lblDisplayLogType.TabIndex = 74
+        Me.lblDisplayLogType.Text = "Display Log Type"
+        '
+        'cmbDisplayLogType
+        '
+        Me.cmbDisplayLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbDisplayLogType.FormattingEnabled = True
+        Me.cmbDisplayLogType.Items.AddRange(New Object() {"All", "Negative", "Positive"})
+        Me.cmbDisplayLogType.Location = New System.Drawing.Point(269, 205)
+        Me.cmbDisplayLogType.Name = "cmbDisplayLogType"
+        Me.cmbDisplayLogType.Size = New System.Drawing.Size(255, 24)
+        Me.cmbDisplayLogType.TabIndex = 7
+        '
+        'cmbRepeatSignalOnHistoricalRefresh
+        '
+        Me.cmbRepeatSignalOnHistoricalRefresh.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbRepeatSignalOnHistoricalRefresh.FormattingEnabled = True
+        Me.cmbRepeatSignalOnHistoricalRefresh.Items.AddRange(New Object() {"True", "False"})
+        Me.cmbRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(269, 243)
+        Me.cmbRepeatSignalOnHistoricalRefresh.Name = "cmbRepeatSignalOnHistoricalRefresh"
+        Me.cmbRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(255, 24)
+        Me.cmbRepeatSignalOnHistoricalRefresh.TabIndex = 75
+        '
+        'lblRepeatSignalOnHistoricalRefresh
+        '
+        Me.lblRepeatSignalOnHistoricalRefresh.AutoSize = True
+        Me.lblRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(7, 245)
+        Me.lblRepeatSignalOnHistoricalRefresh.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRepeatSignalOnHistoricalRefresh.Name = "lblRepeatSignalOnHistoricalRefresh"
+        Me.lblRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(236, 17)
+        Me.lblRepeatSignalOnHistoricalRefresh.TabIndex = 76
+        Me.lblRepeatSignalOnHistoricalRefresh.Text = "Repeat Signal On Historical Refresh"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -408,4 +456,8 @@ Partial Class frmNFOSettings
     Friend WithEvents chkbNFO As CheckBox
     Friend WithEvents chkbNSE As CheckBox
     Friend WithEvents lblRunInstruments As Label
+    Friend WithEvents cmbDisplayLogType As ComboBox
+    Friend WithEvents lblDisplayLogType As Label
+    Friend WithEvents cmbRepeatSignalOnHistoricalRefresh As ComboBox
+    Friend WithEvents lblRepeatSignalOnHistoricalRefresh As Label
 End Class

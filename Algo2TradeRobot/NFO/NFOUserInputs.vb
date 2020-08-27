@@ -8,6 +8,14 @@ Imports Algo2TradeCore.Entities
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
+#Region "Enum"
+    Enum TypeOfDisplayLog
+        All = 1
+        Negative
+        Positive
+    End Enum
+#End Region
+
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Screener.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
@@ -18,6 +26,8 @@ Public Class NFOUserInputs
     Public Property RunMCX As Boolean
 
     Public Property TargetToLeftMovementPercentage As Decimal
+    Public Property DisplayLogType As TypeOfDisplayLog
+    Public Property RepeatSignalOnHistoricalRefresh As Boolean
 
     'Indicator
     Public Property VWAP_EMAPeriod As Integer
