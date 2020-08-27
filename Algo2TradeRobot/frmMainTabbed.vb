@@ -1561,7 +1561,7 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
-#Region "Export Grid"
+#Region "Export"
     Private Sub ExportDataToCSV(ByVal runningStrategy As Strategy, ByVal fileName As String)
         'If runningStrategy IsNot Nothing AndAlso runningStrategy.SignalManager IsNot Nothing AndAlso
         '    runningStrategy.SignalManager.ActivityDetails IsNot Nothing AndAlso runningStrategy.SignalManager.ActivityDetails.Count > 0 Then
@@ -1606,6 +1606,23 @@ Public Class frmMainTabbed
         '        End Using
         '    End If
         'End If
+    End Sub
+
+    Private Sub btnExportDisplayLog_Click(sender As Object, e As EventArgs) Handles btnExportDisplayLog.Click
+        SetObjectEnableDisable_ThreadSafe(btnExportDisplayLog, False)
+        If lstNFOLog.Items IsNot Nothing AndAlso lstNFOLog.Items.Count > 0 Then
+            Dim logData As List(Of String) = New List(Of String)
+            For Each runningLog In lstNFOLog.Items
+                logData.Add(runningLog)
+            Next
+            Dim folderPath As String = Path.Combine(My.Application.Info.DirectoryPath, "Display Log")
+            If Not Directory.Exists(folderPath) Then Directory.CreateDirectory(folderPath)
+            File.WriteAllLines(Path.Combine(folderPath, String.Format("Display Log {0}.txt", Now.ToString("dd_mm_yyyy HH_mm_ss"))), logData)
+            MsgBox("Export Done", MsgBoxStyle.Information)
+        Else
+            MsgBox("Nothing to export", MsgBoxStyle.Exclamation)
+        End If
+        SetObjectEnableDisable_ThreadSafe(btnExportDisplayLog, True)
     End Sub
 #End Region
 

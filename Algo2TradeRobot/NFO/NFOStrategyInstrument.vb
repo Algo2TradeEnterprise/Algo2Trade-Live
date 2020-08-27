@@ -317,6 +317,8 @@ Public Class NFOStrategyInstrument
 
                                                         positiveSignal = True
                                                     End If
+                                                Else
+                                                    message = message.Replace("[INFO2]", "")
                                                 End If
                                             Else
                                                 message = message.Replace("[INFO1]", "")
@@ -447,7 +449,11 @@ Public Class NFOStrategyInstrument
 
                                                         positiveSignal = True
                                                     End If
+                                                Else
+                                                    message = message.Replace("[INFO2]", "")
                                                 End If
+                                            Else
+                                                message = message.Replace("[INFO1]", "")
                                             End If
                                         End If
                                         If message IsNot Nothing AndAlso message.Trim <> "" Then

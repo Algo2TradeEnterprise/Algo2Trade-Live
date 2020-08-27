@@ -78,6 +78,7 @@ Partial Class frmMainTabbed
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrCDSTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.btnExportDisplayLog = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -208,6 +209,7 @@ Partial Class frmMainTabbed
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstruments, 10, 0)
+        Me.pnlMomentumReversalTopHeaderVerticalSplitter.Controls.Add(Me.btnExportDisplayLog, 7, 0)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlMomentumReversalTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -805,6 +807,16 @@ Partial Class frmMainTabbed
         '
         Me.tmrCDSTickerStatus.Enabled = True
         '
+        'btnExportDisplayLog
+        '
+        Me.btnExportDisplayLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnExportDisplayLog.Location = New System.Drawing.Point(626, 3)
+        Me.btnExportDisplayLog.Name = "btnExportDisplayLog"
+        Me.btnExportDisplayLog.Size = New System.Drawing.Size(83, 33)
+        Me.btnExportDisplayLog.TabIndex = 13
+        Me.btnExportDisplayLog.Text = "Export"
+        Me.btnExportDisplayLog.UseVisualStyleBackColor = True
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -910,4 +922,5 @@ Partial Class frmMainTabbed
     Friend WithEvents lstCDSLog As ListBox
     Friend WithEvents sfdgvCDSMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrCDSTickerStatus As Timer
+    Friend WithEvents btnExportDisplayLog As Button
 End Class
