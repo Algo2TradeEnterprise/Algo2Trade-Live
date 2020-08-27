@@ -29,7 +29,8 @@ Public Class NFOStrategyInstrument
     Private _lastDayMA As Decimal = Decimal.MinValue
     Private _lastDayATR As Decimal = Decimal.MinValue
 
-    Private _lastPrevPayloadPlaceOrder As String = ""
+    Private _lastPrevPayload As OHLCPayload = Nothing
+    Private _lastPrevPayloadString As String = ""
     Private _lastMessage As String = ""
     Private _lastMessageSend As Date = Date.MinValue
 
@@ -159,8 +160,20 @@ Public Class NFOStrategyInstrument
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
             If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
-                If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
-                    _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
+                Dim checkSignal As Boolean = False
+                If userSettings.RepeatSignalOnHistoricalRefresh Then
+                    If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadString Then
+                        checkSignal = True
+                        _lastPrevPayloadString = runningCandlePayload.PreviousPayload.ToString
+                    End If
+                Else
+                    If runningCandlePayload.PreviousPayload.SnapshotDateTime <> _lastPrevPayload.SnapshotDateTime Then
+                        checkSignal = True
+                        _lastPrevPayload = runningCandlePayload.PreviousPayload
+                    End If
+                End If
+
+                If checkSignal Then
                     _lastMessage = ""
                     If hkData.ConsumerPayloads IsNot Nothing AndAlso hkData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
                         Dim hkCandle As OHLCPayload = hkData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
@@ -170,8 +183,9 @@ Public Class NFOStrategyInstrument
                                 Dim vwapEMA As EMAConsumer.EMAPayload = emaData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
                                 If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
                                     Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                                    If hkCandle IsNot Nothing AndAlso hkCandle.PreviousPayload IsNot Nothing Then
-                                        Dim signalCandle As OHLCPayload = hkCandle
+                                    Dim signalCandle As OHLCPayload = hkCandle
+                                    If signalCandle IsNot Nothing AndAlso signalCandle.PreviousPayload IsNot Nothing AndAlso
+                                        signalCandle.PreviousPayload.SnapshotDateTime.Date = Now.Date Then
                                         Dim message As String = String.Format("{0} ->Signal Candle Time:{1}.",
                                                                               Me.TradableInstrument.TradingSymbol,
                                                                               signalCandle.SnapshotDateTime.ToString("HH:mm:ss"))
