@@ -40,7 +40,7 @@ Public Class NFOUserInputs
 
     <Serializable>
     Public Class InstrumentDetails
-        Public Property InstrumentName As String
+        Public Property TradingSymbol As String
         Public Property InstrumentType As String
         Public Property Range As Decimal
     End Class
@@ -103,18 +103,18 @@ Public Class NFOUserInputs
                             Next
                             If trdngSymbl IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
-                                instrumentData.InstrumentName = trdngSymbl.ToUpper
+                                instrumentData.TradingSymbol = trdngSymbl.ToUpper
                                 instrumentData.InstrumentType = instmntTyp
                                 instrumentData.Range = range
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New List(Of InstrumentDetails)
 
                                 Dim availableInstruments As List(Of InstrumentDetails) = Me.InstrumentsData.FindAll(Function(x)
-                                                                                                                        Return x.InstrumentName.ToUpper = instrumentData.InstrumentName.ToUpper AndAlso
+                                                                                                                        Return x.TradingSymbol.ToUpper = instrumentData.TradingSymbol.ToUpper AndAlso
                                                                                                                         x.InstrumentType.ToUpper = instrumentData.InstrumentType.ToUpper
                                                                                                                     End Function)
                                 If availableInstruments IsNot Nothing AndAlso availableInstruments.Count > 0 Then
-                                    Throw New ApplicationException(String.Format("Duplicate Instrument Details {0}", instrumentData.InstrumentName))
+                                    Throw New ApplicationException(String.Format("Duplicate Instrument Details {0}", instrumentData.TradingSymbol))
                                 End If
                                 Me.InstrumentsData.Add(instrumentData)
                             End If

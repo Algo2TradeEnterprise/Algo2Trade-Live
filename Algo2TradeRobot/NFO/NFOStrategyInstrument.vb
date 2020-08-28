@@ -147,7 +147,7 @@ Public Class NFOStrategyInstrument
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim instrumentData As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData.Find(Function(x)
-                                                                                                      Return x.InstrumentName.ToUpper = Me.TradableInstrument.RawInstrumentName.ToUpper AndAlso
+                                                                                                      Return x.TradingSymbol.ToUpper = Me.TradableInstrument.TradingSymbol.ToUpper AndAlso
                                                                                                       x.InstrumentType.ToUpper = Me.TradableInstrument.RawExchange.ToUpper
                                                                                                   End Function)
         Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
