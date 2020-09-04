@@ -216,11 +216,16 @@ Public Class NFOStrategyInstrument
                                                                     Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
                                                                     signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
 
-                                            takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle Close({1})>VWAP({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                            'takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
+                                            'message = String.Format("{0} Signal Candle Close({1})>VWAP({2})[{3}].",
+                                            '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                            '                        Math.Round(vwap.VWAP.Value, 2),
+                                            '                        signalCandle.ClosePrice.Value > vwap.VWAP.Value)
+                                            takeTrade = takeTrade And (signalCandle.HighPrice.Value > vwap.VWAP.Value)
+                                            message = String.Format("{0} Signal Candle High({1})>VWAP({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
                                                                     Math.Round(vwap.VWAP.Value, 2),
-                                                                    signalCandle.ClosePrice.Value > vwap.VWAP.Value)
+                                                                    signalCandle.HighPrice.Value > vwap.VWAP.Value)
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value > pivots.Pivot.Value)
                                             message = String.Format("{0} VWAP({1})>Central Pivot({2})[{3}].",
@@ -236,8 +241,8 @@ Public Class NFOStrategyInstrument
 
                                             If takeTrade Then
                                                 Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                Dim stoploss As Decimal = ConvertFloorCeling(signalCandle.PreviousPayload.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                Dim slRemark As String = "Candle Low"
+                                                Dim stoploss As Decimal = Decimal.MinValue
+                                                Dim slRemark As String = ""
                                                 If vwap.VWAP.Value > stoploss AndAlso vwap.VWAP.Value < entryPrice Then
                                                     stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                                                     slRemark = "VWAP"
@@ -304,12 +309,14 @@ Public Class NFOStrategyInstrument
                                                             quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
                                                         End If
 
-                                                        _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}({3}) - Target:{4} - Quantity:{5} - Signal Candle:{6}.{7}{8}",
+                                                        _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
                                                                                      Me.TradableInstrument.TradingSymbol,
                                                                                      entryPrice,
                                                                                      stoploss,
+                                                                                     entryPrice - stoploss,
                                                                                      slRemark,
                                                                                      target,
+                                                                                     target - entryPrice,
                                                                                      quantity,
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,
@@ -349,11 +356,16 @@ Public Class NFOStrategyInstrument
                                                                     Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
                                                                     signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
 
-                                            takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle Close({1})<VWAP({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                            'takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
+                                            'message = String.Format("{0} Signal Candle Close({1})<VWAP({2})[{3}].",
+                                            '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                            '                        Math.Round(vwap.VWAP.Value, 2),
+                                            '                        signalCandle.ClosePrice.Value < vwap.VWAP.Value)
+                                            takeTrade = takeTrade And (signalCandle.LowPrice.Value < vwap.VWAP.Value)
+                                            message = String.Format("{0} Signal Candle Low({1})<VWAP({2})[{3}].",
+                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
                                                                     Math.Round(vwap.VWAP.Value, 2),
-                                                                    signalCandle.ClosePrice.Value < vwap.VWAP.Value)
+                                                                    signalCandle.LowPrice.Value < vwap.VWAP.Value)
 
                                             takeTrade = takeTrade And (vwap.VWAP.Value < pivots.Pivot.Value)
                                             message = String.Format("{0} VWAP({1})<Central Pivot({2})[{3}].",
@@ -369,8 +381,8 @@ Public Class NFOStrategyInstrument
 
                                             If takeTrade Then
                                                 Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                Dim stoploss As Decimal = ConvertFloorCeling(signalCandle.PreviousPayload.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                Dim slRemark As String = "Candle High"
+                                                Dim stoploss As Decimal = Decimal.MaxValue
+                                                Dim slRemark As String = ""
                                                 If vwap.VWAP.Value < stoploss AndAlso vwap.VWAP.Value > entryPrice Then
                                                     stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                                                     slRemark = "VWAP"
@@ -437,12 +449,14 @@ Public Class NFOStrategyInstrument
                                                             quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
                                                         End If
 
-                                                        _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}({3}) - Target:{4} - Quantity:{5} - Signal Candle:{6}.{7}{8}",
+                                                        _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
                                                                                      Me.TradableInstrument.TradingSymbol,
                                                                                      entryPrice,
                                                                                      stoploss,
+                                                                                     stoploss - entryPrice,
                                                                                      slRemark,
                                                                                      target,
+                                                                                     entryPrice - target,
                                                                                      quantity,
                                                                                      signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                                      vbNewLine,

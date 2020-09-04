@@ -48,50 +48,16 @@ Public Class NFOStrategy
                     If (runningStock.InstrumentType.ToUpper = "NSE" AndAlso userInputs.RunNSE) OrElse
                         (runningStock.InstrumentType.ToUpper = "NFO" AndAlso userInputs.RunNFO) OrElse
                         (runningStock.InstrumentType.ToUpper = "MCX" AndAlso userInputs.RunMCX) Then
-                        Dim allTradableInstruments As List(Of IInstrument) = Nothing
-                        If runningStock.InstrumentType.ToUpper = "NSE" Then
-                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
-                                                                                       Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
-                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Cash AndAlso
-                                                                                        x.RawExchange = "NSE"
-                                                                                   End Function)
-                        ElseIf runningStock.InstrumentType.ToUpper = "NFO" Then
-                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
-                                                                                       Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
-                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                                                                        x.RawExchange = "NFO"
-                                                                                   End Function)
-                        ElseIf runningStock.InstrumentType.ToUpper = "MCX" Then
-                            allTradableInstruments = allInstruments.ToList.FindAll(Function(x)
-                                                                                       Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
-                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
-                                                                                        x.RawExchange = "MCX"
-                                                                                   End Function)
-                        End If
+                        Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                              Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
+                                                                                                     x.RawExchange = runningStock.InstrumentType.ToUpper
+                                                                                          End Function)
 
-                        If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
-                            Dim runningInstrument As IInstrument = Nothing
-                            'If runningStock.InstrumentType.ToUpper <> "NSE" Then
-                            '    Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
-                            '                                                           If x.Expiry.Value.Date > Now.Date Then
-                            '                                                               Return x.Expiry.Value
-                            '                                                           Else
-                            '                                                               Return Date.MaxValue
-                            '                                                           End If
-                            '                                                       End Function)
-
-                            '    runningInstrument = allTradableInstruments.Find(Function(x)
-                            '                                                        Return x.Expiry = minExpiry
-                            '                                                    End Function)
-                            'Else
-                            runningInstrument = allTradableInstruments.FirstOrDefault
-                            'End If
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If runningInstrument IsNot Nothing Then
-                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                                ret = True
-                            End If
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If runningInstrument IsNot Nothing Then
+                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                            ret = True
                         End If
                     End If
                 Next
