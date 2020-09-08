@@ -40,6 +40,7 @@ Partial Class frmMainTabbed
         Me.lblNFOTickerStatus = New System.Windows.Forms.Label()
         Me.btnNFOSettings = New System.Windows.Forms.Button()
         Me.linklblNFOTradableInstruments = New System.Windows.Forms.LinkLabel()
+        Me.btnExportDisplayLog = New System.Windows.Forms.Button()
         Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox2 = New System.Windows.Forms.PictureBox()
         Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -78,7 +79,6 @@ Partial Class frmMainTabbed
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrCDSTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.btnExportDisplayLog = New System.Windows.Forms.Button()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -296,6 +296,16 @@ Partial Class frmMainTabbed
         Me.linklblNFOTradableInstruments.TabStop = True
         Me.linklblNFOTradableInstruments.Text = "Tradable Instruments: 0"
         Me.linklblNFOTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'btnExportDisplayLog
+        '
+        Me.btnExportDisplayLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnExportDisplayLog.Location = New System.Drawing.Point(626, 3)
+        Me.btnExportDisplayLog.Name = "btnExportDisplayLog"
+        Me.btnExportDisplayLog.Size = New System.Drawing.Size(83, 33)
+        Me.btnExportDisplayLog.TabIndex = 13
+        Me.btnExportDisplayLog.Text = "Export"
+        Me.btnExportDisplayLog.UseVisualStyleBackColor = True
         '
         'pnlMomentumReversalBodyVerticalSplitter
         '
@@ -806,16 +816,6 @@ Partial Class frmMainTabbed
         'tmrCDSTickerStatus
         '
         Me.tmrCDSTickerStatus.Enabled = True
-        '
-        'btnExportDisplayLog
-        '
-        Me.btnExportDisplayLog.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnExportDisplayLog.Location = New System.Drawing.Point(626, 3)
-        Me.btnExportDisplayLog.Name = "btnExportDisplayLog"
-        Me.btnExportDisplayLog.Size = New System.Drawing.Size(83, 33)
-        Me.btnExportDisplayLog.TabIndex = 13
-        Me.btnExportDisplayLog.Text = "Export"
-        Me.btnExportDisplayLog.UseVisualStyleBackColor = True
         '
         'frmMainTabbed
         '

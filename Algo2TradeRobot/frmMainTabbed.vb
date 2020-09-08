@@ -1386,18 +1386,12 @@ Public Class frmMainTabbed
     Private Async Function GenerateTelegramMessageAsync(ByVal message As String) As Task
         logger.Debug("Telegram Message:{0}", message)
         _cts.Token.ThrowIfCancellationRequested()
-        If message.Contains("&") Then
-            message = message.Replace("&", "_")
-        End If
         Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-        If _commonControllerUserInput IsNot Nothing AndAlso _commonControllerUserInput.TelegramAPIKey IsNot Nothing AndAlso
-            Not _commonControllerUserInput.TelegramAPIKey.Trim = "" AndAlso _commonControllerUserInput.TelegramChatID IsNot Nothing AndAlso
-            Not _commonControllerUserInput.TelegramChatID.Trim = "" Then
-            If _commonControllerUserInput.FormRemarks IsNot Nothing Then
-                message = String.Format("{0}: {1}", _commonControllerUserInput.FormRemarks, message)
-            End If
-            Using tSender As New Utilities.Notification.Telegram(_commonControllerUserInput.TelegramAPIKey.Trim, _commonControllerUserInput.TelegramChatID, _cts)
-                Dim encodedString As String = Utilities.Strings.EncodeString(message)
+        If _commonControllerUserInput IsNot Nothing AndAlso
+            _commonControllerUserInput.TelegramAPIKey IsNot Nothing AndAlso _commonControllerUserInput.TelegramAPIKey.Trim <> "" AndAlso
+            _commonControllerUserInput.TelegramChatID IsNot Nothing AndAlso _commonControllerUserInput.TelegramChatID.Trim <> "" Then
+            Using tSender As New Utilities.Notification.Telegram(_commonControllerUserInput.TelegramAPIKey.Trim.Trim, _commonControllerUserInput.TelegramChatID.Trim, _cts)
+                Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                 Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
             End Using
         End If
@@ -1439,12 +1433,14 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(MCXStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(CDSStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
+        GenerateTelegramMessageAsync("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(MCXStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(CDSStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
+        GenerateTelegramMessageAsync("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
         If Not isConnected Then
@@ -1455,6 +1451,8 @@ Public Class frmMainTabbed
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
         OnHeartbeat(String.Format("Ticker:Error:{0}", errorMsg))
+        Dim message As String = String.Format("Ticker:Error:{0}", errorMsg)
+        GenerateTelegramMessageAsync(message)
     End Sub
     Private Sub OnTickerNoReconnect()
         'Nothing to do
@@ -1464,6 +1462,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(MCXStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(CDSStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
+        GenerateTelegramMessageAsync("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
         OnHeartbeat(String.Format("Historical Data Fetcher: Error:{0}, InstrumentIdentifier:{1}", errorMsg, instrumentIdentifier))

@@ -16,6 +16,7 @@
         dt.Columns.Add("Tick Size")
         dt.Columns.Add("Historical")
         dt.Columns.Add("Pre Processing")
+        dt.Columns.Add("Running")
 
         If _TradableInstruments IsNot Nothing AndAlso _TradableInstruments.Count > 0 Then
             For Each instrument In _TradableInstruments
@@ -28,6 +29,7 @@
                 row("Tick Size") = instrument.TradableInstrument.TickSize
                 row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
                 row("Pre Processing") = instrument.PreProcessingDone
+                row("Running") = instrument.StrategyInstrumentRunning
                 dt.Rows.Add(row)
             Next
         End If

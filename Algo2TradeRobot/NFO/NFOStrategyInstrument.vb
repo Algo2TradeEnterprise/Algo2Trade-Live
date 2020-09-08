@@ -116,6 +116,7 @@ Public Class NFOStrategyInstrument
 
     Public Overrides Async Function MonitorAsync() As Task
         Try
+            _strategyInstrumentRunning = True
             _ChartURL = String.Format(_ChartRawURL, Me.ParentStrategy.ParentController.APIConnection.ENCToken, Me.ParentStrategy.ParentController.APIConnection.APIUser.UserId, Me.TradableInstrument.RawExchange, Me.TradableInstrument.InstrumentIdentifier)
             Dim preProcess As Boolean = Await CompletePreProcessing().ConfigureAwait(False)
             If preProcess AndAlso _lastDayATR <> Decimal.MinValue Then
@@ -136,8 +137,10 @@ Public Class NFOStrategyInstrument
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
             'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
-            logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+            logger.Error("Strategy Instrument:{0} stopped, error:{1}", Me.ToString, ex.ToString)
             Throw ex
+        Finally
+            _strategyInstrumentRunning = False
         End Try
     End Function
 
@@ -544,9 +547,6 @@ Public Class NFOStrategyInstrument
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            'If message.Contains("&") Then
-            '    message = message.Replace("&", "_")
-            'End If
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
             If userInputs.TelegramAPIKey IsNot Nothing AndAlso Not userInputs.TelegramAPIKey.Trim = "" AndAlso
                 userInputs.TelegramChatID IsNot Nothing AndAlso Not userInputs.TelegramChatID.Trim = "" Then
