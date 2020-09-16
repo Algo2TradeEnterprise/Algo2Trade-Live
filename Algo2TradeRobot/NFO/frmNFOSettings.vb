@@ -44,7 +44,6 @@ Public Class frmNFOSettings
             txtNumberOfStockToTrade.Text = _settings.NumberOfStockToTrade
             txtMaxTurnoverPerTrade.Text = _settings.MaxTurnoverPerTrade
 
-            txtMaxStockPrice.Text = _settings.MaxStockPrice
             If _settings.StockList IsNot Nothing And _settings.StockList.Count > 0 Then
                 Dim stocks As String = Nothing
                 For Each runningStock In _settings.StockList
@@ -53,6 +52,9 @@ Public Class frmNFOSettings
 
                 txtStockList.Text = stocks.Substring(1)
             End If
+            dtpckrLastEntryTime.Value = _settings.LastEntryTime
+            txtMaxTargetPL.Text = _settings.MaxTargetPL
+            txtMinVolumePer.Text = _settings.MinVolumePercentage
         End If
     End Sub
 
@@ -65,7 +67,6 @@ Public Class frmNFOSettings
         _settings.NumberOfStockToTrade = txtNumberOfStockToTrade.Text
         _settings.MaxTurnoverPerTrade = txtMaxTurnoverPerTrade.Text
 
-        _settings.MaxStockPrice = txtMaxStockPrice.Text
         If txtStockList.Text IsNot Nothing And txtStockList.Text.Count > 0 Then
             Dim stocks() As String = txtStockList.Text.Trim.Split(",")
             If stocks IsNot Nothing AndAlso stocks.Count > 0 Then
@@ -75,6 +76,9 @@ Public Class frmNFOSettings
                 Next
             End If
         End If
+        _settings.LastEntryTime = dtpckrLastEntryTime.Value
+        _settings.MaxTargetPL = txtMaxTargetPL.Text
+        _settings.MinVolumePercentage = txtMinVolumePer.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub

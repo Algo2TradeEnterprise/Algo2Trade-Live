@@ -45,8 +45,8 @@ Public Class NFOFillInstrumentDetails
     Private _cts As CancellationTokenSource
     Private ReadOnly _parentStrategy As NFOStrategy
     Private ReadOnly _userInputs As NFOUserInputs
-    Private ReadOnly AliceEODHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
-    Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
+    Private ReadOnly AliceEODHistoricalURL As String = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
+    Private ReadOnly ALiceIntradayHistoricalURL As String = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
     Private ReadOnly _tradingDay As Date = Date.MinValue
     Private ReadOnly _APIAdapter As APIAdapter
     Public Sub New(ByVal canceller As CancellationTokenSource, ByVal parentStrategy As NFOStrategy)
@@ -67,16 +67,78 @@ Public Class NFOFillInstrumentDetails
         End Select
     End Sub
 
+    Public Async Function GetInstrumentData(ByVal optionsInstruments As IEnumerable(Of IInstrument), ByVal spotInstrument As IInstrument) As Task(Of List(Of IInstrument))
+        Dim ret As List(Of IInstrument) = Nothing
+        If spotInstrument IsNot Nothing Then
+            Dim eodPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(spotInstrument, Now.Date.AddMonths(-3), Now.Date, TypeOfData.EOD)
+            If eodPayload IsNot Nothing AndAlso eodPayload.Count > 0 Then
+                Dim hkPayload As Dictionary(Of Date, OHLCPayload) = Nothing
+                ConvertToHeikenAshi(eodPayload, hkPayload)
+                If hkPayload IsNot Nothing AndAlso hkPayload.Count > 0 Then
+                    Dim lastTradingDay As Date = hkPayload.Keys.Where(Function(x)
+                                                                          Return x.Date < Now.Date
+                                                                      End Function).Max
+                    If lastTradingDay <> Date.MinValue AndAlso lastTradingDay <> Date.MaxValue AndAlso lastTradingDay.Date <> Now.Date AndAlso
+                        hkPayload.ContainsKey(lastTradingDay) Then
+                        Dim instrumentType As String = Nothing
+                        If hkPayload(lastTradingDay).CandleColor = Color.Green Then
+                            instrumentType = "CE"
+                        ElseIf hkPayload(lastTradingDay).CandleColor = Color.Red Then
+                            instrumentType = "PE"
+                        End If
+                        If instrumentType IsNot Nothing AndAlso instrumentType.Trim <> "" Then
+                            If optionsInstruments IsNot Nothing AndAlso optionsInstruments.Count > 0 Then
+                                Dim minExpiry As Date = optionsInstruments.Min(Function(x)
+                                                                                   If x.Expiry.Value.Date > Now.Date Then
+                                                                                       Return x.Expiry.Value.Date
+                                                                                   Else
+                                                                                       Return Date.MaxValue
+                                                                                   End If
+                                                                               End Function)
+                                _cts.Token.ThrowIfCancellationRequested()
+                                If minExpiry <> Date.MaxValue AndAlso minExpiry <> Date.MinValue AndAlso minExpiry.Date > Now.Date Then
+                                    Dim currentContracts As IEnumerable(Of IInstrument) = optionsInstruments.Where(Function(x)
+                                                                                                                       Return x.Expiry.Value.Date = minExpiry.Date
+                                                                                                                   End Function)
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    If currentContracts IsNot Nothing AndAlso currentContracts.Count > 0 Then
+                                        For Each runningIntrument In currentContracts
+                                            _cts.Token.ThrowIfCancellationRequested()
+                                            If runningIntrument.RawInstrumentType.ToUpper = instrumentType.ToUpper Then
+                                                If ret Is Nothing Then ret = New List(Of IInstrument)
+                                                ret.Add(runningIntrument)
+                                            End If
+                                        Next
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+        Return ret
+    End Function
+
     Private Async Function GetHistoricalCandleStickAsync(ByVal instrument As IInstrument, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
         Dim ret As Dictionary(Of String, Object) = Nothing
         _cts.Token.ThrowIfCancellationRequested()
         Dim historicalDataURL As String = Nothing
-        Select Case historicalDataType
-            Case TypeOfData.Intraday
-                historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
-            Case TypeOfData.EOD
-                historicalDataURL = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
-        End Select
+        If instrument.Segment.ToUpper = "INDICES" Then
+            Select Case historicalDataType
+                Case TypeOfData.Intraday
+                    historicalDataURL = String.Format(ALiceIntradayHistoricalURL.Replace("token", "name"), String.Format("{0}_{1}", instrument.RawExchange, instrument.Segment), instrument.TradingSymbol, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                Case TypeOfData.EOD
+                    historicalDataURL = String.Format(AliceEODHistoricalURL.Replace("token", "name"), String.Format("{0}_{1}", instrument.RawExchange, instrument.Segment), instrument.TradingSymbol, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+            End Select
+        Else
+            Select Case historicalDataType
+                Case TypeOfData.Intraday
+                    historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                Case TypeOfData.EOD
+                    historicalDataURL = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+            End Select
+        End If
         OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
         Dim proxyToBeUsed As HttpProxy = Nothing
         Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
@@ -144,58 +206,35 @@ Public Class NFOFillInstrumentDetails
         Return ret
     End Function
 
-    Public Async Function GetInstrumentData(ByVal optionsInstruments As IEnumerable(Of IInstrument)) As Task(Of List(Of IInstrument))
-        Dim ret As List(Of IInstrument) = Nothing
-        If optionsInstruments IsNot Nothing AndAlso optionsInstruments.Count > 0 Then
-            Dim minExpiry As Date = optionsInstruments.Min(Function(x)
-                                                               If x.Expiry.Value.Date > Now.Date Then
-                                                                   Return x.Expiry.Value.Date
-                                                               Else
-                                                                   Return Date.MaxValue
-                                                               End If
-                                                           End Function)
-            _cts.Token.ThrowIfCancellationRequested()
-            If minExpiry <> Date.MaxValue AndAlso minExpiry <> Date.MinValue AndAlso minExpiry.Date > Now.Date Then
-                Dim currentContracts As IEnumerable(Of IInstrument) = optionsInstruments.Where(Function(x)
-                                                                                                   Return x.Expiry.Value.Date = minExpiry.Date
-                                                                                               End Function)
-                _cts.Token.ThrowIfCancellationRequested()
-                If currentContracts IsNot Nothing AndAlso currentContracts.Count > 0 Then
-                    Dim contractDetails As Dictionary(Of String, OHLCPayload) = Nothing
-                    For Each runningIntrument In currentContracts
-                        _cts.Token.ThrowIfCancellationRequested()
-                        Dim eodData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningIntrument, Now.Date.AddDays(-7), Now.Date, TypeOfData.EOD)
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If eodData IsNot Nothing AndAlso eodData.Count > 0 Then
-                            Dim lastDayCandle As OHLCPayload = eodData.OrderBy(Function(x)
-                                                                                   Return x.Key
-                                                                               End Function).LastOrDefault.Value
-
-                            If contractDetails Is Nothing Then contractDetails = New Dictionary(Of String, OHLCPayload)
-                            contractDetails.Add(runningIntrument.InstrumentIdentifier, lastDayCandle)
-                        End If
-                    Next
-                    If contractDetails IsNot Nothing AndAlso contractDetails.Count > 0 Then
-                        For Each runningIntrument In contractDetails.OrderByDescending(Function(x)
-                                                                                           Return x.Value.Volume.Value
-                                                                                       End Function)
-                            _cts.Token.ThrowIfCancellationRequested()
-                            If runningIntrument.Value.ClosePrice.Value < _userInputs.MaxStockPrice Then
-                                Dim instrument As IInstrument = currentContracts.ToList.Find(Function(y)
-                                                                                                 Return y.InstrumentIdentifier = runningIntrument.Key
-                                                                                             End Function)
-                                If instrument IsNot Nothing Then
-                                    If ret Is Nothing Then ret = New List(Of IInstrument)
-                                    ret.Add(instrument)
-
-                                    If ret.Count >= _userInputs.NumberOfStockToTrade Then Exit For
-                                End If
-                            End If
-                        Next
-                    End If
-                End If
+    Private Sub ConvertToHeikenAshi(ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByRef outputPayload As Dictionary(Of Date, OHLCPayload))
+        If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
+            If inputPayload.Count < 30 Then
+                Throw New ApplicationException("Can't Calculate Heikenshi Properly")
             End If
+
+            Dim tempHAPayload As OHLCPayload = Nothing
+            Dim tempPreHAPayload As OHLCPayload = Nothing
+
+            For Each runningInputPayload In inputPayload
+
+                tempHAPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
+                tempHAPayload.PreviousPayload = tempPreHAPayload
+                If tempPreHAPayload Is Nothing Then
+                    tempHAPayload.OpenPrice.Value = (runningInputPayload.Value.OpenPrice.Value + runningInputPayload.Value.ClosePrice.Value) / 2
+                Else
+                    tempHAPayload.OpenPrice.Value = (tempPreHAPayload.OpenPrice.Value + tempPreHAPayload.ClosePrice.Value) / 2
+                End If
+                tempHAPayload.ClosePrice.Value = (runningInputPayload.Value.OpenPrice.Value + runningInputPayload.Value.ClosePrice.Value + runningInputPayload.Value.HighPrice.Value + runningInputPayload.Value.LowPrice.Value) / 4
+                tempHAPayload.HighPrice.Value = Math.Max(runningInputPayload.Value.HighPrice.Value, Math.Max(tempHAPayload.OpenPrice.Value, tempHAPayload.ClosePrice.Value))
+                tempHAPayload.LowPrice.Value = Math.Min(runningInputPayload.Value.LowPrice.Value, Math.Min(tempHAPayload.OpenPrice.Value, tempHAPayload.ClosePrice.Value))
+                tempHAPayload.Volume.Value = runningInputPayload.Value.Volume
+                tempHAPayload.DailyVolume = runningInputPayload.Value.DailyVolume
+                tempHAPayload.SnapshotDateTime = runningInputPayload.Value.SnapshotDateTime
+                tempHAPayload.TradingSymbol = runningInputPayload.Value.TradingSymbol
+                tempPreHAPayload = tempHAPayload
+                If outputPayload Is Nothing Then outputPayload = New Dictionary(Of Date, OHLCPayload)
+                outputPayload.Add(runningInputPayload.Key, tempHAPayload)
+            Next
         End If
-        Return ret
-    End Function
+    End Sub
 End Class

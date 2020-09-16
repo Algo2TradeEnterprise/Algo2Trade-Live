@@ -1,4 +1,5 @@
-﻿Imports System.Text.RegularExpressions
+﻿Imports System.IO
+Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
@@ -11,7 +12,8 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public TakeTradeLock As Integer = 0
+    Public ReadOnly Property DerivedInstruments As Dictionary(Of String, List(Of IInstrument))
+    Public ReadOnly Property FreezeQuantityData As Dictionary(Of String, Long)
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
@@ -41,25 +43,45 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
+            _FreezeQuantityData = Await GetFreezeQuantityData().ConfigureAwait(False)
+
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.StockList IsNot Nothing AndAlso userInputs.StockList.Count > 0 Then
                 Dim fillInstrument As NFOFillInstrumentDetails = New NFOFillInstrumentDetails(_cts, Me)
                 For Each runningStock In userInputs.StockList
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim optionInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                    Return x.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
-                                                                                                    x.TradingSymbol.Split(" ")(0).Trim.ToUpper = runningStock
-                                                                                                End Function)
+                    Dim spotTradingSymbol As String = runningStock
+                    If runningStock = "BANKNIFTY" Then
+                        spotTradingSymbol = "NIFTY BANK"
+                    ElseIf runningStock = "NIFTY" Then
+                        spotTradingSymbol = "NIFTY 50"
+                    End If
 
-                    Dim intrumentToCheck As List(Of IInstrument) = Await fillInstrument.GetInstrumentData(optionInstruments).ConfigureAwait(False)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If intrumentToCheck IsNot Nothing AndAlso intrumentToCheck.Count > 0 Then
-                        For Each runningInstrument In intrumentToCheck
+                    Dim spotInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                       Return x.InstrumentType = IInstrument.TypeOfInstrument.Cash AndAlso
+                                                                                       x.TradingSymbol.ToUpper = spotTradingSymbol
+                                                                                   End Function)
+                    If spotInstrument IsNot Nothing Then
+                        Dim optionInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
+                                                                                                        Return x.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
+                                                                                                    x.TradingSymbol.Split(" ")(0).Trim.ToUpper = runningStock
+                                                                                                    End Function)
+                        If optionInstruments IsNot Nothing AndAlso optionInstruments.Count > 0 Then
+                            Dim intrumentToCheck As List(Of IInstrument) = Await fillInstrument.GetInstrumentData(optionInstruments, spotInstrument).ConfigureAwait(False)
                             _cts.Token.ThrowIfCancellationRequested()
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                            ret = True
-                        Next
+                            If intrumentToCheck IsNot Nothing AndAlso intrumentToCheck.Count > 0 Then
+                                If _DerivedInstruments Is Nothing Then _DerivedInstruments = New Dictionary(Of String, List(Of IInstrument))
+                                _DerivedInstruments.Add(spotInstrument.InstrumentIdentifier, intrumentToCheck)
+
+                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                retTradableInstrumentsAsPerStrategy.Add(spotInstrument)
+                                For Each runningInstrument In intrumentToCheck
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                                    ret = True
+                                Next
+                            End If
+                        End If
                     End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -112,7 +134,9 @@ Public Class NFOStrategy
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
+                If tradableStrategyInstrument.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                    tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.CheckInstrumentAsync, _cts.Token))
+                End If
             Next
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -131,5 +155,42 @@ Public Class NFOStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Throw New NotImplementedException()
+    End Function
+
+    Private Async Function GetFreezeQuantityData() As Task(Of Dictionary(Of String, Long))
+        Dim ret As Dictionary(Of String, Long) = Nothing
+        Dim freezeQuantityFile As String = Path.Combine(My.Application.Info.DirectoryPath, "Freeze Quantity.xls")
+        If File.Exists(freezeQuantityFile) Then File.Delete(freezeQuantityFile)
+        Using browser As New Utilities.Network.HttpBrowser(Nothing, Net.DecompressionMethods.GZip, TimeSpan.FromSeconds(30), _cts)
+            browser.KeepAlive = True
+            Dim headersToBeSent As New Dictionary(Of String, String)
+            headersToBeSent.Add("Host", "www1.nseindia.com")
+            headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
+            headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
+            headersToBeSent.Add("Sec-Fetch-Site", "none")
+
+            Dim targetURL As String = "https://www1.nseindia.com/content/fo/qtyfreeze.xls"
+            If targetURL IsNot Nothing Then
+                Await browser.GetFileAsync(targetURL, freezeQuantityFile, False, headersToBeSent).ConfigureAwait(False)
+            End If
+        End Using
+        If freezeQuantityFile IsNot Nothing AndAlso File.Exists(freezeQuantityFile) Then
+            Using xlHlpr As New Utilities.DAL.ExcelHelper(freezeQuantityFile, Utilities.DAL.ExcelHelper.ExcelOpenStatus.OpenExistingForReadWrite, Utilities.DAL.ExcelHelper.ExcelSaveType.XLS_XLSX, _cts)
+                Dim freezeQuantityData As Object(,) = xlHlpr.GetExcelInMemory()
+                If freezeQuantityData IsNot Nothing Then
+                    For row As Integer = 2 To freezeQuantityData.GetLength(0) - 1
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If ret Is Nothing Then ret = New Dictionary(Of String, Long)
+                        ret.Add(freezeQuantityData(row, 2).ToString.Trim.ToUpper, freezeQuantityData(row, 3))
+                    Next
+                End If
+            End Using
+        End If
+        If ret IsNot Nothing AndAlso ret.Count > 0 Then
+            OnHeartbeat(String.Format("Freeze quanity data returned {0} stocks", ret.Count))
+        Else
+            OnHeartbeat("Freeze quanity data did not returned anything")
+        End If
+        Return ret
     End Function
 End Class
