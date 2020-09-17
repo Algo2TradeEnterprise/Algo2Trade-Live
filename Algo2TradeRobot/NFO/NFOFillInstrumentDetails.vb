@@ -98,17 +98,58 @@ Public Class NFOFillInstrumentDetails
                                 _cts.Token.ThrowIfCancellationRequested()
                                 If minExpiry <> Date.MaxValue AndAlso minExpiry <> Date.MinValue AndAlso minExpiry.Date > Now.Date Then
                                     Dim currentContracts As IEnumerable(Of IInstrument) = optionsInstruments.Where(Function(x)
-                                                                                                                       Return x.Expiry.Value.Date = minExpiry.Date
+                                                                                                                       Return x.Expiry.Value.Date = minExpiry.Date AndAlso
+                                                                                                                       x.RawInstrumentType.ToUpper = instrumentType.ToUpper
                                                                                                                    End Function)
+
                                     _cts.Token.ThrowIfCancellationRequested()
-                                    If currentContracts IsNot Nothing AndAlso currentContracts.Count > 0 Then
-                                        For Each runningIntrument In currentContracts
+                                    Dim volumeCheckContracts As IEnumerable(Of IInstrument) = Nothing
+                                    If Now.DayOfWeek = DayOfWeek.Thursday Then
+                                        volumeCheckContracts = optionsInstruments.Where(Function(x)
+                                                                                            Return x.Expiry.Value.Date = Now.Date AndAlso
+                                                                                            x.RawInstrumentType.ToUpper = instrumentType.ToUpper
+                                                                                        End Function)
+                                    Else
+                                        volumeCheckContracts = currentContracts
+                                    End If
+
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    If volumeCheckContracts IsNot Nothing AndAlso volumeCheckContracts.Count > 0 Then
+                                        Dim optionContracts As List(Of IInstrument) = Nothing
+                                        For Each runningContract In volumeCheckContracts
                                             _cts.Token.ThrowIfCancellationRequested()
-                                            If runningIntrument.RawInstrumentType.ToUpper = instrumentType.ToUpper Then
-                                                If ret Is Nothing Then ret = New List(Of IInstrument)
-                                                ret.Add(runningIntrument)
+                                            Dim optionPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.Intraday)
+                                            If optionPayload IsNot Nothing AndAlso optionPayload.Count > 0 Then
+                                                Dim numberOfBlankCandle As Integer = optionPayload.Where(Function(x)
+                                                                                                             Return x.Key.Date = lastTradingDay.Date AndAlso
+                                                                                                             (x.Value.Volume.Value = 0 OrElse
+                                                                                                             x.Value.HighPrice.Value = x.Value.LowPrice.Value)
+                                                                                                         End Function).Count
+
+                                                If (numberOfBlankCandle / 375) * 100 <= _userInputs.MaxBlankCandlePercentage Then
+                                                    If optionContracts Is Nothing Then optionContracts = New List(Of IInstrument)
+                                                    If Now.DayOfWeek = DayOfWeek.Thursday Then
+                                                        Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
+                                                        If currentOptionContract IsNot Nothing Then
+                                                            optionContracts.Add(currentOptionContract)
+                                                        Else
+                                                            Throw New ApplicationException(String.Format("Unable to find current option contract for {0}", runningContract.TradingSymbol))
+                                                        End If
+                                                    Else
+                                                        optionContracts.Add(runningContract)
+                                                    End If
+                                                End If
                                             End If
                                         Next
+
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        If optionContracts IsNot Nothing AndAlso optionContracts.Count > 0 Then
+                                            For Each runningIntrument In optionContracts
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                If ret Is Nothing Then ret = New List(Of IInstrument)
+                                                ret.Add(runningIntrument)
+                                            Next
+                                        End If
                                     End If
                                 End If
                             End If
@@ -116,6 +157,55 @@ Public Class NFOFillInstrumentDetails
                     End If
                 End If
             End If
+        End If
+        Return ret
+    End Function
+
+    Private Function GetCurrentOptionContract(ByVal currentContracts As IEnumerable(Of IInstrument), ByVal previousExiryInstrument As IInstrument) As IInstrument
+        Dim ret As IInstrument = Nothing
+        Dim previousExpiryStrike As Decimal = Decimal.MinValue
+        If previousExiryInstrument IsNot Nothing Then
+            Dim lastDayOfTheMonth As Date = New Date(previousExiryInstrument.Expiry.Value.Year, previousExiryInstrument.Expiry.Value.Month,
+                                                 Date.DaysInMonth(previousExiryInstrument.Expiry.Value.Year, previousExiryInstrument.Expiry.Value.Month))
+            Dim lastThursDayOfTheMonth As Date = lastDayOfTheMonth
+            While lastThursDayOfTheMonth.DayOfWeek <> DayOfWeek.Thursday
+                lastThursDayOfTheMonth = lastThursDayOfTheMonth.AddDays(-1)
+            End While
+
+            If previousExiryInstrument.Expiry.Value.Date = lastThursDayOfTheMonth.Date Then
+                If IsNumeric(previousExiryInstrument.TradingSymbol.Split(" ")(2).Trim) Then
+                    previousExpiryStrike = Val(previousExiryInstrument.TradingSymbol.Split(" ")(2).Trim)
+                End If
+            Else
+                If IsNumeric(previousExiryInstrument.TradingSymbol.Split(" ")(3).Trim) Then
+                    previousExpiryStrike = Val(previousExiryInstrument.TradingSymbol.Split(" ")(3).Trim)
+                End If
+            End If
+        End If
+        If previousExpiryStrike <> Decimal.MinValue Then
+            For Each runningContact In currentContracts
+                Dim lastDayOfTheMonth As Date = New Date(runningContact.Expiry.Value.Year, runningContact.Expiry.Value.Month,
+                                                 Date.DaysInMonth(runningContact.Expiry.Value.Year, runningContact.Expiry.Value.Month))
+                Dim lastThursDayOfTheMonth As Date = lastDayOfTheMonth
+                While lastThursDayOfTheMonth.DayOfWeek <> DayOfWeek.Thursday
+                    lastThursDayOfTheMonth = lastThursDayOfTheMonth.AddDays(-1)
+                End While
+
+                Dim currentStrike As Decimal = Decimal.MinValue
+                If runningContact.Expiry.Value.Date = lastThursDayOfTheMonth.Date Then
+                    If IsNumeric(runningContact.TradingSymbol.Split(" ")(2).Trim) Then
+                        currentStrike = Val(runningContact.TradingSymbol.Split(" ")(2).Trim)
+                    End If
+                Else
+                    If IsNumeric(runningContact.TradingSymbol.Split(" ")(3).Trim) Then
+                        currentStrike = Val(runningContact.TradingSymbol.Split(" ")(3).Trim)
+                    End If
+                End If
+                If currentStrike <> Decimal.MinValue AndAlso currentStrike = previousExpiryStrike Then
+                    ret = runningContact
+                    Exit For
+                End If
+            Next
         End If
         Return ret
     End Function

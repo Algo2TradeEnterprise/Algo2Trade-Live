@@ -11,12 +11,15 @@ Public Class NFOUserInputs
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "AdaptiveMartingaleWithController.Strategy.a2t")
 
     Public Property MaxProfitPerStock As Decimal
-    Public Property MaxTurnoverPerTrade As Decimal
     Public Property NumberOfStockToTrade As Integer
+    Public Property MaxTurnoverPerTrade As Decimal
+    Public Property MinTurnoverPerTrade As Decimal
+    Public Property MaxFractalDifferencePercentage As Decimal
+    Public Property MaxStrikeRangePercentage As Decimal
 
     Public Property StockList As List(Of String)
-    Public Property MaxTargetPL As Decimal
     Public Property MinVolumePercentage As Decimal
+    Public Property MaxBlankCandlePercentage As Decimal
 
     Private _LastEntryTime As Date
     Public Property LastEntryTime As Date

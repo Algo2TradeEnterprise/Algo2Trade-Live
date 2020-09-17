@@ -40,9 +40,12 @@ Public Class frmNFOSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtMaxProfitPerStock.Text = _settings.MaxProfitPerStock
             txtNumberOfStockToTrade.Text = _settings.NumberOfStockToTrade
+            txtMinTurnoverPerTrade.Text = _settings.MinTurnoverPerTrade
             txtMaxTurnoverPerTrade.Text = _settings.MaxTurnoverPerTrade
+            txtMaxProfitPerStock.Text = _settings.MaxProfitPerStock
+            txtMaxFractalDiffPer.Text = _settings.MaxFractalDifferencePercentage
+            txtMaxStrikeRangePer.Text = _settings.MaxStrikeRangePercentage
 
             If _settings.StockList IsNot Nothing And _settings.StockList.Count > 0 Then
                 Dim stocks As String = Nothing
@@ -53,8 +56,8 @@ Public Class frmNFOSettings
                 txtStockList.Text = stocks.Substring(1)
             End If
             dtpckrLastEntryTime.Value = _settings.LastEntryTime
-            txtMaxTargetPL.Text = _settings.MaxTargetPL
             txtMinVolumePer.Text = _settings.MinVolumePercentage
+            txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
         End If
     End Sub
 
@@ -63,9 +66,12 @@ Public Class frmNFOSettings
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.MaxProfitPerStock = Math.Abs(CDec(txtMaxProfitPerStock.Text))
         _settings.NumberOfStockToTrade = txtNumberOfStockToTrade.Text
+        _settings.MinTurnoverPerTrade = txtMinTurnoverPerTrade.Text
         _settings.MaxTurnoverPerTrade = txtMaxTurnoverPerTrade.Text
+        _settings.MaxProfitPerStock = Math.Abs(CDec(txtMaxProfitPerStock.Text))
+        _settings.MaxFractalDifferencePercentage = txtMaxFractalDiffPer.Text
+        _settings.MaxStrikeRangePercentage = txtMaxStrikeRangePer.Text
 
         If txtStockList.Text IsNot Nothing And txtStockList.Text.Count > 0 Then
             Dim stocks() As String = txtStockList.Text.Trim.Split(",")
@@ -77,8 +83,8 @@ Public Class frmNFOSettings
             End If
         End If
         _settings.LastEntryTime = dtpckrLastEntryTime.Value
-        _settings.MaxTargetPL = txtMaxTargetPL.Text
         _settings.MinVolumePercentage = txtMinVolumePer.Text
+        _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -101,8 +107,15 @@ Public Class frmNFOSettings
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(1, Decimal.MaxValue, txtMaxProfitPerStock)
-        ValidateNumbers(1, Decimal.MaxValue, txtMaxTurnoverPerTrade)
         ValidateNumbers(1, Integer.MaxValue, txtNumberOfStockToTrade, True)
+        ValidateNumbers(1, Decimal.MaxValue, txtMinTurnoverPerTrade)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxTurnoverPerTrade)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxProfitPerStock)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxFractalDiffPer)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxStrikeRangePer)
+
+        ValidateNumbers(1, Decimal.MaxValue, txtMinVolumePer)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxBlankCandlePer)
     End Sub
+
 End Class
