@@ -18,6 +18,8 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
+        txtNumberOfStockToTrade.Text = 1
+        txtNumberOfStockToTrade.Enabled = False
         LoadSettings()
     End Sub
 
@@ -40,7 +42,7 @@ Public Class frmNFOSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtNumberOfStockToTrade.Text = _settings.NumberOfStockToTrade
+            'txtNumberOfStockToTrade.Text = _settings.NumberOfStockToTrade
             txtMinTurnoverPerTrade.Text = _settings.MinTurnoverPerTrade
             txtMaxTurnoverPerTrade.Text = _settings.MaxTurnoverPerTrade
             txtMaxProfitPerStock.Text = _settings.MaxProfitPerStock

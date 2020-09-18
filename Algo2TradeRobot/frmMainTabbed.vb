@@ -1404,6 +1404,14 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "EX Users"
+    Private Sub lblDisplayRatio_Click(sender As Object, e As EventArgs) Handles lblDisplayRatio.Click
+        pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        If pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 70 Then
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+        Else
+            pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 70
+        End If
+    End Sub
     Private Sub frmMainTabbed_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         GlobalDiagnosticsContext.Set("appname", My.Application.Info.AssemblyName)
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
@@ -1421,6 +1429,10 @@ Public Class frmMainTabbed
             formRemarks = _commonControllerUserInput.FormRemarks.Trim
         End If
         Me.Text = String.Format("Algo2Trade Robot v{0}{1}", My.Application.Info.Version, If(formRemarks IsNot Nothing, String.Format(" - {0}", formRemarks), ""))
+
+        pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 70
+
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(CDSStrategy))
@@ -1506,9 +1518,9 @@ Public Class frmMainTabbed
                 Case GetType(NFOStrategy)
                     BindingListAdd_ThreadSafe(_nfoDashboadList, item)
                 Case GetType(MCXStrategy)
-                    BindingListAdd_ThreadSafe(_MCXdashboadList, item)
+                    BindingListAdd_ThreadSafe(_mcxDashboadList, item)
                 Case GetType(CDSStrategy)
-                    BindingListAdd_ThreadSafe(_CDSDashboadList, item)
+                    BindingListAdd_ThreadSafe(_cdsDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
@@ -1524,15 +1536,15 @@ Public Class frmMainTabbed
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvNFOMainDashboard)
             Case GetType(MCXStrategy)
                 SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, Nothing)
-                _MCXdashboadList = Nothing
-                _MCXdashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, _MCXdashboadList)
+                _mcxDashboadList = Nothing
+                _mcxDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvMCXMainDashboard, _mcxDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvMCXMainDashboard)
             Case GetType(CDSStrategy)
                 SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, Nothing)
-                _CDSDashboadList = Nothing
-                _CDSDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
-                SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, _CDSDashboadList)
+                _cdsDashboadList = Nothing
+                _cdsDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvCDSMainDashboard, _cdsDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvCDSMainDashboard)
             Case Else
                 Throw New NotImplementedException
@@ -1555,7 +1567,7 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
-#Region "Export Grid"
+#Region "Export"
     Private Sub ExportDataToCSV(ByVal runningStrategy As Strategy, ByVal fileName As String)
         'If runningStrategy IsNot Nothing AndAlso runningStrategy.SignalManager IsNot Nothing AndAlso
         '    runningStrategy.SignalManager.ActivityDetails IsNot Nothing AndAlso runningStrategy.SignalManager.ActivityDetails.Count > 0 Then
@@ -1600,6 +1612,23 @@ Public Class frmMainTabbed
         '        End Using
         '    End If
         'End If
+    End Sub
+
+    Private Sub btnExportDisplayLog_Click(sender As Object, e As EventArgs) Handles btnExportDisplayLog.Click
+        SetObjectEnableDisable_ThreadSafe(btnExportDisplayLog, False)
+        If lstNFOLog.Items IsNot Nothing AndAlso lstNFOLog.Items.Count > 0 Then
+            Dim logData As List(Of String) = New List(Of String)
+            For Each runningLog In lstNFOLog.Items
+                logData.Add(runningLog)
+            Next
+            Dim folderPath As String = Path.Combine(My.Application.Info.DirectoryPath, "Display Log")
+            If Not Directory.Exists(folderPath) Then Directory.CreateDirectory(folderPath)
+            File.WriteAllLines(Path.Combine(folderPath, String.Format("Display Log {0}.txt", Now.ToString("dd_mm_yyyy HH_mm_ss"))), logData)
+            MsgBox("Export Done", MsgBoxStyle.Information)
+        Else
+            MsgBox("Nothing to export", MsgBoxStyle.Exclamation)
+        End If
+        SetObjectEnableDisable_ThreadSafe(btnExportDisplayLog, True)
     End Sub
 #End Region
 
