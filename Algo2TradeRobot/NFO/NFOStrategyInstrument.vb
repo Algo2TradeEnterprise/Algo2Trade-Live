@@ -549,21 +549,41 @@ Public Class NFOStrategyInstrument
                 If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
                     Dim fractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
                     If runningCandle.PreviousPayload.ClosePrice.Value < fractal.FractalLow.Value Then
+                        Dim remark As String = String.Format("Signal Candle Close({0})<Fractal Low({1})[True].",
+                                                             runningCandle.PreviousPayload.ClosePrice.Value, fractal.FractalLow.Value)
                         Dim signalCandle As OHLCPayload = Nothing
                         Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
                         If lastExecutedOrder IsNot Nothing Then
-                            If _targetPrice <> Decimal.MinValue Then
-                                Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
-                                If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
+                            Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                            If lastOrderSignalCandle IsNot Nothing Then
+                                If lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
+                                    remark = String.Format("{0} Last Order Signal Candle({1})<>Signal Candle({2})[True].",
+                                                           remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                           runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"))
                                     If fractalData.ConsumerPayloads.ContainsKey(lastOrderSignalCandle.SnapshotDateTime) Then
                                         Dim lastTradedFractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(lastOrderSignalCandle.SnapshotDateTime)
-                                        If lastTradedFractal.FractalLow.Value <> fractal.FractalLow.Value AndAlso _targetPrice <> fractal.FractalHigh.Value Then
+                                        If lastTradedFractal.FractalLow.Value <> fractal.FractalLow.Value AndAlso
+                                            lastTradedFractal.FractalHigh.Value <> fractal.FractalHigh.Value Then
                                             signalCandle = runningCandle.PreviousPayload
                                         End If
+                                        remark = String.Format("{0} Last Order Fractal High({1})<>Fractal High({2})[{3}]. Last Order Fractal Low({4})<>Fractal Low({5})[{6}].",
+                                                               remark, lastTradedFractal.FractalHigh.Value, fractal.FractalHigh.Value,
+                                                               lastTradedFractal.FractalHigh.Value <> fractal.FractalHigh.Value,
+                                                               lastTradedFractal.FractalLow.Value, fractal.FractalLow.Value,
+                                                               lastTradedFractal.FractalLow.Value <> fractal.FractalLow.Value)
+                                    Else
+                                        remark = String.Format("{0} Last Order Fractal Not Found.", remark)
                                     End If
+                                Else
+                                    remark = String.Format("{0} Last Order Signal Candle({1})<>Signal Candle({2})[False].",
+                                                           remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                           runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"))
                                 End If
+                            Else
+                                remark = String.Format("{0} Last Order Signal Candle: Nothing.", remark)
                             End If
                         Else
+                            remark = String.Format("{0} Last Order: Nothing.", remark)
                             signalCandle = runningCandle.PreviousPayload
                         End If
 
@@ -571,20 +591,31 @@ Public Class NFOStrategyInstrument
                             Dim entryPrice As Decimal = fractal.FractalLow.Value
                             Dim targetPrice As Decimal = fractal.FractalHigh.Value
                             Dim fractalTurnoverSatisfied As Tuple(Of Boolean, Decimal, String) = IsFratalAndTurnoverSatisfied(entryPrice, targetPrice)
-                            If fractalTurnoverSatisfied IsNot Nothing AndAlso fractalTurnoverSatisfied.Item1 AndAlso fractalTurnoverSatisfied.Item2 <> Decimal.MinValue Then
-                                Dim quantity As Integer = CalculateQuantity(entryPrice, targetPrice, userSettings.MaxProfitPerStock)
-                                If quantity > 0 Then
-                                    ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal)(True, signalCandle, quantity, targetPrice)
+                            If fractalTurnoverSatisfied IsNot Nothing Then
+                                remark = String.Format("{0} {1}.", remark, fractalTurnoverSatisfied.Item3)
+                                If fractalTurnoverSatisfied.Item1 AndAlso fractalTurnoverSatisfied.Item2 <> Decimal.MinValue Then
+                                    Dim quantity As Integer = CalculateQuantity(entryPrice, targetPrice, userSettings.MaxProfitPerStock)
+                                    remark = String.Format("{0} Quantity({1})>0[{2}].", remark, quantity, quantity > 0)
+                                    If quantity > 0 Then
+                                        ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal)(True, signalCandle, quantity, targetPrice)
 
-                                    If forcePrint Then
-                                        Try
-                                            logger.Debug("Signal Candle:{0}, Potential Entry:{1}, Potential Target:{2}, Quantity:{3}",
-                                                 signalCandle.SnapshotDateTime.ToString("HH:mm:ss"), entryPrice, targetPrice, quantity)
-                                        Catch ex As Exception
-                                            logger.Warn(ex.ToString)
-                                        End Try
+                                        If forcePrint Then
+                                            Try
+                                                logger.Debug("Signal Candle:{0}, Potential Entry:{1}, Potential Target:{2}, Quantity:{3}",
+                                                     signalCandle.SnapshotDateTime.ToString("HH:mm:ss"), entryPrice, targetPrice, quantity)
+                                            Catch ex As Exception
+                                                logger.Warn(ex.ToString)
+                                            End Try
+                                        End If
                                     End If
                                 End If
+                            End If
+                        End If
+
+                        If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
+                            If Not runningCandle.PreviousPayload.ToString = _lastPrevPayloadDisplayLog Then
+                                _lastPrevPayloadDisplayLog = runningCandle.PreviousPayload.ToString
+                                OnHeartbeat(remark)
                             End If
                         End If
                     End If
