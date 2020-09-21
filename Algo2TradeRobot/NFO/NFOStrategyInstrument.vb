@@ -55,6 +55,7 @@ Public Class NFOStrategyInstrument
     Private _lastPrevPayloadDisplayLog As String = ""
     Private _lastPrevPayloadPlaceOrder As String = ""
 
+    Private _targetMessageSend As Boolean = False
     Private _targetReached As Boolean = False
     Private _candleClosedAboveTarget As Boolean = False
     Private _targetPrice As Decimal = Decimal.MinValue
@@ -414,7 +415,21 @@ Public Class NFOStrategyInstrument
             logger.Warn(ex)
         End Try
 
-        Dim checkOfEntryOrder As Boolean = False
+        If _targetReached AndAlso Not _targetMessageSend AndAlso GetTotalQuantityTraded() = 0 Then
+            Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
+            If lastExecutedOrder IsNot Nothing AndAlso lastExecutedOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell AndAlso
+                lastExecutedOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                Dim sellPrice As Decimal = lastExecutedOrder.ParentOrder.AveragePrice
+                Dim pl As Decimal = GetUnrealizedPL(sellPrice)
+
+                Dim message As String = String.Format("Target reached. PL: {0}", pl)
+
+                Await DisplayAndSendSignalAlertAsync(message, runningCandle, True).ConfigureAwait(False)
+                _targetMessageSend = True
+            End If
+        End If
+
+            Dim checkOfEntryOrder As Boolean = False
         If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing AndAlso _targetPrice <> Decimal.MinValue Then
             If Not _targetReached Then
                 If Not _candleClosedAboveTarget AndAlso runningCandle.PreviousPayload.ClosePrice.Value >= _targetPrice Then
@@ -456,7 +471,7 @@ Public Class NFOStrategyInstrument
                 runningCandle IsNot Nothing AndAlso runningCandle.SnapshotDateTime >= userSettings.TradeStartTime AndAlso Not _targetReached AndAlso
                 runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandle.PreviousPayload IsNot Nothing AndAlso
                 Me.TradableInstrument.IsHistoricalCompleted AndAlso fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.Count > 0 Then
-                Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = GetEntrySignal(runningCandle, currentTick, forcePrint)
+                Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Await GetEntrySignalAsync(runningCandle, currentTick, forcePrint).ConfigureAwait(False)
                 If signal IsNot Nothing AndAlso signal.Item1 Then
                     Dim signalCandle As OHLCPayload = signal.Item2
                     Dim quantity As Integer = signal.Item3
@@ -578,7 +593,7 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-    Private Function GetEntrySignal(ByVal runningCandle As OHLCPayload, ByVal currentTick As ITick, ByVal forcePrint As Boolean) As Tuple(Of Boolean, OHLCPayload, Integer, Decimal)
+    Private Async Function GetEntrySignalAsync(ByVal runningCandle As OHLCPayload, ByVal currentTick As ITick, ByVal forcePrint As Boolean) As Task(Of Tuple(Of Boolean, OHLCPayload, Integer, Decimal))
         Dim ret As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Nothing
         If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
             Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
@@ -647,10 +662,7 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
 
-                If Not runningCandle.PreviousPayload.ToString = _lastPrevPayloadDisplayLog Then
-                    _lastPrevPayloadDisplayLog = runningCandle.PreviousPayload.ToString
-                    OnHeartbeat(remark)
-                End If
+                Await DisplayAndSendSignalAlertAsync(remark, runningCandle).ConfigureAwait(False)
             End If
         End If
         Return ret
@@ -853,6 +865,38 @@ Public Class NFOStrategyInstrument
             End If
         End If
         Return ret
+    End Function
+
+    Private Async Function DisplayAndSendSignalAlertAsync(ByVal message As String, ByVal runningCandle As OHLCPayload, Optional ByVal forceDisplay As Boolean = False) As Task
+        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+        _cts.Token.ThrowIfCancellationRequested()
+        If message IsNot Nothing AndAlso message.Trim <> "" AndAlso runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
+            If Not runningCandle.PreviousPayload.ToString = _lastPrevPayloadDisplayLog OrElse forceDisplay Then
+                _lastPrevPayloadDisplayLog = runningCandle.PreviousPayload.ToString
+                OnHeartbeat(message)
+                message = String.Format("{0}: {1}", Me.TradableInstrument.TradingSymbol, message)
+                SendTelegramMessageAsync(message)
+            End If
+        End If
+    End Function
+
+    Private Async Function SendTelegramMessageAsync(ByVal message As String) As Task
+        Try
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
+            If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
+                Not Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim = "" AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                Not Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim = "" Then
+                Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                End Using
+            End If
+        Catch ex As Exception
+            logger.Warn(ex.ToString)
+        End Try
     End Function
 
 #Region "IDisposable Support"
