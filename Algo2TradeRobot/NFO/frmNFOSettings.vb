@@ -60,6 +60,7 @@ Public Class frmNFOSettings
             dtpckrLastEntryTime.Value = _settings.LastEntryTime
             txtMinVolumePer.Text = _settings.MinVolumePercentage
             txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
+            txtMinTotalCandlePer.Text = _settings.MinTotalCandlePercentage
         End If
     End Sub
 
@@ -87,6 +88,7 @@ Public Class frmNFOSettings
         _settings.LastEntryTime = dtpckrLastEntryTime.Value
         _settings.MinVolumePercentage = txtMinVolumePer.Text
         _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
+        _settings.MinTotalCandlePercentage = txtMinTotalCandlePer.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub

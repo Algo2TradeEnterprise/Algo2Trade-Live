@@ -27,6 +27,8 @@ Partial Class frmNFOSettings
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.grpStockSelection = New System.Windows.Forms.GroupBox()
+        Me.txtMaxBlankCandlePer = New System.Windows.Forms.TextBox()
+        Me.lblMaxBlankCandlePer = New System.Windows.Forms.Label()
         Me.txtMinVolumePer = New System.Windows.Forms.TextBox()
         Me.lblMinVolumePer = New System.Windows.Forms.Label()
         Me.dtpckrLastEntryTime = New System.Windows.Forms.DateTimePicker()
@@ -44,6 +46,8 @@ Partial Class frmNFOSettings
         Me.lblMaxProfitPerStock = New System.Windows.Forms.Label()
         Me.txtMaxProfitPerStock = New System.Windows.Forms.TextBox()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMaxStrikeRangePer = New System.Windows.Forms.TextBox()
+        Me.lblMaxStrikeRangePer = New System.Windows.Forms.Label()
         Me.txtMaxFractalDiffPer = New System.Windows.Forms.TextBox()
         Me.lblMaxFractalDiffPer = New System.Windows.Forms.Label()
         Me.txtMinTurnoverPerTrade = New System.Windows.Forms.TextBox()
@@ -53,10 +57,8 @@ Partial Class frmNFOSettings
         Me.txtNumberOfStockToTrade = New System.Windows.Forms.TextBox()
         Me.lblNumberOfStockToTrade = New System.Windows.Forms.Label()
         Me.toolTipStockList = New System.Windows.Forms.ToolTip(Me.components)
-        Me.txtMaxStrikeRangePer = New System.Windows.Forms.TextBox()
-        Me.lblMaxStrikeRangePer = New System.Windows.Forms.Label()
-        Me.txtMaxBlankCandlePer = New System.Windows.Forms.TextBox()
-        Me.lblMaxBlankCandlePer = New System.Windows.Forms.Label()
+        Me.txtMinTotalCandlePer = New System.Windows.Forms.TextBox()
+        Me.lblMinTotalCandlePer = New System.Windows.Forms.Label()
         Me.grpStockSelection.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
@@ -83,6 +85,8 @@ Partial Class frmNFOSettings
         '
         'grpStockSelection
         '
+        Me.grpStockSelection.Controls.Add(Me.txtMinTotalCandlePer)
+        Me.grpStockSelection.Controls.Add(Me.lblMinTotalCandlePer)
         Me.grpStockSelection.Controls.Add(Me.txtMaxBlankCandlePer)
         Me.grpStockSelection.Controls.Add(Me.lblMaxBlankCandlePer)
         Me.grpStockSelection.Controls.Add(Me.txtMinVolumePer)
@@ -93,10 +97,29 @@ Partial Class frmNFOSettings
         Me.grpStockSelection.Controls.Add(Me.lblStockList)
         Me.grpStockSelection.Location = New System.Drawing.Point(551, -2)
         Me.grpStockSelection.Name = "grpStockSelection"
-        Me.grpStockSelection.Size = New System.Drawing.Size(358, 216)
+        Me.grpStockSelection.Size = New System.Drawing.Size(358, 248)
         Me.grpStockSelection.TabIndex = 46
         Me.grpStockSelection.TabStop = False
         Me.grpStockSelection.Text = "Stock Selection Settings"
+        '
+        'txtMaxBlankCandlePer
+        '
+        Me.txtMaxBlankCandlePer.Location = New System.Drawing.Point(147, 169)
+        Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
+        Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMaxBlankCandlePer.TabIndex = 14
+        Me.txtMaxBlankCandlePer.Tag = "Max Blank Candle %"
+        '
+        'lblMaxBlankCandlePer
+        '
+        Me.lblMaxBlankCandlePer.AutoSize = True
+        Me.lblMaxBlankCandlePer.Location = New System.Drawing.Point(8, 172)
+        Me.lblMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxBlankCandlePer.Name = "lblMaxBlankCandlePer"
+        Me.lblMaxBlankCandlePer.Size = New System.Drawing.Size(136, 17)
+        Me.lblMaxBlankCandlePer.TabIndex = 63
+        Me.lblMaxBlankCandlePer.Text = "Max Blank Candle %"
         '
         'txtMinVolumePer
         '
@@ -104,7 +127,7 @@ Partial Class frmNFOSettings
         Me.txtMinVolumePer.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinVolumePer.Name = "txtMinVolumePer"
         Me.txtMinVolumePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinVolumePer.TabIndex = 12
+        Me.txtMinVolumePer.TabIndex = 13
         Me.txtMinVolumePer.Tag = "Min Volume %"
         '
         'lblMinVolumePer
@@ -124,7 +147,7 @@ Partial Class frmNFOSettings
         Me.dtpckrLastEntryTime.Name = "dtpckrLastEntryTime"
         Me.dtpckrLastEntryTime.ShowUpDown = True
         Me.dtpckrLastEntryTime.Size = New System.Drawing.Size(201, 22)
-        Me.dtpckrLastEntryTime.TabIndex = 11
+        Me.dtpckrLastEntryTime.TabIndex = 12
         Me.dtpckrLastEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblLastEntryTime
@@ -144,7 +167,7 @@ Partial Class frmNFOSettings
         Me.txtStockList.Multiline = True
         Me.txtStockList.Name = "txtStockList"
         Me.txtStockList.Size = New System.Drawing.Size(201, 63)
-        Me.txtStockList.TabIndex = 10
+        Me.txtStockList.TabIndex = 11
         Me.txtStockList.Tag = "Stock List"
         Me.toolTipStockList.SetToolTip(Me.txtStockList, "Add core stock name seperated by comma. Options stocks will be selected automatic" &
         "ally from core stock name.")
@@ -289,6 +312,25 @@ Partial Class frmNFOSettings
         Me.GroupBox1.TabIndex = 44
         Me.GroupBox1.TabStop = False
         '
+        'txtMaxStrikeRangePer
+        '
+        Me.txtMaxStrikeRangePer.Location = New System.Drawing.Point(285, 330)
+        Me.txtMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxStrikeRangePer.Name = "txtMaxStrikeRangePer"
+        Me.txtMaxStrikeRangePer.Size = New System.Drawing.Size(243, 22)
+        Me.txtMaxStrikeRangePer.TabIndex = 10
+        Me.txtMaxStrikeRangePer.Tag = "Max Strike Range %"
+        '
+        'lblMaxStrikeRangePer
+        '
+        Me.lblMaxStrikeRangePer.AutoSize = True
+        Me.lblMaxStrikeRangePer.Location = New System.Drawing.Point(9, 333)
+        Me.lblMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxStrikeRangePer.Name = "lblMaxStrikeRangePer"
+        Me.lblMaxStrikeRangePer.Size = New System.Drawing.Size(135, 17)
+        Me.lblMaxStrikeRangePer.TabIndex = 63
+        Me.lblMaxStrikeRangePer.Text = "Max Strike Range %"
+        '
         'txtMaxFractalDiffPer
         '
         Me.txtMaxFractalDiffPer.Location = New System.Drawing.Point(285, 295)
@@ -365,43 +407,24 @@ Partial Class frmNFOSettings
         Me.lblNumberOfStockToTrade.TabIndex = 48
         Me.lblNumberOfStockToTrade.Text = "Number Of Stock To Trade"
         '
-        'txtMaxStrikeRangePer
+        'txtMinTotalCandlePer
         '
-        Me.txtMaxStrikeRangePer.Location = New System.Drawing.Point(285, 330)
-        Me.txtMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxStrikeRangePer.Name = "txtMaxStrikeRangePer"
-        Me.txtMaxStrikeRangePer.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxStrikeRangePer.TabIndex = 62
-        Me.txtMaxStrikeRangePer.Tag = "Max Strike Range %"
+        Me.txtMinTotalCandlePer.Location = New System.Drawing.Point(147, 204)
+        Me.txtMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinTotalCandlePer.Name = "txtMinTotalCandlePer"
+        Me.txtMinTotalCandlePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinTotalCandlePer.TabIndex = 15
+        Me.txtMinTotalCandlePer.Tag = "Min Total Candle %"
         '
-        'lblMaxStrikeRangePer
+        'lblMinTotalCandlePer
         '
-        Me.lblMaxStrikeRangePer.AutoSize = True
-        Me.lblMaxStrikeRangePer.Location = New System.Drawing.Point(9, 333)
-        Me.lblMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxStrikeRangePer.Name = "lblMaxStrikeRangePer"
-        Me.lblMaxStrikeRangePer.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxStrikeRangePer.TabIndex = 63
-        Me.lblMaxStrikeRangePer.Text = "Max Strike Range %"
-        '
-        'txtMaxBlankCandlePer
-        '
-        Me.txtMaxBlankCandlePer.Location = New System.Drawing.Point(147, 169)
-        Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
-        Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxBlankCandlePer.TabIndex = 62
-        Me.txtMaxBlankCandlePer.Tag = "Max Blank Candle %"
-        '
-        'lblMaxBlankCandlePer
-        '
-        Me.lblMaxBlankCandlePer.AutoSize = True
-        Me.lblMaxBlankCandlePer.Location = New System.Drawing.Point(8, 172)
-        Me.lblMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxBlankCandlePer.Name = "lblMaxBlankCandlePer"
-        Me.lblMaxBlankCandlePer.Size = New System.Drawing.Size(136, 17)
-        Me.lblMaxBlankCandlePer.TabIndex = 63
-        Me.lblMaxBlankCandlePer.Text = "Max Blank Candle %"
+        Me.lblMinTotalCandlePer.AutoSize = True
+        Me.lblMinTotalCandlePer.Location = New System.Drawing.Point(8, 207)
+        Me.lblMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinTotalCandlePer.Name = "lblMinTotalCandlePer"
+        Me.lblMinTotalCandlePer.Size = New System.Drawing.Size(130, 17)
+        Me.lblMinTotalCandlePer.TabIndex = 65
+        Me.lblMinTotalCandlePer.Text = "Min Total Candle %"
         '
         'frmNFOSettings
         '
@@ -459,4 +482,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMaxStrikeRangePer As Label
     Friend WithEvents txtMaxBlankCandlePer As TextBox
     Friend WithEvents lblMaxBlankCandlePer As Label
+    Friend WithEvents txtMinTotalCandlePer As TextBox
+    Friend WithEvents lblMinTotalCandlePer As Label
 End Class

@@ -20,6 +20,7 @@ Public Class NFOUserInputs
     Public Property StockList As List(Of String)
     Public Property MinVolumePercentage As Decimal
     Public Property MaxBlankCandlePercentage As Decimal
+    Public Property MinTotalCandlePercentage As Decimal
 
     Private _LastEntryTime As Date
     Public Property LastEntryTime As Date
