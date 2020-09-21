@@ -125,8 +125,14 @@ Public Class NFOFillInstrumentDetails
                                                                                                              (x.Value.Volume.Value = 0 OrElse
                                                                                                              x.Value.HighPrice.Value = x.Value.LowPrice.Value)
                                                                                                          End Function).Count
+                                                Dim totalCount As Integer = optionPayload.Where(Function(x)
+                                                                                                    Return x.Key.Date = lastTradingDay.Date
+                                                                                                End Function).Count
 
-                                                If (numberOfBlankCandle / 375) * 100 <= _userInputs.MaxBlankCandlePercentage Then
+                                                Dim blankCandlePer As Decimal = 100
+                                                If totalCount > 0 Then blankCandlePer = (numberOfBlankCandle / totalCount) * 100
+                                                logger.Info("{0}: Total Candle = {1}, Blank Candle = {2}, Blank Candle% = {3}", runningContract.TradingSymbol, totalCount, numberOfBlankCandle, Math.Round(blankCandlePer, 4))
+                                                If blankCandlePer <= _userInputs.MaxBlankCandlePercentage Then
                                                     If optionContracts Is Nothing Then optionContracts = New List(Of IInstrument)
                                                     If Now.DayOfWeek = DayOfWeek.Thursday Then
                                                         Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
