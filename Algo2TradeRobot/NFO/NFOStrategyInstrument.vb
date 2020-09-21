@@ -95,7 +95,7 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
-        _runningInstrumentFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.DerivedInstrument.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
+        _runningInstrumentFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.DerivedInstrument.txt", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
         _StrikePrice = Decimal.MinValue
         _SelectionData = New SelectionDetails
 
@@ -169,10 +169,10 @@ Public Class NFOStrategyInstrument
                     If derivedStrategyInstruments IsNot Nothing AndAlso derivedStrategyInstruments.Count > 0 Then
                         Dim instrumentsToRun As NFOStrategyInstrument = Nothing
                         If File.Exists(_runningInstrumentFilename) Then
-                            Dim instrument As IInstrument = Utilities.Strings.DeserializeToCollection(Of IInstrument)(_runningInstrumentFilename)
-                            If instrument IsNot Nothing Then
+                            Dim instrument As String = File.ReadAllText(_runningInstrumentFilename)
+                            If instrument IsNot Nothing AndAlso instrument.Trim <> "" Then
                                 instrumentsToRun = derivedStrategyInstruments.Find(Function(x)
-                                                                                       Return x.TradableInstrument.InstrumentIdentifier = instrument.InstrumentIdentifier
+                                                                                       Return x.TradableInstrument.InstrumentIdentifier = instrument.Trim
                                                                                    End Function)
                             End If
                         Else
@@ -187,6 +187,7 @@ Public Class NFOStrategyInstrument
                                 Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                             End While
 
+                            OnHeartbeat("All Historical complete")
                             'allHistoricalComplete = True
                             If allHistoricalComplete Then
                                 Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
@@ -231,7 +232,9 @@ Public Class NFOStrategyInstrument
                             End If
                         End If
                         If instrumentsToRun IsNot Nothing Then
-                            Utilities.Strings.SerializeFromCollection(Of IInstrument)(_runningInstrumentFilename, instrumentsToRun.TradableInstrument)
+                            logger.Debug("********************************** Instrument Found ********************************** {0}", instrumentsToRun.TradableInstrument.TradingSymbol)
+
+                            File.WriteAllText(_runningInstrumentFilename, instrumentsToRun.TradableInstrument.InstrumentIdentifier)
 
                             For Each runningStrategyInstrument In derivedStrategyInstruments
                                 If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrumentsToRun.TradableInstrument.InstrumentIdentifier Then
@@ -239,7 +242,6 @@ Public Class NFOStrategyInstrument
                                 End If
                             Next
 
-                            logger.Debug("********************************** Instrument Found ********************************** {0}", instrumentsToRun.TradableInstrument.TradingSymbol)
                             Await instrumentsToRun.MonitorAsync().ConfigureAwait(False)
                         End If
 
@@ -429,7 +431,7 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
-            Dim checkOfEntryOrder As Boolean = False
+        Dim checkOfEntryOrder As Boolean = False
         If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing AndAlso _targetPrice <> Decimal.MinValue Then
             If Not _targetReached Then
                 If Not _candleClosedAboveTarget AndAlso runningCandle.PreviousPayload.ClosePrice.Value >= _targetPrice Then
@@ -674,63 +676,68 @@ Public Class NFOStrategyInstrument
         Dim conditionSatisfied As Boolean = False
         Dim comment As String = Nothing
 
-        _SelectionData.LastDayFractalLowChanged = IsLastDayFractalLowChanged(fractalData, runningCandle)
-        conditionSatisfied = SelectionData.LastDayFractalLowChanged
-        comment = String.Format("Last Day Fractal Low Changed[{0}] ~", SelectionData.LastDayFractalLowChanged)
-
         _SelectionData.SignalCandle = runningCandle.PreviousPayload
         If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(SelectionData.SignalCandle.SnapshotDateTime) Then
             Dim fractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(SelectionData.SignalCandle.SnapshotDateTime)
             _SelectionData.FractalHigh = fractal.FractalHigh.Value
             _SelectionData.FractalLow = fractal.FractalLow.Value
 
-            _SelectionData.CandleCloseBelowFractalLow = SelectionData.SignalCandle.ClosePrice.Value < SelectionData.FractalLow
-            conditionSatisfied = conditionSatisfied AndAlso SelectionData.CandleCloseBelowFractalLow
-            comment = String.Format("{0} Candle Close({1})<Fractal Low({2})[{3}] ~",
+            If SelectionData.FractalHigh > 0 AndAlso SelectionData.FractalLow > 0 Then
+                _SelectionData.LastDayFractalLowChanged = IsLastDayFractalLowChanged(fractalData, runningCandle)
+                conditionSatisfied = SelectionData.LastDayFractalLowChanged
+                comment = String.Format("Last Day Fractal Low Changed[{0}] ~", SelectionData.LastDayFractalLowChanged)
+
+                _SelectionData.CandleCloseBelowFractalLow = SelectionData.SignalCandle.ClosePrice.Value < SelectionData.FractalLow
+                conditionSatisfied = conditionSatisfied AndAlso SelectionData.CandleCloseBelowFractalLow
+                comment = String.Format("{0} Candle Close({1})<Fractal Low({2})[{3}] ~",
                                     comment, SelectionData.SignalCandle.ClosePrice.Value, SelectionData.FractalLow, SelectionData.CandleCloseBelowFractalLow)
 
-            _SelectionData.FractalHighGreaterThanFractalLow = SelectionData.FractalHigh > SelectionData.FractalLow
-            conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalHighGreaterThanFractalLow
-            comment = String.Format("{0} Fractal High({1})>Fractal Low({2})[{3}] ~",
+                _SelectionData.FractalHighGreaterThanFractalLow = SelectionData.FractalHigh > SelectionData.FractalLow
+                conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalHighGreaterThanFractalLow
+                comment = String.Format("{0} Fractal High({1})>Fractal Low({2})[{3}] ~",
                                     comment, SelectionData.FractalHigh, SelectionData.FractalLow, SelectionData.FractalHighGreaterThanFractalLow)
 
-            _SelectionData.FractalDiffernce = SelectionData.FractalHigh - SelectionData.FractalLow
-            _SelectionData.MaxFractalDiffernce = Math.Round(SelectionData.FractalLow * userSettings.MaxFractalDifferencePercentage / 100, 4)
-            _SelectionData.FractalDiffLessThanMaxFractalDiff = SelectionData.FractalDiffernce < SelectionData.MaxFractalDiffernce
-            conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalDiffLessThanMaxFractalDiff
-            comment = String.Format("{0} Fractal Differnce({1})<{2}% of Lower Fractal({3})[{4}] ~",
+                _SelectionData.FractalDiffernce = SelectionData.FractalHigh - SelectionData.FractalLow
+                _SelectionData.MaxFractalDiffernce = Math.Round(SelectionData.FractalLow * userSettings.MaxFractalDifferencePercentage / 100, 4)
+                _SelectionData.FractalDiffLessThanMaxFractalDiff = SelectionData.FractalDiffernce < SelectionData.MaxFractalDiffernce
+                conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalDiffLessThanMaxFractalDiff
+                comment = String.Format("{0} Fractal Differnce({1})<{2}% of Lower Fractal({3})[{4}] ~",
                                     comment, SelectionData.FractalDiffernce,
                                     userSettings.MaxFractalDifferencePercentage,
                                     SelectionData.MaxFractalDiffernce,
                                     SelectionData.FractalDiffLessThanMaxFractalDiff)
 
-            _SelectionData.PotentialQuantityForMinimumTurnover = Math.Ceiling((userSettings.MinTurnoverPerTrade / SelectionData.FractalLow) / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize
-            _SelectionData.PLForPotentialQuantityForMinimumTurnover = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, SelectionData.FractalLow, SelectionData.FractalHigh, SelectionData.PotentialQuantityForMinimumTurnover)
-            _SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero = SelectionData.PLForPotentialQuantityForMinimumTurnover > 0
-            conditionSatisfied = conditionSatisfied AndAlso SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero
-            comment = String.Format("{0} Potential Quantity for min turnover=Min Turnover({1})/Fractal Low({2})={3}, Using that PL({4}) > 0[{5}] ~",
+                _SelectionData.PotentialQuantityForMinimumTurnover = Math.Ceiling((userSettings.MinTurnoverPerTrade / SelectionData.FractalLow) / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize
+                _SelectionData.PLForPotentialQuantityForMinimumTurnover = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, SelectionData.FractalLow, SelectionData.FractalHigh, SelectionData.PotentialQuantityForMinimumTurnover)
+                _SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero = SelectionData.PLForPotentialQuantityForMinimumTurnover > 0
+                conditionSatisfied = conditionSatisfied AndAlso SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero
+                comment = String.Format("{0} Potential Quantity for min turnover=Min Turnover({1})/Fractal Low({2})={3}, Using that PL({4}) > 0[{5}] ~",
                                     comment, userSettings.MinTurnoverPerTrade, SelectionData.FractalLow,
                                     SelectionData.PotentialQuantityForMinimumTurnover,
                                     SelectionData.PLForPotentialQuantityForMinimumTurnover,
                                     SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero)
 
 
-            If conditionSatisfied Then
-                _SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss = CalculateQuantityFromTarget(SelectionData.FractalLow, SelectionData.FractalHigh, userSettings.MaxProfitPerStock)
-                _SelectionData.Turnover = SelectionData.FractalLow * SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss
-                _SelectionData.TurnoverGreaterThanMinimumTurnover = SelectionData.Turnover >= userSettings.MinTurnoverPerTrade
-                _SelectionData.TurnoverLessThanMaximumTurnover = SelectionData.Turnover <= userSettings.MaxTurnoverPerTrade
-                conditionSatisfied = conditionSatisfied AndAlso SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover
-                comment = String.Format("{0} Qunatity to get required target without previous loss={1}, Turnover=Quantity({2})*Fractal Low({3})={4}, Turnover({5})>={6} And Turnover({7})<={8}[{9}].",
+                If conditionSatisfied Then
+                    _SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss = CalculateQuantityFromTarget(SelectionData.FractalLow, SelectionData.FractalHigh, userSettings.MaxProfitPerStock)
+                    _SelectionData.Turnover = SelectionData.FractalLow * SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss
+                    _SelectionData.TurnoverGreaterThanMinimumTurnover = SelectionData.Turnover >= userSettings.MinTurnoverPerTrade
+                    _SelectionData.TurnoverLessThanMaximumTurnover = SelectionData.Turnover <= userSettings.MaxTurnoverPerTrade
+                    conditionSatisfied = conditionSatisfied AndAlso SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover
+                    comment = String.Format("{0} Qunatity to get required target without previous loss={1}, Turnover=Quantity({2})*Fractal Low({3})={4}, Turnover({5})>={6} And Turnover({7})<={8}[{9}].",
                                           comment, SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss,
                                           SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss, SelectionData.FractalLow,
                                           SelectionData.Turnover, SelectionData.Turnover, userSettings.MinTurnoverPerTrade,
                                           SelectionData.Turnover, userSettings.MaxTurnoverPerTrade,
                                           (SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover))
+                End If
+            Else
+                conditionSatisfied = False
+                comment = String.Format("Signal Candle Fractal High:{0}, Fractal Low:{1} [######]", SelectionData.FractalHigh, SelectionData.FractalLow)
             End If
         Else
             conditionSatisfied = False
-            comment = String.Format("{0} Signal Candle Fractal not found", comment)
+            comment = String.Format("Signal Candle Fractal not found [######]")
         End If
 
         ret = New Tuple(Of Boolean, String)(conditionSatisfied, comment)
