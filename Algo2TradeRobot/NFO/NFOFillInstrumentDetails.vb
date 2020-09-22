@@ -131,8 +131,14 @@ Public Class NFOFillInstrumentDetails
 
                                                 Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
                                                 Dim totalCandlePer As Decimal = (totalCount / 375) * 100
-                                                logger.Info("{0}: Total Candle = {1}, Blank Candle = {2}, Total Candle% = {3}, Blank Candle% = {4}",
-                                                            runningContract.TradingSymbol, totalCount, numberOfBlankCandle, Math.Round(totalCandlePer, 4), Math.Round(blankCandlePer, 4))
+                                                Dim message As String = String.Format("{0}: Total Candle = {1}, Blank Candle = {2}, Total Candle% = {3}, Blank Candle% = {4}",
+                                                                                      "[INFO1]",
+                                                                                      totalCount,
+                                                                                      numberOfBlankCandle,
+                                                                                      Math.Round(totalCandlePer, 4),
+                                                                                      Math.Round(blankCandlePer, 4))
+                                                logger.Info(message.Replace("[INFO1]", runningContract.TradingSymbol))
+
                                                 If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
                                                     blankCandlePer <= _userInputs.MaxBlankCandlePercentage Then
                                                     If optionContracts Is Nothing Then optionContracts = New List(Of IInstrument)
@@ -140,12 +146,17 @@ Public Class NFOFillInstrumentDetails
                                                         Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
                                                         If currentOptionContract IsNot Nothing Then
                                                             optionContracts.Add(currentOptionContract)
+                                                            message = message.Replace("[INFO1]", currentOptionContract.TradingSymbol)
                                                         Else
                                                             Throw New ApplicationException(String.Format("Unable to find current option contract for {0}", runningContract.TradingSymbol))
                                                         End If
                                                     Else
                                                         optionContracts.Add(runningContract)
+                                                        message = message.Replace("[INFO1]", runningContract.TradingSymbol)
                                                     End If
+
+                                                    OnHeartbeat(message)
+                                                    Await SendTelegramMessageAsync(message).ConfigureAwait(False)
                                                 End If
                                             End If
                                         Next
@@ -335,4 +346,22 @@ Public Class NFOFillInstrumentDetails
             Next
         End If
     End Sub
+
+    Private Async Function SendTelegramMessageAsync(ByVal message As String) As Task
+        Try
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            If _parentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
+                Not _parentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim = "" AndAlso
+                _parentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                Not _parentStrategy.ParentController.UserInputs.TelegramChatID.Trim = "" Then
+                Using tSender As New Utilities.Notification.Telegram(_parentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, _parentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                End Using
+            End If
+        Catch ex As Exception
+            logger.Warn(ex.ToString)
+        End Try
+    End Function
 End Class
