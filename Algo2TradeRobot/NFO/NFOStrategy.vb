@@ -48,6 +48,8 @@ Public Class NFOStrategy
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.StockList IsNot Nothing AndAlso userInputs.StockList.Count > 0 Then
                 Dim fillInstrument As NFOFillInstrumentDetails = New NFOFillInstrumentDetails(_cts, Me)
+                AddHandler fillInstrument.HeartbeatSpecial, AddressOf OnHeartbeat
+
                 For Each runningStock In userInputs.StockList
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim spotTradingSymbol As String = runningStock

@@ -19,6 +19,7 @@ Public Class NFOFillInstrumentDetails
     Public Event DocumentDownloadComplete()
     Public Event DocumentRetryStatus(ByVal currentTry As Integer, ByVal totalTries As Integer)
     Public Event Heartbeat(ByVal msg As String)
+    Public Event HeartbeatSpecial(ByVal msg As String)
     Public Event WaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
     'The below functions are needed to allow the derived classes to raise the above two events
     Protected Overridable Sub OnDocumentDownloadComplete()
@@ -29,6 +30,9 @@ Public Class NFOFillInstrumentDetails
     End Sub
     Protected Overridable Sub OnHeartbeat(ByVal msg As String)
         RaiseEvent Heartbeat(msg)
+    End Sub
+    Protected Overridable Sub OnHeartbeatSpecial(ByVal msg As String)
+        RaiseEvent HeartbeatSpecial(msg)
     End Sub
     Protected Overridable Sub OnWaitingFor(ByVal elapsedSecs As Integer, ByVal totalSecs As Integer, ByVal msg As String)
         RaiseEvent WaitingFor(elapsedSecs, totalSecs, msg)
@@ -115,9 +119,10 @@ Public Class NFOFillInstrumentDetails
 
                                     _cts.Token.ThrowIfCancellationRequested()
                                     If volumeCheckContracts IsNot Nothing AndAlso volumeCheckContracts.Count > 0 Then
-                                        Dim optionContracts As List(Of IInstrument) = Nothing
+                                        Dim optionContracts As List(Of IInstrument) = New List(Of IInstrument)
                                         For Each runningContract In volumeCheckContracts
                                             _cts.Token.ThrowIfCancellationRequested()
+                                            Dim message As String = Nothing
                                             Dim optionPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.Intraday)
                                             If optionPayload IsNot Nothing AndAlso optionPayload.Count > 0 Then
                                                 Dim numberOfBlankCandle As Integer = optionPayload.Where(Function(x)
@@ -131,17 +136,15 @@ Public Class NFOFillInstrumentDetails
 
                                                 Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
                                                 Dim totalCandlePer As Decimal = (totalCount / 375) * 100
-                                                Dim message As String = String.Format("{0}: Total Candle = {1}, Blank Candle = {2}, Total Candle% = {3}, Blank Candle% = {4}",
-                                                                                      "[INFO1]",
-                                                                                      totalCount,
-                                                                                      numberOfBlankCandle,
-                                                                                      Math.Round(totalCandlePer, 4),
-                                                                                      Math.Round(blankCandlePer, 4))
-                                                logger.Info(message.Replace("[INFO1]", runningContract.TradingSymbol))
+                                                message = String.Format("{0}: Total Candle = {1}, Blank Candle = {2}, Total Candle% = {3}, Blank Candle% = {4}. [INFO2]. Selected #[INFO3]",
+                                                                        "[INFO1]",
+                                                                        totalCount,
+                                                                        numberOfBlankCandle,
+                                                                        Math.Round(totalCandlePer, 4),
+                                                                        Math.Round(blankCandlePer, 4))
 
                                                 If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
                                                     blankCandlePer <= _userInputs.MaxBlankCandlePercentage Then
-                                                    If optionContracts Is Nothing Then optionContracts = New List(Of IInstrument)
                                                     If Now.DayOfWeek = DayOfWeek.Thursday Then
                                                         Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
                                                         If currentOptionContract IsNot Nothing Then
@@ -154,17 +157,22 @@ Public Class NFOFillInstrumentDetails
                                                         optionContracts.Add(runningContract)
                                                         message = message.Replace("[INFO1]", runningContract.TradingSymbol)
                                                     End If
-
-                                                    OnHeartbeat(message)
-                                                    Await SendTelegramMessageAsync(message).ConfigureAwait(False)
+                                                    message = message.Replace("[INFO2]", "SELECTED")
                                                 Else
                                                     message = message.Replace("[INFO1]", runningContract.TradingSymbol)
+                                                    message = message.Replace("[INFO2]", "NOT SELECTED")
                                                 End If
 
-                                                OnHeartbeat(message)
-                                                Await SendTelegramMessageAsync(message).ConfigureAwait(False)
+                                                message = message.Replace("[INFO3]", String.Format("{0}/{1}", optionContracts.Count, volumeCheckContracts.Count))
+                                            Else
+                                                message = String.Format("{0}: No historical candle found. NOT SELECTED. Selected #{1}/{2}",
+                                                                        runningContract.TradingSymbol, optionContracts.Count, volumeCheckContracts.Count)
                                             End If
+
+                                            OnHeartbeatSpecial(message)
+                                            Await SendTelegramMessageAsync(message).ConfigureAwait(False)
                                         Next
+
 
                                         _cts.Token.ThrowIfCancellationRequested()
                                         If optionContracts IsNot Nothing AndAlso optionContracts.Count > 0 Then

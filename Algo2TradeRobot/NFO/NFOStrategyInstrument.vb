@@ -94,12 +94,9 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
-        _runningInstrumentFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.DerivedInstrument.txt", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
-        _runningInstrumentLogFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.Log.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
-
-        _StrikePrice = Decimal.MinValue
         _SelectionData = New SelectionDetails
 
+        _StrikePrice = Decimal.MinValue
         If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options Then
             Dim lastDayOfTheMonth As Date = New Date(Me.TradableInstrument.Expiry.Value.Year, Me.TradableInstrument.Expiry.Value.Month,
                                                  Date.DaysInMonth(Me.TradableInstrument.Expiry.Value.Year, Me.TradableInstrument.Expiry.Value.Month))
@@ -118,9 +115,32 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
+        _runningInstrumentLogFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.Log.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
         _displayedLogList = New List(Of String)
         If File.Exists(_runningInstrumentLogFilename) Then
             _displayedLogList = Utilities.Strings.DeserializeToCollection(Of List(Of String))(_runningInstrumentLogFilename)
+        End If
+
+        _runningInstrumentFilename = Nothing
+        If CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments IsNot Nothing AndAlso CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments.Count > 0 Then
+            For Each runningController In CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments
+                If runningController.Key.ToUpper = Me.TradableInstrument.InstrumentIdentifier.ToUpper Then
+                    _runningInstrumentFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.DerivedInstrument.txt", runningController.Key, Now.ToString("yy_MM_dd")))
+                Else
+                    If runningController.Value IsNot Nothing AndAlso runningController.Value.Count > 0 Then
+                        For Each runningInstrument In runningController.Value
+                            If runningInstrument.InstrumentIdentifier.ToUpper = Me.TradableInstrument.InstrumentIdentifier Then
+                                _runningInstrumentFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.DerivedInstrument.txt", runningController.Key, Now.ToString("yy_MM_dd")))
+                                Exit For
+                            End If
+                        Next
+                    End If
+                End If
+                If _runningInstrumentFilename IsNot Nothing Then Exit For
+            Next
+        End If
+        If _runningInstrumentFilename Is Nothing Then
+            Throw New ApplicationException(String.Format("{0}: Unable to find my controller.", Me.TradableInstrument.TradingSymbol))
         End If
     End Sub
 
@@ -176,84 +196,95 @@ Public Class NFOStrategyInstrument
                         End If
                     Next
                     If derivedStrategyInstruments IsNot Nothing AndAlso derivedStrategyInstruments.Count > 0 Then
-                        Dim instrumentsToRun As NFOStrategyInstrument = Nothing
-                        If File.Exists(_runningInstrumentFilename) Then
-                            Dim instrument As String = File.ReadAllText(_runningInstrumentFilename)
-                            If instrument IsNot Nothing AndAlso instrument.Trim <> "" Then
-                                instrumentsToRun = derivedStrategyInstruments.Find(Function(x)
-                                                                                       Return x.TradableInstrument.InstrumentIdentifier = instrument.Trim
-                                                                                   End Function)
-                            End If
-                        Else
-                            Dim allHistoricalComplete As Boolean = False
-                            While Not allHistoricalComplete
-                                Dim notDone As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
-                                                                                                                       Return Not x.TradableInstrument.IsHistoricalCompleted
-                                                                                                                   End Function)
-                                If notDone Is Nothing OrElse notDone.Count = 0 Then allHistoricalComplete = True
+                        While True
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Dim instrumentsToRun As NFOStrategyInstrument = Nothing
+                            If File.Exists(_runningInstrumentFilename) Then
+                                Dim instrument As String = File.ReadAllText(_runningInstrumentFilename)
+                                If instrument IsNot Nothing AndAlso instrument.Trim <> "" Then
+                                    instrumentsToRun = derivedStrategyInstruments.Find(Function(x)
+                                                                                           Return x.TradableInstrument.InstrumentIdentifier = instrument.Trim
+                                                                                       End Function)
+                                End If
+                            Else
+                                Dim allHistoricalComplete As Boolean = False
+                                While Not allHistoricalComplete
+                                    Dim notDone As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
+                                                                                                                           Return Not x.TradableInstrument.IsHistoricalCompleted
+                                                                                                                       End Function)
+                                    If notDone Is Nothing OrElse notDone.Count = 0 Then allHistoricalComplete = True
 
-                                _cts.Token.ThrowIfCancellationRequested()
-                                Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
-                            End While
-
-                            OnHeartbeat("All Historical complete")
-                            'allHistoricalComplete = True
-                            If allHistoricalComplete Then
-                                Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-                                While True
-                                    If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                                        Throw Me.ParentStrategy.ParentController.OrphanException
-                                    End If
                                     _cts.Token.ThrowIfCancellationRequested()
-                                    Dim tasks As New List(Of Task)()
-                                    For Each tradableStrategyInstrument As NFOStrategyInstrument In derivedStrategyInstruments
-                                        _cts.Token.ThrowIfCancellationRequested()
-                                        tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.CheckStockSelectionSignalAsync, _cts.Token))
-                                    Next
-                                    Await Task.WhenAll(tasks).ConfigureAwait(False)
-
-                                    Dim spotPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
-                                    Dim satisfiedStrategyInstruments As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
-                                                                                                                                                Return x.SelectionData.Turnover <> Decimal.MinValue AndAlso
-                                                                                                                                                x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
-                                                                                                                                                x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentage AndAlso
-                                                                                                                                                x.StrikePrice <> Decimal.MinValue AndAlso
-                                                                                                                                                Math.Abs(x.StrikePrice - spotPrice) <= spotPrice * userSettings.MaxStrikeRangePercentage / 100
-                                                                                                                                            End Function)
-
-
-
-                                    If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
-                                        For Each runningStrategyInstrument In satisfiedStrategyInstruments.OrderBy(Function(x)
-                                                                                                                       Return x.SelectionData.Turnover
-                                                                                                                   End Function)
-                                            _cts.Token.ThrowIfCancellationRequested()
-                                            instrumentsToRun = runningStrategyInstrument
-                                            Exit For
-                                        Next
-
-                                        Exit While
-                                    End If
-                                    _cts.Token.ThrowIfCancellationRequested()
-                                    Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                                    Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                                 End While
 
-                            End If
-                        End If
-                        If instrumentsToRun IsNot Nothing Then
-                            logger.Debug("********************************** Instrument Found ********************************** {0}", instrumentsToRun.TradableInstrument.TradingSymbol)
+                                OnHeartbeat("All Historical complete")
+                                'allHistoricalComplete = True
+                                If allHistoricalComplete Then
+                                    Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+                                    While True
+                                        If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                                            Throw Me.ParentStrategy.ParentController.OrphanException
+                                        End If
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        Dim tasks As New List(Of Task)()
+                                        For Each tradableStrategyInstrument As NFOStrategyInstrument In derivedStrategyInstruments
+                                            _cts.Token.ThrowIfCancellationRequested()
+                                            tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.CheckStockSelectionSignalAsync, _cts.Token))
+                                        Next
+                                        Await Task.WhenAll(tasks).ConfigureAwait(False)
 
-                            File.WriteAllText(_runningInstrumentFilename, instrumentsToRun.TradableInstrument.InstrumentIdentifier)
+                                        Dim spotPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
+                                        Dim satisfiedStrategyInstruments As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
+                                                                                                                                                    Return x.SelectionData.Turnover <> Decimal.MinValue AndAlso
+                                                                                                                                                    x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
+                                                                                                                                                    x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentage AndAlso
+                                                                                                                                                    x.StrikePrice <> Decimal.MinValue AndAlso
+                                                                                                                                                    Math.Abs(x.StrikePrice - spotPrice) <= spotPrice * userSettings.MaxStrikeRangePercentage / 100
+                                                                                                                                                End Function)
 
-                            For Each runningStrategyInstrument In derivedStrategyInstruments
-                                If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrumentsToRun.TradableInstrument.InstrumentIdentifier Then
-                                    runningStrategyInstrument.TradableInstrument.FetchHistorical = False
+
+
+                                        If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
+                                            For Each runningStrategyInstrument In satisfiedStrategyInstruments.OrderBy(Function(x)
+                                                                                                                           Return x.SelectionData.Turnover
+                                                                                                                       End Function).ThenByDescending(Function(y)
+                                                                                                                                                          Return y.SelectionData.VolumePercentage
+                                                                                                                                                      End Function)
+                                                _cts.Token.ThrowIfCancellationRequested()
+                                                instrumentsToRun = runningStrategyInstrument
+                                                Exit For
+                                            Next
+
+                                            Exit While
+                                        End If
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                                    End While
                                 End If
-                            Next
+                            End If
+                            If instrumentsToRun IsNot Nothing Then
+                                Await DisplayAndSendSignalAlertAsync(String.Format("***** Potential Instrument Found ***** {0}. Will Check rest of the conditions.", instrumentsToRun.TradableInstrument.TradingSymbol)).ConfigureAwait(False)
 
-                            Await instrumentsToRun.MonitorAsync().ConfigureAwait(False)
-                        End If
+                                For Each runningStrategyInstrument In derivedStrategyInstruments
+                                    If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrumentsToRun.TradableInstrument.InstrumentIdentifier Then
+                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = False
+                                    End If
+                                Next
 
+                                Await instrumentsToRun.MonitorAsync().ConfigureAwait(False)
+
+                                If Not File.Exists(_runningInstrumentFilename) Then
+                                    For Each runningStrategyInstrument In derivedStrategyInstruments
+                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
+                                    Next
+                                Else
+                                    Throw New ApplicationException("Serilized file available but it is out of monitor async loop")
+                                End If
+                            Else
+                                Throw New ApplicationException("No instrument found")
+                            End If
+                        End While
                     End If
                 End If
             End If
@@ -277,7 +308,7 @@ Public Class NFOStrategyInstrument
             runningCandle.SnapshotDateTime >= userSettings.TradeStartTime AndAlso runningCandle.SnapshotDateTime <= userSettings.LastEntryTime AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.Count > 0 Then
             If runningCandle.PreviousPayload.SnapshotDateTime.Date = Now.Date AndAlso fractalData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
-                Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle)
+                Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle, "From 'Controller'")
                 If fractalTurnoverSatisfied IsNot Nothing Then
                     Dim remark As String = fractalTurnoverSatisfied.Item2
                     If fractalTurnoverSatisfied.Item1 Then
@@ -285,11 +316,11 @@ Public Class NFOStrategyInstrument
                         If firstCandleOfTheDay IsNot Nothing AndAlso firstCandleOfTheDay.PreviousPayload IsNot Nothing Then
                             Dim currentDaySignalCandleTime As Date = runningCandle.PreviousPayload.SnapshotDateTime
                             Dim previousDaySignalCandleTime As Date = New Date(firstCandleOfTheDay.PreviousPayload.SnapshotDateTime.Year,
-                                                                           firstCandleOfTheDay.PreviousPayload.SnapshotDateTime.Month,
-                                                                           firstCandleOfTheDay.PreviousPayload.SnapshotDateTime.Day,
-                                                                           currentDaySignalCandleTime.Hour,
-                                                                           currentDaySignalCandleTime.Minute,
-                                                                           currentDaySignalCandleTime.Second)
+                                                                               firstCandleOfTheDay.PreviousPayload.SnapshotDateTime.Month,
+                                                                               firstCandleOfTheDay.PreviousPayload.SnapshotDateTime.Day,
+                                                                               currentDaySignalCandleTime.Hour,
+                                                                               currentDaySignalCandleTime.Minute,
+                                                                               currentDaySignalCandleTime.Second)
 
                             If xMinutePayloadConsumer IsNot Nothing AndAlso xMinutePayloadConsumer.ConsumerPayloads IsNot Nothing AndAlso
                                 xMinutePayloadConsumer.ConsumerPayloads.ContainsKey(currentDaySignalCandleTime) AndAlso
@@ -343,12 +374,26 @@ Public Class NFOStrategyInstrument
                                 _targetPrice = placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault
                             End If
 
-                            OnHeartbeat(String.Format("Trade Placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}, Potential Target:{3}",
-                                                      placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                      placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
-                                                      placeOrderTriggers.FirstOrDefault.Item2.Quantity,
-                                                      If(_targetPrice <> Decimal.MinValue, _targetPrice, "Not Set")))
+                            Dim message As String = String.Format("Trade Placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}, Target:{3}",
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.Quantity,
+                                                                  If(_targetPrice <> Decimal.MinValue, _targetPrice, "Not Set"))
+                            Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
+                            If Not File.Exists(_runningInstrumentFilename) Then
+                                File.WriteAllText(_runningInstrumentFilename, Me.TradableInstrument.InstrumentIdentifier)
+                            End If
                         End If
+                    Else
+                        If Not File.Exists(_runningInstrumentFilename) Then
+                            Dim message As String = String.Format("'Is Trigger Recevied Execute command' returned false. So instrument will be released.")
+                            Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
+                        End If
+                    End If
+                Else
+                    If Not File.Exists(_runningInstrumentFilename) Then
+                        Dim message As String = String.Format("'Is Trigger Recevied' returned false. So instrument will be released.")
+                        Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
                     End If
                 End If
                 'Place Order block end
@@ -608,7 +653,7 @@ Public Class NFOStrategyInstrument
             Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
             Dim fractalData As FractalConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyFractalConsumer)
 
-            Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle)
+            Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle, "From 'Is Trigger Receive'")
             If fractalTurnoverSatisfied IsNot Nothing AndAlso fractalTurnoverSatisfied.Item1 Then
                 Dim remark As String = fractalTurnoverSatisfied.Item2
 
@@ -679,13 +724,14 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Private Function IsFratalAndTurnoverSatisfied(ByVal fractalData As FractalConsumer, ByVal runningCandle As OHLCPayload) As Tuple(Of Boolean, String)
+    Private Function IsFratalAndTurnoverSatisfied(ByVal fractalData As FractalConsumer, ByVal runningCandle As OHLCPayload, ByVal checkFrom As String) As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim conditionSatisfied As Boolean = False
-        Dim comment As String = Nothing
+        Dim comment As String = String.Format("{0}{1}{1}", checkFrom, vbNewLine)
 
         _SelectionData.SignalCandle = runningCandle.PreviousPayload
+        comment = String.Format("{0}Signal Candle: {1}{2}{2}", comment, SelectionData.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"), vbNewLine)
         If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(SelectionData.SignalCandle.SnapshotDateTime) Then
             Dim fractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(SelectionData.SignalCandle.SnapshotDateTime)
             _SelectionData.FractalHigh = fractal.FractalHigh.Value
@@ -694,55 +740,62 @@ Public Class NFOStrategyInstrument
             If SelectionData.FractalHigh > 0 AndAlso SelectionData.FractalLow > 0 Then
                 _SelectionData.LastDayFractalLowChanged = IsLastDayFractalLowChanged(fractalData, runningCandle)
                 conditionSatisfied = SelectionData.LastDayFractalLowChanged
-                comment = String.Format("Last Day Fractal Low Changed[{0}]{1}{1}", SelectionData.LastDayFractalLowChanged, vbNewLine)
-
-                _SelectionData.CandleCloseBelowFractalLow = SelectionData.SignalCandle.ClosePrice.Value < SelectionData.FractalLow
-                conditionSatisfied = conditionSatisfied AndAlso SelectionData.CandleCloseBelowFractalLow
-                comment = String.Format("{0}Candle Close({1})<Fractal Low({2})[{3}]{4}{4}",
-                                    comment, SelectionData.SignalCandle.ClosePrice.Value, SelectionData.FractalLow,
-                                    SelectionData.CandleCloseBelowFractalLow, vbNewLine)
-
-                _SelectionData.FractalHighGreaterThanFractalLow = SelectionData.FractalHigh > SelectionData.FractalLow
-                conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalHighGreaterThanFractalLow
-                comment = String.Format("{0}Fractal High({1})>Fractal Low({2})[{3}]{4}{4}",
-                                    comment, SelectionData.FractalHigh, SelectionData.FractalLow,
-                                    SelectionData.FractalHighGreaterThanFractalLow, vbNewLine)
-
-                _SelectionData.FractalDiffernce = SelectionData.FractalHigh - SelectionData.FractalLow
-                _SelectionData.MaxFractalDiffernce = Math.Round(SelectionData.FractalLow * userSettings.MaxFractalDifferencePercentage / 100, 4)
-                _SelectionData.FractalDiffLessThanMaxFractalDiff = SelectionData.FractalDiffernce < SelectionData.MaxFractalDiffernce
-                conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalDiffLessThanMaxFractalDiff
-                comment = String.Format("{0}Fractal Differnce({1})<{2}% ({3}) of Lower Fractal({4})[{5}]{6}{6}",
-                                    comment, SelectionData.FractalDiffernce,
-                                    userSettings.MaxFractalDifferencePercentage,
-                                    SelectionData.MaxFractalDiffernce,
-                                    SelectionData.FractalLow,
-                                    SelectionData.FractalDiffLessThanMaxFractalDiff,
-                                    vbNewLine)
-
-                _SelectionData.PotentialQuantityForMinimumTurnover = Math.Ceiling((userSettings.MinTurnoverPerTrade / SelectionData.FractalLow) / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize
-                _SelectionData.PLForPotentialQuantityForMinimumTurnover = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, SelectionData.FractalLow, SelectionData.FractalHigh, SelectionData.PotentialQuantityForMinimumTurnover)
-                _SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero = SelectionData.PLForPotentialQuantityForMinimumTurnover > 0
-                conditionSatisfied = conditionSatisfied AndAlso SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero
-                comment = String.Format("{0}Potential Quantity for min turnover=Min Turnover({1}) / Fractal Low({2})={3}, Using that PL({4}) > 0[{5}]{6}{6}",
-                                    comment, userSettings.MinTurnoverPerTrade, SelectionData.FractalLow,
-                                    SelectionData.PotentialQuantityForMinimumTurnover,
-                                    SelectionData.PLForPotentialQuantityForMinimumTurnover,
-                                    SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero, vbNewLine)
-
+                comment = String.Format("{0}Last Day Fractal Low Changed[{1}]{2}{2}", comment, SelectionData.LastDayFractalLowChanged, vbNewLine)
 
                 If conditionSatisfied Then
-                    _SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss = CalculateQuantityFromTarget(SelectionData.FractalLow, SelectionData.FractalHigh, userSettings.MaxProfitPerStock)
-                    _SelectionData.Turnover = SelectionData.FractalLow * SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss
-                    _SelectionData.TurnoverGreaterThanMinimumTurnover = SelectionData.Turnover >= userSettings.MinTurnoverPerTrade
-                    _SelectionData.TurnoverLessThanMaximumTurnover = SelectionData.Turnover <= userSettings.MaxTurnoverPerTrade
-                    conditionSatisfied = conditionSatisfied AndAlso SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover
-                    comment = String.Format("{0}Qunatity to get required target without previous loss={1}, Turnover=Quantity({2})*Fractal Low({3})={4}, Turnover({5})>={6} And Turnover({7})<={8}[{9}]{10}{10}",
-                                          comment, SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss,
-                                          SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss, SelectionData.FractalLow,
-                                          SelectionData.Turnover, SelectionData.Turnover, userSettings.MinTurnoverPerTrade,
-                                          SelectionData.Turnover, userSettings.MaxTurnoverPerTrade,
-                                          (SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover), vbNewLine)
+                    _SelectionData.CandleCloseBelowFractalLow = SelectionData.SignalCandle.ClosePrice.Value < SelectionData.FractalLow
+                    conditionSatisfied = conditionSatisfied AndAlso SelectionData.CandleCloseBelowFractalLow
+                    comment = String.Format("{0}Candle Close({1})<Fractal Low({2})[{3}]{4}{4}",
+                                            comment, SelectionData.SignalCandle.ClosePrice.Value, SelectionData.FractalLow,
+                                            SelectionData.CandleCloseBelowFractalLow, vbNewLine)
+
+                    If conditionSatisfied Then
+                        _SelectionData.FractalHighGreaterThanFractalLow = SelectionData.FractalHigh > SelectionData.FractalLow
+                        conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalHighGreaterThanFractalLow
+                        comment = String.Format("{0}Fractal High({1})>Fractal Low({2})[{3}]{4}{4}",
+                                                comment, SelectionData.FractalHigh, SelectionData.FractalLow,
+                                                SelectionData.FractalHighGreaterThanFractalLow, vbNewLine)
+
+                        If conditionSatisfied Then
+                            _SelectionData.FractalDiffernce = SelectionData.FractalHigh - SelectionData.FractalLow
+                            _SelectionData.MaxFractalDiffernce = Math.Round(SelectionData.FractalLow * userSettings.MaxFractalDifferencePercentage / 100, 4)
+                            _SelectionData.FractalDiffLessThanMaxFractalDiff = SelectionData.FractalDiffernce < SelectionData.MaxFractalDiffernce
+                            conditionSatisfied = conditionSatisfied AndAlso SelectionData.FractalDiffLessThanMaxFractalDiff
+                            comment = String.Format("{0}Fractal Differnce({1})<{2}% ({3}) of Lower Fractal({4})[{5}]{6}{6}",
+                                                    comment, SelectionData.FractalDiffernce,
+                                                    userSettings.MaxFractalDifferencePercentage,
+                                                    SelectionData.MaxFractalDiffernce,
+                                                    SelectionData.FractalLow,
+                                                    SelectionData.FractalDiffLessThanMaxFractalDiff,
+                                                    vbNewLine)
+
+                            If conditionSatisfied Then
+                                _SelectionData.PotentialQuantityForMinimumTurnover = Math.Ceiling((userSettings.MinTurnoverPerTrade / SelectionData.FractalLow) / Me.TradableInstrument.LotSize) * Me.TradableInstrument.LotSize
+                                _SelectionData.PLForPotentialQuantityForMinimumTurnover = _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, SelectionData.FractalLow, SelectionData.FractalHigh, SelectionData.PotentialQuantityForMinimumTurnover)
+                                _SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero = SelectionData.PLForPotentialQuantityForMinimumTurnover > 0
+                                conditionSatisfied = conditionSatisfied AndAlso SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero
+                                comment = String.Format("{0}Potential Quantity for min turnover=Min Turnover({1}) / Fractal Low({2})={3}, Using that PL({4}) > 0[{5}]{6}{6}",
+                                                        comment, userSettings.MinTurnoverPerTrade, SelectionData.FractalLow,
+                                                        SelectionData.PotentialQuantityForMinimumTurnover,
+                                                        SelectionData.PLForPotentialQuantityForMinimumTurnover,
+                                                        SelectionData.PLForPotentialQuantityForMinimumTurnoverGratenThanZero, vbNewLine)
+
+                                If conditionSatisfied Then
+                                    _SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss = CalculateQuantityFromTarget(SelectionData.FractalLow, SelectionData.FractalHigh, userSettings.MaxProfitPerStock)
+                                    _SelectionData.Turnover = SelectionData.FractalLow * SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss
+                                    _SelectionData.TurnoverGreaterThanMinimumTurnover = SelectionData.Turnover >= userSettings.MinTurnoverPerTrade
+                                    _SelectionData.TurnoverLessThanMaximumTurnover = SelectionData.Turnover <= userSettings.MaxTurnoverPerTrade
+                                    conditionSatisfied = conditionSatisfied AndAlso SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover
+                                    comment = String.Format("{0}Quantity to get required target without previous loss={1}, Turnover=Quantity({2})*Fractal Low({3})={4}, Turnover({5})>={6} And Turnover({7})<={8}[{9}]{10}{10}",
+                                                              comment, SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss,
+                                                              SelectionData.QuantityToGetRequiedTargetWithoutPreviousLoss, SelectionData.FractalLow,
+                                                              SelectionData.Turnover, SelectionData.Turnover, userSettings.MinTurnoverPerTrade,
+                                                              SelectionData.Turnover, userSettings.MaxTurnoverPerTrade,
+                                                              (SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover), vbNewLine)
+                                End If
+                            End If
+                        End If
+                    End If
                 End If
             Else
                 conditionSatisfied = False
@@ -896,7 +949,7 @@ Public Class NFOStrategyInstrument
                 Utilities.Strings.SerializeFromCollection(Of List(Of String))(_runningInstrumentLogFilename, _displayedLogList)
 
                 OnHeartbeat(message)
-                message = String.Format("{0}: {1}", Me.TradableInstrument.TradingSymbol, message)
+                message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
                 SendTelegramMessageAsync(message)
             End If
         End If
