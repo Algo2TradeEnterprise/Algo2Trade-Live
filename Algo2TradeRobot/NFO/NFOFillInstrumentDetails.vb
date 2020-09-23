@@ -157,7 +157,12 @@ Public Class NFOFillInstrumentDetails
 
                                                     OnHeartbeat(message)
                                                     Await SendTelegramMessageAsync(message).ConfigureAwait(False)
+                                                Else
+                                                    message = message.Replace("[INFO1]", runningContract.TradingSymbol)
                                                 End If
+
+                                                OnHeartbeat(message)
+                                                Await SendTelegramMessageAsync(message).ConfigureAwait(False)
                                             End If
                                         Next
 
