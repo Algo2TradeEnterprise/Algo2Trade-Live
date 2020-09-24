@@ -45,14 +45,23 @@ Public Class NFOStrategyInstrument
         Public Property PreviousDayTotalVolume As Long
         Public Property VolumePercentage As Decimal
 
+        Public Property Iteration As Integer
+        Public Property FinalMessage As String
     End Class
+
+    Enum MessageType
+        INFO = 1
+        DEBUG
+        ALL
+    End Enum
 #End Region
 
     Public ReadOnly Property StrikePrice As Decimal
     Public ReadOnly Property SelectionData As SelectionDetails
 
     Private _lastPrevPayloadPlaceOrder As String = ""
-    Private _displayedLogList As List(Of String) = Nothing
+    Private _displayedLogData As Dictionary(Of Date, List(Of String)) = Nothing
+
     Private _targetMessageSend As Boolean = False
     Private _targetReached As Boolean = False
     Private _candleClosedAboveTarget As Boolean = False
@@ -116,9 +125,9 @@ Public Class NFOStrategyInstrument
         End If
 
         _runningInstrumentLogFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.Log.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
-        _displayedLogList = New List(Of String)
+        _displayedLogData = New Dictionary(Of Date, List(Of String))
         If File.Exists(_runningInstrumentLogFilename) Then
-            _displayedLogList = Utilities.Strings.DeserializeToCollection(Of List(Of String))(_runningInstrumentLogFilename)
+            _displayedLogData = Utilities.Strings.DeserializeToCollection(Of Dictionary(Of Date, List(Of String)))(_runningInstrumentLogFilename)
         End If
 
         _runningInstrumentFilename = Nothing
@@ -166,18 +175,6 @@ Public Class NFOStrategyInstrument
 
     Public Async Function CheckInstrumentAsync() As Task
         Try
-            Dim todayDate As String = Now.ToString("yy_MM_dd")
-            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.DerivedInstrument.txt")
-                If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
-            Next
-            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.Log.a2t")
-                If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
-            Next
-        Catch ex As Exception
-            logger.Error(ex)
-        End Try
-
-        Try
             _strategyInstrumentRunning = True
             Me.TradableInstrument.FetchHistorical = False
             If CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments IsNot Nothing AndAlso
@@ -218,7 +215,7 @@ Public Class NFOStrategyInstrument
                                     Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                                 End While
 
-                                OnHeartbeat("All Historical complete")
+                                Await DisplayAndSendSignalAlertAsync(Now, "All Historical complete", MessageType.INFO).ConfigureAwait(False)
                                 'allHistoricalComplete = True
                                 If allHistoricalComplete Then
                                     Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
@@ -227,6 +224,7 @@ Public Class NFOStrategyInstrument
                                             Throw Me.ParentStrategy.ParentController.OrphanException
                                         End If
                                         _cts.Token.ThrowIfCancellationRequested()
+
                                         Dim tasks As New List(Of Task)()
                                         For Each tradableStrategyInstrument As NFOStrategyInstrument In derivedStrategyInstruments
                                             _cts.Token.ThrowIfCancellationRequested()
@@ -240,10 +238,8 @@ Public Class NFOStrategyInstrument
                                                                                                                                                     x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
                                                                                                                                                     x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentageTillSignalTime AndAlso
                                                                                                                                                     x.StrikePrice <> Decimal.MinValue AndAlso
-                                                                                                                                                    Math.Abs(x.StrikePrice - spotPrice) <= spotPrice * userSettings.MaxStrikeRangePercentage / 100
+                                                                                                                                                    (Math.Abs(x.StrikePrice - spotPrice) / spotPrice) * 100 <= userSettings.MaxStrikeRangePercentage
                                                                                                                                                 End Function)
-
-
 
                                         If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
                                             For Each runningStrategyInstrument In satisfiedStrategyInstruments.OrderBy(Function(x)
@@ -255,16 +251,69 @@ Public Class NFOStrategyInstrument
                                                 instrumentsToRun = runningStrategyInstrument
                                                 Exit For
                                             Next
-
-                                            Exit While
                                         End If
+
+                                        Dim maxSignalCandleTime As Date = derivedStrategyInstruments.Max(Function(x)
+                                                                                                             If x.SelectionData.SignalCandle IsNot Nothing Then
+                                                                                                                 Return x.SelectionData.SignalCandle.SnapshotDateTime
+                                                                                                             Else
+                                                                                                                 Return Date.MinValue
+                                                                                                             End If
+                                                                                                         End Function)
+                                        If maxSignalCandleTime <> Date.MinValue AndAlso maxSignalCandleTime.Date = Now.Date Then
+                                            Dim header As String = "Trading Symbol,Strike %,Iteration,Turnover,Volume %,Reason"
+                                            Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, header, MessageType.INFO, True, True).ConfigureAwait(False)
+
+                                            For Each runningInstrument In derivedStrategyInstruments
+                                                Dim tradingSymbol As String = runningInstrument.TradableInstrument.TradingSymbol
+                                                Dim strikePriceRangePer As Decimal = Math.Round((Math.Abs(runningInstrument.StrikePrice - spotPrice) / spotPrice) * 100, 2)
+                                                Dim iteration As Integer = runningInstrument.SelectionData.Iteration
+                                                Dim turnover As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.Turnover, "N/A")
+                                                Dim volumePer As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.VolumePercentage, "N/A")
+                                                Dim finalReason As String = runningInstrument.SelectionData.FinalMessage
+                                                If runningInstrument.SelectionData.SignalCandle IsNot Nothing Then
+                                                    If runningInstrument.SelectionData.SignalCandle.SnapshotDateTime < maxSignalCandleTime Then
+                                                        finalReason = "Tick not received"
+                                                    End If
+                                                Else
+                                                    finalReason = "Tick not received"
+                                                End If
+                                                If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
+                                                    Dim foundInstrument As NFOStrategyInstrument = satisfiedStrategyInstruments.Find(Function(x)
+                                                                                                                                         Return x.TradableInstrument.InstrumentIdentifier = runningInstrument.TradableInstrument.InstrumentIdentifier
+                                                                                                                                     End Function)
+                                                    If foundInstrument IsNot Nothing Then
+                                                        finalReason = "Shortlisted"
+                                                        If instrumentsToRun IsNot Nothing AndAlso
+                                                            instrumentsToRun.TradableInstrument.InstrumentIdentifier = runningInstrument.TradableInstrument.InstrumentIdentifier Then
+                                                            finalReason = "Shortlisted and Selected"
+                                                        End If
+                                                    End If
+                                                End If
+
+                                                Dim message As String = String.Format("{0},{1},{2},{3},{4},{5}",
+                                                                                      tradingSymbol,
+                                                                                      strikePriceRangePer,
+                                                                                      iteration,
+                                                                                      turnover,
+                                                                                      volumePer,
+                                                                                      finalReason)
+
+                                                Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, message, MessageType.INFO, True, True).ConfigureAwait(False)
+                                            Next
+                                        End If
+
+                                        If instrumentsToRun IsNot Nothing Then Exit While
+
                                         _cts.Token.ThrowIfCancellationRequested()
                                         Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
                                     End While
                                 End If
                             End If
                             If instrumentsToRun IsNot Nothing Then
-                                Await DisplayAndSendSignalAlertAsync(String.Format("***** Potential Instrument Found ***** {0}. Will Check rest of the conditions.", instrumentsToRun.TradableInstrument.TradingSymbol)).ConfigureAwait(False)
+                                Dim infoMessage As String = String.Format("#Potential_Instrument_Found {0}. Will Check rest of the conditions.",
+                                                                           instrumentsToRun.TradableInstrument.TradingSymbol)
+                                Await DisplayAndSendSignalAlertAsync(Now, infoMessage, MessageType.INFO).ConfigureAwait(False)
 
                                 For Each runningStrategyInstrument In derivedStrategyInstruments
                                     If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrumentsToRun.TradableInstrument.InstrumentIdentifier Then
@@ -332,12 +381,22 @@ Public Class NFOStrategyInstrument
                                 _SelectionData.PreviousDayTotalVolume = previousDayTotalVolume
                                 _SelectionData.VolumePercentage = Math.Round(currentDayTotalVolume * 100 / previousDayTotalVolume, 2)
 
-                                remark = String.Format("{0} Volume %={1}", remark, SelectionData.VolumePercentage)
+                                If SelectionData.VolumePercentage >= userSettings.MinVolumePercentageTillSignalTime Then
+                                    remark = String.Format("{0} Volume %={1} >= {2}[True]{3}{3}",
+                                                           remark, SelectionData.VolumePercentage,
+                                                           userSettings.MinVolumePercentageTillSignalTime, vbNewLine)
+                                Else
+                                    remark = String.Format("{0} Volume %={1} >= {2}[False]{3}{3}",
+                                                           remark, SelectionData.VolumePercentage,
+                                                           userSettings.MinVolumePercentageTillSignalTime, vbNewLine)
+
+                                    _SelectionData.FinalMessage = String.Format("Volume % till signal time not satisfied")
+                                End If
                             End If
                         End If
                     End If
 
-                    Await DisplayAndSendSignalAlertAsync(remark).ConfigureAwait(False)
+                    Await DisplayAndSendSignalAlertAsync(_SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.DEBUG).ConfigureAwait(False)
                 End If
             End If
         End If
@@ -366,20 +425,29 @@ Public Class NFOStrategyInstrument
                         Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                         If placeOrderResponse.ContainsKey("data") AndAlso
                             placeOrderResponse("data").ContainsKey("order_id") Then
+                            Dim message As String = Nothing
+
                             If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
                                 _targetReached = True
+                                message = String.Format("Exit order placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}",
+                                                        placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                        placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
+                                                        placeOrderTriggers.FirstOrDefault.Item2.Quantity)
                             End If
 
                             If placeOrderTriggers.FirstOrDefault.Item2.Supporting IsNot Nothing AndAlso placeOrderTriggers.FirstOrDefault.Item2.Supporting.Count > 0 Then
                                 _targetPrice = placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault
+
+                                message = String.Format("Entry Order Placed. Signal Candle: {0}, Direction:{1}, Potential Entry:{2}, Potential Target:{3}, Quantity:{4}",
+                                                        placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                        placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
+                                                        placeOrderTriggers.FirstOrDefault.Item2.Supporting.LastOrDefault,
+                                                        placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault,
+                                                        placeOrderTriggers.FirstOrDefault.Item2.Quantity)
                             End If
 
-                            Dim message As String = String.Format("Trade Placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}, Target:{3}",
-                                                                  placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                  placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
-                                                                  placeOrderTriggers.FirstOrDefault.Item2.Quantity,
-                                                                  If(_targetPrice <> Decimal.MinValue, _targetPrice, "Not Set"))
-                            Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
+                            Await DisplayAndSendSignalAlertAsync(placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime, message, MessageType.INFO).ConfigureAwait(False)
+
                             If Not File.Exists(_runningInstrumentFilename) Then
                                 File.WriteAllText(_runningInstrumentFilename, Me.TradableInstrument.InstrumentIdentifier)
                             End If
@@ -387,13 +455,15 @@ Public Class NFOStrategyInstrument
                     Else
                         If Not File.Exists(_runningInstrumentFilename) Then
                             Dim message As String = String.Format("'Is Trigger Recevied Execute command' returned false. So instrument will be released.")
-                            Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
+                            Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO).ConfigureAwait(False)
+                            Exit While
                         End If
                     End If
                 Else
                     If Not File.Exists(_runningInstrumentFilename) Then
                         Dim message As String = String.Format("'Is Trigger Recevied' returned false. So instrument will be released.")
-                        Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
+                        Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO).ConfigureAwait(False)
+                        Exit While
                     End If
                 End If
                 'Place Order block end
@@ -474,12 +544,15 @@ Public Class NFOStrategyInstrument
             If lastExecutedOrder IsNot Nothing AndAlso lastExecutedOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell AndAlso
                 lastExecutedOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                 Dim sellPrice As Decimal = lastExecutedOrder.ParentOrder.AveragePrice
-                Dim pl As Decimal = GetUnrealizedPL(sellPrice)
+                Dim pl As Decimal = GetProjectedPL(sellPrice)
 
-                Dim message As String = String.Format("Target reached. PL: {0}", pl)
+                Dim lastTradeSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                If lastTradeSignalCandle IsNot Nothing Then
+                    Dim message As String = String.Format("Target reached. PL: {0}", pl)
 
-                Await DisplayAndSendSignalAlertAsync(message).ConfigureAwait(False)
-                _targetMessageSend = True
+                    Await DisplayAndSendSignalAlertAsync(lastTradeSignalCandle.SnapshotDateTime, message, MessageType.INFO).ConfigureAwait(False)
+                    _targetMessageSend = True
+                End If
             End If
         End If
 
@@ -525,7 +598,7 @@ Public Class NFOStrategyInstrument
                 runningCandle IsNot Nothing AndAlso runningCandle.SnapshotDateTime >= userSettings.TradeStartTime AndAlso Not _targetReached AndAlso
                 runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandle.PreviousPayload IsNot Nothing AndAlso
                 Me.TradableInstrument.IsHistoricalCompleted AndAlso fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.Count > 0 Then
-                Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Await GetEntrySignalAsync(runningCandle, currentTick, forcePrint).ConfigureAwait(False)
+                Dim signal As Tuple(Of Boolean, OHLCPayload, Integer, Decimal, Decimal) = Await GetEntrySignalAsync(runningCandle, currentTick, forcePrint).ConfigureAwait(False)
                 If signal IsNot Nothing AndAlso signal.Item1 Then
                     Dim signalCandle As OHLCPayload = signal.Item2
                     Dim quantity As Integer = signal.Item3
@@ -535,7 +608,7 @@ Public Class NFOStrategyInstrument
                                         {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                          .OrderType = IOrder.TypeOfOrder.Market,
                                          .Quantity = quantity,
-                                         .Supporting = New List(Of Object) From {signal.Item4}}
+                                         .Supporting = New List(Of Object) From {signal.Item4, signal.Item5}}
                     End If
                 End If
             End If
@@ -647,78 +720,76 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-    Private Async Function GetEntrySignalAsync(ByVal runningCandle As OHLCPayload, ByVal currentTick As ITick, ByVal forcePrint As Boolean) As Task(Of Tuple(Of Boolean, OHLCPayload, Integer, Decimal))
-        Dim ret As Tuple(Of Boolean, OHLCPayload, Integer, Decimal) = Nothing
+    Private Async Function GetEntrySignalAsync(ByVal runningCandle As OHLCPayload, ByVal currentTick As ITick, ByVal forcePrint As Boolean) As Task(Of Tuple(Of Boolean, OHLCPayload, Integer, Decimal, Decimal))
+        Dim ret As Tuple(Of Boolean, OHLCPayload, Integer, Decimal, Decimal) = Nothing
         If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
             Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
             Dim fractalData As FractalConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyFractalConsumer)
 
             Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle, "From 'Is Trigger Receive'")
-            If fractalTurnoverSatisfied IsNot Nothing AndAlso fractalTurnoverSatisfied.Item1 Then
+            If fractalTurnoverSatisfied IsNot Nothing Then
                 Dim remark As String = fractalTurnoverSatisfied.Item2
-
-                Dim signalCandle As OHLCPayload = Nothing
-                Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
-                If lastExecutedOrder IsNot Nothing Then
-                    Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
-                    If lastOrderSignalCandle IsNot Nothing Then
-                        If lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
-                            remark = String.Format("{0}Last Order Signal Candle({1})<>Signal Candle({2})[True]{3}{3}",
-                                                   remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                   runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                   vbNewLine)
-                            If fractalData.ConsumerPayloads.ContainsKey(lastOrderSignalCandle.SnapshotDateTime) Then
-                                Dim lastTradedFractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(lastOrderSignalCandle.SnapshotDateTime)
-                                If lastTradedFractal.FractalLow.Value <> SelectionData.FractalLow AndAlso
-                                    lastTradedFractal.FractalHigh.Value <> SelectionData.FractalHigh Then
-                                    signalCandle = runningCandle.PreviousPayload
+                If fractalTurnoverSatisfied.Item1 Then
+                    Dim signalCandle As OHLCPayload = Nothing
+                    Dim lastExecutedOrder As IBusinessOrder = GetLastExecutedOrder()
+                    If lastExecutedOrder IsNot Nothing Then
+                        Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastExecutedOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                        If lastOrderSignalCandle IsNot Nothing Then
+                            If lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
+                                remark = String.Format("{0}Last Order Signal Candle({1})<>Signal Candle({2})[True]{3}{3}",
+                                                       remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                       runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                       vbNewLine)
+                                If fractalData.ConsumerPayloads.ContainsKey(lastOrderSignalCandle.SnapshotDateTime) Then
+                                    Dim lastTradedFractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(lastOrderSignalCandle.SnapshotDateTime)
+                                    If lastTradedFractal.FractalLow.Value <> SelectionData.FractalLow AndAlso
+                                        lastTradedFractal.FractalHigh.Value <> SelectionData.FractalHigh Then
+                                        signalCandle = runningCandle.PreviousPayload
+                                    Else
+                                        _SelectionData.FinalMessage = String.Format("Last order signal candle fractal high/low same")
+                                    End If
+                                    remark = String.Format("{0}Last Order Fractal High({1})<>Fractal High({2})[{3}]. Last Order Fractal Low({4})<>Fractal Low({5})[{6}]{7}{7}",
+                                                           remark, lastTradedFractal.FractalHigh.Value, SelectionData.FractalHigh,
+                                                           lastTradedFractal.FractalHigh.Value <> SelectionData.FractalHigh,
+                                                           lastTradedFractal.FractalLow.Value, SelectionData.FractalLow,
+                                                           lastTradedFractal.FractalLow.Value <> SelectionData.FractalLow, vbNewLine)
+                                Else
+                                    remark = String.Format("{0}Last Order Fractal Not Found.", remark)
+                                    _SelectionData.FinalMessage = String.Format("Last order signal candle fractal not found")
                                 End If
-                                remark = String.Format("{0}Last Order Fractal High({1})<>Fractal High({2})[{3}]. Last Order Fractal Low({4})<>Fractal Low({5})[{6}]{7}{7}",
-                                                       remark, lastTradedFractal.FractalHigh.Value, SelectionData.FractalHigh,
-                                                       lastTradedFractal.FractalHigh.Value <> SelectionData.FractalHigh,
-                                                       lastTradedFractal.FractalLow.Value, SelectionData.FractalLow,
-                                                       lastTradedFractal.FractalLow.Value <> SelectionData.FractalLow, vbNewLine)
                             Else
-                                remark = String.Format("{0}Last Order Fractal Not Found.", remark)
+                                remark = String.Format("{0}Last Order Signal Candle({1})<>Signal Candle({2})[False]{3}{3}",
+                                                       remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                       runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                       vbNewLine)
+                                _SelectionData.FinalMessage = String.Format("Last order signal candle is not different from current signal candle")
                             End If
                         Else
-                            remark = String.Format("{0}Last Order Signal Candle({1})<>Signal Candle({2})[False]{3}{3}",
-                                                   remark, lastOrderSignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                   runningCandle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                   vbNewLine)
+                            remark = String.Format("{0}Last Order Signal Candle not found.", remark)
+                            _SelectionData.FinalMessage = String.Format("Last order signal candle not found")
                         End If
                     Else
-                        remark = String.Format("{0}Last Order Signal Candle not found.", remark)
+                        signalCandle = SelectionData.SignalCandle
                     End If
-                Else
-                    signalCandle = SelectionData.SignalCandle
-                End If
 
-                If signalCandle IsNot Nothing Then
-                    Dim entryPrice As Decimal = SelectionData.FractalLow
-                    Dim targetPrice As Decimal = SelectionData.FractalHigh
-                    Dim averageEntryPrice As Decimal = GetAverageEntryPrice()
-                    Dim unrealizedPL As Decimal = GetUnrealizedPL(targetPrice)
-                    Dim plToAchive As Decimal = userSettings.MaxProfitPerStock - unrealizedPL
-                    If plToAchive > 0 Then
+                    If signalCandle IsNot Nothing Then
+                        Dim entryPrice As Decimal = SelectionData.FractalLow
+                        Dim targetPrice As Decimal = SelectionData.FractalHigh
+                        Dim previousProjectedPL As Decimal = GetProjectedPL(targetPrice)
+                        Dim previousQuantity As Long = GetTotalQuantityTraded()
+
+                        Dim plToAchive As Decimal = userSettings.MaxProfitPerStock - previousProjectedPL
                         Dim quantity As Integer = CalculateQuantityFromTarget(entryPrice, targetPrice, plToAchive)
 
-                        remark = String.Format("{0}Average Entry Price={1}, Potential Target={2}, PL To Achieve=Max Stock Profit({3}) - Unrealized PL({4})={5}>0[True]{6}{6}",
-                                                remark, Math.Round(averageEntryPrice, 4), targetPrice, userSettings.MaxProfitPerStock, unrealizedPL, plToAchive, vbNewLine)
+                        remark = String.Format("{0}Previous Projected PL INR={1} for Quantity={2}, So Current Effective INR Required={3}, So Quantity To Trade={4}.{5}{5}",
+                                                remark, previousProjectedPL, previousQuantity, plToAchive, quantity, vbNewLine)
 
-                        remark = String.Format("{0}Potential Entry={1}, Target={2}, Quantity={3} [******]",
-                                               remark, entryPrice, targetPrice, quantity)
-
-                        ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal)(True, signalCandle, quantity, targetPrice)
+                        ret = New Tuple(Of Boolean, OHLCPayload, Integer, Decimal, Decimal)(True, signalCandle, quantity, targetPrice, entryPrice)
 
                         If forcePrint Then logger.Debug(remark)
-                    Else
-                        remark = String.Format("{0}Average Entry Price={1}, Potential Target={2}, PL To Achieve=Max Stock Profit({3}) - Unrealized PL({4})={5}>0[False]",
-                                           remark, Math.Round(averageEntryPrice, 4), targetPrice, userSettings.MaxProfitPerStock, unrealizedPL, plToAchive)
                     End If
                 End If
-
-                Await DisplayAndSendSignalAlertAsync(remark).ConfigureAwait(False)
+                Await DisplayAndSendSignalAlertAsync(SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.ALL).ConfigureAwait(False)
             End If
         End If
         Return ret
@@ -728,7 +799,7 @@ Public Class NFOStrategyInstrument
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim conditionSatisfied As Boolean = False
-        Dim comment As String = String.Format("{0}{1}{1}", checkFrom, vbNewLine)
+        Dim comment As String = String.Format("{0}{1}[FINAL MESSAGE]{1}{1}", checkFrom, vbNewLine)
 
         _SelectionData.SignalCandle = runningCandle.PreviousPayload
         comment = String.Format("{0}Signal Candle: {1}{2}{2}", comment, SelectionData.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"), vbNewLine)
@@ -792,18 +863,33 @@ Public Class NFOStrategyInstrument
                                                               SelectionData.Turnover, SelectionData.Turnover, userSettings.MinTurnoverPerTrade,
                                                               SelectionData.Turnover, userSettings.MaxTurnoverPerTrade,
                                                               (SelectionData.TurnoverGreaterThanMinimumTurnover AndAlso SelectionData.TurnoverLessThanMaximumTurnover), vbNewLine)
+                                    If Not conditionSatisfied Then
+                                        _SelectionData.FinalMessage = String.Format("Maximum/minimum turnover not satisfied")
+                                    End If
+                                Else
+                                    _SelectionData.FinalMessage = String.Format("Minimum turnover pl not greater than zero")
                                 End If
+                            Else
+                                _SelectionData.FinalMessage = String.Format("Fractal difference not less that max allowed fractal difference")
                             End If
+                        Else
+                            _SelectionData.FinalMessage = String.Format("Fractal high not greater than fractal low")
                         End If
+                    Else
+                        _SelectionData.FinalMessage = String.Format("Candle close not below fractal")
                     End If
+                Else
+                    _SelectionData.FinalMessage = String.Format("Last day dractal low not changed")
                 End If
             Else
                 conditionSatisfied = False
-                comment = String.Format("Signal Candle Fractal High:{0}, Fractal Low:{1} [######]", SelectionData.FractalHigh, SelectionData.FractalLow)
+                comment = String.Format("Signal Candle Fractal High:{0}, Fractal Low:{1}", SelectionData.FractalHigh, SelectionData.FractalLow)
+                _SelectionData.FinalMessage = String.Format("Signal Candle Fractal High/Low = 0")
             End If
         Else
             conditionSatisfied = False
-            comment = String.Format("Signal Candle Fractal not found [######]")
+            comment = String.Format("Signal Candle Fractal not found")
+            _SelectionData.FinalMessage = String.Format("Signal Candle Fractal not found")
         End If
 
         ret = New Tuple(Of Boolean, String)(conditionSatisfied, comment)
@@ -811,7 +897,7 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Private Function GetUnrealizedPL(ByVal targetPrice As Decimal) As Decimal
+    Private Function GetProjectedPL(ByVal targetPrice As Decimal) As Decimal
         Dim ret As Decimal = 0
         If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             For Each runningOrder In Me.OrderDetails.Values
@@ -820,22 +906,6 @@ Public Class NFOStrategyInstrument
                     ret += _APIAdapter.CalculatePLWithBrokerage(Me.TradableInstrument, runningOrder.ParentOrder.AveragePrice, targetPrice, runningOrder.ParentOrder.Quantity)
                 End If
             Next
-        End If
-        Return ret
-    End Function
-
-    Private Function GetAverageEntryPrice() As Decimal
-        Dim ret As Decimal = 0
-        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-            Dim counter As Integer = 0
-            For Each runningOrder In Me.OrderDetails.Values
-                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy AndAlso
-                    runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                    ret += runningOrder.ParentOrder.AveragePrice
-                    counter += 1
-                End If
-            Next
-            If counter > 0 Then ret = ret / counter
         End If
         Return ret
     End Function
@@ -940,33 +1010,69 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Private Async Function DisplayAndSendSignalAlertAsync(ByVal message As String, Optional ByVal forceDisplay As Boolean = False) As Task
+    Private Async Function DisplayAndSendSignalAlertAsync(ByVal signalMinuteTime As Date, ByVal message As String, ByVal typeOfMessage As MessageType,
+                                                          Optional ByVal forceEntry As Boolean = False, Optional ByVal doNotIncludeTradingSymbol As Boolean = False) As Task
         Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
         If message IsNot Nothing AndAlso message.Trim <> "" Then
-            If Not _displayedLogList.Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceDisplay Then
-                _displayedLogList.Add(message)
-                Utilities.Strings.SerializeFromCollection(Of List(Of String))(_runningInstrumentLogFilename, _displayedLogList)
+            If _displayedLogData.ContainsKey(signalMinuteTime) Then
+                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = SelectionData.Iteration + 1
+            Else
+                _displayedLogData.Add(signalMinuteTime, New List(Of String))
+                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = 1
+            End If
+
+            If Not _displayedLogData(signalMinuteTime).Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceEntry Then
+                _displayedLogData(signalMinuteTime).Add(message)
+                Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, List(Of String)))(_runningInstrumentLogFilename, _displayedLogData)
+
+                Dim summaryMessage As String = Nothing
+                If typeOfMessage <> MessageType.INFO Then
+                    summaryMessage = String.Format("Iteration:{0}, Reason:{1}", SelectionData.Iteration, SelectionData.FinalMessage)
+                    message = message.Replace("[FINAL MESSAGE]", summaryMessage)
+                End If
 
                 OnHeartbeat(message)
-                message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
-                SendTelegramMessageAsync(message)
+
+                If doNotIncludeTradingSymbol Then
+                    message = String.Format("{0}{1}Timestamp: {2}", message, vbNewLine, Now.ToString("HH:mm:ss"))
+                Else
+                    message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
+                End If
+
+                SendTelegramMessageAsync(message, summaryMessage, typeOfMessage)
             End If
         End If
     End Function
 
-    Private Async Function SendTelegramMessageAsync(ByVal message As String) As Task
+    Private Async Function SendTelegramMessageAsync(ByVal message As String, ByVal summaryMessage As String, ByVal typeOfMessage As MessageType) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
-                Not Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim = "" AndAlso
-                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
-                Not Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim = "" Then
-                Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+            Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
+            If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
+                userInputs.TelegramDebugChatID IsNot Nothing AndAlso userInputs.TelegramDebugChatID.Trim <> "" Then
+                Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramDebugChatID.Trim, _cts)
                     Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                     Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
                 End Using
+            End If
+            If typeOfMessage = MessageType.INFO Then
+                If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
+                    userInputs.TelegramInfoChatID IsNot Nothing AndAlso userInputs.TelegramInfoChatID.Trim <> "" Then
+                    Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramInfoChatID.Trim, _cts)
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End Using
+                End If
+            ElseIf typeOfMessage = MessageType.ALL Then
+                If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
+                    userInputs.TelegramInfoChatID IsNot Nothing AndAlso userInputs.TelegramInfoChatID.Trim <> "" Then
+                    Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramInfoChatID.Trim, _cts)
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(summaryMessage)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End Using
+                End If
             End If
         Catch ex As Exception
             logger.Warn(ex.ToString)
