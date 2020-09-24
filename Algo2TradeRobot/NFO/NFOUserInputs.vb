@@ -1,34 +1,38 @@
 ﻿Imports System.IO
-Imports System.Threading
 Imports Algo2TradeCore.Entities.UserSettings
-Imports Utilities.DAL
-Imports Algo2TradeCore.Entities
 
 <Serializable>
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "AdaptiveMartingaleWithController.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "AdaptiveMartingale.Strategy.a2t")
 
-    Public Property MaxProfitPerStock As Decimal
-    Public Property NumberOfStockToTrade As Integer
-    Public Property MaxTurnoverPerTrade As Decimal
     Public Property MinTurnoverPerTrade As Decimal
+    Public Property MaxTurnoverPerTrade As Decimal
+    Public Property MaxProfitPerStock As Decimal
     Public Property MaxFractalDifferencePercentage As Decimal
-    Public Property MaxStrikeRangePercentage As Decimal
+
+
+    Public Property TelegramBotAPIKey As String
+    Public Property TelegramDebugChatID As String
+    Public Property TelegramInfoChatID As String
+
 
     Public Property StockList As List(Of String)
-    Public Property MinVolumePercentage As Decimal
-    Public Property MaxBlankCandlePercentage As Decimal
+    Public Property MinNonBlankCandlePercentage As Decimal
     Public Property MinTotalCandlePercentage As Decimal
+    Public Property MinEODTurnoverPercentage As Decimal
 
-    Private _LastEntryTime As Date
-    Public Property LastEntryTime As Date
+
+    Private _LastOptionCheckTime As Date
+    Public Property LastOptionCheckTime As Date
         Get
-            Return New Date(Now.Year, Now.Month, Now.Day, _LastEntryTime.Hour, _LastEntryTime.Minute, _LastEntryTime.Second)
+            Return New Date(Now.Year, Now.Month, Now.Day, _LastOptionCheckTime.Hour, _LastOptionCheckTime.Minute, _LastOptionCheckTime.Second)
         End Get
         Set(value As Date)
-            _LastEntryTime = value
+            _LastOptionCheckTime = value
         End Set
     End Property
+    Public Property MaxStrikeRangePercentage As Decimal
+    Public Property MinVolumePercentageTillSignalTime As Decimal
 End Class

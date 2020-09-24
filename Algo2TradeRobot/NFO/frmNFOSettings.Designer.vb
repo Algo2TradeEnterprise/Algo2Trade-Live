@@ -26,13 +26,13 @@ Partial Class frmNFOSettings
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmNFOSettings))
         Me.btnSave = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.grpStockSelection = New System.Windows.Forms.GroupBox()
-        Me.txtMaxBlankCandlePer = New System.Windows.Forms.TextBox()
-        Me.lblMaxBlankCandlePer = New System.Windows.Forms.Label()
-        Me.txtMinVolumePer = New System.Windows.Forms.TextBox()
-        Me.lblMinVolumePer = New System.Windows.Forms.Label()
-        Me.dtpckrLastEntryTime = New System.Windows.Forms.DateTimePicker()
-        Me.lblLastEntryTime = New System.Windows.Forms.Label()
+        Me.grpStockFilter = New System.Windows.Forms.GroupBox()
+        Me.txtMinEODTurnoverPercentage = New System.Windows.Forms.TextBox()
+        Me.lblEODTurnoverPercentage = New System.Windows.Forms.Label()
+        Me.txtMinTotalCandlePer = New System.Windows.Forms.TextBox()
+        Me.lblMinTotalCandlePer = New System.Windows.Forms.Label()
+        Me.txtMinNonBlankCandlePer = New System.Windows.Forms.TextBox()
+        Me.lblMinNonBlankCandlePer = New System.Windows.Forms.Label()
         Me.txtStockList = New System.Windows.Forms.TextBox()
         Me.lblStockList = New System.Windows.Forms.Label()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
@@ -45,22 +45,32 @@ Partial Class frmNFOSettings
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.lblMaxProfitPerStock = New System.Windows.Forms.Label()
         Me.txtMaxProfitPerStock = New System.Windows.Forms.TextBox()
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
-        Me.txtMaxStrikeRangePer = New System.Windows.Forms.TextBox()
-        Me.lblMaxStrikeRangePer = New System.Windows.Forms.Label()
+        Me.grpSignal = New System.Windows.Forms.GroupBox()
         Me.txtMaxFractalDiffPer = New System.Windows.Forms.TextBox()
         Me.lblMaxFractalDiffPer = New System.Windows.Forms.Label()
         Me.txtMinTurnoverPerTrade = New System.Windows.Forms.TextBox()
         Me.lblMinTurnoverPerTrade = New System.Windows.Forms.Label()
         Me.txtMaxTurnoverPerTrade = New System.Windows.Forms.TextBox()
         Me.lblMaxTurnoverPerTrade = New System.Windows.Forms.Label()
-        Me.txtNumberOfStockToTrade = New System.Windows.Forms.TextBox()
-        Me.lblNumberOfStockToTrade = New System.Windows.Forms.Label()
         Me.toolTipStockList = New System.Windows.Forms.ToolTip(Me.components)
-        Me.txtMinTotalCandlePer = New System.Windows.Forms.TextBox()
-        Me.lblMinTotalCandlePer = New System.Windows.Forms.Label()
+        Me.grpStockSelection = New System.Windows.Forms.GroupBox()
+        Me.txtMinVolumePerTillSignalTime = New System.Windows.Forms.TextBox()
+        Me.lblMinVolumePerTillSignalTime = New System.Windows.Forms.Label()
+        Me.txtMaxStrikeRangePer = New System.Windows.Forms.TextBox()
+        Me.lblMaxStrikeRangePer = New System.Windows.Forms.Label()
+        Me.dtpckrLastOptionCheckTime = New System.Windows.Forms.DateTimePicker()
+        Me.lblLastEntryTime = New System.Windows.Forms.Label()
+        Me.grpTelegram = New System.Windows.Forms.GroupBox()
+        Me.txtTelegramInfoChatID = New System.Windows.Forms.TextBox()
+        Me.lblTelegramInfoChatID = New System.Windows.Forms.Label()
+        Me.txtTelegramBotAPIKey = New System.Windows.Forms.TextBox()
+        Me.lblTelegramBotAPIKey = New System.Windows.Forms.Label()
+        Me.txtTelegramDebugChatID = New System.Windows.Forms.TextBox()
+        Me.lblTelegramDebugChatID = New System.Windows.Forms.Label()
+        Me.grpStockFilter.SuspendLayout()
+        Me.grpSignal.SuspendLayout()
         Me.grpStockSelection.SuspendLayout()
-        Me.GroupBox1.SuspendLayout()
+        Me.grpTelegram.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -68,7 +78,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(797, 302)
+        Me.btnSave.Location = New System.Drawing.Point(864, 365)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -83,91 +93,88 @@ Partial Class frmNFOSettings
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
-        'grpStockSelection
+        'grpStockFilter
         '
-        Me.grpStockSelection.Controls.Add(Me.txtMinTotalCandlePer)
-        Me.grpStockSelection.Controls.Add(Me.lblMinTotalCandlePer)
-        Me.grpStockSelection.Controls.Add(Me.txtMaxBlankCandlePer)
-        Me.grpStockSelection.Controls.Add(Me.lblMaxBlankCandlePer)
-        Me.grpStockSelection.Controls.Add(Me.txtMinVolumePer)
-        Me.grpStockSelection.Controls.Add(Me.lblMinVolumePer)
-        Me.grpStockSelection.Controls.Add(Me.dtpckrLastEntryTime)
-        Me.grpStockSelection.Controls.Add(Me.lblLastEntryTime)
-        Me.grpStockSelection.Controls.Add(Me.txtStockList)
-        Me.grpStockSelection.Controls.Add(Me.lblStockList)
-        Me.grpStockSelection.Location = New System.Drawing.Point(551, -2)
-        Me.grpStockSelection.Name = "grpStockSelection"
-        Me.grpStockSelection.Size = New System.Drawing.Size(358, 248)
-        Me.grpStockSelection.TabIndex = 46
-        Me.grpStockSelection.TabStop = False
-        Me.grpStockSelection.Text = "Stock Selection Settings"
+        Me.grpStockFilter.Controls.Add(Me.txtMinEODTurnoverPercentage)
+        Me.grpStockFilter.Controls.Add(Me.lblEODTurnoverPercentage)
+        Me.grpStockFilter.Controls.Add(Me.txtMinTotalCandlePer)
+        Me.grpStockFilter.Controls.Add(Me.lblMinTotalCandlePer)
+        Me.grpStockFilter.Controls.Add(Me.txtMinNonBlankCandlePer)
+        Me.grpStockFilter.Controls.Add(Me.lblMinNonBlankCandlePer)
+        Me.grpStockFilter.Controls.Add(Me.txtStockList)
+        Me.grpStockFilter.Controls.Add(Me.lblStockList)
+        Me.grpStockFilter.Location = New System.Drawing.Point(551, -2)
+        Me.grpStockFilter.Name = "grpStockFilter"
+        Me.grpStockFilter.Size = New System.Drawing.Size(425, 194)
+        Me.grpStockFilter.TabIndex = 2
+        Me.grpStockFilter.TabStop = False
+        Me.grpStockFilter.Text = "Stock and Option Filter Settings"
         '
-        'txtMaxBlankCandlePer
+        'txtMinEODTurnoverPercentage
         '
-        Me.txtMaxBlankCandlePer.Location = New System.Drawing.Point(147, 169)
-        Me.txtMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxBlankCandlePer.Name = "txtMaxBlankCandlePer"
-        Me.txtMaxBlankCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMaxBlankCandlePer.TabIndex = 14
-        Me.txtMaxBlankCandlePer.Tag = "Max Blank Candle %"
+        Me.txtMinEODTurnoverPercentage.Location = New System.Drawing.Point(216, 158)
+        Me.txtMinEODTurnoverPercentage.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinEODTurnoverPercentage.Name = "txtMinEODTurnoverPercentage"
+        Me.txtMinEODTurnoverPercentage.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinEODTurnoverPercentage.TabIndex = 3
+        Me.txtMinEODTurnoverPercentage.Tag = "Min EOD Turnover %"
         '
-        'lblMaxBlankCandlePer
+        'lblEODTurnoverPercentage
         '
-        Me.lblMaxBlankCandlePer.AutoSize = True
-        Me.lblMaxBlankCandlePer.Location = New System.Drawing.Point(8, 172)
-        Me.lblMaxBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxBlankCandlePer.Name = "lblMaxBlankCandlePer"
-        Me.lblMaxBlankCandlePer.Size = New System.Drawing.Size(136, 17)
-        Me.lblMaxBlankCandlePer.TabIndex = 63
-        Me.lblMaxBlankCandlePer.Text = "Max Blank Candle %"
+        Me.lblEODTurnoverPercentage.AutoSize = True
+        Me.lblEODTurnoverPercentage.Location = New System.Drawing.Point(8, 161)
+        Me.lblEODTurnoverPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblEODTurnoverPercentage.Name = "lblEODTurnoverPercentage"
+        Me.lblEODTurnoverPercentage.Size = New System.Drawing.Size(142, 17)
+        Me.lblEODTurnoverPercentage.TabIndex = 67
+        Me.lblEODTurnoverPercentage.Text = "Min EOD Turnover %"
         '
-        'txtMinVolumePer
+        'txtMinTotalCandlePer
         '
-        Me.txtMinVolumePer.Location = New System.Drawing.Point(147, 134)
-        Me.txtMinVolumePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinVolumePer.Name = "txtMinVolumePer"
-        Me.txtMinVolumePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinVolumePer.TabIndex = 13
-        Me.txtMinVolumePer.Tag = "Min Volume %"
+        Me.txtMinTotalCandlePer.Location = New System.Drawing.Point(216, 124)
+        Me.txtMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinTotalCandlePer.Name = "txtMinTotalCandlePer"
+        Me.txtMinTotalCandlePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinTotalCandlePer.TabIndex = 2
+        Me.txtMinTotalCandlePer.Tag = "Min Total Candle %"
         '
-        'lblMinVolumePer
+        'lblMinTotalCandlePer
         '
-        Me.lblMinVolumePer.AutoSize = True
-        Me.lblMinVolumePer.Location = New System.Drawing.Point(8, 137)
-        Me.lblMinVolumePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinVolumePer.Name = "lblMinVolumePer"
-        Me.lblMinVolumePer.Size = New System.Drawing.Size(97, 17)
-        Me.lblMinVolumePer.TabIndex = 61
-        Me.lblMinVolumePer.Text = "Min Volume %"
+        Me.lblMinTotalCandlePer.AutoSize = True
+        Me.lblMinTotalCandlePer.Location = New System.Drawing.Point(8, 127)
+        Me.lblMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinTotalCandlePer.Name = "lblMinTotalCandlePer"
+        Me.lblMinTotalCandlePer.Size = New System.Drawing.Size(130, 17)
+        Me.lblMinTotalCandlePer.TabIndex = 65
+        Me.lblMinTotalCandlePer.Text = "Min Total Candle %"
         '
-        'dtpckrLastEntryTime
+        'txtMinNonBlankCandlePer
         '
-        Me.dtpckrLastEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrLastEntryTime.Location = New System.Drawing.Point(147, 100)
-        Me.dtpckrLastEntryTime.Name = "dtpckrLastEntryTime"
-        Me.dtpckrLastEntryTime.ShowUpDown = True
-        Me.dtpckrLastEntryTime.Size = New System.Drawing.Size(201, 22)
-        Me.dtpckrLastEntryTime.TabIndex = 12
-        Me.dtpckrLastEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        Me.txtMinNonBlankCandlePer.Location = New System.Drawing.Point(216, 89)
+        Me.txtMinNonBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinNonBlankCandlePer.Name = "txtMinNonBlankCandlePer"
+        Me.txtMinNonBlankCandlePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinNonBlankCandlePer.TabIndex = 1
+        Me.txtMinNonBlankCandlePer.Tag = "Min Non-Blank Candle %"
         '
-        'lblLastEntryTime
+        'lblMinNonBlankCandlePer
         '
-        Me.lblLastEntryTime.AutoSize = True
-        Me.lblLastEntryTime.Location = New System.Drawing.Point(8, 103)
-        Me.lblLastEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblLastEntryTime.Name = "lblLastEntryTime"
-        Me.lblLastEntryTime.Size = New System.Drawing.Size(107, 17)
-        Me.lblLastEntryTime.TabIndex = 41
-        Me.lblLastEntryTime.Text = "Last Entry Time"
+        Me.lblMinNonBlankCandlePer.AutoSize = True
+        Me.lblMinNonBlankCandlePer.Location = New System.Drawing.Point(8, 92)
+        Me.lblMinNonBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinNonBlankCandlePer.Name = "lblMinNonBlankCandlePer"
+        Me.lblMinNonBlankCandlePer.Size = New System.Drawing.Size(164, 17)
+        Me.lblMinNonBlankCandlePer.TabIndex = 63
+        Me.lblMinNonBlankCandlePer.Text = "Min Non-Blank Candle %"
         '
         'txtStockList
         '
-        Me.txtStockList.Location = New System.Drawing.Point(147, 24)
+        Me.txtStockList.Location = New System.Drawing.Point(216, 24)
         Me.txtStockList.Margin = New System.Windows.Forms.Padding(4)
         Me.txtStockList.Multiline = True
         Me.txtStockList.Name = "txtStockList"
-        Me.txtStockList.Size = New System.Drawing.Size(201, 63)
-        Me.txtStockList.TabIndex = 11
+        Me.txtStockList.Size = New System.Drawing.Size(201, 49)
+        Me.txtStockList.TabIndex = 0
         Me.txtStockList.Tag = "Stock List"
         Me.toolTipStockList.SetToolTip(Me.txtStockList, "Add core stock name seperated by comma. Options stocks will be selected automatic" &
         "ally from core stock name.")
@@ -200,7 +207,7 @@ Partial Class frmNFOSettings
         Me.txtSignalTimeFrame.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSignalTimeFrame.Name = "txtSignalTimeFrame"
         Me.txtSignalTimeFrame.Size = New System.Drawing.Size(242, 22)
-        Me.txtSignalTimeFrame.TabIndex = 1
+        Me.txtSignalTimeFrame.TabIndex = 0
         Me.txtSignalTimeFrame.Tag = "Signal Time Frame"
         '
         'lblTradeStartTime
@@ -240,7 +247,7 @@ Partial Class frmNFOSettings
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 2
+        Me.dtpckrTradeStartTime.TabIndex = 1
         Me.dtpckrTradeStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrLastTradeEntryTime
@@ -250,7 +257,7 @@ Partial Class frmNFOSettings
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 3
+        Me.dtpckrLastTradeEntryTime.TabIndex = 2
         Me.dtpckrLastTradeEntryTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'dtpckrEODExitTime
@@ -260,13 +267,13 @@ Partial Class frmNFOSettings
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(242, 22)
-        Me.dtpckrEODExitTime.TabIndex = 4
+        Me.dtpckrEODExitTime.TabIndex = 3
         Me.dtpckrEODExitTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblMaxProfitPerStock
         '
         Me.lblMaxProfitPerStock.AutoSize = True
-        Me.lblMaxProfitPerStock.Location = New System.Drawing.Point(9, 265)
+        Me.lblMaxProfitPerStock.Location = New System.Drawing.Point(9, 232)
         Me.lblMaxProfitPerStock.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxProfitPerStock.Name = "lblMaxProfitPerStock"
         Me.lblMaxProfitPerStock.Size = New System.Drawing.Size(135, 17)
@@ -275,75 +282,53 @@ Partial Class frmNFOSettings
         '
         'txtMaxProfitPerStock
         '
-        Me.txtMaxProfitPerStock.Location = New System.Drawing.Point(285, 262)
+        Me.txtMaxProfitPerStock.Location = New System.Drawing.Point(285, 229)
         Me.txtMaxProfitPerStock.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxProfitPerStock.Name = "txtMaxProfitPerStock"
         Me.txtMaxProfitPerStock.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxProfitPerStock.TabIndex = 8
+        Me.txtMaxProfitPerStock.TabIndex = 6
         Me.txtMaxProfitPerStock.Tag = "Max Profit Per Stock"
         '
-        'GroupBox1
+        'grpSignal
         '
-        Me.GroupBox1.Controls.Add(Me.txtMaxStrikeRangePer)
-        Me.GroupBox1.Controls.Add(Me.lblMaxStrikeRangePer)
-        Me.GroupBox1.Controls.Add(Me.txtMaxFractalDiffPer)
-        Me.GroupBox1.Controls.Add(Me.lblMaxFractalDiffPer)
-        Me.GroupBox1.Controls.Add(Me.txtMinTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.lblMinTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.txtMaxTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.lblMaxTurnoverPerTrade)
-        Me.GroupBox1.Controls.Add(Me.txtNumberOfStockToTrade)
-        Me.GroupBox1.Controls.Add(Me.lblNumberOfStockToTrade)
-        Me.GroupBox1.Controls.Add(Me.txtMaxProfitPerStock)
-        Me.GroupBox1.Controls.Add(Me.lblMaxProfitPerStock)
-        Me.GroupBox1.Controls.Add(Me.dtpckrEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.dtpckrTradeStartTime)
-        Me.GroupBox1.Controls.Add(Me.lblEODExitTime)
-        Me.GroupBox1.Controls.Add(Me.lblLastTradeEntryTime)
-        Me.GroupBox1.Controls.Add(Me.lblTradeStartTime)
-        Me.GroupBox1.Controls.Add(Me.txtSignalTimeFrame)
-        Me.GroupBox1.Controls.Add(Me.lblSignalTimeFrame)
-        Me.GroupBox1.Location = New System.Drawing.Point(5, -2)
-        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(539, 362)
-        Me.GroupBox1.TabIndex = 44
-        Me.GroupBox1.TabStop = False
-        '
-        'txtMaxStrikeRangePer
-        '
-        Me.txtMaxStrikeRangePer.Location = New System.Drawing.Point(285, 330)
-        Me.txtMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxStrikeRangePer.Name = "txtMaxStrikeRangePer"
-        Me.txtMaxStrikeRangePer.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxStrikeRangePer.TabIndex = 10
-        Me.txtMaxStrikeRangePer.Tag = "Max Strike Range %"
-        '
-        'lblMaxStrikeRangePer
-        '
-        Me.lblMaxStrikeRangePer.AutoSize = True
-        Me.lblMaxStrikeRangePer.Location = New System.Drawing.Point(9, 333)
-        Me.lblMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxStrikeRangePer.Name = "lblMaxStrikeRangePer"
-        Me.lblMaxStrikeRangePer.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxStrikeRangePer.TabIndex = 63
-        Me.lblMaxStrikeRangePer.Text = "Max Strike Range %"
+        Me.grpSignal.Controls.Add(Me.txtMaxFractalDiffPer)
+        Me.grpSignal.Controls.Add(Me.lblMaxFractalDiffPer)
+        Me.grpSignal.Controls.Add(Me.txtMinTurnoverPerTrade)
+        Me.grpSignal.Controls.Add(Me.lblMinTurnoverPerTrade)
+        Me.grpSignal.Controls.Add(Me.txtMaxTurnoverPerTrade)
+        Me.grpSignal.Controls.Add(Me.lblMaxTurnoverPerTrade)
+        Me.grpSignal.Controls.Add(Me.txtMaxProfitPerStock)
+        Me.grpSignal.Controls.Add(Me.lblMaxProfitPerStock)
+        Me.grpSignal.Controls.Add(Me.dtpckrEODExitTime)
+        Me.grpSignal.Controls.Add(Me.dtpckrLastTradeEntryTime)
+        Me.grpSignal.Controls.Add(Me.dtpckrTradeStartTime)
+        Me.grpSignal.Controls.Add(Me.lblEODExitTime)
+        Me.grpSignal.Controls.Add(Me.lblLastTradeEntryTime)
+        Me.grpSignal.Controls.Add(Me.lblTradeStartTime)
+        Me.grpSignal.Controls.Add(Me.txtSignalTimeFrame)
+        Me.grpSignal.Controls.Add(Me.lblSignalTimeFrame)
+        Me.grpSignal.Location = New System.Drawing.Point(5, -2)
+        Me.grpSignal.Margin = New System.Windows.Forms.Padding(4)
+        Me.grpSignal.Name = "grpSignal"
+        Me.grpSignal.Padding = New System.Windows.Forms.Padding(4)
+        Me.grpSignal.Size = New System.Drawing.Size(539, 298)
+        Me.grpSignal.TabIndex = 1
+        Me.grpSignal.TabStop = False
+        Me.grpSignal.Text = "Signal Settings"
         '
         'txtMaxFractalDiffPer
         '
-        Me.txtMaxFractalDiffPer.Location = New System.Drawing.Point(285, 295)
+        Me.txtMaxFractalDiffPer.Location = New System.Drawing.Point(285, 263)
         Me.txtMaxFractalDiffPer.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxFractalDiffPer.Name = "txtMaxFractalDiffPer"
         Me.txtMaxFractalDiffPer.Size = New System.Drawing.Size(243, 22)
-        Me.txtMaxFractalDiffPer.TabIndex = 9
+        Me.txtMaxFractalDiffPer.TabIndex = 7
         Me.txtMaxFractalDiffPer.Tag = "Max Fractal Difference %"
         '
         'lblMaxFractalDiffPer
         '
         Me.lblMaxFractalDiffPer.AutoSize = True
-        Me.lblMaxFractalDiffPer.Location = New System.Drawing.Point(9, 298)
+        Me.lblMaxFractalDiffPer.Location = New System.Drawing.Point(9, 266)
         Me.lblMaxFractalDiffPer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxFractalDiffPer.Name = "lblMaxFractalDiffPer"
         Me.lblMaxFractalDiffPer.Size = New System.Drawing.Size(165, 17)
@@ -352,17 +337,17 @@ Partial Class frmNFOSettings
         '
         'txtMinTurnoverPerTrade
         '
-        Me.txtMinTurnoverPerTrade.Location = New System.Drawing.Point(285, 194)
+        Me.txtMinTurnoverPerTrade.Location = New System.Drawing.Point(285, 159)
         Me.txtMinTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinTurnoverPerTrade.Name = "txtMinTurnoverPerTrade"
         Me.txtMinTurnoverPerTrade.Size = New System.Drawing.Size(242, 22)
-        Me.txtMinTurnoverPerTrade.TabIndex = 6
+        Me.txtMinTurnoverPerTrade.TabIndex = 4
         Me.txtMinTurnoverPerTrade.Tag = "Min Turnover Per Trade"
         '
         'lblMinTurnoverPerTrade
         '
         Me.lblMinTurnoverPerTrade.AutoSize = True
-        Me.lblMinTurnoverPerTrade.Location = New System.Drawing.Point(8, 197)
+        Me.lblMinTurnoverPerTrade.Location = New System.Drawing.Point(8, 162)
         Me.lblMinTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMinTurnoverPerTrade.Name = "lblMinTurnoverPerTrade"
         Me.lblMinTurnoverPerTrade.Size = New System.Drawing.Size(160, 17)
@@ -371,68 +356,177 @@ Partial Class frmNFOSettings
         '
         'txtMaxTurnoverPerTrade
         '
-        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(285, 228)
+        Me.txtMaxTurnoverPerTrade.Location = New System.Drawing.Point(285, 193)
         Me.txtMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMaxTurnoverPerTrade.Name = "txtMaxTurnoverPerTrade"
         Me.txtMaxTurnoverPerTrade.Size = New System.Drawing.Size(242, 22)
-        Me.txtMaxTurnoverPerTrade.TabIndex = 7
+        Me.txtMaxTurnoverPerTrade.TabIndex = 5
         Me.txtMaxTurnoverPerTrade.Tag = "Max Turnover Per Trade"
         '
         'lblMaxTurnoverPerTrade
         '
         Me.lblMaxTurnoverPerTrade.AutoSize = True
-        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(8, 231)
+        Me.lblMaxTurnoverPerTrade.Location = New System.Drawing.Point(8, 196)
         Me.lblMaxTurnoverPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMaxTurnoverPerTrade.Name = "lblMaxTurnoverPerTrade"
         Me.lblMaxTurnoverPerTrade.Size = New System.Drawing.Size(163, 17)
         Me.lblMaxTurnoverPerTrade.TabIndex = 57
         Me.lblMaxTurnoverPerTrade.Text = "Max Turnover Per Trade"
         '
-        'txtNumberOfStockToTrade
+        'grpStockSelection
         '
-        Me.txtNumberOfStockToTrade.Location = New System.Drawing.Point(285, 160)
-        Me.txtNumberOfStockToTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtNumberOfStockToTrade.Name = "txtNumberOfStockToTrade"
-        Me.txtNumberOfStockToTrade.Size = New System.Drawing.Size(242, 22)
-        Me.txtNumberOfStockToTrade.TabIndex = 5
-        Me.txtNumberOfStockToTrade.Tag = "Number Of Stock To Trade"
+        Me.grpStockSelection.Controls.Add(Me.txtMinVolumePerTillSignalTime)
+        Me.grpStockSelection.Controls.Add(Me.lblMinVolumePerTillSignalTime)
+        Me.grpStockSelection.Controls.Add(Me.txtMaxStrikeRangePer)
+        Me.grpStockSelection.Controls.Add(Me.lblMaxStrikeRangePer)
+        Me.grpStockSelection.Controls.Add(Me.dtpckrLastOptionCheckTime)
+        Me.grpStockSelection.Controls.Add(Me.lblLastEntryTime)
+        Me.grpStockSelection.Location = New System.Drawing.Point(551, 198)
+        Me.grpStockSelection.Name = "grpStockSelection"
+        Me.grpStockSelection.Size = New System.Drawing.Size(425, 128)
+        Me.grpStockSelection.TabIndex = 3
+        Me.grpStockSelection.TabStop = False
+        Me.grpStockSelection.Text = "Option Selection Settings"
         '
-        'lblNumberOfStockToTrade
+        'txtMinVolumePerTillSignalTime
         '
-        Me.lblNumberOfStockToTrade.AutoSize = True
-        Me.lblNumberOfStockToTrade.Location = New System.Drawing.Point(8, 163)
-        Me.lblNumberOfStockToTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblNumberOfStockToTrade.Name = "lblNumberOfStockToTrade"
-        Me.lblNumberOfStockToTrade.Size = New System.Drawing.Size(179, 17)
-        Me.lblNumberOfStockToTrade.TabIndex = 48
-        Me.lblNumberOfStockToTrade.Text = "Number Of Stock To Trade"
+        Me.txtMinVolumePerTillSignalTime.Location = New System.Drawing.Point(216, 89)
+        Me.txtMinVolumePerTillSignalTime.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinVolumePerTillSignalTime.Name = "txtMinVolumePerTillSignalTime"
+        Me.txtMinVolumePerTillSignalTime.Size = New System.Drawing.Size(201, 22)
+        Me.txtMinVolumePerTillSignalTime.TabIndex = 2
+        Me.txtMinVolumePerTillSignalTime.Tag = "Min Volume % Till Signal Time"
         '
-        'txtMinTotalCandlePer
+        'lblMinVolumePerTillSignalTime
         '
-        Me.txtMinTotalCandlePer.Location = New System.Drawing.Point(147, 204)
-        Me.txtMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMinTotalCandlePer.Name = "txtMinTotalCandlePer"
-        Me.txtMinTotalCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinTotalCandlePer.TabIndex = 15
-        Me.txtMinTotalCandlePer.Tag = "Min Total Candle %"
+        Me.lblMinVolumePerTillSignalTime.AutoSize = True
+        Me.lblMinVolumePerTillSignalTime.Location = New System.Drawing.Point(8, 94)
+        Me.lblMinVolumePerTillSignalTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinVolumePerTillSignalTime.Name = "lblMinVolumePerTillSignalTime"
+        Me.lblMinVolumePerTillSignalTime.Size = New System.Drawing.Size(197, 17)
+        Me.lblMinVolumePerTillSignalTime.TabIndex = 71
+        Me.lblMinVolumePerTillSignalTime.Text = "Min Volume % Till Signal Time"
         '
-        'lblMinTotalCandlePer
+        'txtMaxStrikeRangePer
         '
-        Me.lblMinTotalCandlePer.AutoSize = True
-        Me.lblMinTotalCandlePer.Location = New System.Drawing.Point(8, 207)
-        Me.lblMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinTotalCandlePer.Name = "lblMinTotalCandlePer"
-        Me.lblMinTotalCandlePer.Size = New System.Drawing.Size(130, 17)
-        Me.lblMinTotalCandlePer.TabIndex = 65
-        Me.lblMinTotalCandlePer.Text = "Min Total Candle %"
+        Me.txtMaxStrikeRangePer.Location = New System.Drawing.Point(216, 56)
+        Me.txtMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxStrikeRangePer.Name = "txtMaxStrikeRangePer"
+        Me.txtMaxStrikeRangePer.Size = New System.Drawing.Size(201, 22)
+        Me.txtMaxStrikeRangePer.TabIndex = 1
+        Me.txtMaxStrikeRangePer.Tag = "Max Strike Range %"
+        '
+        'lblMaxStrikeRangePer
+        '
+        Me.lblMaxStrikeRangePer.AutoSize = True
+        Me.lblMaxStrikeRangePer.Location = New System.Drawing.Point(8, 61)
+        Me.lblMaxStrikeRangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxStrikeRangePer.Name = "lblMaxStrikeRangePer"
+        Me.lblMaxStrikeRangePer.Size = New System.Drawing.Size(135, 17)
+        Me.lblMaxStrikeRangePer.TabIndex = 70
+        Me.lblMaxStrikeRangePer.Text = "Max Strike Range %"
+        '
+        'dtpckrLastOptionCheckTime
+        '
+        Me.dtpckrLastOptionCheckTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrLastOptionCheckTime.Location = New System.Drawing.Point(216, 21)
+        Me.dtpckrLastOptionCheckTime.Name = "dtpckrLastOptionCheckTime"
+        Me.dtpckrLastOptionCheckTime.ShowUpDown = True
+        Me.dtpckrLastOptionCheckTime.Size = New System.Drawing.Size(201, 22)
+        Me.dtpckrLastOptionCheckTime.TabIndex = 0
+        Me.dtpckrLastOptionCheckTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
+        '
+        'lblLastEntryTime
+        '
+        Me.lblLastEntryTime.AutoSize = True
+        Me.lblLastEntryTime.Location = New System.Drawing.Point(8, 26)
+        Me.lblLastEntryTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblLastEntryTime.Name = "lblLastEntryTime"
+        Me.lblLastEntryTime.Size = New System.Drawing.Size(159, 17)
+        Me.lblLastEntryTime.TabIndex = 69
+        Me.lblLastEntryTime.Text = "Last Option Check Time"
+        '
+        'grpTelegram
+        '
+        Me.grpTelegram.Controls.Add(Me.txtTelegramInfoChatID)
+        Me.grpTelegram.Controls.Add(Me.lblTelegramInfoChatID)
+        Me.grpTelegram.Controls.Add(Me.txtTelegramBotAPIKey)
+        Me.grpTelegram.Controls.Add(Me.lblTelegramBotAPIKey)
+        Me.grpTelegram.Controls.Add(Me.txtTelegramDebugChatID)
+        Me.grpTelegram.Controls.Add(Me.lblTelegramDebugChatID)
+        Me.grpTelegram.Location = New System.Drawing.Point(5, 297)
+        Me.grpTelegram.Name = "grpTelegram"
+        Me.grpTelegram.Size = New System.Drawing.Size(539, 124)
+        Me.grpTelegram.TabIndex = 4
+        Me.grpTelegram.TabStop = False
+        Me.grpTelegram.Text = "Telegram Settings"
+        '
+        'txtTelegramInfoChatID
+        '
+        Me.txtTelegramInfoChatID.Location = New System.Drawing.Point(286, 92)
+        Me.txtTelegramInfoChatID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTelegramInfoChatID.Name = "txtTelegramInfoChatID"
+        Me.txtTelegramInfoChatID.Size = New System.Drawing.Size(243, 22)
+        Me.txtTelegramInfoChatID.TabIndex = 2
+        Me.txtTelegramInfoChatID.Tag = "Telegram Info Chat ID"
+        '
+        'lblTelegramInfoChatID
+        '
+        Me.lblTelegramInfoChatID.AutoSize = True
+        Me.lblTelegramInfoChatID.Location = New System.Drawing.Point(10, 95)
+        Me.lblTelegramInfoChatID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTelegramInfoChatID.Name = "lblTelegramInfoChatID"
+        Me.lblTelegramInfoChatID.Size = New System.Drawing.Size(145, 17)
+        Me.lblTelegramInfoChatID.TabIndex = 67
+        Me.lblTelegramInfoChatID.Text = "Telegram Info Chat ID"
+        '
+        'txtTelegramBotAPIKey
+        '
+        Me.txtTelegramBotAPIKey.Location = New System.Drawing.Point(286, 25)
+        Me.txtTelegramBotAPIKey.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTelegramBotAPIKey.Name = "txtTelegramBotAPIKey"
+        Me.txtTelegramBotAPIKey.Size = New System.Drawing.Size(242, 22)
+        Me.txtTelegramBotAPIKey.TabIndex = 0
+        Me.txtTelegramBotAPIKey.Tag = "Telegram Bot API Key"
+        '
+        'lblTelegramBotAPIKey
+        '
+        Me.lblTelegramBotAPIKey.AutoSize = True
+        Me.lblTelegramBotAPIKey.Location = New System.Drawing.Point(9, 28)
+        Me.lblTelegramBotAPIKey.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTelegramBotAPIKey.Name = "lblTelegramBotAPIKey"
+        Me.lblTelegramBotAPIKey.Size = New System.Drawing.Size(146, 17)
+        Me.lblTelegramBotAPIKey.TabIndex = 66
+        Me.lblTelegramBotAPIKey.Text = "Telegram Bot API Key"
+        '
+        'txtTelegramDebugChatID
+        '
+        Me.txtTelegramDebugChatID.Location = New System.Drawing.Point(286, 59)
+        Me.txtTelegramDebugChatID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTelegramDebugChatID.Name = "txtTelegramDebugChatID"
+        Me.txtTelegramDebugChatID.Size = New System.Drawing.Size(243, 22)
+        Me.txtTelegramDebugChatID.TabIndex = 1
+        Me.txtTelegramDebugChatID.Tag = "Telegram Debug Chat ID"
+        '
+        'lblTelegramDebugChatID
+        '
+        Me.lblTelegramDebugChatID.AutoSize = True
+        Me.lblTelegramDebugChatID.Location = New System.Drawing.Point(10, 62)
+        Me.lblTelegramDebugChatID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTelegramDebugChatID.Name = "lblTelegramDebugChatID"
+        Me.lblTelegramDebugChatID.Size = New System.Drawing.Size(164, 17)
+        Me.lblTelegramDebugChatID.TabIndex = 65
+        Me.lblTelegramDebugChatID.Text = "Telegram Debug Chat ID"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(913, 367)
-        Me.Controls.Add(Me.GroupBox1)
+        Me.ClientSize = New System.Drawing.Size(978, 426)
+        Me.Controls.Add(Me.grpTelegram)
         Me.Controls.Add(Me.grpStockSelection)
+        Me.Controls.Add(Me.grpSignal)
+        Me.Controls.Add(Me.grpStockFilter)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Margin = New System.Windows.Forms.Padding(4)
@@ -440,18 +534,22 @@ Partial Class frmNFOSettings
         Me.MinimizeBox = False
         Me.Name = "frmNFOSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "NFO Settings"
+        Me.Text = "Adaptive Martingale Strategy - Settings"
+        Me.grpStockFilter.ResumeLayout(False)
+        Me.grpStockFilter.PerformLayout()
+        Me.grpSignal.ResumeLayout(False)
+        Me.grpSignal.PerformLayout()
         Me.grpStockSelection.ResumeLayout(False)
         Me.grpStockSelection.PerformLayout()
-        Me.GroupBox1.ResumeLayout(False)
-        Me.GroupBox1.PerformLayout()
+        Me.grpTelegram.ResumeLayout(False)
+        Me.grpTelegram.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
 
     Friend WithEvents btnSave As Button
     Friend WithEvents ImageList1 As ImageList
-    Friend WithEvents grpStockSelection As GroupBox
+    Friend WithEvents grpStockFilter As GroupBox
     Friend WithEvents lblSignalTimeFrame As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblTradeStartTime As Label
@@ -462,26 +560,34 @@ Partial Class frmNFOSettings
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents lblMaxProfitPerStock As Label
     Friend WithEvents txtMaxProfitPerStock As TextBox
-    Friend WithEvents GroupBox1 As GroupBox
-    Friend WithEvents txtNumberOfStockToTrade As TextBox
-    Friend WithEvents lblNumberOfStockToTrade As Label
+    Friend WithEvents grpSignal As GroupBox
     Friend WithEvents txtMaxTurnoverPerTrade As TextBox
     Friend WithEvents lblMaxTurnoverPerTrade As Label
     Friend WithEvents txtStockList As TextBox
     Friend WithEvents lblStockList As Label
     Friend WithEvents toolTipStockList As ToolTip
-    Friend WithEvents dtpckrLastEntryTime As DateTimePicker
-    Friend WithEvents lblLastEntryTime As Label
-    Friend WithEvents txtMinVolumePer As TextBox
-    Friend WithEvents lblMinVolumePer As Label
     Friend WithEvents txtMaxFractalDiffPer As TextBox
     Friend WithEvents lblMaxFractalDiffPer As Label
     Friend WithEvents txtMinTurnoverPerTrade As TextBox
     Friend WithEvents lblMinTurnoverPerTrade As Label
-    Friend WithEvents txtMaxStrikeRangePer As TextBox
-    Friend WithEvents lblMaxStrikeRangePer As Label
-    Friend WithEvents txtMaxBlankCandlePer As TextBox
-    Friend WithEvents lblMaxBlankCandlePer As Label
+    Friend WithEvents txtMinNonBlankCandlePer As TextBox
+    Friend WithEvents lblMinNonBlankCandlePer As Label
     Friend WithEvents txtMinTotalCandlePer As TextBox
     Friend WithEvents lblMinTotalCandlePer As Label
+    Friend WithEvents txtMinEODTurnoverPercentage As TextBox
+    Friend WithEvents lblEODTurnoverPercentage As Label
+    Friend WithEvents grpStockSelection As GroupBox
+    Friend WithEvents txtMinVolumePerTillSignalTime As TextBox
+    Friend WithEvents lblMinVolumePerTillSignalTime As Label
+    Friend WithEvents txtMaxStrikeRangePer As TextBox
+    Friend WithEvents lblMaxStrikeRangePer As Label
+    Friend WithEvents dtpckrLastOptionCheckTime As DateTimePicker
+    Friend WithEvents lblLastEntryTime As Label
+    Friend WithEvents grpTelegram As GroupBox
+    Friend WithEvents txtTelegramInfoChatID As TextBox
+    Friend WithEvents lblTelegramInfoChatID As Label
+    Friend WithEvents txtTelegramBotAPIKey As TextBox
+    Friend WithEvents lblTelegramBotAPIKey As Label
+    Friend WithEvents txtTelegramDebugChatID As TextBox
+    Friend WithEvents lblTelegramDebugChatID As Label
 End Class

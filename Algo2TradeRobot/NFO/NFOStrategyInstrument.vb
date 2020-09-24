@@ -238,7 +238,7 @@ Public Class NFOStrategyInstrument
                                         Dim satisfiedStrategyInstruments As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
                                                                                                                                                     Return x.SelectionData.Turnover <> Decimal.MinValue AndAlso
                                                                                                                                                     x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
-                                                                                                                                                    x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentage AndAlso
+                                                                                                                                                    x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentageTillSignalTime AndAlso
                                                                                                                                                     x.StrikePrice <> Decimal.MinValue AndAlso
                                                                                                                                                     Math.Abs(x.StrikePrice - spotPrice) <= spotPrice * userSettings.MaxStrikeRangePercentage / 100
                                                                                                                                                 End Function)
@@ -305,7 +305,7 @@ Public Class NFOStrategyInstrument
         Dim fractalData As FractalConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyFractalConsumer)
         Dim xMinutePayloadConsumer As PayloadToChartConsumer = RawPayloadDependentConsumers.FirstOrDefault
         If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing AndAlso
-            runningCandle.SnapshotDateTime >= userSettings.TradeStartTime AndAlso runningCandle.SnapshotDateTime <= userSettings.LastEntryTime AndAlso
+            runningCandle.SnapshotDateTime >= userSettings.TradeStartTime AndAlso runningCandle.SnapshotDateTime <= userSettings.LastOptionCheckTime AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.Count > 0 Then
             If runningCandle.PreviousPayload.SnapshotDateTime.Date = Now.Date AndAlso fractalData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
                 Dim fractalTurnoverSatisfied As Tuple(Of Boolean, String) = IsFratalAndTurnoverSatisfied(fractalData, runningCandle, "From 'Controller'")

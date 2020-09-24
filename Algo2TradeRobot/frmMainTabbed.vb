@@ -458,7 +458,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments"))
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments : {0}", _nfoTradableInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 

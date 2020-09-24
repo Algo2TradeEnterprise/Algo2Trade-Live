@@ -119,68 +119,92 @@ Public Class NFOFillInstrumentDetails
 
                                     _cts.Token.ThrowIfCancellationRequested()
                                     If volumeCheckContracts IsNot Nothing AndAlso volumeCheckContracts.Count > 0 Then
-                                        Dim optionContracts As List(Of IInstrument) = New List(Of IInstrument)
+                                        Dim messageLog As Dictionary(Of String, String) = New Dictionary(Of String, String)
+                                        Dim primarySelectedOptionData As Dictionary(Of String, Double) = New Dictionary(Of String, Double)
                                         For Each runningContract In volumeCheckContracts
                                             _cts.Token.ThrowIfCancellationRequested()
-                                            Dim message As String = Nothing
-                                            Dim optionPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.Intraday)
-                                            If optionPayload IsNot Nothing AndAlso optionPayload.Count > 0 Then
-                                                Dim numberOfBlankCandle As Integer = optionPayload.Where(Function(x)
-                                                                                                             Return x.Key.Date = lastTradingDay.Date AndAlso
-                                                                                                             (x.Value.Volume.Value = 0 OrElse
-                                                                                                             x.Value.HighPrice.Value = x.Value.LowPrice.Value)
-                                                                                                         End Function).Count
-                                                Dim totalCount As Integer = optionPayload.Where(Function(x)
-                                                                                                    Return x.Key.Date = lastTradingDay.Date
-                                                                                                End Function).Count
+                                            Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
+                                            If currentOptionContract IsNot Nothing Then
+                                                Dim message As String = Nothing
+                                                Dim optionIntradayPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.Intraday)
+                                                If optionIntradayPayload IsNot Nothing AndAlso optionIntradayPayload.Count > 0 Then
+                                                    Dim numberOfBlankCandle As Integer = optionIntradayPayload.Where(Function(x)
+                                                                                                                         Return x.Key.Date = lastTradingDay.Date AndAlso
+                                                                                                                 (x.Value.Volume.Value = 0 OrElse
+                                                                                                                 x.Value.HighPrice.Value = x.Value.LowPrice.Value)
+                                                                                                                     End Function).Count
+                                                    Dim totalCount As Integer = optionIntradayPayload.Where(Function(x)
+                                                                                                                Return x.Key.Date = lastTradingDay.Date
+                                                                                                            End Function).Count
 
-                                                Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
-                                                Dim totalCandlePer As Decimal = (totalCount / 375) * 100
-                                                message = String.Format("{0}: Total Candle = {1}, Blank Candle = {2}, Total Candle% = {3}, Blank Candle% = {4}. [INFO2]. Selected #[INFO3]",
-                                                                        "[INFO1]",
-                                                                        totalCount,
-                                                                        numberOfBlankCandle,
-                                                                        Math.Round(totalCandlePer, 4),
-                                                                        Math.Round(blankCandlePer, 4))
+                                                    Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
+                                                    Dim nonBlankCandlePer As Decimal = 100 - blankCandlePer
+                                                    Dim totalCandlePer As Decimal = (totalCount / 375) * 100
+                                                    message = String.Format("{0}: Total Candle = {1}, Non-Blank Candle = {2}, Total Candle% = {3}, Non-Blank Candle% = {4}.",
+                                                                            currentOptionContract.TradingSymbol,
+                                                                            totalCount,
+                                                                            375 - numberOfBlankCandle,
+                                                                            Math.Round(totalCandlePer, 4),
+                                                                            Math.Round(nonBlankCandlePer, 4))
 
-                                                If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
-                                                    blankCandlePer <= _userInputs.MaxBlankCandlePercentage Then
-                                                    If Now.DayOfWeek = DayOfWeek.Thursday Then
-                                                        Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
-                                                        If currentOptionContract IsNot Nothing Then
-                                                            optionContracts.Add(currentOptionContract)
-                                                            message = message.Replace("[INFO1]", currentOptionContract.TradingSymbol)
-                                                        Else
-                                                            Throw New ApplicationException(String.Format("Unable to find current option contract for {0}", runningContract.TradingSymbol))
+                                                    If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
+                                                        nonBlankCandlePer >= _userInputs.MinNonBlankCandlePercentage Then
+                                                        Dim optionEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.EOD)
+                                                        If optionEODPayload IsNot Nothing AndAlso optionEODPayload.ContainsKey(lastTradingDay) Then
+                                                            primarySelectedOptionData.Add(currentOptionContract.InstrumentIdentifier, optionEODPayload(lastTradingDay).Volume.Value * optionEODPayload(lastTradingDay).ClosePrice.Value)
                                                         End If
                                                     Else
-                                                        optionContracts.Add(runningContract)
-                                                        message = message.Replace("[INFO1]", runningContract.TradingSymbol)
+                                                        message = String.Format("{0}{1}#NOT_SELECTED..", message, vbNewLine)
                                                     End If
-                                                    message = message.Replace("[INFO2]", "SELECTED")
                                                 Else
-                                                    message = message.Replace("[INFO1]", runningContract.TradingSymbol)
-                                                    message = message.Replace("[INFO2]", "NOT SELECTED")
+                                                    message = String.Format("{0}: No historical candle found.{1}#NOT_SELECTED..",
+                                                                            currentOptionContract.TradingSymbol, vbNewLine)
                                                 End If
 
-                                                message = message.Replace("[INFO3]", String.Format("{0}/{1}", optionContracts.Count, volumeCheckContracts.Count))
+                                                messageLog.Add(currentOptionContract.InstrumentIdentifier, message)
                                             Else
-                                                message = String.Format("{0}: No historical candle found. NOT SELECTED. Selected #{1}/{2}",
-                                                                        runningContract.TradingSymbol, optionContracts.Count, volumeCheckContracts.Count)
+                                                If Not MessageBox.Show(String.Format("Unable to find current option contract for {0}{1}Do you want to procced ?", runningContract.TradingSymbol, vbNewLine), "Adaptive Martingale", MessageBoxButtons.YesNo, MessageBoxIcon.Error) = DialogResult.Yes Then
+                                                    Throw New ApplicationException(String.Format("Unable to find current option contract for {0}", runningContract.TradingSymbol))
+                                                End If
                                             End If
-
-                                            OnHeartbeatSpecial(message)
-                                            Await SendTelegramMessageAsync(message).ConfigureAwait(False)
                                         Next
-
-
-                                        _cts.Token.ThrowIfCancellationRequested()
-                                        If optionContracts IsNot Nothing AndAlso optionContracts.Count > 0 Then
-                                            For Each runningIntrument In optionContracts
+                                        If primarySelectedOptionData IsNot Nothing AndAlso primarySelectedOptionData.Count > 0 Then
+                                            Dim avgTurnover As Double = primarySelectedOptionData.Values.Average
+                                            For Each runningContract In primarySelectedOptionData
                                                 _cts.Token.ThrowIfCancellationRequested()
-                                                If ret Is Nothing Then ret = New List(Of IInstrument)
-                                                ret.Add(runningIntrument)
+                                                Dim message As String = messageLog(runningContract.Key)
+                                                Dim turnoverPer As Double = Math.Round(runningContract.Value * 100 / avgTurnover, 4)
+                                                If turnoverPer >= _userInputs.MinEODTurnoverPercentage Then
+                                                    message = String.Format("{0} EOD Turnover% = {1}.{2}#SELECTED..", message, turnoverPer, vbNewLine)
+                                                    Dim currentInstrument As IInstrument = currentContracts.ToList.Find(Function(x)
+                                                                                                                            Return x.InstrumentIdentifier = runningContract.Key
+                                                                                                                        End Function)
+                                                    If currentInstrument IsNot Nothing Then
+                                                        If ret Is Nothing Then ret = New List(Of IInstrument)
+                                                        ret.Add(currentInstrument)
+                                                    End If
+                                                Else
+                                                    message = String.Format("{0} EOD Turnover% = {1}.{2}#NOT_SELECTED..", message, turnoverPer, vbNewLine)
+                                                End If
+                                                messageLog(runningContract.Key) = message
                                             Next
+                                            If ret IsNot Nothing AndAlso ret.Count > 0 Then
+                                                Dim counter As Integer = 0
+                                                For Each runningMessage In messageLog
+                                                    Dim contractAvailable As IInstrument = ret.Find(Function(x)
+                                                                                                        Return x.InstrumentIdentifier = runningMessage.Key
+                                                                                                    End Function)
+                                                    If contractAvailable IsNot Nothing Then
+                                                        counter += 1
+                                                    End If
+
+                                                    Dim message As String = runningMessage.Value
+                                                    message = String.Format("{0} Selected Instrument Count: {1}/{2}", message, counter, messageLog.Count)
+
+                                                    OnHeartbeatSpecial(message)
+                                                    SendTelegramDebugMessageAsync(message)
+                                                Next
+                                            End If
                                         End If
                                     End If
                                 End If
@@ -190,6 +214,22 @@ Public Class NFOFillInstrumentDetails
                 End If
             End If
         End If
+        Dim infoMessage As String = Nothing
+        If ret IsNot Nothing AndAlso ret.Count > 0 Then
+            Dim selectedInstruments As String = Nothing
+            For Each runningInstrument In ret
+                selectedInstruments = String.Format("{0} {1},", selectedInstruments, runningInstrument.TradingSymbol)
+            Next
+            selectedInstruments = selectedInstruments.Trim
+            selectedInstruments = selectedInstruments.Substring(0, selectedInstruments.Count - 1)
+            infoMessage = String.Format("{0}: Number of option selected = {1}.{2}{3}", spotInstrument.TradingSymbol, ret.Count, vbNewLine, selectedInstruments)
+        Else
+            infoMessage = String.Format("{0}: No option selected", spotInstrument.TradingSymbol)
+        End If
+        OnHeartbeatSpecial(infoMessage)
+        SendTelegramDebugMessageAsync(infoMessage)
+        Await SendTelegramInfoMessageAsync(infoMessage).ConfigureAwait(False)
+
         Return ret
     End Function
 
@@ -360,15 +400,29 @@ Public Class NFOFillInstrumentDetails
         End If
     End Sub
 
-    Private Async Function SendTelegramMessageAsync(ByVal message As String) As Task
+    Private Async Function SendTelegramDebugMessageAsync(ByVal message As String) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If _parentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
-                Not _parentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim = "" AndAlso
-                _parentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
-                Not _parentStrategy.ParentController.UserInputs.TelegramChatID.Trim = "" Then
-                Using tSender As New Utilities.Notification.Telegram(_parentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, _parentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+            If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
+                _userInputs.TelegramDebugChatID IsNot Nothing AndAlso Not _userInputs.TelegramDebugChatID.Trim = "" Then
+                Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramDebugChatID.Trim, _cts)
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                End Using
+            End If
+        Catch ex As Exception
+            logger.Warn(ex.ToString)
+        End Try
+    End Function
+
+    Private Async Function SendTelegramInfoMessageAsync(ByVal message As String) As Task
+        Try
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
+                _userInputs.TelegramInfoChatID IsNot Nothing AndAlso Not _userInputs.TelegramInfoChatID.Trim = "" Then
+                Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramInfoChatID.Trim, _cts)
                     Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                     Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
                 End Using

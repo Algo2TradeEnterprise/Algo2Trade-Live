@@ -84,7 +84,7 @@ Partial Class frmNFOTradableInstrumentList
         Me.MinimizeBox = False
         Me.Name = "frmNFOTradableInstrumentList"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "NFO Tradable Instruments"
+        Me.Text = "Adaptive Martingale Strategy - Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
