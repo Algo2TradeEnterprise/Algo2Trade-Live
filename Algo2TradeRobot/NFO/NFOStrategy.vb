@@ -43,8 +43,6 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            _FreezeQuantityData = Await GetFreezeQuantityData().ConfigureAwait(False)
-
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.StockList IsNot Nothing AndAlso userInputs.StockList.Count > 0 Then
                 Dim fillInstrument As NFOFillInstrumentDetails = New NFOFillInstrumentDetails(_cts, Me)
@@ -88,6 +86,8 @@ Public Class NFOStrategy
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
+
+            _FreezeQuantityData = Await GetFreezeQuantityData().ConfigureAwait(False)
         End If
 
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
@@ -187,6 +187,7 @@ Public Class NFOStrategy
                     Next
                 End If
             End Using
+            File.Delete(freezeQuantityFile)
         End If
         If ret IsNot Nothing AndAlso ret.Count > 0 Then
             OnHeartbeat(String.Format("Freeze quanity data returned {0} stocks", ret.Count))

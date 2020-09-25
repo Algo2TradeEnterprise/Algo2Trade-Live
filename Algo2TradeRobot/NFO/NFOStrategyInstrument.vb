@@ -176,7 +176,6 @@ Public Class NFOStrategyInstrument
     Public Async Function CheckInstrumentAsync() As Task
         Try
             _strategyInstrumentRunning = True
-            Me.TradableInstrument.FetchHistorical = False
             If CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments IsNot Nothing AndAlso
                 CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments.Count > 0 AndAlso
                 CType(Me.ParentStrategy, NFOStrategy).DerivedInstruments.ContainsKey(Me.TradableInstrument.InstrumentIdentifier) Then
@@ -209,7 +208,9 @@ Public Class NFOStrategyInstrument
                                     Dim notDone As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
                                                                                                                            Return Not x.TradableInstrument.IsHistoricalCompleted
                                                                                                                        End Function)
-                                    If notDone Is Nothing OrElse notDone.Count = 0 Then allHistoricalComplete = True
+                                    If notDone Is Nothing OrElse notDone.Count = 0 Then
+                                        allHistoricalComplete = Me.TradableInstrument.IsHistoricalCompleted
+                                    End If
 
                                     _cts.Token.ThrowIfCancellationRequested()
                                     Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
@@ -233,6 +234,10 @@ Public Class NFOStrategyInstrument
                                         Await Task.WhenAll(tasks).ConfigureAwait(False)
 
                                         Dim spotPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
+                                        Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+                                        If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
+                                            spotPrice = runningCandle.PreviousPayload.ClosePrice.Value
+                                        End If
                                         Dim satisfiedStrategyInstruments As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
                                                                                                                                                     Return x.SelectionData.Turnover <> Decimal.MinValue AndAlso
                                                                                                                                                     x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
@@ -262,7 +267,7 @@ Public Class NFOStrategyInstrument
                                                                                                          End Function)
                                         If maxSignalCandleTime <> Date.MinValue AndAlso maxSignalCandleTime.Date = Now.Date Then
                                             Dim header As String = "Trading Symbol,Strike %,Iteration,Turnover,Volume %,Reason"
-                                            Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, header, MessageType.INFO, True, True).ConfigureAwait(False)
+                                            Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, header, MessageType.INFO, False, True).ConfigureAwait(False)
 
                                             For Each runningInstrument In derivedStrategyInstruments
                                                 Dim tradingSymbol As String = runningInstrument.TradableInstrument.TradingSymbol
@@ -293,13 +298,13 @@ Public Class NFOStrategyInstrument
 
                                                 Dim message As String = String.Format("{0},{1},{2},{3},{4},{5}",
                                                                                       tradingSymbol,
+                                                                                      finalReason,
                                                                                       strikePriceRangePer,
                                                                                       iteration,
                                                                                       turnover,
-                                                                                      volumePer,
-                                                                                      finalReason)
+                                                                                      volumePer)
 
-                                                Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, message, MessageType.INFO, True, True).ConfigureAwait(False)
+                                                Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, message, MessageType.INFO, False, True).ConfigureAwait(False)
                                             Next
                                         End If
 
@@ -801,7 +806,17 @@ Public Class NFOStrategyInstrument
         Dim conditionSatisfied As Boolean = False
         Dim comment As String = String.Format("{0}{1}[FINAL MESSAGE]{1}{1}", checkFrom, vbNewLine)
 
-        _SelectionData.SignalCandle = runningCandle.PreviousPayload
+        If SelectionData.SignalCandle IsNot Nothing Then
+            If SelectionData.SignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
+                _SelectionData.SignalCandle = runningCandle.PreviousPayload
+                _SelectionData.Iteration = 0
+            Else
+                'Nothing to do as signal candle and iteration already assigned
+            End If
+        Else
+            _SelectionData.SignalCandle = runningCandle.PreviousPayload
+            _SelectionData.Iteration = 0
+        End If
         comment = String.Format("{0}Signal Candle: {1}{2}{2}", comment, SelectionData.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"), vbNewLine)
         If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(SelectionData.SignalCandle.SnapshotDateTime) Then
             Dim fractal As FractalConsumer.FractalPayload = fractalData.ConsumerPayloads(SelectionData.SignalCandle.SnapshotDateTime)
@@ -879,7 +894,7 @@ Public Class NFOStrategyInstrument
                         _SelectionData.FinalMessage = String.Format("Candle close not below fractal")
                     End If
                 Else
-                    _SelectionData.FinalMessage = String.Format("Last day dractal low not changed")
+                    _SelectionData.FinalMessage = String.Format("Last day fractal low not changed")
                 End If
             Else
                 conditionSatisfied = False
@@ -1015,14 +1030,10 @@ Public Class NFOStrategyInstrument
         Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
         _cts.Token.ThrowIfCancellationRequested()
         If message IsNot Nothing AndAlso message.Trim <> "" Then
-            If _displayedLogData.ContainsKey(signalMinuteTime) Then
-                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = SelectionData.Iteration + 1
-            Else
-                _displayedLogData.Add(signalMinuteTime, New List(Of String))
-                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = 1
-            End If
-
+            If Not _displayedLogData.ContainsKey(signalMinuteTime) Then _displayedLogData.Add(signalMinuteTime, New List(Of String))
             If Not _displayedLogData(signalMinuteTime).Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceEntry Then
+                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = SelectionData.Iteration + 1
+
                 _displayedLogData(signalMinuteTime).Add(message)
                 Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, List(Of String)))(_runningInstrumentLogFilename, _displayedLogData)
 
