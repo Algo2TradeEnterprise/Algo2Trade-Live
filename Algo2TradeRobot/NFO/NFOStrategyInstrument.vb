@@ -1109,13 +1109,11 @@ Public Class NFOStrategyInstrument
 
                     If Not convertToImage Then OnHeartbeat(message)
 
-                    SendTelegramMessageAsync(message, summaryMessage, typeOfMessage, doNotIncludeTradingSymbol, convertToImage)
+                    Await SendTelegramMessageAsync(message, summaryMessage, typeOfMessage, doNotIncludeTradingSymbol, convertToImage).ConfigureAwait(False)
                 End If
             End If
         Catch ex As Exception
             logger.Warn(ex.ToString)
-        Finally
-            Console.WriteLine("Display log done")
         End Try
     End Function
 
@@ -1124,48 +1122,69 @@ Public Class NFOStrategyInstrument
         Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
         Try
             _cts.Token.ThrowIfCancellationRequested()
-
-            If Not convertToImage Then
-                If doNotIncludeTradingSymbol Then
-                    message = String.Format("{0}{1}Timestamp: {2}", message, vbNewLine, Now.ToString("HH:mm:ss"))
-                Else
-                    message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
-                End If
-            Else
-                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
-                messageImage.Save("infoImage.png")
-            End If
-
-            Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
-            If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
-                userInputs.TelegramDebugChatID IsNot Nothing AndAlso userInputs.TelegramDebugChatID.Trim <> "" Then
-                Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramDebugChatID.Trim, _cts)
-                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
-                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-                End Using
-            End If
+            SendTelegramDebugMessageAsync(message, doNotIncludeTradingSymbol, convertToImage)
             If typeOfMessage = MessageType.INFO Then
-                If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
-                    userInputs.TelegramInfoChatID IsNot Nothing AndAlso userInputs.TelegramInfoChatID.Trim <> "" Then
-                    Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramInfoChatID.Trim, _cts)
-                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
-                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-                    End Using
-                End If
+                SendTelegramInfoMessageAsync(message, doNotIncludeTradingSymbol, convertToImage)
             ElseIf typeOfMessage = MessageType.ALL Then
-                If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
-                    userInputs.TelegramInfoChatID IsNot Nothing AndAlso userInputs.TelegramInfoChatID.Trim <> "" Then
-                    Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramInfoChatID.Trim, _cts)
-                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(summaryMessage)
-                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-                    End Using
-                End If
+                SendTelegramInfoMessageAsync(summaryMessage, doNotIncludeTradingSymbol, convertToImage)
             End If
         Catch ex As Exception
             logger.Warn(ex.ToString)
-        Finally
-            Console.WriteLine("Telegram done")
         End Try
+    End Function
+
+    Private Async Function SendTelegramDebugMessageAsync(ByVal message As String, ByVal doNotIncludeTradingSymbol As Boolean, ByVal convertToImage As Boolean) As Task
+        Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
+        If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
+            userInputs.TelegramDebugChatID IsNot Nothing AndAlso userInputs.TelegramDebugChatID.Trim <> "" Then
+            Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramDebugChatID.Trim, _cts)
+                If Not convertToImage Then
+                    If doNotIncludeTradingSymbol Then
+                        message = String.Format("{0}{1}Timestamp: {2}", message, vbNewLine, Now.ToString("HH:mm:ss"))
+                    Else
+                        message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
+                    End If
+
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                Else
+                    Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
+                    Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
+                    Dim stream = New System.IO.MemoryStream()
+                    messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                    stream.Position = 0
+
+                    Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                End If
+            End Using
+        End If
+    End Function
+
+    Private Async Function SendTelegramInfoMessageAsync(ByVal message As String, ByVal doNotIncludeTradingSymbol As Boolean, ByVal convertToImage As Boolean) As Task
+        Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
+        If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
+            userInputs.TelegramInfoChatID IsNot Nothing AndAlso userInputs.TelegramInfoChatID.Trim <> "" Then
+            Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramInfoChatID.Trim, _cts)
+                If Not convertToImage Then
+                    If doNotIncludeTradingSymbol Then
+                        message = String.Format("{0}{1}Timestamp: {2}", message, vbNewLine, Now.ToString("HH:mm:ss"))
+                    Else
+                        message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
+                    End If
+
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                Else
+                    Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
+                    Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
+                    Dim stream = New System.IO.MemoryStream()
+                    messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                    stream.Position = 0
+
+                    Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                End If
+            End Using
+        End If
     End Function
 
 #Region "IDisposable Support"

@@ -420,15 +420,21 @@ Public Class NFOFillInstrumentDetails
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If convertToImage Then
-                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
-                messageImage.Save("infoImage.png")
-            End If
             If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 _userInputs.TelegramDebugChatID IsNot Nothing AndAlso Not _userInputs.TelegramDebugChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramDebugChatID.Trim, _cts)
-                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
-                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    If convertToImage Then
+                        Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
+                        Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
+                        Dim stream = New System.IO.MemoryStream()
+                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                        stream.Position = 0
+
+                        Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                    Else
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End If
                 End Using
             End If
         Catch ex As Exception
@@ -440,15 +446,21 @@ Public Class NFOFillInstrumentDetails
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If convertToImage Then
-                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
-                messageImage.Save("infoImage.png")
-            End If
             If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 _userInputs.TelegramInfoChatID IsNot Nothing AndAlso Not _userInputs.TelegramInfoChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramInfoChatID.Trim, _cts)
-                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
-                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    If convertToImage Then
+                        Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
+                        Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
+                        Dim stream = New System.IO.MemoryStream()
+                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                        stream.Position = 0
+
+                        Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                    Else
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End If
                 End Using
             End If
         Catch ex As Exception
