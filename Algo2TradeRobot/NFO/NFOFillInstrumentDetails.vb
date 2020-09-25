@@ -119,13 +119,13 @@ Public Class NFOFillInstrumentDetails
 
                                     _cts.Token.ThrowIfCancellationRequested()
                                     If volumeCheckContracts IsNot Nothing AndAlso volumeCheckContracts.Count > 0 Then
-                                        Dim messageLog As Dictionary(Of String, String) = New Dictionary(Of String, String)
+                                        Dim messageLog As Dictionary(Of String, Tuple(Of String, Decimal, Decimal, Decimal, Boolean)) = New Dictionary(Of String, Tuple(Of String, Decimal, Decimal, Decimal, Boolean))
                                         Dim primarySelectedOptionData As Dictionary(Of String, Double) = New Dictionary(Of String, Double)
                                         For Each runningContract In volumeCheckContracts
                                             _cts.Token.ThrowIfCancellationRequested()
                                             Dim currentOptionContract As IInstrument = GetCurrentOptionContract(currentContracts, runningContract)
                                             If currentOptionContract IsNot Nothing Then
-                                                Dim message As String = Nothing
+                                                Dim message As Tuple(Of String, Decimal, Decimal, Decimal, Boolean) = Nothing
                                                 Dim optionIntradayPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.Intraday)
                                                 If optionIntradayPayload IsNot Nothing AndAlso optionIntradayPayload.Count > 0 Then
                                                     Dim numberOfBlankCandle As Integer = optionIntradayPayload.Where(Function(x)
@@ -138,27 +138,20 @@ Public Class NFOFillInstrumentDetails
                                                                                                             End Function).Count
 
                                                     Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
-                                                    Dim nonBlankCandlePer As Decimal = 100 - blankCandlePer
-                                                    Dim totalCandlePer As Decimal = (totalCount / 375) * 100
-                                                    message = String.Format("{0}: Total Candle = {1}, Non-Blank Candle = {2}, Total Candle% = {3}, Non-Blank Candle% = {4}.",
-                                                                            currentOptionContract.TradingSymbol,
-                                                                            totalCount,
-                                                                            375 - numberOfBlankCandle,
-                                                                            Math.Round(totalCandlePer, 4),
-                                                                            Math.Round(nonBlankCandlePer, 4))
-
+                                                    Dim nonBlankCandlePer As Decimal = Math.Round(100 - blankCandlePer, 4)
+                                                    Dim totalCandlePer As Decimal = Math.Round((totalCount / 375) * 100, 4)
                                                     If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
                                                         nonBlankCandlePer >= _userInputs.MinNonBlankCandlePercentage Then
                                                         Dim optionEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.EOD)
                                                         If optionEODPayload IsNot Nothing AndAlso optionEODPayload.ContainsKey(lastTradingDay) Then
                                                             primarySelectedOptionData.Add(currentOptionContract.InstrumentIdentifier, optionEODPayload(lastTradingDay).Volume.Value * optionEODPayload(lastTradingDay).ClosePrice.Value)
                                                         End If
+                                                        message = New Tuple(Of String, Decimal, Decimal, Decimal, Boolean)(Nothing, totalCandlePer, nonBlankCandlePer, 0, False)
                                                     Else
-                                                        message = String.Format("{0}{1}#NOT_SELECTED..", message, vbNewLine)
+                                                        message = New Tuple(Of String, Decimal, Decimal, Decimal, Boolean)("Total candle/Non-blank candle less than min value", totalCandlePer, nonBlankCandlePer, 0, False)
                                                     End If
                                                 Else
-                                                    message = String.Format("{0}: No historical candle found.{1}#NOT_SELECTED..",
-                                                                            currentOptionContract.TradingSymbol, vbNewLine)
+                                                    message = New Tuple(Of String, Decimal, Decimal, Decimal, Boolean)("No historical candle found", 0, 0, 0, False)
                                                 End If
 
                                                 messageLog.Add(currentOptionContract.InstrumentIdentifier, message)
@@ -172,10 +165,9 @@ Public Class NFOFillInstrumentDetails
                                             Dim avgTurnover As Double = primarySelectedOptionData.Values.Average
                                             For Each runningContract In primarySelectedOptionData
                                                 _cts.Token.ThrowIfCancellationRequested()
-                                                Dim message As String = messageLog(runningContract.Key)
+                                                Dim message As Tuple(Of String, Decimal, Decimal, Decimal, Boolean) = messageLog(runningContract.Key)
                                                 Dim turnoverPer As Double = Math.Round(runningContract.Value * 100 / avgTurnover, 4)
                                                 If turnoverPer >= _userInputs.MinEODTurnoverPercentage Then
-                                                    message = String.Format("{0} EOD Turnover% = {1}.{2}#SELECTED..", message, turnoverPer, vbNewLine)
                                                     Dim currentInstrument As IInstrument = currentContracts.ToList.Find(Function(x)
                                                                                                                             Return x.InstrumentIdentifier = runningContract.Key
                                                                                                                         End Function)
@@ -183,27 +175,51 @@ Public Class NFOFillInstrumentDetails
                                                         If ret Is Nothing Then ret = New List(Of IInstrument)
                                                         ret.Add(currentInstrument)
                                                     End If
+                                                    messageLog(runningContract.Key) = New Tuple(Of String, Decimal, Decimal, Decimal, Boolean)("SELECTED", message.Item2, message.Item3, turnoverPer, True)
                                                 Else
-                                                    message = String.Format("{0} EOD Turnover% = {1}.{2}#NOT_SELECTED..", message, turnoverPer, vbNewLine)
+                                                    messageLog(runningContract.Key) = New Tuple(Of String, Decimal, Decimal, Decimal, Boolean)("EOD Turnover less than min value", message.Item2, message.Item3, turnoverPer, False)
                                                 End If
-                                                messageLog(runningContract.Key) = message
                                             Next
                                             If ret IsNot Nothing AndAlso ret.Count > 0 Then
-                                                Dim counter As Integer = 0
-                                                For Each runningMessage In messageLog
-                                                    Dim contractAvailable As IInstrument = ret.Find(Function(x)
-                                                                                                        Return x.InstrumentIdentifier = runningMessage.Key
-                                                                                                    End Function)
+                                                Dim htmlString As String = String.Format("<html>{0}<head>{0}<style>", vbNewLine)
+
+                                                Dim styleString As String = "table, th, td {  border: 1px solid black;  border-collapse: collapse;}"
+                                                htmlString = String.Format("{0}{1}{2}{1}</head>", htmlString, vbNewLine, styleString)
+
+                                                htmlString = String.Format("{0}{1}</style>{1}</head>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}{1}<body>{1}<table>", htmlString, vbNewLine)
+
+                                                'Header
+                                                htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<th>Trading Symbol</th>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<th>Remarks</th>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<th>Total Candle%</th>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<th>Non-Blank Candle%</th>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<th>EOD Turnover%</th>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
+
+                                                For Each runningMessage In messageLog.OrderByDescending(Function(x)
+                                                                                                            Return x.Value.Item4
+                                                                                                        End Function).ThenByDescending(Function(y)
+                                                                                                                                           Return y.Value.Item3
+                                                                                                                                       End Function).ThenByDescending(Function(z)
+                                                                                                                                                                          Return z.Value.Item2
+                                                                                                                                                                      End Function)
+                                                    Dim contractAvailable As IInstrument = currentContracts.ToList.Find(Function(x)
+                                                                                                                            Return x.InstrumentIdentifier = runningMessage.Key
+                                                                                                                        End Function)
                                                     If contractAvailable IsNot Nothing Then
-                                                        counter += 1
+                                                        htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, contractAvailable.TradingSymbol)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, runningMessage.Value.Item1)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, runningMessage.Value.Item2)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, runningMessage.Value.Item3)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, runningMessage.Value.Item4)
+                                                        htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
                                                     End If
-
-                                                    Dim message As String = runningMessage.Value
-                                                    message = String.Format("{0} Selected Instrument Count: {1}/{2}", message, counter, messageLog.Count)
-
-                                                    OnHeartbeatSpecial(message)
-                                                    SendTelegramDebugMessageAsync(message)
                                                 Next
+                                                htmlString = String.Format("{0}{1}</table>{1}{1}</body>{1}</html>", htmlString, vbNewLine)
+                                                Await SendTelegramDebugMessageAsync(htmlString, True).ConfigureAwait(False)
                                             End If
                                         End If
                                     End If
@@ -227,8 +243,8 @@ Public Class NFOFillInstrumentDetails
             infoMessage = String.Format("{0}: No option selected", spotInstrument.TradingSymbol)
         End If
         OnHeartbeatSpecial(infoMessage)
-        SendTelegramDebugMessageAsync(infoMessage)
-        Await SendTelegramInfoMessageAsync(infoMessage).ConfigureAwait(False)
+        Await SendTelegramDebugMessageAsync(infoMessage, False).ConfigureAwait(False)
+        Await SendTelegramInfoMessageAsync(infoMessage, False).ConfigureAwait(False)
 
         Return ret
     End Function
@@ -400,10 +416,14 @@ Public Class NFOFillInstrumentDetails
         End If
     End Sub
 
-    Private Async Function SendTelegramDebugMessageAsync(ByVal message As String) As Task
+    Private Async Function SendTelegramDebugMessageAsync(ByVal message As String, ByVal convertToImage As Boolean) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
+            If convertToImage Then
+                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
+                messageImage.Save("infoImage.png")
+            End If
             If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 _userInputs.TelegramDebugChatID IsNot Nothing AndAlso Not _userInputs.TelegramDebugChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramDebugChatID.Trim, _cts)
@@ -416,10 +436,14 @@ Public Class NFOFillInstrumentDetails
         End Try
     End Function
 
-    Private Async Function SendTelegramInfoMessageAsync(ByVal message As String) As Task
+    Private Async Function SendTelegramInfoMessageAsync(ByVal message As String, ByVal convertToImage As Boolean) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
+            If convertToImage Then
+                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
+                messageImage.Save("infoImage.png")
+            End If
             If _userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not _userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 _userInputs.TelegramInfoChatID IsNot Nothing AndAlso Not _userInputs.TelegramInfoChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramInfoChatID.Trim, _cts)

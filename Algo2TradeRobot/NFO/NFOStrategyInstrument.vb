@@ -216,7 +216,7 @@ Public Class NFOStrategyInstrument
                                     Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                                 End While
 
-                                Await DisplayAndSendSignalAlertAsync(Now, "All Historical complete", MessageType.INFO).ConfigureAwait(False)
+                                Await DisplayAndSendSignalAlertAsync(Now, "All Historical complete", MessageType.INFO, False, False).ConfigureAwait(False)
                                 'allHistoricalComplete = True
                                 If allHistoricalComplete Then
                                     Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
@@ -241,6 +241,7 @@ Public Class NFOStrategyInstrument
                                         Dim satisfiedStrategyInstruments As List(Of NFOStrategyInstrument) = derivedStrategyInstruments.FindAll(Function(x)
                                                                                                                                                     Return x.SelectionData.Turnover <> Decimal.MinValue AndAlso
                                                                                                                                                     x.SelectionData.VolumePercentage <> Decimal.MinValue AndAlso
+                                                                                                                                                    x.SelectionData.Turnover > 0 AndAlso
                                                                                                                                                     x.SelectionData.VolumePercentage >= userSettings.MinVolumePercentageTillSignalTime AndAlso
                                                                                                                                                     x.StrikePrice <> Decimal.MinValue AndAlso
                                                                                                                                                     (Math.Abs(x.StrikePrice - spotPrice) / spotPrice) * 100 <= userSettings.MaxStrikeRangePercentage
@@ -266,46 +267,105 @@ Public Class NFOStrategyInstrument
                                                                                                              End If
                                                                                                          End Function)
                                         If maxSignalCandleTime <> Date.MinValue AndAlso maxSignalCandleTime.Date = Now.Date Then
-                                            Dim header As String = "Trading Symbol,Strike %,Iteration,Turnover,Volume %,Reason"
-                                            Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, header, MessageType.INFO, False, True).ConfigureAwait(False)
+                                            Dim htmlString As String = String.Format("<html>{0}<head>{0}<style>", vbNewLine)
 
+                                            Dim styleString As String = "table, th, td {  border: 1px solid black;  border-collapse: collapse;}"
+                                            htmlString = String.Format("{0}{1}{2}{1}</head>", htmlString, vbNewLine, styleString)
+
+                                            htmlString = String.Format("{0}{1}</style>{1}</head>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}{1}<body>{1}<table>", htmlString, vbNewLine)
+
+                                            'Header
+                                            htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Trading Symbol</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Reason</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Strike%</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Iteration</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Turnover</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}<th>Volume%</th>", htmlString, vbNewLine)
+                                            htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
+
+                                            Dim addedInstrument As List(Of String) = New List(Of String)
+                                            If instrumentsToRun IsNot Nothing Then
+                                                addedInstrument.Add(instrumentsToRun.TradableInstrument.InstrumentIdentifier)
+
+                                                Dim tradingSymbol As String = instrumentsToRun.TradableInstrument.TradingSymbol
+                                                Dim strikePriceRangePer As Decimal = Math.Round((Math.Abs(instrumentsToRun.StrikePrice - spotPrice) / spotPrice) * 100, 2)
+                                                Dim iteration As Integer = instrumentsToRun.SelectionData.Iteration
+                                                Dim turnover As String = If(instrumentsToRun.SelectionData.Turnover <> Decimal.MinValue, instrumentsToRun.SelectionData.Turnover, "N/A")
+                                                Dim volumePer As String = If(instrumentsToRun.SelectionData.Turnover <> Decimal.MinValue, instrumentsToRun.SelectionData.VolumePercentage, "N/A")
+                                                Dim finalReason As String = "Shortlisted and Selected"
+
+                                                htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                                htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, tradingSymbol)
+                                                htmlString = String.Format("{0}{1}<td><b><i>{2}</i></b></td>", htmlString, vbNewLine, finalReason)
+                                                htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, strikePriceRangePer)
+                                                htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, iteration)
+                                                htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, turnover)
+                                                htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, volumePer)
+                                                htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
+                                            End If
+                                            If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
+                                                For Each runningInstrument In satisfiedStrategyInstruments.OrderBy(Function(x)
+                                                                                                                       Return x.SelectionData.Turnover
+                                                                                                                   End Function).ThenByDescending(Function(y)
+                                                                                                                                                      Return y.SelectionData.VolumePercentage
+                                                                                                                                                  End Function)
+                                                    If Not addedInstrument.Contains(runningInstrument.TradableInstrument.InstrumentIdentifier) Then
+                                                        addedInstrument.Add(runningInstrument.TradableInstrument.InstrumentIdentifier)
+
+                                                        Dim tradingSymbol As String = runningInstrument.TradableInstrument.TradingSymbol
+                                                        Dim strikePriceRangePer As Decimal = Math.Round((Math.Abs(runningInstrument.StrikePrice - spotPrice) / spotPrice) * 100, 2)
+                                                        Dim iteration As Integer = runningInstrument.SelectionData.Iteration
+                                                        Dim turnover As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.Turnover, "N/A")
+                                                        Dim volumePer As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.VolumePercentage, "N/A")
+                                                        Dim finalReason As String = "Shortlisted"
+
+                                                        htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, tradingSymbol)
+                                                        htmlString = String.Format("{0}{1}<td><i>{2}</i></td>", htmlString, vbNewLine, finalReason)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, strikePriceRangePer)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, iteration)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, turnover)
+                                                        htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, volumePer)
+                                                        htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
+                                                    End If
+                                                Next
+                                            End If
                                             For Each runningInstrument In derivedStrategyInstruments
-                                                Dim tradingSymbol As String = runningInstrument.TradableInstrument.TradingSymbol
-                                                Dim strikePriceRangePer As Decimal = Math.Round((Math.Abs(runningInstrument.StrikePrice - spotPrice) / spotPrice) * 100, 2)
-                                                Dim iteration As Integer = runningInstrument.SelectionData.Iteration
-                                                Dim turnover As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.Turnover, "N/A")
-                                                Dim volumePer As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.VolumePercentage, "N/A")
-                                                Dim finalReason As String = runningInstrument.SelectionData.FinalMessage
-                                                If runningInstrument.SelectionData.SignalCandle IsNot Nothing Then
-                                                    If runningInstrument.SelectionData.SignalCandle.SnapshotDateTime < maxSignalCandleTime Then
+                                                If Not addedInstrument.Contains(runningInstrument.TradableInstrument.InstrumentIdentifier) Then
+                                                    addedInstrument.Add(runningInstrument.TradableInstrument.InstrumentIdentifier)
+
+                                                    Dim tradingSymbol As String = runningInstrument.TradableInstrument.TradingSymbol
+                                                    Dim strikePriceRangePer As Decimal = Math.Round((Math.Abs(runningInstrument.StrikePrice - spotPrice) / spotPrice) * 100, 2)
+                                                    Dim iteration As Integer = runningInstrument.SelectionData.Iteration
+                                                    Dim turnover As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.Turnover, "N/A")
+                                                    Dim volumePer As String = If(runningInstrument.SelectionData.Turnover <> Decimal.MinValue, runningInstrument.SelectionData.VolumePercentage, "N/A")
+                                                    Dim finalReason As String = runningInstrument.SelectionData.FinalMessage
+                                                    If runningInstrument.SelectionData.SignalCandle IsNot Nothing Then
+                                                        If runningInstrument.SelectionData.SignalCandle.SnapshotDateTime < maxSignalCandleTime Then
+                                                            finalReason = "Tick not received"
+                                                        End If
+                                                    Else
                                                         finalReason = "Tick not received"
                                                     End If
-                                                Else
-                                                    finalReason = "Tick not received"
-                                                End If
-                                                If satisfiedStrategyInstruments IsNot Nothing AndAlso satisfiedStrategyInstruments.Count > 0 Then
-                                                    Dim foundInstrument As NFOStrategyInstrument = satisfiedStrategyInstruments.Find(Function(x)
-                                                                                                                                         Return x.TradableInstrument.InstrumentIdentifier = runningInstrument.TradableInstrument.InstrumentIdentifier
-                                                                                                                                     End Function)
-                                                    If foundInstrument IsNot Nothing Then
-                                                        finalReason = "Shortlisted"
-                                                        If instrumentsToRun IsNot Nothing AndAlso
-                                                            instrumentsToRun.TradableInstrument.InstrumentIdentifier = runningInstrument.TradableInstrument.InstrumentIdentifier Then
-                                                            finalReason = "Shortlisted and Selected"
-                                                        End If
+                                                    If strikePriceRangePer > userSettings.MaxStrikeRangePercentage Then
+                                                        finalReason = "Outside max strike range"
                                                     End If
+
+                                                    htmlString = String.Format("{0}{1}<tr>", htmlString, vbNewLine)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, tradingSymbol)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, finalReason)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, strikePriceRangePer)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, iteration)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, turnover)
+                                                    htmlString = String.Format("{0}{1}<td>{2}</td>", htmlString, vbNewLine, volumePer)
+                                                    htmlString = String.Format("{0}{1}</tr>", htmlString, vbNewLine)
                                                 End If
-
-                                                Dim message As String = String.Format("{0},{1},{2},{3},{4},{5}",
-                                                                                      tradingSymbol,
-                                                                                      finalReason,
-                                                                                      strikePriceRangePer,
-                                                                                      iteration,
-                                                                                      turnover,
-                                                                                      volumePer)
-
-                                                Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, message, MessageType.INFO, False, True).ConfigureAwait(False)
                                             Next
+                                            htmlString = String.Format("{0}{1}</table>{1}{1}</body>{1}</html>", htmlString, vbNewLine)
+
+                                            Await DisplayAndSendSignalAlertAsync(maxSignalCandleTime, htmlString, MessageType.INFO, True, True)
                                         End If
 
                                         If instrumentsToRun IsNot Nothing Then Exit While
@@ -318,7 +378,7 @@ Public Class NFOStrategyInstrument
                             If instrumentsToRun IsNot Nothing Then
                                 Dim infoMessage As String = String.Format("#Potential_Instrument_Found {0}. Will Check rest of the conditions.",
                                                                            instrumentsToRun.TradableInstrument.TradingSymbol)
-                                Await DisplayAndSendSignalAlertAsync(Now, infoMessage, MessageType.INFO).ConfigureAwait(False)
+                                Await DisplayAndSendSignalAlertAsync(Now, infoMessage, MessageType.INFO, True, False).ConfigureAwait(False)
 
                                 For Each runningStrategyInstrument In derivedStrategyInstruments
                                     If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrumentsToRun.TradableInstrument.InstrumentIdentifier Then
@@ -401,7 +461,7 @@ Public Class NFOStrategyInstrument
                         End If
                     End If
 
-                    Await DisplayAndSendSignalAlertAsync(_SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.DEBUG).ConfigureAwait(False)
+                    Await DisplayAndSendSignalAlertAsync(_SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.DEBUG, False, False).ConfigureAwait(False)
                 End If
             End If
         End If
@@ -451,7 +511,7 @@ Public Class NFOStrategyInstrument
                                                         placeOrderTriggers.FirstOrDefault.Item2.Quantity)
                             End If
 
-                            Await DisplayAndSendSignalAlertAsync(placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime, message, MessageType.INFO).ConfigureAwait(False)
+                            Await DisplayAndSendSignalAlertAsync(placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime, message, MessageType.INFO, False, False).ConfigureAwait(False)
 
                             If Not File.Exists(_runningInstrumentFilename) Then
                                 File.WriteAllText(_runningInstrumentFilename, Me.TradableInstrument.InstrumentIdentifier)
@@ -460,14 +520,14 @@ Public Class NFOStrategyInstrument
                     Else
                         If Not File.Exists(_runningInstrumentFilename) Then
                             Dim message As String = String.Format("'Is Trigger Recevied Execute command' returned false. So instrument will be released.")
-                            Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO).ConfigureAwait(False)
+                            Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO, False, False).ConfigureAwait(False)
                             Exit While
                         End If
                     End If
                 Else
                     If Not File.Exists(_runningInstrumentFilename) Then
                         Dim message As String = String.Format("'Is Trigger Recevied' returned false. So instrument will be released.")
-                        Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO).ConfigureAwait(False)
+                        Await DisplayAndSendSignalAlertAsync(Now, message, MessageType.INFO, False, False).ConfigureAwait(False)
                         Exit While
                     End If
                 End If
@@ -555,7 +615,7 @@ Public Class NFOStrategyInstrument
                 If lastTradeSignalCandle IsNot Nothing Then
                     Dim message As String = String.Format("Target reached. PL: {0}", pl)
 
-                    Await DisplayAndSendSignalAlertAsync(lastTradeSignalCandle.SnapshotDateTime, message, MessageType.INFO).ConfigureAwait(False)
+                    Await DisplayAndSendSignalAlertAsync(lastTradeSignalCandle.SnapshotDateTime, message, MessageType.INFO, False, False).ConfigureAwait(False)
                     _targetMessageSend = True
                 End If
             End If
@@ -794,7 +854,7 @@ Public Class NFOStrategyInstrument
                         If forcePrint Then logger.Debug(remark)
                     End If
                 End If
-                Await DisplayAndSendSignalAlertAsync(SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.ALL).ConfigureAwait(False)
+                Await DisplayAndSendSignalAlertAsync(SelectionData.SignalCandle.SnapshotDateTime, remark, MessageType.ALL, False, False).ConfigureAwait(False)
             End If
         End If
         Return ret
@@ -810,12 +870,14 @@ Public Class NFOStrategyInstrument
             If SelectionData.SignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
                 _SelectionData.SignalCandle = runningCandle.PreviousPayload
                 _SelectionData.Iteration = 0
+                _SelectionData.FinalMessage = Nothing
             Else
                 'Nothing to do as signal candle and iteration already assigned
             End If
         Else
             _SelectionData.SignalCandle = runningCandle.PreviousPayload
             _SelectionData.Iteration = 0
+            _SelectionData.FinalMessage = Nothing
         End If
         comment = String.Format("{0}Signal Candle: {1}{2}{2}", comment, SelectionData.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"), vbNewLine)
         If fractalData.ConsumerPayloads IsNot Nothing AndAlso fractalData.ConsumerPayloads.ContainsKey(SelectionData.SignalCandle.SnapshotDateTime) Then
@@ -1026,40 +1088,54 @@ Public Class NFOStrategyInstrument
     End Function
 
     Private Async Function DisplayAndSendSignalAlertAsync(ByVal signalMinuteTime As Date, ByVal message As String, ByVal typeOfMessage As MessageType,
-                                                          Optional ByVal forceEntry As Boolean = False, Optional ByVal doNotIncludeTradingSymbol As Boolean = False) As Task
+                                                          ByVal doNotIncludeTradingSymbol As Boolean,
+                                                          ByVal convertToImage As Boolean) As Task
         Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-        _cts.Token.ThrowIfCancellationRequested()
-        If message IsNot Nothing AndAlso message.Trim <> "" Then
-            If Not _displayedLogData.ContainsKey(signalMinuteTime) Then _displayedLogData.Add(signalMinuteTime, New List(Of String))
-            If Not _displayedLogData(signalMinuteTime).Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceEntry Then
-                If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = SelectionData.Iteration + 1
+        Try
+            _cts.Token.ThrowIfCancellationRequested()
+            If message IsNot Nothing AndAlso message.Trim <> "" Then
+                If Not _displayedLogData.ContainsKey(signalMinuteTime) Then _displayedLogData.Add(signalMinuteTime, New List(Of String))
+                If Not _displayedLogData(signalMinuteTime).Contains(message, StringComparer.OrdinalIgnoreCase) Then
+                    If typeOfMessage <> MessageType.INFO Then _SelectionData.Iteration = SelectionData.Iteration + 1
 
-                _displayedLogData(signalMinuteTime).Add(message)
-                Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, List(Of String)))(_runningInstrumentLogFilename, _displayedLogData)
+                    _displayedLogData(signalMinuteTime).Add(message)
+                    Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, List(Of String)))(_runningInstrumentLogFilename, _displayedLogData)
 
-                Dim summaryMessage As String = Nothing
-                If typeOfMessage <> MessageType.INFO Then
-                    summaryMessage = String.Format("Iteration:{0}, Reason:{1}", SelectionData.Iteration, SelectionData.FinalMessage)
-                    message = message.Replace("[FINAL MESSAGE]", summaryMessage)
+                    Dim summaryMessage As String = Nothing
+                    If typeOfMessage <> MessageType.INFO Then
+                        summaryMessage = String.Format("Iteration:{0}, Reason:{1}", SelectionData.Iteration, SelectionData.FinalMessage)
+                        message = message.Replace("[FINAL MESSAGE]", summaryMessage)
+                    End If
+
+                    If Not convertToImage Then OnHeartbeat(message)
+
+                    SendTelegramMessageAsync(message, summaryMessage, typeOfMessage, doNotIncludeTradingSymbol, convertToImage)
                 End If
+            End If
+        Catch ex As Exception
+            logger.Warn(ex.ToString)
+        Finally
+            Console.WriteLine("Display log done")
+        End Try
+    End Function
 
-                OnHeartbeat(message)
+    Private Async Function SendTelegramMessageAsync(ByVal message As String, ByVal summaryMessage As String, ByVal typeOfMessage As MessageType,
+                                                    ByVal doNotIncludeTradingSymbol As Boolean, ByVal convertToImage As Boolean) As Task
+        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+        Try
+            _cts.Token.ThrowIfCancellationRequested()
 
+            If Not convertToImage Then
                 If doNotIncludeTradingSymbol Then
                     message = String.Format("{0}{1}Timestamp: {2}", message, vbNewLine, Now.ToString("HH:mm:ss"))
                 Else
                     message = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
                 End If
-
-                SendTelegramMessageAsync(message, summaryMessage, typeOfMessage)
+            Else
+                Dim messageImage As Image = TheArtOfDev.HtmlRenderer.WinForms.HtmlRender.RenderToImage(message)
+                messageImage.Save("infoImage.png")
             End If
-        End If
-    End Function
 
-    Private Async Function SendTelegramMessageAsync(ByVal message As String, ByVal summaryMessage As String, ByVal typeOfMessage As MessageType) As Task
-        Try
-            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-            _cts.Token.ThrowIfCancellationRequested()
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso userInputs.TelegramBotAPIKey.Trim <> "" AndAlso
                 userInputs.TelegramDebugChatID IsNot Nothing AndAlso userInputs.TelegramDebugChatID.Trim <> "" Then
@@ -1087,6 +1163,8 @@ Public Class NFOStrategyInstrument
             End If
         Catch ex As Exception
             logger.Warn(ex.ToString)
+        Finally
+            Console.WriteLine("Telegram done")
         End Try
     End Function
 
