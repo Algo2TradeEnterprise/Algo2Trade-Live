@@ -139,8 +139,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                             End Function).Count
 
                                                     Dim blankCandlePer As Decimal = (numberOfBlankCandle / 375) * 100
-                                                    Dim nonBlankCandlePer As Decimal = Math.Round(100 - blankCandlePer, 4)
-                                                    Dim totalCandlePer As Decimal = Math.Round((totalCount / 375) * 100, 4)
+                                                    Dim nonBlankCandlePer As Decimal = Math.Round(100 - blankCandlePer, 1)
+                                                    Dim totalCandlePer As Decimal = Math.Round((totalCount / 375) * 100, 1)
                                                     If totalCandlePer >= _userInputs.MinTotalCandlePercentage AndAlso
                                                         nonBlankCandlePer >= _userInputs.MinNonBlankCandlePercentage Then
                                                         Dim optionEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(runningContract, lastTradingDay.Date, Now.Date, TypeOfData.EOD)
@@ -167,7 +167,7 @@ Public Class NFOFillInstrumentDetails
                                             For Each runningContract In primarySelectedOptionData
                                                 _cts.Token.ThrowIfCancellationRequested()
                                                 Dim message As Tuple(Of String, Decimal, Decimal, Decimal, Boolean) = messageLog(runningContract.Key)
-                                                Dim turnoverPer As Double = Math.Round(runningContract.Value * 100 / avgTurnover, 4)
+                                                Dim turnoverPer As Double = Math.Round(runningContract.Value * 100 / avgTurnover, 1)
                                                 If turnoverPer >= _userInputs.MinEODTurnoverPercentage Then
                                                     Dim currentInstrument As IInstrument = currentContracts.ToList.Find(Function(x)
                                                                                                                             Return x.InstrumentIdentifier = runningContract.Key
