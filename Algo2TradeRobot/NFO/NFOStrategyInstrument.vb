@@ -1148,13 +1148,13 @@ Public Class NFOStrategyInstrument
                     Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                     Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
                 Else
-                    Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
-                    Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
-                    Dim stream = New System.IO.MemoryStream()
-                    messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
-                    stream.Position = 0
+                    Dim messageImage As Image = HtmlToImage.HtmlToImage.HtmlToImage.ConvertHtmlToImage(message, 1000)
+                    Using stream As New System.IO.MemoryStream()
+                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                        stream.Position = 0
 
-                    Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                        Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                    End Using
                 End If
             End Using
         End If
@@ -1175,13 +1175,13 @@ Public Class NFOStrategyInstrument
                     Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                     Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
                 Else
-                    Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
-                    Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
-                    Dim stream = New System.IO.MemoryStream()
-                    messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
-                    stream.Position = 0
+                    Dim messageImage As Image = HtmlToImage.HtmlToImage.HtmlToImage.ConvertHtmlToImage(message, 1000)
+                    Using stream As New System.IO.MemoryStream()
+                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                        stream.Position = 0
 
-                    Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                        Await tSender.SendDocumentGetAsync(stream, "Potential To Actual Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                    End Using
                 End If
             End Using
         End If

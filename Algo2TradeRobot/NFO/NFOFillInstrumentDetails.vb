@@ -7,6 +7,7 @@ Imports Utilities.Network
 Imports Utilities.Time
 Imports Utilities.Numbers
 Imports System.Net.Http
+Imports HtmlToImage
 Imports NLog
 
 Public Class NFOFillInstrumentDetails
@@ -424,13 +425,13 @@ Public Class NFOFillInstrumentDetails
                 _userInputs.TelegramDebugChatID IsNot Nothing AndAlso Not _userInputs.TelegramDebugChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramDebugChatID.Trim, _cts)
                     If convertToImage Then
-                        Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
-                        Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
-                        Dim stream = New System.IO.MemoryStream()
-                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
-                        stream.Position = 0
+                        Dim messageImage As Image = HtmlToImage.HtmlToImage.HtmlToImage.ConvertHtmlToImage(message, 1000)
+                        Using stream As New System.IO.MemoryStream()
+                            messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                            stream.Position = 0
 
-                        Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                            Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                        End Using
                     Else
                         Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                         Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
@@ -450,13 +451,13 @@ Public Class NFOFillInstrumentDetails
                 _userInputs.TelegramInfoChatID IsNot Nothing AndAlso Not _userInputs.TelegramInfoChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(_userInputs.TelegramBotAPIKey.Trim, _userInputs.TelegramInfoChatID.Trim, _cts)
                     If convertToImage Then
-                        Dim render As Utilities.HTMLRender.Render = New Utilities.HTMLRender.Render(_cts)
-                        Dim messageImage As Image = Await render.ConvertHTMLStringToImage(message).ConfigureAwait(False)
-                        Dim stream = New System.IO.MemoryStream()
-                        messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
-                        stream.Position = 0
+                        Dim messageImage As Image = HtmlToImage.HtmlToImage.HtmlToImage.ConvertHtmlToImage(message, 1000)
+                        Using stream As New System.IO.MemoryStream()
+                            messageImage.Save(stream, System.Drawing.Imaging.ImageFormat.Jpeg)
+                            stream.Position = 0
 
-                        Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                            Await tSender.SendDocumentGetAsync(stream, "Day Beginning Strike Selection.jpeg", String.Format("Timestamp: {0}", Now.ToString("HH:mm:ss"))).ConfigureAwait(False)
+                        End Using
                     Else
                         Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                         Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
