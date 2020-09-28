@@ -453,11 +453,11 @@ Public Class NFOStrategyInstrument
                                 _SelectionData.VolumePercentage = Math.Round(currentDayTotalVolume * 100 / previousDayTotalVolume, 2)
 
                                 If SelectionData.VolumePercentage >= userSettings.MinVolumePercentageTillSignalTime Then
-                                    remark = String.Format("{0} Volume %={1} >= {2}[True]{3}{3}",
+                                    remark = String.Format("{0} Volume %({1}) >= {2}[True]{3}{3}",
                                                            remark, SelectionData.VolumePercentage,
                                                            userSettings.MinVolumePercentageTillSignalTime, vbNewLine)
                                 Else
-                                    remark = String.Format("{0} Volume %={1} >= {2}[False]{3}{3}",
+                                    remark = String.Format("{0} Volume %({1}) >= {2}[False]{3}{3}",
                                                            remark, SelectionData.VolumePercentage,
                                                            userSettings.MinVolumePercentageTillSignalTime, vbNewLine)
 
@@ -1109,7 +1109,14 @@ Public Class NFOStrategyInstrument
 
                     Dim summaryMessage As String = Nothing
                     If typeOfMessage <> MessageType.INFO Then
-                        summaryMessage = String.Format("Iteration:{0}, Reason:{1}", SelectionData.Iteration, SelectionData.FinalMessage)
+                        Dim selectionMessage As String = "#Condition_Satisfied"
+                        Dim finalMessage As String = "N/A"
+                        If SelectionData.FinalMessage IsNot Nothing AndAlso SelectionData.FinalMessage.Trim <> "" Then
+                            selectionMessage = "#Not_Condition_Satisfied"
+                            finalMessage = SelectionData.FinalMessage
+                        End If
+                        summaryMessage = String.Format("Iteration:{0}, Reason:{1} ({2})",
+                                                       SelectionData.Iteration, finalMessage, selectionMessage)
                         message = message.Replace("[FINAL MESSAGE]", summaryMessage)
                     End If
 
@@ -1150,6 +1157,11 @@ Public Class NFOStrategyInstrument
                     If typeOfMessage = MessageType.INFO Then
                         Await SendTelegramTextMessageAsync(userInputs.TelegramBotAPIKey, userInputs.TelegramInfoChatID, message).ConfigureAwait(False)
                     ElseIf typeOfMessage = MessageType.ALL Then
+                        If doNotIncludeTradingSymbol Then
+                            summaryMessage = String.Format("{0}{1}Timestamp: {2}", summaryMessage, vbNewLine, Now.ToString("HH:mm:ss"))
+                        Else
+                            summaryMessage = String.Format("{0}: {1}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, summaryMessage, vbNewLine, Now.ToString("HH:mm:ss"))
+                        End If
                         Await SendTelegramTextMessageAsync(userInputs.TelegramBotAPIKey, userInputs.TelegramInfoChatID, summaryMessage).ConfigureAwait(False)
                     End If
                 End If

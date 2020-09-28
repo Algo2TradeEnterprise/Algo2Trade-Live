@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Entities.UserSettings
 
 <Serializable>
@@ -19,6 +20,7 @@ Public Class NFOUserInputs
 
 
     Public Property StockList As List(Of String)
+    Public Property SpotDirection As IOrder.TypeOfTransaction
     Public Property MinNonBlankCandlePercentage As Decimal
     Public Property MinTotalCandlePercentage As Decimal
     Public Property MinEODTurnoverPercentage As Decimal

@@ -18,6 +18,7 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
+        cmbSpotDirection.SelectedIndex = 0
         LoadSettings()
     End Sub
 
@@ -57,6 +58,14 @@ Public Class frmNFOSettings
 
                 txtStockList.Text = stocks.Substring(1)
             End If
+            Select Case _settings.SpotDirection
+                Case Algo2TradeCore.Entities.IOrder.TypeOfTransaction.None
+                    cmbSpotDirection.SelectedIndex = 0
+                Case Algo2TradeCore.Entities.IOrder.TypeOfTransaction.Buy
+                    cmbSpotDirection.SelectedIndex = 1
+                Case Algo2TradeCore.Entities.IOrder.TypeOfTransaction.Sell
+                    cmbSpotDirection.SelectedIndex = 2
+            End Select
             txtMinNonBlankCandlePer.Text = _settings.MinNonBlankCandlePercentage
             txtMinTotalCandlePer.Text = _settings.MinTotalCandlePercentage
             txtMinEODTurnoverPercentage.Text = _settings.MinEODTurnoverPercentage
@@ -90,6 +99,14 @@ Public Class frmNFOSettings
                 Next
             End If
         End If
+        Select Case cmbSpotDirection.SelectedIndex
+            Case 0
+                _settings.SpotDirection = Algo2TradeCore.Entities.IOrder.TypeOfTransaction.None
+            Case 1
+                _settings.SpotDirection = Algo2TradeCore.Entities.IOrder.TypeOfTransaction.Buy
+            Case 2
+                _settings.SpotDirection = Algo2TradeCore.Entities.IOrder.TypeOfTransaction.Sell
+        End Select
         _settings.MinNonBlankCandlePercentage = txtMinNonBlankCandlePer.Text
         _settings.MinTotalCandlePercentage = txtMinTotalCandlePer.Text
         _settings.MinEODTurnoverPercentage = txtMinEODTurnoverPercentage.Text

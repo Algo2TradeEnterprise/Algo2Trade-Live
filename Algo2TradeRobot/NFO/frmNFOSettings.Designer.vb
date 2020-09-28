@@ -67,6 +67,8 @@ Partial Class frmNFOSettings
         Me.lblTelegramBotAPIKey = New System.Windows.Forms.Label()
         Me.txtTelegramDebugChatID = New System.Windows.Forms.TextBox()
         Me.lblTelegramDebugChatID = New System.Windows.Forms.Label()
+        Me.lblSpotDirection = New System.Windows.Forms.Label()
+        Me.cmbSpotDirection = New System.Windows.Forms.ComboBox()
         Me.grpStockFilter.SuspendLayout()
         Me.grpSignal.SuspendLayout()
         Me.grpStockSelection.SuspendLayout()
@@ -95,6 +97,8 @@ Partial Class frmNFOSettings
         '
         'grpStockFilter
         '
+        Me.grpStockFilter.Controls.Add(Me.cmbSpotDirection)
+        Me.grpStockFilter.Controls.Add(Me.lblSpotDirection)
         Me.grpStockFilter.Controls.Add(Me.txtMinEODTurnoverPercentage)
         Me.grpStockFilter.Controls.Add(Me.lblEODTurnoverPercentage)
         Me.grpStockFilter.Controls.Add(Me.txtMinTotalCandlePer)
@@ -105,24 +109,24 @@ Partial Class frmNFOSettings
         Me.grpStockFilter.Controls.Add(Me.lblStockList)
         Me.grpStockFilter.Location = New System.Drawing.Point(551, -2)
         Me.grpStockFilter.Name = "grpStockFilter"
-        Me.grpStockFilter.Size = New System.Drawing.Size(425, 194)
+        Me.grpStockFilter.Size = New System.Drawing.Size(425, 225)
         Me.grpStockFilter.TabIndex = 2
         Me.grpStockFilter.TabStop = False
         Me.grpStockFilter.Text = "Stock and Option Filter Settings"
         '
         'txtMinEODTurnoverPercentage
         '
-        Me.txtMinEODTurnoverPercentage.Location = New System.Drawing.Point(216, 158)
+        Me.txtMinEODTurnoverPercentage.Location = New System.Drawing.Point(216, 186)
         Me.txtMinEODTurnoverPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinEODTurnoverPercentage.Name = "txtMinEODTurnoverPercentage"
         Me.txtMinEODTurnoverPercentage.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinEODTurnoverPercentage.TabIndex = 3
+        Me.txtMinEODTurnoverPercentage.TabIndex = 4
         Me.txtMinEODTurnoverPercentage.Tag = "Min EOD Turnover %"
         '
         'lblEODTurnoverPercentage
         '
         Me.lblEODTurnoverPercentage.AutoSize = True
-        Me.lblEODTurnoverPercentage.Location = New System.Drawing.Point(8, 161)
+        Me.lblEODTurnoverPercentage.Location = New System.Drawing.Point(8, 189)
         Me.lblEODTurnoverPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEODTurnoverPercentage.Name = "lblEODTurnoverPercentage"
         Me.lblEODTurnoverPercentage.Size = New System.Drawing.Size(142, 17)
@@ -131,17 +135,17 @@ Partial Class frmNFOSettings
         '
         'txtMinTotalCandlePer
         '
-        Me.txtMinTotalCandlePer.Location = New System.Drawing.Point(216, 124)
+        Me.txtMinTotalCandlePer.Location = New System.Drawing.Point(216, 152)
         Me.txtMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinTotalCandlePer.Name = "txtMinTotalCandlePer"
         Me.txtMinTotalCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinTotalCandlePer.TabIndex = 2
+        Me.txtMinTotalCandlePer.TabIndex = 3
         Me.txtMinTotalCandlePer.Tag = "Min Total Candle %"
         '
         'lblMinTotalCandlePer
         '
         Me.lblMinTotalCandlePer.AutoSize = True
-        Me.lblMinTotalCandlePer.Location = New System.Drawing.Point(8, 127)
+        Me.lblMinTotalCandlePer.Location = New System.Drawing.Point(8, 155)
         Me.lblMinTotalCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMinTotalCandlePer.Name = "lblMinTotalCandlePer"
         Me.lblMinTotalCandlePer.Size = New System.Drawing.Size(130, 17)
@@ -150,17 +154,17 @@ Partial Class frmNFOSettings
         '
         'txtMinNonBlankCandlePer
         '
-        Me.txtMinNonBlankCandlePer.Location = New System.Drawing.Point(216, 89)
+        Me.txtMinNonBlankCandlePer.Location = New System.Drawing.Point(216, 117)
         Me.txtMinNonBlankCandlePer.Margin = New System.Windows.Forms.Padding(4)
         Me.txtMinNonBlankCandlePer.Name = "txtMinNonBlankCandlePer"
         Me.txtMinNonBlankCandlePer.Size = New System.Drawing.Size(201, 22)
-        Me.txtMinNonBlankCandlePer.TabIndex = 1
+        Me.txtMinNonBlankCandlePer.TabIndex = 2
         Me.txtMinNonBlankCandlePer.Tag = "Min Non-Blank Candle %"
         '
         'lblMinNonBlankCandlePer
         '
         Me.lblMinNonBlankCandlePer.AutoSize = True
-        Me.lblMinNonBlankCandlePer.Location = New System.Drawing.Point(8, 92)
+        Me.lblMinNonBlankCandlePer.Location = New System.Drawing.Point(8, 120)
         Me.lblMinNonBlankCandlePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblMinNonBlankCandlePer.Name = "lblMinNonBlankCandlePer"
         Me.lblMinNonBlankCandlePer.Size = New System.Drawing.Size(164, 17)
@@ -381,7 +385,7 @@ Partial Class frmNFOSettings
         Me.grpStockSelection.Controls.Add(Me.lblMaxStrikeRangePer)
         Me.grpStockSelection.Controls.Add(Me.dtpckrLastOptionCheckTime)
         Me.grpStockSelection.Controls.Add(Me.lblLastEntryTime)
-        Me.grpStockSelection.Location = New System.Drawing.Point(551, 198)
+        Me.grpStockSelection.Location = New System.Drawing.Point(551, 229)
         Me.grpStockSelection.Name = "grpStockSelection"
         Me.grpStockSelection.Size = New System.Drawing.Size(425, 128)
         Me.grpStockSelection.TabIndex = 3
@@ -518,6 +522,26 @@ Partial Class frmNFOSettings
         Me.lblTelegramDebugChatID.TabIndex = 65
         Me.lblTelegramDebugChatID.Text = "Telegram Debug Chat ID"
         '
+        'lblSpotDirection
+        '
+        Me.lblSpotDirection.AutoSize = True
+        Me.lblSpotDirection.Location = New System.Drawing.Point(8, 86)
+        Me.lblSpotDirection.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSpotDirection.Name = "lblSpotDirection"
+        Me.lblSpotDirection.Size = New System.Drawing.Size(97, 17)
+        Me.lblSpotDirection.TabIndex = 69
+        Me.lblSpotDirection.Text = "Spot Direction"
+        '
+        'cmbSpotDirection
+        '
+        Me.cmbSpotDirection.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbSpotDirection.FormattingEnabled = True
+        Me.cmbSpotDirection.Items.AddRange(New Object() {"AUTO", "BUY", "SELL"})
+        Me.cmbSpotDirection.Location = New System.Drawing.Point(216, 83)
+        Me.cmbSpotDirection.Name = "cmbSpotDirection"
+        Me.cmbSpotDirection.Size = New System.Drawing.Size(201, 24)
+        Me.cmbSpotDirection.TabIndex = 1
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -590,4 +614,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblTelegramBotAPIKey As Label
     Friend WithEvents txtTelegramDebugChatID As TextBox
     Friend WithEvents lblTelegramDebugChatID As Label
+    Friend WithEvents cmbSpotDirection As ComboBox
+    Friend WithEvents lblSpotDirection As Label
 End Class

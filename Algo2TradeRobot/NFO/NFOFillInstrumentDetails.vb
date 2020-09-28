@@ -91,6 +91,13 @@ Public Class NFOFillInstrumentDetails
                         ElseIf hkPayload(lastTradingDay).CandleColor = Color.Red Then
                             instrumentType = "PE"
                         End If
+
+                        If _userInputs.SpotDirection = IOrder.TypeOfTransaction.Buy Then
+                            instrumentType = "CE"
+                        ElseIf _userInputs.SpotDirection = IOrder.TypeOfTransaction.Sell Then
+                            instrumentType = "PE"
+                        End If
+
                         If instrumentType IsNot Nothing AndAlso instrumentType.Trim <> "" Then
                             If optionsInstruments IsNot Nothing AndAlso optionsInstruments.Count > 0 Then
                                 Dim minExpiry As Date = optionsInstruments.Min(Function(x)
