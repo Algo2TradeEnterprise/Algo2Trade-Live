@@ -66,6 +66,7 @@ Public Class NFOStrategyInstrument
     Private _targetReached As Boolean = False
     Private _candleClosedAboveTarget As Boolean = False
     Private _targetPrice As Decimal = Decimal.MinValue
+    Private _potentialUsedCapital As Decimal = 0
 
     Private ReadOnly _dummyFractalConsumer As FractalConsumer
     Private ReadOnly _runningInstrumentFilename As String
@@ -500,7 +501,7 @@ Public Class NFOStrategyInstrument
 
                             If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
                                 _targetReached = True
-                                message = String.Format("Exit order placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}",
+                                message = String.Format("#Exit_order_placed. Signal Candle: {0}, Direction:{1}, Quantity:{2}",
                                                         placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                         placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
                                                         placeOrderTriggers.FirstOrDefault.Item2.Quantity)
@@ -509,12 +510,16 @@ Public Class NFOStrategyInstrument
                             If placeOrderTriggers.FirstOrDefault.Item2.Supporting IsNot Nothing AndAlso placeOrderTriggers.FirstOrDefault.Item2.Supporting.Count > 0 Then
                                 _targetPrice = placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault
 
-                                message = String.Format("Entry Order Placed. Signal Candle: {0}, Direction:{1}, Potential Entry:{2}, Potential Target:{3}, Quantity:{4}",
+                                Dim potentialCapitalRequiredForThisTrade As Decimal = CDec(placeOrderTriggers.FirstOrDefault.Item2.Supporting.LastOrDefault) * placeOrderTriggers.FirstOrDefault.Item2.Quantity
+                                _potentialUsedCapital += potentialCapitalRequiredForThisTrade
+                                message = String.Format("#Entry_Order_Placed. Signal Candle: {0}, Direction:{1}, Potential Entry:{2}, Potential Target:{3}, Quantity:{4}, Potential Capital Required for this trade:{5}, Potential Total Used Capital:{6}",
                                                         placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
                                                         placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString,
                                                         placeOrderTriggers.FirstOrDefault.Item2.Supporting.LastOrDefault,
                                                         placeOrderTriggers.FirstOrDefault.Item2.Supporting.FirstOrDefault,
-                                                        placeOrderTriggers.FirstOrDefault.Item2.Quantity)
+                                                        placeOrderTriggers.FirstOrDefault.Item2.Quantity,
+                                                        potentialCapitalRequiredForThisTrade,
+                                                        _potentialUsedCapital)
                             End If
 
                             Await DisplayAndSendSignalAlertAsync(placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime, message, MessageType.INFO, False, False).ConfigureAwait(False)
