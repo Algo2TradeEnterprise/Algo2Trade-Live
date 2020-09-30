@@ -40,43 +40,55 @@ Public Class frmNFOSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtMaxTargetToStoplossMultiplier.Text = _settings.MaxTargetToStoplossMultiplier
-            txtMaxProfitPerTrade.Text = _settings.MaxProfitPerTrade
+            txtMaxLossPerTrade.Text = _settings.MaxLossPerTrade
             txtNumberOfTradePerStock.Text = _settings.NumberOfTradePerStock
-            txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
-            txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
-            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            txtNumberOfStock.Text = _settings.NumberOfStock
             txtMaxTurnoverOfATrade.Text = _settings.MaxTurnoverOfATrade
             txtMinDistancePercentageForCancellation.Text = _settings.MinDistancePercentageForCancellation
+
+            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            txtNumberOfStock.Text = _settings.NumberOfStock
+            txtOverallMaxLossPerDay.Text = _settings.OverallMaxLossPerDay
+            txtOverallMaxProfitPerDay.Text = _settings.OverallMaxProfitPerDay
 
             chkbAutoSelectStock.Checked = _settings.AutoSelectStock
             txtMinPrice.Text = _settings.MinStockPrice
             txtMaxPrice.Text = _settings.MaxStockPrice
             txtATRPercentage.Text = _settings.MinATRPercentage
             txtMaxBlankCandlePer.Text = _settings.MaxBlankCandlePercentage
+            txtMaxTargetToStoplossMultiplier.Text = _settings.MaxTargetToStoplossMultiplier
+
+            txtATRPeriod.Text = _settings.ATRPeriod
+            txtATRBandsPeriod.Text = _settings.ATRBandPeriod
+            txtATRBandsShift.Text = _settings.ATRBandShift
         End If
     End Sub
+
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.MaxTargetToStoplossMultiplier = txtMaxTargetToStoplossMultiplier.Text
-        _settings.MaxProfitPerTrade = Math.Abs(CDec(txtMaxProfitPerTrade.Text))
+        _settings.MaxLossPerTrade = Math.Abs(CDec(txtMaxLossPerTrade.Text)) * -1
         _settings.NumberOfTradePerStock = txtNumberOfTradePerStock.Text
-        _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
-        _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))
-        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        _settings.NumberOfStock = txtNumberOfStock.Text
         _settings.MaxTurnoverOfATrade = txtMaxTurnoverOfATrade.Text
         _settings.MinDistancePercentageForCancellation = txtMinDistancePercentageForCancellation.Text
+
+        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.NumberOfStock = txtNumberOfStock.Text
+        _settings.OverallMaxLossPerDay = Math.Abs(CDec(txtOverallMaxLossPerDay.Text)) * -1
+        _settings.OverallMaxProfitPerDay = Math.Abs(CDec(txtOverallMaxProfitPerDay.Text))
 
         _settings.AutoSelectStock = chkbAutoSelectStock.Checked
         _settings.MinStockPrice = txtMinPrice.Text
         _settings.MaxStockPrice = txtMaxPrice.Text
         _settings.MinATRPercentage = txtATRPercentage.Text
         _settings.MaxBlankCandlePercentage = txtMaxBlankCandlePer.Text
+        _settings.MaxTargetToStoplossMultiplier = txtMaxTargetToStoplossMultiplier.Text
+
+        _settings.ATRPeriod = txtATRPeriod.Text
+        _settings.ATRBandPeriod = txtATRBandsPeriod.Text
+        _settings.ATRBandShift = txtATRBandsShift.Text
+
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -100,6 +112,24 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxLossPerTrade)
+        ValidateNumbers(1, Integer.MaxValue, txtNumberOfTradePerStock, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxTurnoverOfATrade)
+        ValidateNumbers(0, Decimal.MaxValue, txtMinDistancePercentageForCancellation)
+
+        ValidateNumbers(1, Integer.MaxValue, txtNumberOfStock, True)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtOverallMaxLossPerDay)
+        ValidateNumbers(0, Decimal.MaxValue, txtOverallMaxProfitPerDay)
+
+        ValidateNumbers(0, Decimal.MaxValue, txtMinPrice)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxPrice)
+        ValidateNumbers(0, Decimal.MaxValue, txtATRPercentage)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxBlankCandlePer)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxTargetToStoplossMultiplier)
+
+        ValidateNumbers(1, Integer.MaxValue, txtATRPeriod, True)
+        ValidateNumbers(1, Integer.MaxValue, txtATRBandsPeriod, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtATRBandsShift)
 
         ValidateFile()
     End Sub

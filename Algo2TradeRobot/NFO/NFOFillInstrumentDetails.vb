@@ -36,6 +36,24 @@ Public Class NFOFillInstrumentDetails
     End Sub
 #End Region
 
+#Region "Enum"
+    Enum TypeOfData
+        Intraday = 1
+        EOD
+    End Enum
+#End Region
+
+#Region "Private Class"
+    Private Class InstrumentDetails
+        Public TradingSymbol As String
+        Public ATRPercentage As Decimal
+        Public Price As Decimal
+        Public BlankCandlePercentage As Decimal
+        Public Instrument As IInstrument
+        Public PreviousDayHighestATR As Decimal
+    End Class
+#End Region
+
     Private _cts As CancellationTokenSource
     Private ReadOnly _parentStrategy As NFOStrategy
     Private ReadOnly _userInputs As NFOUserInputs
@@ -43,6 +61,7 @@ Public Class NFOFillInstrumentDetails
     Private ReadOnly ALiceIntradayHistoricalURL = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=1&starttime={2}&endtime={3}&type=historical"
     Private ReadOnly tradingDay As Date = Date.MinValue
     Private ReadOnly _APIAdapter As APIAdapter
+
     Public Sub New(ByVal canceller As CancellationTokenSource, ByVal parentStrategy As NFOStrategy)
         _cts = canceller
         _parentStrategy = parentStrategy
@@ -60,82 +79,6 @@ Public Class NFOFillInstrumentDetails
                 Throw New NotImplementedException
         End Select
     End Sub
-
-    Private Async Function GetHistoricalCandleStickAsync(ByVal instrument As IInstrument, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
-        Dim ret As Dictionary(Of String, Object) = Nothing
-        _cts.Token.ThrowIfCancellationRequested()
-        Dim historicalDataURL As String = Nothing
-        Select Case historicalDataType
-            Case TypeOfData.Intraday
-                historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
-            Case TypeOfData.EOD
-                historicalDataURL = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
-        End Select
-        OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
-        Dim proxyToBeUsed As HttpProxy = Nothing
-        Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-
-            Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
-            headers.Add("X-Authorization-Token", _parentStrategy.ParentController.APIConnection.ENCToken)
-
-            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
-                                                                                HttpMethod.Get,
-                                                                                Nothing,
-                                                                                False,
-                                                                                headers,
-                                                                                True,
-                                                                                "application/json").ConfigureAwait(False)
-            If l Is Nothing OrElse l.Item2 Is Nothing Then
-                Throw New ApplicationException(String.Format("No response while getting historical data for: {0}", historicalDataURL))
-            End If
-            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                ret = l.Item2
-            End If
-            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-        End Using
-        Return ret
-    End Function
-    Private Async Function GetChartFromHistoricalAsync(ByVal instrument As IInstrument,
-                                                       ByVal fromDate As Date,
-                                                       ByVal toDate As Date,
-                                                       ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of Date, OHLCPayload))
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim ret As Dictionary(Of Date, OHLCPayload) = Nothing
-        Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Await GetHistoricalCandleStickAsync(instrument, fromDate, toDate, historicalDataType).ConfigureAwait(False)
-        If historicalCandlesJSONDict.ContainsKey("data") Then
-            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
-            OnHeartbeat(String.Format("Generating Payload for {0}", instrument.TradingSymbol))
-            Dim previousPayload As OHLCPayload = Nothing
-            For Each historicalCandle In historicalCandles
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim runningSnapshotTime As Date = UnixToDateTime(historicalCandle(0))
-
-                Dim runningPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
-                With runningPayload
-                    .SnapshotDateTime = runningSnapshotTime
-                    .TradingSymbol = instrument.TradingSymbol
-                    .OpenPrice.Value = historicalCandle(1) / instrument.PriceDivisor
-                    .HighPrice.Value = historicalCandle(2) / instrument.PriceDivisor
-                    .LowPrice.Value = historicalCandle(3) / instrument.PriceDivisor
-                    .ClosePrice.Value = historicalCandle(4) / instrument.PriceDivisor
-                    .Volume.Value = historicalCandle(5)
-                    .PreviousPayload = previousPayload
-                End With
-                previousPayload = runningPayload
-
-                If ret Is Nothing Then ret = New Dictionary(Of Date, OHLCPayload)
-                If Not ret.ContainsKey(runningSnapshotTime) Then ret.Add(runningSnapshotTime, runningPayload)
-            Next
-        End If
-        Return ret
-    End Function
 
     Public Async Function GetInstrumentData(ByVal allInstruments As IEnumerable(Of IInstrument), ByVal bannedStock As List(Of String)) As Task
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
@@ -183,28 +126,23 @@ Public Class NFOFillInstrumentDetails
                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                    If y.RawExchange.ToUpper = "NFO" AndAlso (bannedStock Is Nothing OrElse
                                                                                                                    bannedStock IsNot Nothing AndAlso Not bannedStock.Contains(y.RawInstrumentName)) Then
-                                                                                                       ''Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                       'Dim futureEODPayload As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(y, tradingDay.AddDays(-10), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
-                                                                                                       'If futureEODPayload IsNot Nothing AndAlso futureEODPayload.Count > 0 Then
-                                                                                                       '    Dim lastDayPayload As OHLCPayload = futureEODPayload.LastOrDefault.Value
-                                                                                                       '    If lastDayPayload.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso lastDayPayload.ClosePrice.Value <= _userInputs.MaxStockPrice Then
                                                                                                        Dim rawCashInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
                                                                                                                                                                              Return x.TradingSymbol = y.RawInstrumentName
                                                                                                                                                                          End Function)
                                                                                                        If rawCashInstrument IsNot Nothing Then
                                                                                                            _cts.Token.ThrowIfCancellationRequested()
-                                                                                                           'Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay.AddDays(-1), TypeOfData.EOD).ConfigureAwait(False)
                                                                                                            Dim eodHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(rawCashInstrument, tradingDay.AddDays(-300), tradingDay, TypeOfData.EOD).ConfigureAwait(False)
                                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                                            If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 100 Then
                                                                                                                _cts.Token.ThrowIfCancellationRequested()
-                                                                                                               If eodHistoricalData.LastOrDefault.Value.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso eodHistoricalData.LastOrDefault.Value.ClosePrice.Value <= _userInputs.MaxStockPrice Then
-                                                                                                                   Dim ATRPayload As Dictionary(Of Date, Decimal) = Nothing
-                                                                                                                   CalculateATR(14, eodHistoricalData, ATRPayload)
+                                                                                                               If eodHistoricalData.LastOrDefault.Value.ClosePrice.Value >= _userInputs.MinStockPrice AndAlso
+                                                                                                                    eodHistoricalData.LastOrDefault.Value.ClosePrice.Value <= _userInputs.MaxStockPrice Then
+                                                                                                                   Dim atrPayload As Dictionary(Of Date, Decimal) = Nothing
+                                                                                                                   CalculateATR(14, eodHistoricalData, atrPayload)
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()
                                                                                                                    Dim lastDayClosePrice As Decimal = eodHistoricalData.LastOrDefault.Value.ClosePrice.Value
                                                                                                                    lastTradingDay = eodHistoricalData.LastOrDefault.Key
-                                                                                                                   Dim atrPercentage As Decimal = (ATRPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
+                                                                                                                   Dim atrPercentage As Decimal = (atrPayload(eodHistoricalData.LastOrDefault.Key) / lastDayClosePrice) * 100
                                                                                                                    If atrPercentage >= _userInputs.MinATRPercentage Then
                                                                                                                        If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
                                                                                                                        highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, lastDayClosePrice})
@@ -212,8 +150,6 @@ Public Class NFOFillInstrumentDetails
                                                                                                                End If
                                                                                                            End If
                                                                                                        End If
-                                                                                                       '    End If
-                                                                                                       'End If
                                                                                                    End If
                                                                                                Catch ex As Exception
                                                                                                    logger.Error(ex)
@@ -247,59 +183,13 @@ Public Class NFOFillInstrumentDetails
                                                                           Return x.Value(0)
                                                                       End Function)
                         _cts.Token.ThrowIfCancellationRequested()
-                        'Dim futureStocks As List(Of IInstrument) = nfoInstruments.ToList.FindAll(Function(x)
-                        '                                                                             Return x.RawInstrumentName = stock.Key
-                        '                                                                         End Function)
-                        'If futureStocks IsNot Nothing AndAlso futureStocks.Count > 0 Then
-                        '    Dim minexpiry As Date = futureStocks.Min(Function(y)
-                        '                                                 Return y.Expiry
-                        '                                             End Function)
-                        'Dim tradingStock As IInstrument = Nothing
-                        'Dim volumeCheckingStock As IInstrument = Nothing
                         Dim tradingStock As IInstrument = allInstruments.ToList.Find(Function(y)
                                                                                          Return y.TradingSymbol = stock.Key
                                                                                      End Function)
-                        Dim volumeCheckingStock As IInstrument = tradingStock
-                        '_cts.Token.ThrowIfCancellationRequested()
-                        'If minexpiry.Date = Now.Date Then
-                        '    volumeCheckingStock = futureStocks.Find(Function(x)
-                        '                                                Return x.Expiry = minexpiry
-                        '                                            End Function)
-                        '    Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
-                        '                                                     If Not y.Expiry.Value.Date = Now.Date Then
-                        '                                                         Return y.Expiry.Value
-                        '                                                     Else
-                        '                                                         Return Date.MaxValue
-                        '                                                     End If
-                        '                                                 End Function)
-                        '    tradingStock = futureStocks.Find(Function(z)
-                        '                                         Return z.Expiry = nextMinExpiry
-                        '                                     End Function)
-                        'ElseIf minexpiry.Date < Now.Date Then
-                        '    Dim nextMinExpiry As Date = futureStocks.Min(Function(y)
-                        '                                                     If Not y.Expiry.Value.Date <= Now.Date Then
-                        '                                                         Return y.Expiry.Value
-                        '                                                     Else
-                        '                                                         Return Date.MaxValue
-                        '                                                     End If
-                        '                                                 End Function)
-                        '    volumeCheckingStock = futureStocks.Find(Function(x)
-                        '                                                Return x.Expiry = nextMinExpiry
-                        '                                            End Function)
-                        '    tradingStock = futureStocks.Find(Function(z)
-                        '                                         Return z.Expiry = nextMinExpiry
-                        '                                     End Function)
-                        'Else
-                        '    tradingStock = futureStocks.Find(Function(x)
-                        '                                         Return x.Expiry = minexpiry
-                        '                                     End Function)
-                        '    volumeCheckingStock = tradingStock
-                        'End If
                         _cts.Token.ThrowIfCancellationRequested()
-                        If tradingStock IsNot Nothing AndAlso volumeCheckingStock IsNot Nothing Then
+                        If tradingStock IsNot Nothing Then
                             _cts.Token.ThrowIfCancellationRequested()
-                            'Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), lastTradingDay, TypeOfData.Intraday).ConfigureAwait(False)
-                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(volumeCheckingStock, lastTradingDay.AddDays(-5), tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
+                            Dim intradayHistoricalData As Dictionary(Of Date, OHLCPayload) = Await GetChartFromHistoricalAsync(tradingStock, lastTradingDay.AddDays(-5), tradingDay, TypeOfData.Intraday).ConfigureAwait(False)
                             If intradayHistoricalData IsNot Nothing AndAlso intradayHistoricalData.Count > 100 Then
                                 Dim intradayHKPayload As Dictionary(Of Date, OHLCPayload) = Nothing
                                 ConvertToHeikenAshi(intradayHistoricalData, intradayHKPayload)
@@ -310,7 +200,6 @@ Public Class NFOFillInstrumentDetails
                                     {.TradingSymbol = tradingStock.TradingSymbol,
                                      .ATRPercentage = stock.Value(0),
                                      .Price = stock.Value(1),
-                                     .Slab = CalculateSlab(stock.Value(1), stock.Value(0)),
                                      .BlankCandlePercentage = blankCandlePercentage,
                                      .PreviousDayHighestATR = GetHighestATR(intradayATRPayload, lastTradingDay),
                                      .Instrument = tradingStock}
@@ -318,7 +207,6 @@ Public Class NFOFillInstrumentDetails
                                 capableStocks.Add(tradingStock.TradingSymbol, instrumentData)
                             End If
                         End If
-                        'End If
                     Next
                     If capableStocks IsNot Nothing AndAlso capableStocks.Count > 0 Then
                         Dim todayStockList As List(Of String) = Nothing
@@ -343,39 +231,46 @@ Public Class NFOFillInstrumentDetails
                             Dim allStockData As DataTable = Nothing
                             If _userInputs.InstrumentDetailsFilePath IsNot Nothing AndAlso
                                 File.Exists(_userInputs.InstrumentDetailsFilePath) Then
-                                File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Dim eligibleStocks As Dictionary(Of String, Decimal) = Nothing
                                 For Each runningStock In todayStockList
-                                    Dim highestATR As Decimal = capableStocks(runningStock).PreviousDayHighestATR
-                                    Dim price As Decimal = capableStocks(runningStock).Price
-                                    Dim instrument As IInstrument = capableStocks(runningStock).Instrument
-                                    Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
-                                    Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Celing)
-                                    Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxProfitPerTrade, instrument)
-                                    Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxProfitPerTrade), instrument)
-                                    Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
-                                    If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
-                                        If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
-                                        eligibleStocks.Add(runningStock, multiplier)
-                                    Else
-                                        Console.WriteLine(String.Format("{0},{1}", runningStock, multiplier))
-                                    End If
+                                    Try
+                                        Dim highestATR As Decimal = capableStocks(runningStock).PreviousDayHighestATR
+                                        Dim price As Decimal = capableStocks(runningStock).Price
+                                        Dim instrument As IInstrument = capableStocks(runningStock).Instrument
+                                        Dim buffer As Decimal = CalculateBuffer(price, RoundOfType.Floor)
+                                        Dim slPoint As Decimal = ConvertFloorCeling(highestATR, instrument.TickSize, RoundOfType.Celing)
+                                        Dim quantity As Integer = CalculateQuantityFromStoploss(price, price - slPoint, _userInputs.MaxLossPerTrade, instrument)
+                                        Dim target As Decimal = CalculateTargetFromPL(price, quantity, Math.Abs(_userInputs.MaxLossPerTrade), instrument)
+                                        Dim multiplier As Decimal = Math.Round((target - price) / slPoint, 4)
+                                        If multiplier <= _userInputs.MaxTargetToStoplossMultiplier Then
+                                            If eligibleStocks Is Nothing Then eligibleStocks = New Dictionary(Of String, Decimal)
+                                            eligibleStocks.Add(runningStock, multiplier)
+                                        Else
+                                            Console.WriteLine(String.Format("{0},{1}", runningStock, multiplier))
+                                        End If
+                                    Catch aex As Exception
+                                        logger.Error(String.Format("{0},Tick Size not available", runningStock))
+                                        Console.WriteLine(String.Format("{0},Tick Size not available", runningStock))
+                                    End Try
                                 Next
 
-
+                                File.Delete(_userInputs.InstrumentDetailsFilePath)
                                 Using csv As New CSVHelper(_userInputs.InstrumentDetailsFilePath, ",", _cts)
                                     _cts.Token.ThrowIfCancellationRequested()
                                     allStockData = New DataTable
                                     allStockData.Columns.Add("TRADING SYMBOL")
                                     allStockData.Columns.Add("MULTIPLIER")
                                     allStockData.Columns.Add("HIGHEST ATR")
-                                    For Each stock In eligibleStocks
-                                        Dim row As DataRow = allStockData.NewRow
-                                        row("TRADING SYMBOL") = stock.Key
-                                        row("MULTIPLIER") = stock.Value
-                                        row("HIGHEST ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
-                                        allStockData.Rows.Add(row)
-                                    Next
+
+                                    If eligibleStocks IsNot Nothing AndAlso eligibleStocks.Count > 0 Then
+                                        For Each stock In eligibleStocks
+                                            Dim row As DataRow = allStockData.NewRow
+                                            row("TRADING SYMBOL") = stock.Key
+                                            row("MULTIPLIER") = stock.Value
+                                            row("HIGHEST ATR") = Math.Round(capableStocks(stock.Key).PreviousDayHighestATR, 6)
+                                            allStockData.Rows.Add(row)
+                                        Next
+                                    End If
 
                                     csv.GetCSVFromDataTable(allStockData)
                                 End Using
@@ -391,26 +286,96 @@ Public Class NFOFillInstrumentDetails
             End If
         End If
     End Function
-    Private Function CalculateSlab(ByVal price As Decimal, ByVal atrPer As Decimal) As Decimal
-        Dim ret As Decimal = 0.25
-        Dim slabList As List(Of Decimal) = New List(Of Decimal) From {0.25, 0.5, 1, 2.5, 5, 10, 25}
-        Dim atr As Decimal = (atrPer / 100) * price
-        Dim supportedSlabList As List(Of Decimal) = slabList.FindAll(Function(x)
-                                                                         Return x <= atr / 8
-                                                                     End Function)
-        If supportedSlabList IsNot Nothing AndAlso supportedSlabList.Count > 0 Then
-            ret = supportedSlabList.Max
-            If price * 1 / 100 < ret Then
-                Dim newSupportedSlabList As List(Of Decimal) = supportedSlabList.FindAll(Function(x)
-                                                                                             Return x <= price * 1 / 100
-                                                                                         End Function)
-                If newSupportedSlabList IsNot Nothing AndAlso newSupportedSlabList.Count > 0 Then
-                    ret = newSupportedSlabList.Max
-                End If
-            End If
+
+#Region "Historical"
+    Private Async Function GetChartFromHistoricalAsync(ByVal instrument As IInstrument,
+                                                       ByVal fromDate As Date,
+                                                       ByVal toDate As Date,
+                                                       ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of Date, OHLCPayload))
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Dim ret As Dictionary(Of Date, OHLCPayload) = Nothing
+        Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Await GetHistoricalCandleStickAsync(instrument, fromDate, toDate, historicalDataType).ConfigureAwait(False)
+        If historicalCandlesJSONDict.ContainsKey("data") Then
+            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
+            OnHeartbeat(String.Format("Generating Payload for {0}", instrument.TradingSymbol))
+            Dim previousPayload As OHLCPayload = Nothing
+            For Each historicalCandle In historicalCandles
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim runningSnapshotTime As Date = UnixToDateTime(historicalCandle(0))
+
+                Dim runningPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
+                With runningPayload
+                    .SnapshotDateTime = runningSnapshotTime
+                    .TradingSymbol = instrument.TradingSymbol
+                    .OpenPrice.Value = historicalCandle(1) / instrument.PriceDivisor
+                    .HighPrice.Value = historicalCandle(2) / instrument.PriceDivisor
+                    .LowPrice.Value = historicalCandle(3) / instrument.PriceDivisor
+                    .ClosePrice.Value = historicalCandle(4) / instrument.PriceDivisor
+                    .Volume.Value = historicalCandle(5)
+                    .PreviousPayload = previousPayload
+                End With
+                previousPayload = runningPayload
+
+                If ret Is Nothing Then ret = New Dictionary(Of Date, OHLCPayload)
+                If Not ret.ContainsKey(runningSnapshotTime) Then ret.Add(runningSnapshotTime, runningPayload)
+            Next
         End If
         Return ret
     End Function
+
+    Private Async Function GetHistoricalCandleStickAsync(ByVal instrument As IInstrument, ByVal fromDate As Date, ByVal toDate As Date, ByVal historicalDataType As TypeOfData) As Task(Of Dictionary(Of String, Object))
+        Dim ret As Dictionary(Of String, Object) = Nothing
+        _cts.Token.ThrowIfCancellationRequested()
+        Dim historicalDataURL As String = Nothing
+        If instrument.Segment.ToUpper = "INDICES" Then
+            Select Case historicalDataType
+                Case TypeOfData.Intraday
+                    historicalDataURL = String.Format(ALiceIntradayHistoricalURL.Replace("token", "name"), String.Format("{0}_{1}", instrument.RawExchange, instrument.Segment), instrument.TradingSymbol, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                Case TypeOfData.EOD
+                    historicalDataURL = String.Format(AliceEODHistoricalURL.Replace("token", "name"), String.Format("{0}_{1}", instrument.RawExchange, instrument.Segment), instrument.TradingSymbol, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+            End Select
+        Else
+            Select Case historicalDataType
+                Case TypeOfData.Intraday
+                    historicalDataURL = String.Format(ALiceIntradayHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+                Case TypeOfData.EOD
+                    historicalDataURL = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+            End Select
+        End If
+        OnHeartbeat(String.Format("Fetching historical Data: {0}", historicalDataURL))
+        Dim proxyToBeUsed As HttpProxy = Nothing
+        Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
+            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+
+            Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
+            headers.Add("X-Authorization-Token", _parentStrategy.ParentController.APIConnection.ENCToken)
+
+            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL,
+                                                                                HttpMethod.Get,
+                                                                                Nothing,
+                                                                                False,
+                                                                                headers,
+                                                                                True,
+                                                                                "application/json").ConfigureAwait(False)
+            If l Is Nothing OrElse l.Item2 Is Nothing Then
+                Throw New ApplicationException(String.Format("No response while getting historical data for: {0}", historicalDataURL))
+            End If
+            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
+                ret = l.Item2
+            End If
+            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
+            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
+            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+        End Using
+        Return ret
+    End Function
+#End Region
+
+#Region "Indicator"
     Private Sub CalculateATR(ByVal ATRPeriod As Integer, ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByRef outputPayload As Dictionary(Of Date, Decimal))
         'Using WILDER Formula
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
@@ -451,6 +416,7 @@ Public Class NFOFillInstrumentDetails
             Next
         End If
     End Sub
+
     Private Sub ConvertToHeikenAshi(ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByRef outputPayload As Dictionary(Of Date, OHLCPayload))
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
             If inputPayload.Count < 30 Then
@@ -482,6 +448,9 @@ Public Class NFOFillInstrumentDetails
             Next
         End If
     End Sub
+#End Region
+
+#Region "Required Functions"
     Private Function CalculateBlankVolumePercentage(ByVal inputPayload As Dictionary(Of Date, OHLCPayload), ByVal lastTradingDay As Date) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
@@ -499,6 +468,7 @@ Public Class NFOFillInstrumentDetails
         End If
         Return ret
     End Function
+
     Private Function GetHighestATR(ByVal inputPayload As Dictionary(Of Date, Decimal), ByVal lastTradingDay As Date) As Decimal
         Dim ret As Decimal = Decimal.MinValue
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
@@ -512,12 +482,14 @@ Public Class NFOFillInstrumentDetails
         End If
         Return ret
     End Function
-    Protected Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
+
+    Private Function CalculateBuffer(ByVal price As Double, ByVal floorOrCeiling As RoundOfType) As Double
         Dim bufferPrice As Double = Nothing
         bufferPrice = ConvertFloorCeling(price * 0.01 * 0.025, 0.05, floorOrCeiling)
         Return bufferPrice
     End Function
-    Public Function CalculateQuantityFromStoploss(ByVal buyPrice As Double, ByVal sellPrice As Double, ByVal NetProfitLossOfTrade As Double, ByVal instrument As IInstrument) As Integer
+
+    Private Function CalculateQuantityFromStoploss(ByVal buyPrice As Double, ByVal sellPrice As Double, ByVal NetProfitLossOfTrade As Double, ByVal instrument As IInstrument) As Integer
         Dim lotSize As Integer = instrument.LotSize
         Dim quantityMultiplier As Integer = 1
         Dim previousQuantity As Integer = lotSize
@@ -532,7 +504,8 @@ Public Class NFOFillInstrumentDetails
         Next
         Return previousQuantity
     End Function
-    Public Function CalculateTargetFromPL(ByVal buyPrice As Decimal, ByVal quantity As Integer, ByVal NetProfitOfTrade As Decimal, ByVal instrument As IInstrument) As Decimal
+
+    Private Function CalculateTargetFromPL(ByVal buyPrice As Decimal, ByVal quantity As Integer, ByVal NetProfitOfTrade As Decimal, ByVal instrument As IInstrument) As Decimal
         Dim ret As Decimal = buyPrice
         For ret = buyPrice To Decimal.MaxValue Step instrument.TickSize
             Dim plAfterBrokerage As Decimal = _APIAdapter.CalculatePLWithBrokerage(instrument, buyPrice, ret, quantity)
@@ -542,21 +515,7 @@ Public Class NFOFillInstrumentDetails
         Next
         Return ret
     End Function
-
-    Private Class InstrumentDetails
-        Public TradingSymbol As String
-        Public ATRPercentage As Decimal
-        Public Price As Decimal
-        Public Slab As Decimal
-        Public BlankCandlePercentage As Decimal
-        Public Instrument As IInstrument
-        Public PreviousDayHighestATR As Decimal
-    End Class
-
-    Enum TypeOfData
-        Intraday = 1
-        EOD
-    End Enum
+#End Region
 
 #Region "IDisposable Support"
     Private disposedValue As Boolean ' To detect redundant calls

@@ -1,5 +1,4 @@
-﻿Imports System.Text.RegularExpressions
-Imports System.Threading
+﻿Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies

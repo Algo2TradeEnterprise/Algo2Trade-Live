@@ -1,23 +1,21 @@
 ﻿Imports System.IO
+Imports Utilities.DAL
 Imports System.Threading
 Imports Algo2TradeCore.Entities.UserSettings
-Imports Utilities.DAL
-Imports Algo2TradeCore.Entities
 
 <Serializable>
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "HKMartingale(ATR).Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Fractal Constriction.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property MaxProfitPerTrade As Decimal
+    Public Property MaxLossPerTrade As Decimal
     Public Property NumberOfTradePerStock As Integer
     Public Property OverallMaxProfitPerDay As Decimal
     Public Property OverallMaxLossPerDay As Decimal
-    Public Property MaxTargetToStoplossMultiplier As Decimal
     Public Property MinDistancePercentageForCancellation As Decimal
     Public Property MaxTurnoverOfATrade As Decimal
 
@@ -26,7 +24,12 @@ Public Class NFOUserInputs
     Public Property MaxStockPrice As Decimal
     Public Property MinATRPercentage As Decimal
     Public Property MaxBlankCandlePercentage As Decimal
+    Public Property MaxTargetToStoplossMultiplier As Decimal
     Public Property NumberOfStock As Integer
+
+    Public Property ATRPeriod As Integer
+    Public Property ATRBandPeriod As Integer
+    Public Property ATRBandShift As Decimal
 
     <Serializable>
     Public Class InstrumentDetails
@@ -47,7 +50,7 @@ Public Class NFOUserInputs
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
                         Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "HIGHEST ATR"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 2
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else

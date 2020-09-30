@@ -15,9 +15,9 @@
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
-            dt.Columns.Add("Multiplier")
-            dt.Columns.Add("Previous Day Highest ATR")
             dt.Columns.Add("Historical")
+            dt.Columns.Add("Running")
+
             For Each instrument In _TradableInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
@@ -26,11 +26,11 @@
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
-                row("Multiplier") = instrument.Multiplier
-                row("Previous Day Highest ATR") = instrument.PreviousDayHighestATR
                 row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
+                row("Running") = instrument.StrategyInstrumentRunning
                 dt.Rows.Add(row)
             Next
+
             dgvTradableInstruments.DataSource = dt
             dgvTradableInstruments.Refresh()
         End If
