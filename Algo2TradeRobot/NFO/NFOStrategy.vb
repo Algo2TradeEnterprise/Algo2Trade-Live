@@ -10,6 +10,9 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+
+    Public Property DependentInstruments As IEnumerable(Of IInstrument)
+
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As NFOUserInputs,
@@ -39,25 +42,73 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.AutoSelectStock Then
-                Using fillInstrumentDetails As New NFOFillInstrumentDetails(_cts, Me)
-                    Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
-                End Using
-                logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
-            End If
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
-                                                                                            End Function)
+                    Dim runningTradableInstrument As IInstrument = Nothing
+                    Dim allTradableInstruments As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                         Return x.RawInstrumentName.ToUpper = instrument.Key AndAlso
+                                                                                                             x.InstrumentType = IInstrument.TypeOfInstrument.Futures AndAlso
+                                                                                                             (x.RawExchange = "NFO" OrElse x.RawExchange = "MCX" OrElse x.RawExchange = "CDS")
+                                                                                                     End Function)
 
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                    ret = True
-                    If retTradableInstrumentsAsPerStrategy.Count >= userInputs.NumberOfStock Then Exit For
+                    If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
+                        Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
+                                                                               If x.Expiry.Value.Date.AddDays(-2) >= Now.Date Then
+                                                                                   Return x.Expiry.Value
+                                                                               Else
+                                                                                   Return Date.MaxValue
+                                                                               End If
+                                                                           End Function)
+
+                        runningTradableInstrument = allTradableInstruments.Find(Function(x)
+                                                                                    Return x.Expiry = minExpiry
+                                                                                End Function)
+
+                        _cts.Token.ThrowIfCancellationRequested()
+
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        If runningTradableInstrument IsNot Nothing Then
+                            retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+
+                            Dim dependentTradableInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
+                                                                                                                       Return x.TradingSymbol.Split(" ")(0) = instrument.Key AndAlso
+                                                                                                                       x.InstrumentType = IInstrument.TypeOfInstrument.Options
+                                                                                                                   End Function)
+                            If dependentTradableInstruments IsNot Nothing AndAlso dependentTradableInstruments.Count > 0 Then
+                                If Me.DependentInstruments IsNot Nothing Then
+                                    Me.DependentInstruments = Me.DependentInstruments.Concat(dependentTradableInstruments)
+                                Else
+                                    Me.DependentInstruments = dependentTradableInstruments
+                                End If
+                            End If
+
+                            If runningTradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date Then
+                                Dim nextMinExpiry As Date = allTradableInstruments.Min(Function(x)
+                                                                                           If x.Expiry.Value.Date.AddDays(-2) > Now.Date Then
+                                                                                               Return x.Expiry.Value
+                                                                                           Else
+                                                                                               Return Date.MaxValue
+                                                                                           End If
+                                                                                       End Function)
+
+                                runningTradableInstrument = allTradableInstruments.Find(Function(x)
+                                                                                            Return x.Expiry = nextMinExpiry
+                                                                                        End Function)
+
+                                _cts.Token.ThrowIfCancellationRequested()
+
+                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                If runningTradableInstrument IsNot Nothing Then
+                                    retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                                End If
+                            End If
+                            ret = True
+                        End If
+                    Else
+                        OnHeartbeat(String.Format("Unable to find future instruments for: {0}", instrument.Key))
+                    End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
@@ -83,7 +134,7 @@ Public Class NFOStrategy
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, _cts)
+                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, True, _cts)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
@@ -101,6 +152,26 @@ Public Class NFOStrategy
         Return ret
     End Function
 
+    Public Async Function CreateDependentTradableStrategyInstrumentsAsync(ByVal instrumentsToBeSubscrided As List(Of IInstrument)) As Task(Of Boolean)
+        Dim ret As Boolean = False
+        Dim retTradableStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
+        For Each runningTradableInstrument In instrumentsToBeSubscrided
+            _cts.Token.ThrowIfCancellationRequested()
+            If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
+            Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, False, _cts)
+            AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
+            AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
+            AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+            AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+
+            retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
+            ret = True
+        Next
+        TradableStrategyInstruments = TradableStrategyInstruments.Concat(retTradableStrategyInstruments)
+        Await Me.ParentController.ProcessDependentStrategyInstrumentSubscriptionAsync(Me).ConfigureAwait(False)
+        Return ret
+    End Function
+
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 
@@ -110,8 +181,10 @@ Public Class NFOStrategy
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.ContractRolloverAsync, _cts.Token))
+                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.ExpiryExitEntryAsync, _cts.Token))
             Next
-            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
+            'tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -129,19 +202,6 @@ Public Class NFOStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
-        Dim userSettings As NFOUserInputs = Me.UserSettings
-        Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
-
-        Dim currentTime As Date = Now
-        If currentTime >= Me.UserSettings.EODExitTime Then
-            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
-            logger.Debug("Max loss reached. Overall PL: {0}", overallPL)
-            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
-        ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
-            logger.Debug("Max Profit reached. Overall PL: {0}", overallPL)
-            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
-        End If
         Return ret
     End Function
 End Class
