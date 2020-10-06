@@ -21,6 +21,10 @@ Public Class NFOStrategyInstrument
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private _lastPrevPayloadCancelOrder As String = ""
 
+    Private _displayedLogData As List(Of String) = New List(Of String)
+    Private ReadOnly _telegramAPIKey As String = Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey
+    Private ReadOnly _telegramChatID As String = Me.ParentStrategy.ParentController.UserInputs.TelegramChatID
+
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
     Private ReadOnly _dummyATRBandsConsumer As ATRBandsConsumer
@@ -115,6 +119,9 @@ Public Class NFOStrategyInstrument
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
 
+                Await SendOrderExecutionMessage().ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
                 'Place Order block start
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
@@ -126,6 +133,20 @@ Public Class NFOStrategyInstrument
                             placeOrderResponse("data").ContainsKey("order_id") Then
                             _cancellationDone = False
                             OnHeartbeat(String.Format("Place Order Response: {0}", Utilities.Strings.JsonSerialize(placeOrderResponse)))
+
+                            Dim message As String = String.Format("#Order_Placed{0}Signal Candle:{1}, Direction:{2}, Entry Price:{3}, Stoploss Point:{4}, Target Point:{5}, Quantity:{6}, Turnover:{7}{8}Stock PL:{9}, Trade Number:{10}",
+                                                                  vbNewLine,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.SignalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.EntryDirection.ToString.ToUpper,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.TriggerPrice,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.StoplossValue,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.SquareOffValue,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.Quantity,
+                                                                  placeOrderTriggers.FirstOrDefault.Item2.TriggerPrice * placeOrderTriggers.FirstOrDefault.Item2.Quantity,
+                                                                  vbNewLine,
+                                                                  Me.GetOverallPLAfterBrokerage(),
+                                                                  GetLogicalTradeCount() + 1)
+                            Await DisplayAndSendSignalAlertAsync(message, True).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -140,6 +161,12 @@ Public Class NFOStrategyInstrument
                         If modifyOrderResponse.ContainsKey("data") AndAlso
                             modifyOrderResponse("data").ContainsKey("status") AndAlso modifyOrderResponse("data")("status") = "Ok" Then
                             OnHeartbeat(String.Format("Modify Order Response: {0}", Utilities.Strings.JsonSerialize(modifyOrderResponse)))
+
+                            Dim message As String = String.Format("#Order_Modified{0}Trigger Price:{1}, Reason:{2}",
+                                                                  vbNewLine,
+                                                                  modifyStoplossOrderTrigger.FirstOrDefault.Item3,
+                                                                  modifyStoplossOrderTrigger.FirstOrDefault.Item4)
+                            Await DisplayAndSendSignalAlertAsync(message, True).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -155,6 +182,11 @@ Public Class NFOStrategyInstrument
                             exitOrderResponse("data").ContainsKey("status") AndAlso exitOrderResponse("data")("status") = "Ok" Then
                             _cancellationDone = True
                             OnHeartbeat(String.Format("Exit Order Response: {0}", Utilities.Strings.JsonSerialize(exitOrderResponse)))
+
+                            Dim message As String = String.Format("#Order_Cancelled{0}Reason:{1}",
+                                                                  vbNewLine,
+                                                                  exitOrderTrigger.FirstOrDefault.Item3)
+                            Await DisplayAndSendSignalAlertAsync(message, True).ConfigureAwait(False)
                         End If
                     End If
                 End If
@@ -415,15 +447,21 @@ Public Class NFOStrategyInstrument
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Cancelled AndAlso
                             Not runningSLOrder.Status = IOrder.TypeOfStatus.Rejected Then
                             Dim triggerPrice As Decimal = Decimal.MinValue
+                            Dim reason As String = Nothing
                             If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
                                 Dim potentialSL As Decimal = Decimal.MinValue
                                 If fractal.FractalLow.Value < parentBussinessOrder.ParentOrder.AveragePrice Then
                                     potentialSL = fractal.FractalLow.Value
+                                    reason = "Fractal Low"
                                     If lowBandV <> Decimal.MinValue AndAlso lowBandV > fractal.FractalLow.Value Then
-                                        potentialSL = lowBandV
+                                        potentialSL = ConvertFloorCeling(lowBandV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                        reason = "Lower Band V"
                                     End If
                                 Else
-                                    If lowBandV <> Decimal.MinValue Then potentialSL = lowBandV
+                                    If lowBandV <> Decimal.MinValue Then
+                                        potentialSL = ConvertFloorCeling(lowBandV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                        reason = "Lower Band V"
+                                    End If
                                 End If
                                 If potentialSL <> Decimal.MinValue AndAlso potentialSL > runningSLOrder.TriggerPrice Then
                                     triggerPrice = potentialSL
@@ -432,11 +470,16 @@ Public Class NFOStrategyInstrument
                                 Dim potentialSL As Decimal = Decimal.MinValue
                                 If fractal.FractalHigh.Value > parentBussinessOrder.ParentOrder.AveragePrice Then
                                     potentialSL = fractal.FractalHigh.Value
+                                    reason = "Fractal High"
                                     If highBandV <> Decimal.MinValue AndAlso highBandV < fractal.FractalHigh.Value Then
-                                        potentialSL = highBandV
+                                        potentialSL = ConvertFloorCeling(highBandV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                        reason = "Higher Band V"
                                     End If
                                 Else
-                                    If highBandV <> Decimal.MinValue Then potentialSL = highBandV
+                                    If highBandV <> Decimal.MinValue Then
+                                        potentialSL = ConvertFloorCeling(highBandV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                        reason = "Higher Band V"
+                                    End If
                                 End If
                                 If potentialSL <> Decimal.MinValue AndAlso potentialSL < runningSLOrder.TriggerPrice Then
                                     triggerPrice = potentialSL
@@ -455,7 +498,7 @@ Public Class NFOStrategyInstrument
                                     End If
                                 End If
                                 If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, "SL adjustment"))
+                                ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningSLOrder, triggerPrice, reason))
                             End If
                         End If
                     Next
@@ -1059,6 +1102,64 @@ Public Class NFOStrategyInstrument
             End If
         End If
         Return ret
+    End Function
+
+    Private Async Function SendOrderExecutionMessage() As Task
+        If Me.IsActiveInstrument() Then
+            For Each runningOrder In Me.OrderDetails.Values
+                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                    If runningOrder.SLOrder IsNot Nothing AndAlso runningOrder.SLOrder.Count > 0 AndAlso
+                        runningOrder.TargetOrder IsNot Nothing AndAlso runningOrder.TargetOrder.Count > 0 Then
+                        Dim message As String = String.Format("#Order_Triggered{0}Entry Price:{1}, Total Capital:{2}",
+                                                                 vbNewLine,
+                                                                 runningOrder.ParentOrder.AveragePrice,
+                                                                 Me.ParentStrategy.GetTotalCapitalUsed)
+                        Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
+                    ElseIf runningOrder.AllOrder IsNot Nothing AndAlso runningOrder.AllOrder.Count > 0 Then
+                        For Each childOrder In runningOrder.AllOrder
+                            If childOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                Dim message As String = String.Format("#{0}_Hit{1}Entry Price:{2},Exit Price:{3}, Total Capital:{4}",
+                                                                     childOrder.LogicalOrderType.ToString,
+                                                                     vbNewLine,
+                                                                     runningOrder.ParentOrder.AveragePrice,
+                                                                     childOrder.AveragePrice,
+                                                                     Me.ParentStrategy.GetTotalCapitalUsed)
+                                Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
+
+                                Exit For
+                            End If
+                        Next
+                    End If
+                End If
+            Next
+        End If
+    End Function
+
+    Private Async Function DisplayAndSendSignalAlertAsync(ByVal message As String, ByVal forceDisplay As Boolean) As Task
+        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+        Try
+            _cts.Token.ThrowIfCancellationRequested()
+            If message IsNot Nothing AndAlso message.Trim <> "" Then
+                If Not _displayedLogData.Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceDisplay Then
+                    _displayedLogData.Add(message)
+
+                    message = String.Format("{0}: {1}{2}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
+                    logger.Fatal(message)
+                    SendTelegramTextMessageAsync(_telegramAPIKey, _telegramChatID, message)
+                End If
+            End If
+        Catch ex As Exception
+            logger.Warn(ex.ToString)
+        End Try
+    End Function
+
+
+    Private Async Function SendTelegramTextMessageAsync(ByVal apiKey As String, ByVal chatID As String, ByVal message As String) As Task
+        If apiKey IsNot Nothing AndAlso chatID IsNot Nothing AndAlso apiKey.Trim <> "" AndAlso chatID.Trim <> "" Then
+            Using tSender As New Utilities.Notification.Telegram(apiKey.Trim, chatID.Trim, _cts)
+                Await tSender.SendMessageGetAsync(Utilities.Strings.UrlEncodeString(message)).ConfigureAwait(False)
+            End Using
+        End If
     End Function
 
 #Region "IDisposable Support"
