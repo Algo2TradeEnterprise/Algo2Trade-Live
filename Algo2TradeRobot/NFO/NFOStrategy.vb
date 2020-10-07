@@ -148,6 +148,7 @@ Public Class NFOStrategy
     Private Async Function SendMaxCapitalDataAsync() As Task
         Try
             While True
+                _cts.Token.ThrowIfCancellationRequested()
                 If Me.GetTotalTurnover() <> 0 Then
                     Dim message As String = String.Format("PL:{0}, Max Capital: {1}, Timestamp: {2}",
                                                           Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
@@ -156,8 +157,8 @@ Public Class NFOStrategy
 
                     Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-412527350", message).ConfigureAwait(False)
                 End If
-
-                Await Task.Delay(60000).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             logger.Error(ex.ToString)
