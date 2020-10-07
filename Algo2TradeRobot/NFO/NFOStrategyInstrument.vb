@@ -1110,20 +1110,18 @@ Public Class NFOStrategyInstrument
                 If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                     If runningOrder.SLOrder IsNot Nothing AndAlso runningOrder.SLOrder.Count > 0 AndAlso
                         runningOrder.TargetOrder IsNot Nothing AndAlso runningOrder.TargetOrder.Count > 0 Then
-                        Dim message As String = String.Format("#Order_Triggered{0}Entry Price:{1}, Total Capital:{2}",
+                        Dim message As String = String.Format("#Order_Triggered{0}Entry Price:{1}",
                                                                  vbNewLine,
-                                                                 runningOrder.ParentOrder.AveragePrice,
-                                                                 Me.ParentStrategy.GetTotalCapitalUsed)
+                                                                 runningOrder.ParentOrder.AveragePrice)
                         Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
                     ElseIf runningOrder.AllOrder IsNot Nothing AndAlso runningOrder.AllOrder.Count > 0 Then
                         For Each childOrder In runningOrder.AllOrder
                             If childOrder.Status = IOrder.TypeOfStatus.Complete Then
-                                Dim message As String = String.Format("#{0}_Hit{1}Entry Price:{2},Exit Price:{3}, Total Capital:{4}",
+                                Dim message As String = String.Format("#{0}_Hit{1}Entry Price:{2},Exit Price:{3}",
                                                                      childOrder.LogicalOrderType.ToString,
                                                                      vbNewLine,
                                                                      runningOrder.ParentOrder.AveragePrice,
-                                                                     childOrder.AveragePrice,
-                                                                     Me.ParentStrategy.GetTotalCapitalUsed)
+                                                                     childOrder.AveragePrice)
                                 Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
 
                                 Exit For
@@ -1142,7 +1140,6 @@ Public Class NFOStrategyInstrument
             If message IsNot Nothing AndAlso message.Trim <> "" Then
                 If Not _displayedLogData.Contains(message, StringComparer.OrdinalIgnoreCase) OrElse forceDisplay Then
                     _displayedLogData.Add(message)
-
                     message = String.Format("{0}: {1}{2}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
                     logger.Fatal(message)
                     SendTelegramTextMessageAsync(_telegramAPIKey, _telegramChatID, message)
@@ -1152,7 +1149,6 @@ Public Class NFOStrategyInstrument
             logger.Warn(ex.ToString)
         End Try
     End Function
-
 
     Private Async Function SendTelegramTextMessageAsync(ByVal apiKey As String, ByVal chatID As String, ByVal message As String) As Task
         If apiKey IsNot Nothing AndAlso chatID IsNot Nothing AndAlso apiKey.Trim <> "" AndAlso chatID.Trim <> "" Then
