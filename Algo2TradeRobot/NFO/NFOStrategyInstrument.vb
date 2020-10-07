@@ -22,8 +22,6 @@ Public Class NFOStrategyInstrument
     Private _lastPrevPayloadCancelOrder As String = ""
 
     Private _displayedLogData As List(Of String) = New List(Of String)
-    Private ReadOnly _telegramAPIKey As String = Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey
-    Private ReadOnly _telegramChatID As String = Me.ParentStrategy.ParentController.UserInputs.TelegramChatID
 
     Private ReadOnly _dummyHKConsumer As HeikinAshiConsumer
     Private ReadOnly _dummyATRConsumer As ATRConsumer
@@ -1154,32 +1152,30 @@ Public Class NFOStrategyInstrument
     End Function
 
     Private Async Function SendOrderExecutionMessage() As Task
-        If Me.IsActiveInstrument() Then
-            For Each runningOrder In Me.OrderDetails.Values
-                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                    If runningOrder.SLOrder IsNot Nothing AndAlso runningOrder.SLOrder.Count > 0 AndAlso
-                        runningOrder.TargetOrder IsNot Nothing AndAlso runningOrder.TargetOrder.Count > 0 Then
-                        Dim message As String = String.Format("#Order_Triggered{0}Entry Price:{1}",
+        For Each runningOrder In Me.OrderDetails.Values
+            If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                If runningOrder.SLOrder IsNot Nothing AndAlso runningOrder.SLOrder.Count > 0 AndAlso
+                    runningOrder.TargetOrder IsNot Nothing AndAlso runningOrder.TargetOrder.Count > 0 Then
+                    Dim message As String = String.Format("#Order_Executed{0}Entry Price:{1}",
+                                                             vbNewLine,
+                                                             runningOrder.ParentOrder.AveragePrice)
+                    Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
+                ElseIf runningOrder.AllOrder IsNot Nothing AndAlso runningOrder.AllOrder.Count > 0 Then
+                    For Each childOrder In runningOrder.AllOrder
+                        If childOrder.Status = IOrder.TypeOfStatus.Complete Then
+                            Dim message As String = String.Format("#{0}_Hit{1}Entry Price:{2},Exit Price:{3}",
+                                                                 childOrder.LogicalOrderType.ToString,
                                                                  vbNewLine,
-                                                                 runningOrder.ParentOrder.AveragePrice)
-                        Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
-                    ElseIf runningOrder.AllOrder IsNot Nothing AndAlso runningOrder.AllOrder.Count > 0 Then
-                        For Each childOrder In runningOrder.AllOrder
-                            If childOrder.Status = IOrder.TypeOfStatus.Complete Then
-                                Dim message As String = String.Format("#{0}_Hit{1}Entry Price:{2},Exit Price:{3}",
-                                                                     childOrder.LogicalOrderType.ToString,
-                                                                     vbNewLine,
-                                                                     runningOrder.ParentOrder.AveragePrice,
-                                                                     childOrder.AveragePrice)
-                                Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
+                                                                 runningOrder.ParentOrder.AveragePrice,
+                                                                 childOrder.AveragePrice)
+                            Await DisplayAndSendSignalAlertAsync(message, False).ConfigureAwait(False)
 
-                                Exit For
-                            End If
-                        Next
-                    End If
+                            Exit For
+                        End If
+                    Next
                 End If
-            Next
-        End If
+            End If
+        Next
     End Function
 
     Private Async Function DisplayAndSendSignalAlertAsync(ByVal message As String, ByVal forceDisplay As Boolean) As Task
@@ -1191,7 +1187,7 @@ Public Class NFOStrategyInstrument
                     _displayedLogData.Add(message)
                     message = String.Format("{0}: {1}{2}{2}Timestamp: {3}", Me.TradableInstrument.TradingSymbol, message, vbNewLine, Now.ToString("HH:mm:ss"))
                     logger.Fatal(message)
-                    SendTelegramTextMessageAsync(_telegramAPIKey, _telegramChatID, message)
+                    SendTelegramTextMessageAsync(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey, "-480863814", message)
                 End If
             End If
         Catch ex As Exception

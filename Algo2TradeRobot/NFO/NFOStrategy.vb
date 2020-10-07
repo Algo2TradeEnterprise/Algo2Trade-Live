@@ -153,7 +153,7 @@ Public Class NFOStrategy
                                                       Math.Round(Me.GetTotalTurnover() / 10, 2),
                                                       Now.ToString("HH:mm:ss"))
 
-                    Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-480863814", message).ConfigureAwait(False)
+                    Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-412527350", message).ConfigureAwait(False)
                 End If
 
                 Await Task.Delay(60000).ConfigureAwait(False)
