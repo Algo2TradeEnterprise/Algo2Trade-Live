@@ -85,7 +85,30 @@ Public Class NFOStrategyInstrument
                     If currentXMinute <> Date.MaxValue Then
                         If runningRawPayloadConsumer.OnwardLevelConsumers IsNot Nothing AndAlso runningRawPayloadConsumer.OnwardLevelConsumers.Count > 0 Then
                             For Each consumer In runningRawPayloadConsumer.OnwardLevelConsumers
-                                candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer)
+                                'candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer)
+
+                                Dim outputConsumer As Indicators.EMAConsumer = consumer
+                                If outputConsumer IsNot Nothing AndAlso outputConsumer.ParentConsumer IsNot Nothing AndAlso
+                                    outputConsumer.ParentConsumer.ConsumerPayloads IsNot Nothing AndAlso
+                                    outputConsumer.ParentConsumer.ConsumerPayloads.Count > 0 Then
+                                    Dim minimumNumberOfCandlesRequied As Integer = outputConsumer.EMAPeriod * 3
+                                    Dim counter As Integer = 0
+                                    Dim dateToCalculateFrom As Date = Date.MinValue
+                                    For Each runningInputDate In outputConsumer.ParentConsumer.ConsumerPayloads.Keys.OrderByDescending(Function(x)
+                                                                                                                                           Return x
+                                                                                                                                       End Function)
+                                        counter += 1
+                                        If counter >= minimumNumberOfCandlesRequied Then
+                                            dateToCalculateFrom = runningInputDate
+                                            Exit For
+                                        End If
+                                    Next
+                                    If currentXMinute > dateToCalculateFrom Then
+                                        candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, consumer)
+                                    Else
+                                        candleCreator.IndicatorCreator.CalculateEMA(dateToCalculateFrom, consumer)
+                                    End If
+                                End If
                             Next
                         End If
                     End If
@@ -159,10 +182,15 @@ Public Class NFOStrategyInstrument
                                     If placeOrderTrigger.Item2.Supporting IsNot Nothing AndAlso placeOrderTrigger.Item2.Supporting.Count > 0 Then
                                         'Find strategy instrument and exit
                                         Dim processOption As Boolean = False
-                                        Dim placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
-                                        If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
-                                            placeOrderResponse("data").ContainsKey("order_id") Then
-                                            processOption = True
+                                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
+                                        If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                                            Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                                            If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
+                                                placeOrderResponse("data").ContainsKey("order_id") Then
+                                                processOption = True
+                                            ElseIf Me.GetQuantityToTrade() = 0 Then
+                                                processOption = True
+                                            End If
                                         ElseIf Me.GetQuantityToTrade() = 0 Then
                                             processOption = True
                                         End If
@@ -268,10 +296,15 @@ Public Class NFOStrategyInstrument
                                             logger.Error(ex)
                                         End Try
                                         Dim processOption As Boolean = False
-                                        Dim placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
-                                        If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
-                                            placeOrderResponse("data").ContainsKey("order_id") Then
-                                            processOption = True
+                                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
+                                        If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                                            Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                                            If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
+                                                placeOrderResponse("data").ContainsKey("order_id") Then
+                                                processOption = True
+                                            ElseIf Me.GetQuantityToTrade() = 0 Then
+                                                processOption = True
+                                            End If
                                         ElseIf Me.GetQuantityToTrade() = 0 Then
                                             processOption = True
                                         End If
@@ -391,10 +424,15 @@ Public Class NFOStrategyInstrument
                 _Direction = IOrder.TypeOfTransaction.Sell
             End If
             If command = ExecuteCommands.PlaceRegularLimitCNCOrder Then
-                Dim placeOrderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
-                If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
-                   placeOrderResponse("data").ContainsKey("order_id") Then
-                    _Direction = IOrder.TypeOfTransaction.None
+                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
+                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                    If placeOrderResponse IsNot Nothing AndAlso placeOrderResponse.ContainsKey("data") AndAlso
+                        placeOrderResponse("data").ContainsKey("order_id") Then
+                        _Direction = IOrder.TypeOfTransaction.None
+                    ElseIf Me.GetQuantityToTrade() = 0 Then
+                        _Direction = IOrder.TypeOfTransaction.None
+                    End If
                 ElseIf Me.GetQuantityToTrade() = 0 Then
                     _Direction = IOrder.TypeOfTransaction.None
                 End If
