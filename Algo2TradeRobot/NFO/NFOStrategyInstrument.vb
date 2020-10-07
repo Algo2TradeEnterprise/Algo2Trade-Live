@@ -103,7 +103,7 @@ Public Class NFOStrategyInstrument
                     Dim tradableInstruments As List(Of IInstrument) = Nothing
                     For Each runningPosition In availablePositions
                         Dim instrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                       Return x.TradingSymbol = runningPosition.TradingSymbol
+                                                                                       Return x.InstrumentIdentifier = runningPosition.InstrumentIdentifier
                                                                                    End Function)
                         If instrument IsNot Nothing Then
                             If instrument.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
@@ -124,9 +124,10 @@ Public Class NFOStrategyInstrument
         Await CType(Me.ParentStrategy, NFOStrategy).CreateDependentTradableStrategyInstrumentsAsync(instrumentList).ConfigureAwait(False)
         Dim tradableStrategyInstruments As List(Of NFOStrategyInstrument) = New List(Of NFOStrategyInstrument)
         For Each runningInstrument In instrumentList
-            Dim subscribedStrategyInstrument As StrategyInstrument = Me.ParentStrategy.TradableStrategyInstruments.ToList.Find(Function(x)
-                                                                                                                                   Return x.TradableInstrument.TradingSymbol = runningInstrument.TradingSymbol
-                                                                                                                               End Function)
+            Dim subscribedStrategyInstrument As StrategyInstrument =
+                Me.ParentStrategy.TradableStrategyInstruments.ToList.Find(Function(x)
+                                                                              Return x.TradableInstrument.InstrumentIdentifier = runningInstrument.InstrumentIdentifier
+                                                                          End Function)
             tradableStrategyInstruments.Add(subscribedStrategyInstrument)
         Next
         If DependentOptionStrategyInstruments IsNot Nothing AndAlso DependentOptionStrategyInstruments.Count > 0 Then
@@ -187,7 +188,7 @@ Public Class NFOStrategyInstrument
                                         End Try
                                         Dim optionInstrument As IInstrument = Nothing
                                         Dim minExpiry As Date = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Min(Function(x)
-                                                                                                                                   If x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName Then
+                                                                                                                                   If x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
                                                                                                                                        Dim expiry As Date = x.Expiry.Value
                                                                                                                                        If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
                                                                                                                                            expiry = x.Expiry.Value.AddDays(-2)
@@ -214,7 +215,7 @@ Public Class NFOStrategyInstrument
                                             optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                                     Return x.Strike <= otmPutStrike AndAlso x.RawInstrumentType = "PE" AndAlso
                                                                                                                                           x.Expiry.Value.Date = minExpiry.Date AndAlso
-                                                                                                                                          x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                          x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                                 End Function).OrderBy(Function(y)
                                                                                                                                                           Return y.Strike
                                                                                                                                                       End Function).LastOrDefault
@@ -225,7 +226,7 @@ Public Class NFOStrategyInstrument
                                             optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                                     Return x.Strike >= otmCallStrike AndAlso x.RawInstrumentType = "CE" AndAlso
                                                                                                                                           x.Expiry.Value.Date = minExpiry.Date AndAlso
-                                                                                                                                          x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                          x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                                 End Function).OrderBy(Function(y)
                                                                                                                                                           Return y.Strike
                                                                                                                                                       End Function).FirstOrDefault
@@ -300,7 +301,7 @@ Public Class NFOStrategyInstrument
                                             optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                                     Return x.Strike <= putStrike AndAlso x.RawInstrumentType = "PE" AndAlso
                                                                                                                                           x.Expiry.Value.Date = Me.TradableInstrument.Expiry.Value.Date AndAlso
-                                                                                                                                          x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                          x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                                 End Function).OrderBy(Function(y)
                                                                                                                                                           Return y.Strike
                                                                                                                                                       End Function).LastOrDefault
@@ -311,7 +312,7 @@ Public Class NFOStrategyInstrument
                                             optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                                     Return x.Strike >= callStrike AndAlso x.RawInstrumentType = "CE" AndAlso
                                                                                                                                           x.Expiry.Value.Date = Me.TradableInstrument.Expiry.Value.Date AndAlso
-                                                                                                                                          x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                          x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                                 End Function).OrderBy(Function(y)
                                                                                                                                                           Return y.Strike
                                                                                                                                                       End Function).FirstOrDefault
@@ -767,7 +768,7 @@ Public Class NFOStrategyInstrument
                             If processOption Then
                                 Dim optionInstrument As IInstrument = Nothing
                                 Dim minExpiry As Date = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Min(Function(x)
-                                                                                                                           If x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName Then
+                                                                                                                           If x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
                                                                                                                                Dim expiry As Date = x.Expiry.Value
                                                                                                                                If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
                                                                                                                                    expiry = x.Expiry.Value.AddDays(-2)
@@ -794,7 +795,7 @@ Public Class NFOStrategyInstrument
 
                                     optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                             Return x.Strike <= otmPutStrike AndAlso x.RawInstrumentType = "PE" AndAlso
-                                                                                                                                  x.Expiry.Value.Date = minExpiry.Date AndAlso x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                  x.Expiry.Value.Date = minExpiry.Date AndAlso x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                         End Function).OrderBy(Function(y)
                                                                                                                                                   Return y.Strike
                                                                                                                                               End Function).LastOrDefault
@@ -804,7 +805,7 @@ Public Class NFOStrategyInstrument
 
                                     optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
                                                                                                                             Return x.Strike >= otmCallStrike AndAlso x.RawInstrumentType = "CE" AndAlso
-                                                                                                                                  x.Expiry.Value.Date = minExpiry.Date AndAlso x.TradingSymbol.Split(" ")(0) = Me.TradableInstrument.RawInstrumentName
+                                                                                                                                  x.Expiry.Value.Date = minExpiry.Date AndAlso x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
                                                                                                                         End Function).OrderBy(Function(y)
                                                                                                                                                   Return y.Strike
                                                                                                                                               End Function).FirstOrDefault

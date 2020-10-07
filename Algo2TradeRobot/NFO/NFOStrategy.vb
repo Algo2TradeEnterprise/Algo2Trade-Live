@@ -18,7 +18,7 @@ Public Class NFOStrategy
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller, True)
+        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -73,7 +73,7 @@ Public Class NFOStrategy
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
                             Dim dependentTradableInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                                       Return x.TradingSymbol.Split(" ")(0) = instrument.Key AndAlso
+                                                                                                                       Return x.RawInstrumentName = instrument.Key AndAlso
                                                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Options
                                                                                                                    End Function)
                             If dependentTradableInstruments IsNot Nothing AndAlso dependentTradableInstruments.Count > 0 Then
