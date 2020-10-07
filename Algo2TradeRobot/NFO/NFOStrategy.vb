@@ -149,9 +149,10 @@ Public Class NFOStrategy
         Try
             While True
                 If Me.GetTotalTurnover() <> 0 Then
-                    Dim message As String = String.Format("Max Capital: {0}, Timestamp: {1}",
-                                                      Math.Round(Me.GetTotalTurnover() / 10, 2),
-                                                      Now.ToString("HH:mm:ss"))
+                    Dim message As String = String.Format("PL:{0}, Max Capital: {1}, Timestamp: {2}",
+                                                          Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
+                                                          Math.Round(Me.GetTotalTurnover() / 10, 2),
+                                                          Now.ToString("HH:mm:ss"))
 
                     Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-412527350", message).ConfigureAwait(False)
                 End If
