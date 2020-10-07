@@ -685,41 +685,16 @@ Public Class NFOStrategyInstrument
                 Dim lastPlacedOrder As IBusinessOrder = OrderDetails.OrderBy(Function(x)
                                                                                  Return x.Value.ParentOrder.TimeStamp
                                                                              End Function).LastOrDefault.Value
-                For Each runningPayload In hkConsumer.ConsumerPayloads.OrderByDescending(Function(x)
-                                                                                             Return x.Key
-                                                                                         End Function)
-                    If runningPayload.Key >= lastPlacedOrder.ParentOrder.TimeStamp AndAlso runningPayload.Key <= currentCandle.SnapshotDateTime Then
-                        If upperV = Decimal.MinValue Then
-                            upperV = GetATRUpperBandV(atrBandConsumer, runningPayload.Value)
-                            If upperV <> Decimal.MinValue Then
-                                'Dim entryPrice As Decimal = ConvertFloorCeling(upperV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                'If Not IsSignalTriggered(entryPrice, IOrder.TypeOfTransaction.Buy, CType(runningPayload.Value, OHLCPayload).PreviousPayload.SnapshotDateTime, currentCandle.PreviousPayload.SnapshotDateTime) Then
-                                upperVSignalCandle = CType(runningPayload.Value, OHLCPayload).PreviousPayload
-                                'End If
-                            End If
-                        End If
-                        If lowerV = Decimal.MinValue Then
-                            lowerV = GetATRLowerBandReverseV(atrBandConsumer, runningPayload.Value)
-                            If lowerV <> Decimal.MinValue Then
-                                'Dim entryPrice As Decimal = ConvertFloorCeling(lowerV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                'If Not IsSignalTriggered(entryPrice, IOrder.TypeOfTransaction.Sell, CType(runningPayload.Value, OHLCPayload).PreviousPayload.SnapshotDateTime, currentCandle.PreviousPayload.SnapshotDateTime) Then
-                                lowerVSignalCandle = CType(runningPayload.Value, OHLCPayload).PreviousPayload
-                                'End If
-                            End If
-                        End If
-                        If upperV <> Decimal.MinValue AndAlso lowerV <> Decimal.MinValue Then
-                            Exit For
-                        End If
-                    End If
-                    If runningPayload.Key < lastPlacedOrder.ParentOrder.TimeStamp Then Exit For
-                Next
-            Else
-                Dim fractalConstrictionDone As Tuple(Of Boolean, Date) = IsFractalConstrictionDone(fractalConsumer, hkConsumer, currentCandle)
-                If fractalConstrictionDone IsNot Nothing AndAlso fractalConstrictionDone.Item1 Then
-                    For Each runningPayload In hkConsumer.ConsumerPayloads.OrderBy(Function(x)
+                Dim hkConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                    hkConsumer.ConsumerPayloads.Where(Function(y)
+                                                          Return y.Key >= lastPlacedOrder.ParentOrder.TimeStamp AndAlso
+                                                          y.Key <= currentCandle.SnapshotDateTime
+                                                      End Function)
+                If hkConsumerPayload IsNot Nothing AndAlso hkConsumerPayload.Count > 0 Then
+                    For Each runningPayload In hkConsumerPayload.OrderByDescending(Function(x)
                                                                                        Return x.Key
                                                                                    End Function)
-                        If runningPayload.Key >= fractalConstrictionDone.Item2 AndAlso runningPayload.Key <= currentCandle.SnapshotDateTime Then
+                        If runningPayload.Key >= lastPlacedOrder.ParentOrder.TimeStamp AndAlso runningPayload.Key <= currentCandle.SnapshotDateTime Then
                             If upperV = Decimal.MinValue Then
                                 upperV = GetATRUpperBandV(atrBandConsumer, runningPayload.Value)
                                 If upperV <> Decimal.MinValue Then
@@ -742,7 +717,46 @@ Public Class NFOStrategyInstrument
                                 Exit For
                             End If
                         End If
+                        If runningPayload.Key < lastPlacedOrder.ParentOrder.TimeStamp Then Exit For
                     Next
+                End If
+            Else
+                Dim fractalConstrictionDone As Tuple(Of Boolean, Date) = IsFractalConstrictionDone(fractalConsumer, hkConsumer, currentCandle)
+                If fractalConstrictionDone IsNot Nothing AndAlso fractalConstrictionDone.Item1 Then
+                    Dim hkConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                        hkConsumer.ConsumerPayloads.Where(Function(y)
+                                                              Return y.Key >= fractalConstrictionDone.Item2 AndAlso
+                                                              y.Key <= currentCandle.SnapshotDateTime
+                                                          End Function)
+                    If hkConsumerPayload IsNot Nothing AndAlso hkConsumerPayload.Count > 0 Then
+                        For Each runningPayload In hkConsumerPayload.OrderBy(Function(x)
+                                                                                 Return x.Key
+                                                                             End Function)
+                            If runningPayload.Key >= fractalConstrictionDone.Item2 AndAlso runningPayload.Key <= currentCandle.SnapshotDateTime Then
+                                If upperV = Decimal.MinValue Then
+                                    upperV = GetATRUpperBandV(atrBandConsumer, runningPayload.Value)
+                                    If upperV <> Decimal.MinValue Then
+                                        'Dim entryPrice As Decimal = ConvertFloorCeling(upperV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                        'If Not IsSignalTriggered(entryPrice, IOrder.TypeOfTransaction.Buy, CType(runningPayload.Value, OHLCPayload).PreviousPayload.SnapshotDateTime, currentCandle.PreviousPayload.SnapshotDateTime) Then
+                                        upperVSignalCandle = CType(runningPayload.Value, OHLCPayload).PreviousPayload
+                                        'End If
+                                    End If
+                                End If
+                                If lowerV = Decimal.MinValue Then
+                                    lowerV = GetATRLowerBandReverseV(atrBandConsumer, runningPayload.Value)
+                                    If lowerV <> Decimal.MinValue Then
+                                        'Dim entryPrice As Decimal = ConvertFloorCeling(lowerV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                        'If Not IsSignalTriggered(entryPrice, IOrder.TypeOfTransaction.Sell, CType(runningPayload.Value, OHLCPayload).PreviousPayload.SnapshotDateTime, currentCandle.PreviousPayload.SnapshotDateTime) Then
+                                        lowerVSignalCandle = CType(runningPayload.Value, OHLCPayload).PreviousPayload
+                                        'End If
+                                    End If
+                                End If
+                                If upperV <> Decimal.MinValue AndAlso lowerV <> Decimal.MinValue Then
+                                    Exit For
+                                End If
+                            End If
+                        Next
+                    End If
                     If upperVSignalCandle IsNot Nothing AndAlso lowerVSignalCandle IsNot Nothing Then
                         Dim highEntryPrice As Decimal = ConvertFloorCeling(upperV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                         Dim lowEntryPrice As Decimal = ConvertFloorCeling(lowerV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
@@ -756,7 +770,9 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
             End If
-            If upperVSignalCandle IsNot Nothing AndAlso lowerVSignalCandle IsNot Nothing Then
+            If upperVSignalCandle IsNot Nothing AndAlso lowerVSignalCandle IsNot Nothing AndAlso
+                fractalConsumer.ConsumerPayloads.ContainsKey(upperVSignalCandle.SnapshotDateTime) AndAlso
+                fractalConsumer.ConsumerPayloads.ContainsKey(lowerVSignalCandle.SnapshotDateTime) Then
                 Dim buyEntryPrice As Decimal = ConvertFloorCeling(upperV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                 Dim sellEntryPrice As Decimal = ConvertFloorCeling(lowerV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                 Dim midPoint As Decimal = (buyEntryPrice + sellEntryPrice) / 2
@@ -780,7 +796,7 @@ Public Class NFOStrategyInstrument
                     End If
                     ret = New Tuple(Of Boolean, Decimal, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, entryPrice, slPoint, lowerVSignalCandle, IOrder.TypeOfTransaction.Sell)
                 End If
-            ElseIf upperVSignalCandle IsNot Nothing Then
+            ElseIf upperVSignalCandle IsNot Nothing AndAlso fractalConsumer.ConsumerPayloads.ContainsKey(upperVSignalCandle.SnapshotDateTime) Then
                 Dim higestATR As Decimal = GetHighestATR(atrConsumer, upperVSignalCandle)
                 Dim fractalLow As Decimal = CType(fractalConsumer.ConsumerPayloads(upperVSignalCandle.SnapshotDateTime), FractalConsumer.FractalPayload).FractalLow.Value
                 Dim entryPrice As Decimal = ConvertFloorCeling(upperV, Me.TradableInstrument.TickSize, RoundOfType.Celing)
@@ -789,7 +805,7 @@ Public Class NFOStrategyInstrument
                     slPoint = entryPrice - fractalLow
                 End If
                 ret = New Tuple(Of Boolean, Decimal, Decimal, OHLCPayload, IOrder.TypeOfTransaction)(True, entryPrice, slPoint, upperVSignalCandle, IOrder.TypeOfTransaction.Buy)
-            ElseIf lowerVSignalCandle IsNot Nothing Then
+            ElseIf lowerVSignalCandle IsNot Nothing AndAlso fractalConsumer.ConsumerPayloads.ContainsKey(lowerVSignalCandle.SnapshotDateTime) Then
                 Dim higestATR As Decimal = GetHighestATR(atrConsumer, lowerVSignalCandle)
                 Dim fractalHigh As Decimal = CType(fractalConsumer.ConsumerPayloads(lowerVSignalCandle.SnapshotDateTime), FractalConsumer.FractalPayload).FractalHigh.Value
                 Dim entryPrice As Decimal = ConvertFloorCeling(lowerV, Me.TradableInstrument.TickSize, RoundOfType.Floor)
@@ -824,19 +840,26 @@ Public Class NFOStrategyInstrument
                     If lowerFractalU.Item1 < upperFractalU.Item1 Then chkStartTime = lowerFractalU.Item1
                     Dim chkEndTime As Date = upperFractalU.Item2
                     If lowerFractalU.Item2 > upperFractalU.Item2 Then chkEndTime = lowerFractalU.Item2
-                    For Each runningPayload In hkConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                       Return x.Key
-                                                                                   End Function)
-                        If runningPayload.Key > chkStartTime AndAlso runningPayload.Key <= chkEndTime Then
-                            Dim hkCandle As OHLCPayload = runningPayload.Value
-                            Dim fractal As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
-                            If hkCandle.ClosePrice.Value >= fractal.FractalHigh.Value OrElse
-                                hkCandle.ClosePrice.Value <= fractal.FractalLow.Value Then
-                                startTime = hkCandle.SnapshotDateTime
-                                Exit For
+
+                    Dim hkConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                        hkConsumer.ConsumerPayloads.Where(Function(y)
+                                                              Return y.Key > chkStartTime AndAlso y.Key <= chkEndTime
+                                                          End Function)
+                    If hkConsumerPayload IsNot Nothing AndAlso hkConsumerPayload.Count > 0 Then
+                        For Each runningPayload In hkConsumerPayload.OrderBy(Function(x)
+                                                                                 Return x.Key
+                                                                             End Function)
+                            If runningPayload.Key > chkStartTime AndAlso runningPayload.Key <= chkEndTime Then
+                                Dim hkCandle As OHLCPayload = runningPayload.Value
+                                Dim fractal As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
+                                If hkCandle.ClosePrice.Value >= fractal.FractalHigh.Value OrElse
+                                    hkCandle.ClosePrice.Value <= fractal.FractalLow.Value Then
+                                    startTime = hkCandle.SnapshotDateTime
+                                    Exit For
+                                End If
                             End If
-                        End If
-                    Next
+                        Next
+                    End If
                     If startTime <= chkStartTime Then
                         'ret = New Tuple(Of Boolean, Date)(True, chkEndTime)
                         'Exit While
@@ -861,59 +884,72 @@ Public Class NFOStrategyInstrument
             Dim secondTime As Date = Date.MinValue
             Dim firstFractal As Decimal = Decimal.MinValue
             Dim secondFractal As Decimal = Decimal.MinValue
-            For Each runningPayload In fractalConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                    Return x.Key
-                                                                                End Function)
-                If runningPayload.Key.Date = Now.Date AndAlso runningPayload.Key > startTime AndAlso runningPayload.Key < endTime Then
-                    Dim fractal As FractalConsumer.FractalPayload = runningPayload.Value
-                    If firstFractal = Decimal.MinValue Then
-                        firstFractal = fractal.FractalHigh.Value
-                        firstTime = runningPayload.Key
-                    Else
-                        If secondFractal = Decimal.MinValue Then
-                            If fractal.FractalHigh.Value > firstFractal Then
-                                secondFractal = fractal.FractalHigh.Value
-                                secondTime = runningPayload.Key
-                            Else
-                                firstFractal = fractal.FractalHigh.Value
-                                firstTime = runningPayload.Key
-                            End If
+
+            Dim fractalConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                fractalConsumer.ConsumerPayloads.Where(Function(y)
+                                                           Return y.Key.Date = Now.Date AndAlso y.Key > startTime AndAlso y.Key < endTime
+                                                       End Function)
+            If fractalConsumerPayload IsNot Nothing AndAlso fractalConsumerPayload.Count > 0 Then
+                For Each runningPayload In fractalConsumerPayload.OrderBy(Function(x)
+                                                                              Return x.Key
+                                                                          End Function)
+                    If runningPayload.Key.Date = Now.Date AndAlso runningPayload.Key > startTime AndAlso runningPayload.Key < endTime Then
+                        Dim fractal As FractalConsumer.FractalPayload = runningPayload.Value
+                        If firstFractal = Decimal.MinValue Then
+                            firstFractal = fractal.FractalHigh.Value
+                            firstTime = runningPayload.Key
                         Else
-                            If fractal.FractalHigh.Value < secondFractal Then
-                                Dim closeFound As Boolean = False
-                                For Each runningCandle In hkConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                                  Return x.Key
-                                                                                              End Function)
-                                    If runningCandle.Key > firstTime AndAlso runningCandle.Key <= runningPayload.Key Then
-                                        Dim hkCandle As OHLCPayload = runningCandle.Value
-                                        Dim fractalData As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
-                                        If hkCandle.ClosePrice.Value >= fractalData.FractalHigh.Value OrElse
-                                            hkCandle.ClosePrice.Value <= fractalData.FractalLow.Value Then
-                                            closeFound = True
-                                            Exit For
-                                        End If
-                                    End If
-                                Next
-                                If Not closeFound Then
-                                    ret = New Tuple(Of Date, Date)(firstTime, runningPayload.Key)
-                                    Exit For
+                            If secondFractal = Decimal.MinValue Then
+                                If fractal.FractalHigh.Value > firstFractal Then
+                                    secondFractal = fractal.FractalHigh.Value
+                                    secondTime = runningPayload.Key
                                 Else
                                     firstFractal = fractal.FractalHigh.Value
                                     firstTime = runningPayload.Key
-                                    secondFractal = Decimal.MinValue
                                 End If
-                            ElseIf fractal.FractalHigh.Value > secondFractal Then
-                                firstFractal = secondFractal
-                                firstTime = secondTime
-                                secondFractal = Decimal.MinValue
                             Else
-                                secondFractal = fractal.FractalHigh.Value
-                                secondTime = runningPayload.Key
+                                If fractal.FractalHigh.Value < secondFractal Then
+                                    Dim closeFound As Boolean = False
+                                    Dim hkConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                                        hkConsumer.ConsumerPayloads.Where(Function(y)
+                                                                              Return y.Key > firstTime AndAlso y.Key <= runningPayload.Key
+                                                                          End Function)
+                                    If hkConsumerPayload IsNot Nothing AndAlso hkConsumerPayload.Count > 0 Then
+                                        For Each runningCandle In hkConsumerPayload.OrderBy(Function(x)
+                                                                                                Return x.Key
+                                                                                            End Function)
+                                            If runningCandle.Key > firstTime AndAlso runningCandle.Key <= runningPayload.Key Then
+                                                Dim hkCandle As OHLCPayload = runningCandle.Value
+                                                Dim fractalData As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
+                                                If hkCandle.ClosePrice.Value >= fractalData.FractalHigh.Value OrElse
+                                                hkCandle.ClosePrice.Value <= fractalData.FractalLow.Value Then
+                                                    closeFound = True
+                                                    Exit For
+                                                End If
+                                            End If
+                                        Next
+                                    End If
+                                    If Not closeFound Then
+                                        ret = New Tuple(Of Date, Date)(firstTime, runningPayload.Key)
+                                        Exit For
+                                    Else
+                                        firstFractal = fractal.FractalHigh.Value
+                                        firstTime = runningPayload.Key
+                                        secondFractal = Decimal.MinValue
+                                    End If
+                                ElseIf fractal.FractalHigh.Value > secondFractal Then
+                                    firstFractal = secondFractal
+                                    firstTime = secondTime
+                                    secondFractal = Decimal.MinValue
+                                Else
+                                    secondFractal = fractal.FractalHigh.Value
+                                    secondTime = runningPayload.Key
+                                End If
                             End If
                         End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
         Return ret
     End Function
@@ -925,59 +961,72 @@ Public Class NFOStrategyInstrument
             Dim secondTime As Date = Date.MinValue
             Dim firstFractal As Decimal = Decimal.MinValue
             Dim secondFractal As Decimal = Decimal.MinValue
-            For Each runningPayload In fractalConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                    Return x.Key
-                                                                                End Function)
-                If runningPayload.Key.Date = Now.Date AndAlso runningPayload.Key > startTime AndAlso runningPayload.Key < endTime Then
-                    Dim fractal As FractalConsumer.FractalPayload = runningPayload.Value
-                    If firstFractal = Decimal.MinValue Then
-                        firstFractal = fractal.FractalLow.Value
-                        firstTime = runningPayload.Key
-                    Else
-                        If secondFractal = Decimal.MinValue Then
-                            If fractal.FractalLow.Value < firstFractal Then
-                                secondFractal = fractal.FractalLow.Value
-                                secondTime = runningPayload.Key
-                            Else
-                                firstFractal = fractal.FractalLow.Value
-                                firstTime = runningPayload.Key
-                            End If
+
+            Dim fractalConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                fractalConsumer.ConsumerPayloads.Where(Function(y)
+                                                           Return y.Key.Date = Now.Date AndAlso y.Key > startTime AndAlso y.Key < endTime
+                                                       End Function)
+            If fractalConsumerPayload IsNot Nothing AndAlso fractalConsumerPayload.Count > 0 Then
+                For Each runningPayload In fractalConsumerPayload.OrderBy(Function(x)
+                                                                              Return x.Key
+                                                                          End Function)
+                    If runningPayload.Key.Date = Now.Date AndAlso runningPayload.Key > startTime AndAlso runningPayload.Key < endTime Then
+                        Dim fractal As FractalConsumer.FractalPayload = runningPayload.Value
+                        If firstFractal = Decimal.MinValue Then
+                            firstFractal = fractal.FractalLow.Value
+                            firstTime = runningPayload.Key
                         Else
-                            If fractal.FractalLow.Value > secondFractal Then
-                                Dim closeFound As Boolean = False
-                                For Each runningCandle In hkConsumer.ConsumerPayloads.OrderBy(Function(x)
-                                                                                                  Return x.Key
-                                                                                              End Function)
-                                    If runningCandle.Key > firstTime AndAlso runningCandle.Key <= runningPayload.Key Then
-                                        Dim hkCandle As OHLCPayload = runningCandle.Value
-                                        Dim fractalData As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
-                                        If hkCandle.ClosePrice.Value >= fractalData.FractalHigh.Value OrElse
-                                            hkCandle.ClosePrice.Value <= fractalData.FractalLow.Value Then
-                                            closeFound = True
-                                            Exit For
-                                        End If
-                                    End If
-                                Next
-                                If Not closeFound Then
-                                    ret = New Tuple(Of Date, Date)(firstTime, runningPayload.Key)
-                                    Exit For
+                            If secondFractal = Decimal.MinValue Then
+                                If fractal.FractalLow.Value < firstFractal Then
+                                    secondFractal = fractal.FractalLow.Value
+                                    secondTime = runningPayload.Key
                                 Else
                                     firstFractal = fractal.FractalLow.Value
                                     firstTime = runningPayload.Key
-                                    secondFractal = Decimal.MinValue
                                 End If
-                            ElseIf fractal.FractalLow.Value < secondFractal Then
-                                firstFractal = secondFractal
-                                firstTime = secondTime
-                                secondFractal = Decimal.MinValue
                             Else
-                                secondFractal = fractal.FractalLow.Value
-                                secondTime = runningPayload.Key
+                                If fractal.FractalLow.Value > secondFractal Then
+                                    Dim closeFound As Boolean = False
+                                    Dim hkConsumerPayload As IEnumerable(Of KeyValuePair(Of Date, IPayload)) =
+                                        hkConsumer.ConsumerPayloads.Where(Function(y)
+                                                                              Return y.Key > firstTime AndAlso y.Key <= runningPayload.Key
+                                                                          End Function)
+                                    If hkConsumerPayload IsNot Nothing AndAlso hkConsumerPayload.Count > 0 Then
+                                        For Each runningCandle In hkConsumerPayload.OrderBy(Function(x)
+                                                                                                Return x.Key
+                                                                                            End Function)
+                                            If runningCandle.Key > firstTime AndAlso runningCandle.Key <= runningPayload.Key Then
+                                                Dim hkCandle As OHLCPayload = runningCandle.Value
+                                                Dim fractalData As FractalConsumer.FractalPayload = fractalConsumer.ConsumerPayloads(hkCandle.SnapshotDateTime)
+                                                If hkCandle.ClosePrice.Value >= fractalData.FractalHigh.Value OrElse
+                                                hkCandle.ClosePrice.Value <= fractalData.FractalLow.Value Then
+                                                    closeFound = True
+                                                    Exit For
+                                                End If
+                                            End If
+                                        Next
+                                    End If
+                                    If Not closeFound Then
+                                        ret = New Tuple(Of Date, Date)(firstTime, runningPayload.Key)
+                                        Exit For
+                                    Else
+                                        firstFractal = fractal.FractalLow.Value
+                                        firstTime = runningPayload.Key
+                                        secondFractal = Decimal.MinValue
+                                    End If
+                                ElseIf fractal.FractalLow.Value < secondFractal Then
+                                    firstFractal = secondFractal
+                                    firstTime = secondTime
+                                    secondFractal = Decimal.MinValue
+                                Else
+                                    secondFractal = fractal.FractalLow.Value
+                                    secondTime = runningPayload.Key
+                                End If
                             End If
                         End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
         Return ret
     End Function

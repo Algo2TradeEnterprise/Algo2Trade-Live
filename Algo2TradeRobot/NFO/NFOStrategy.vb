@@ -112,6 +112,7 @@ Public Class NFOStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf SendMaxCapitalDataAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -143,5 +144,31 @@ Public Class NFOStrategy
             ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
         End If
         Return ret
+    End Function
+    Private Async Function SendMaxCapitalDataAsync() As Task
+        Try
+            While True
+                If Me.GetTotalTurnover() <> 0 Then
+                    Dim message As String = String.Format("Max Capital: {0}, Timestamp: {1}",
+                                                      Math.Round(Me.GetTotalTurnover() / 10, 2),
+                                                      Now.ToString("HH:mm:ss"))
+
+                    Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-480863814", message).ConfigureAwait(False)
+                End If
+
+                Await Task.Delay(60000).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+            Throw ex
+        End Try
+    End Function
+
+    Private Async Function SendTelegramTextMessageAsync(ByVal apiKey As String, ByVal chatID As String, ByVal message As String) As Task
+        If apiKey IsNot Nothing AndAlso chatID IsNot Nothing AndAlso apiKey.Trim <> "" AndAlso chatID.Trim <> "" Then
+            Using tSender As New Utilities.Notification.Telegram(apiKey.Trim, chatID.Trim, _cts)
+                Await tSender.SendMessageGetAsync(Utilities.Strings.UrlEncodeString(message)).ConfigureAwait(False)
+            End Using
+        End If
     End Function
 End Class
