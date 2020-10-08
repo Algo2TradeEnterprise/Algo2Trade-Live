@@ -150,8 +150,9 @@ Public Class NFOStrategy
             While True
                 _cts.Token.ThrowIfCancellationRequested()
                 If Me.MaxTurnover() <> Decimal.MinValue AndAlso Me.MaxTurnover() <> 0 Then
-                    Dim message As String = String.Format("PL:{0}, Max Capital: {1}, Timestamp: {2}",
+                    Dim message As String = String.Format("PL: {0}, Capital: {1}, Max Capital: {2}, Timestamp: {3}",
                                                           Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
+                                                          Math.Round(Me.GetTotalTurnover() / 10, 2),
                                                           Math.Round(Me.MaxTurnover / 10, 2),
                                                           Now.ToString("HH:mm:ss"))
 
