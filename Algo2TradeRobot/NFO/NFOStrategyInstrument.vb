@@ -532,8 +532,7 @@ Public Class NFOStrategyInstrument
 
             ElseIf currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
                 runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
-                runningCandlePayload.PreviousPayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedHistorical AndAlso
-                Me.TradableInstrument.IsHistoricalCompleted Then
+                runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
                 If (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
                     (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
                     (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
@@ -622,12 +621,14 @@ Public Class NFOStrategyInstrument
                 Dim price As Decimal = Decimal.MinValue
                 If _Direction = IOrder.TypeOfTransaction.Buy AndAlso quantity < 0 Then
                     price = currentTick.LastPrice + ConvertFloorCeling(Math.Max(currentTick.LastPrice * 0.9 / 100, 0.2), Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    If price < Me.TradableInstrument.TickSize Then price = Me.TradableInstrument.TickSize
                     parameters = New PlaceOrderParameters(runningCandlePayload) With
                                        {.EntryDirection = _Direction,
                                         .Price = price,
                                         .Quantity = quantity}
                 ElseIf _Direction = IOrder.TypeOfTransaction.Sell AndAlso quantity > 0 Then
                     price = currentTick.LastPrice - ConvertFloorCeling(Math.Max(currentTick.LastPrice * 0.9 / 100, 0.2), Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                    If price < Me.TradableInstrument.TickSize Then price = Me.TradableInstrument.TickSize
                     parameters = New PlaceOrderParameters(runningCandlePayload) With
                                        {.EntryDirection = _Direction,
                                         .Price = price,
