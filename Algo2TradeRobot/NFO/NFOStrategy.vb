@@ -149,7 +149,7 @@ Public Class NFOStrategy
         Try
             While True
                 _cts.Token.ThrowIfCancellationRequested()
-                If Me.MaxTurnover() <> 0 Then
+                If Me.MaxTurnover() <> Decimal.MinValue Then
                     Dim message As String = String.Format("PL:{0}, Max Capital: {1}, Timestamp: {2}",
                                                           Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
                                                           Math.Round(Me.MaxTurnover / 10, 2),
