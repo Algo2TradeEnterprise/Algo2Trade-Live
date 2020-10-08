@@ -149,7 +149,7 @@ Public Class NFOStrategy
         Try
             While True
                 _cts.Token.ThrowIfCancellationRequested()
-                If Me.GetTotalTurnover() <> 0 Then
+                If Me.MaxTurnover() <> 0 Then
                     Dim message As String = String.Format("PL:{0}, Max Capital: {1}, Timestamp: {2}",
                                                           Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
                                                           Math.Round(Me.MaxTurnover / 10, 2),
@@ -161,7 +161,7 @@ Public Class NFOStrategy
                 Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
-            logger.Error(ex.ToString)
+            logger.Error("Capital message error: {0}", ex.ToString)
             Throw ex
         End Try
     End Function
