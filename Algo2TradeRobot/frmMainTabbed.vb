@@ -508,11 +508,10 @@ Public Class frmMainTabbed
         If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
         _commonController = Nothing
         _connection = Nothing
-        '_cts = Nothing
+        _cts = Nothing
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        _cts = Nothing
         Dim authenticationUserId As String = "AB096403"
         If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
@@ -538,7 +537,7 @@ Public Class frmMainTabbed
                     Debug.WriteLine("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
                     logger.Debug("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
                     Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
-                    Await Task.Delay(Math.Ceiling(remainingTime), _cts.Token).ConfigureAwait(False)
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for idle state end")
                     logger.Debug("Restarting the application again for idle state end")
                     btnNFOStart_Click(sender, e)
@@ -546,7 +545,7 @@ Public Class frmMainTabbed
                     Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
                     logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
                     Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
-                    Await Task.Delay(Math.Ceiling(remainingTime), _cts.Token).ConfigureAwait(False)
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for non trading day end")
                     logger.Debug("Restarting the application again for non trading day end")
                     btnNFOStart_Click(sender, e)
