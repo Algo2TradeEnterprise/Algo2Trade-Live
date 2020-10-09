@@ -148,6 +148,9 @@ Public Class NFOStrategy
     Private Async Function SendMaxCapitalDataAsync() As Task
         Try
             While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
                 _cts.Token.ThrowIfCancellationRequested()
                 If Me.MaxTurnover() <> Decimal.MinValue AndAlso Me.MaxTurnover() <> 0 Then
                     Dim message As String = String.Format("PL: {0}, Capital: {1}, Max Capital: {2}, Timestamp: {3}",
