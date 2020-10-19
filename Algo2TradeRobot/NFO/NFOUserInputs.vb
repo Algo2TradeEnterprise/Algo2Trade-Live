@@ -7,35 +7,14 @@ Imports Algo2TradeCore.Entities.UserSettings
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Fractal Constriction.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Cash Future Arbitrage.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
-    Public Property MaxLossPerTrade As Decimal
-    Public Property NumberOfTradePerStock As Integer
-    Public Property OverallMaxProfitPerDay As Decimal
-    Public Property OverallMaxLossPerDay As Decimal
-    Public Property MinDistancePercentageForCancellation As Decimal
-    Public Property MaxTurnoverOfATrade As Decimal
-
-    Public Property AutoSelectStock As Boolean
-    Public Property MinStockPrice As Decimal
-    Public Property MaxStockPrice As Decimal
-    Public Property MinATRPercentage As Decimal
-    Public Property MaxBlankCandlePercentage As Decimal
-    Public Property MaxTargetToStoplossMultiplier As Decimal
-    Public Property NumberOfStock As Integer
-
-    Public Property ATRPeriod As Integer
-    Public Property ATRBandPeriod As Integer
-    Public Property ATRBandShift As Decimal
-
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property Multiplier As Decimal
-        Public Property PreviousDayHighestATR As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -48,9 +27,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "MULTIPLIER", "HIGHEST ATR"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL"}
 
-                        For colCtr = 0 To 2
+                        For colCtr = 0 To 0
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -61,8 +40,6 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
-                            Dim mul As Decimal = 0
-                            Dim hgstATR As Decimal = 0
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -73,36 +50,12 @@ Public Class NFOUserInputs
                                             Throw New ApplicationException(String.Format("Trading Symbol Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
-                                ElseIf columnCtr = 1 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            mul = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Multiplier can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Multiplier can not be null. RowNumber: {0}", rowCtr))
-                                    End If
-                                ElseIf columnCtr = 2 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            hgstATR = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Highest ATR can not be of type {0}. RowNumber: {1}", instrumentDetails(rowCtr, columnCtr).GetType, rowCtr))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Highest ATR can not be null. RowNumber: {0}", rowCtr))
-                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
-                                    .Multiplier = mul
-                                    .PreviousDayHighestATR = hgstATR
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then

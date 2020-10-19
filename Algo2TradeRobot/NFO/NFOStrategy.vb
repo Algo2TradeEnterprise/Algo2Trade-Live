@@ -15,7 +15,7 @@ Public Class NFOStrategy
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller, True)
+        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -39,25 +39,31 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.AutoSelectStock Then
-                Using fillInstrumentDetails As New NFOFillInstrumentDetails(_cts, Me)
-                    Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
-                End Using
-                logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
-            End If
+            Using fillInstrumentDetails As New NFOFillInstrumentDetails(_cts, Me)
+                Await fillInstrumentDetails.GetInstrumentData(allInstruments, bannedInstruments).ConfigureAwait(False)
+            End Using
+            logger.Debug(Utilities.Strings.JsonSerialize(Me.UserSettings))
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol AndAlso
+                                                                                                x.InstrumentType = IInstrument.TypeOfInstrument.Futures
                                                                                             End Function)
 
                     _cts.Token.ThrowIfCancellationRequested()
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                    If runningTradableInstrument IsNot Nothing Then
+                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+
+                        Dim childInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                          Return x.TradingSymbol = runningTradableInstrument.RawInstrumentName AndAlso
+                                                                                          x.InstrumentType = IInstrument.TypeOfInstrument.Cash
+                                                                                      End Function)
+                        If childInstrument IsNot Nothing Then retTradableInstrumentsAsPerStrategy.Add(childInstrument)
+                    End If
                     ret = True
-                    If retTradableInstrumentsAsPerStrategy.Count >= userInputs.NumberOfStock Then Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
@@ -112,7 +118,6 @@ Public Class NFOStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
-            tasks.Add(Task.Run(AddressOf SendMaxCapitalDataAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -136,45 +141,7 @@ Public Class NFOStrategy
         Dim currentTime As Date = Now
         If currentTime >= Me.UserSettings.EODExitTime Then
             ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
-        ElseIf overallPL <= userSettings.OverallMaxLossPerDay Then
-            logger.Debug("Max loss reached. Overall PL: {0}", overallPL)
-            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
-        ElseIf overallPL >= userSettings.OverallMaxProfitPerDay Then
-            logger.Debug("Max Profit reached. Overall PL: {0}", overallPL)
-            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
         End If
         Return ret
-    End Function
-    Private Async Function SendMaxCapitalDataAsync() As Task
-        Try
-            While True
-                If Me.ParentController.OrphanException IsNot Nothing Then
-                    Throw Me.ParentController.OrphanException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                If Me.MaxTurnover() <> Decimal.MinValue AndAlso Me.MaxTurnover() <> 0 Then
-                    Dim message As String = String.Format("PL: {0}, Capital: {1}, Max Capital: {2}, Timestamp: {3}",
-                                                          Math.Round(Me.GetTotalPLAfterBrokerage(), 2),
-                                                          Math.Round(Me.GetTotalTurnover() / 10, 2),
-                                                          Math.Round(Me.MaxTurnover / 10, 2),
-                                                          Now.ToString("HH:mm:ss"))
-
-                    Await SendTelegramTextMessageAsync(Me.ParentController.UserInputs.TelegramAPIKey, "-412527350", message).ConfigureAwait(False)
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-                Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
-            End While
-        Catch ex As Exception
-            logger.Error("Capital message error: {0}", ex.ToString)
-            Throw ex
-        End Try
-    End Function
-
-    Private Async Function SendTelegramTextMessageAsync(ByVal apiKey As String, ByVal chatID As String, ByVal message As String) As Task
-        If apiKey IsNot Nothing AndAlso chatID IsNot Nothing AndAlso apiKey.Trim <> "" AndAlso chatID.Trim <> "" Then
-            Using tSender As New Utilities.Notification.Telegram(apiKey.Trim, chatID.Trim, _cts)
-                Await tSender.SendMessageGetAsync(Utilities.Strings.UrlEncodeString(message)).ConfigureAwait(False)
-            End Using
-        End If
     End Function
 End Class
