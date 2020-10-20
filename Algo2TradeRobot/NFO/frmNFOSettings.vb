@@ -40,6 +40,7 @@ Public Class frmNFOSettings
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            txtChangePer.Text = _settings.ChangePercentage
         End If
     End Sub
 
@@ -49,6 +50,7 @@ Public Class frmNFOSettings
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.ChangePercentage = txtChangePer.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -72,6 +74,7 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtChangePer)
 
         ValidateFile()
     End Sub

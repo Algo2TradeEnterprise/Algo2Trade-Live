@@ -16,8 +16,6 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _changePer As Decimal = 3
-
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
                    ByVal isPairInstrumnet As Boolean,
@@ -47,12 +45,14 @@ Public Class NFOStrategyInstrument
     Public Overrides Async Function MonitorAsync() As Task
         Try
             _strategyInstrumentRunning = True
+            Me.TradableInstrument.FetchHistorical = False
             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Futures Then
                 Dim myCashInstrument As StrategyInstrument = Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
                                                                                                                      Return x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash AndAlso
                                                                                                                         x.TradableInstrument.TradingSymbol = Me.TradableInstrument.RawInstrumentName
                                                                                                                  End Function).FirstOrDefault
                 If myCashInstrument IsNot Nothing Then
+                    Dim userInput As NFOUserInputs = Me.ParentStrategy.UserSettings
                     While True
                         If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw Me.ParentStrategy.ParentController.OrphanException
@@ -66,7 +66,7 @@ Public Class NFOStrategyInstrument
                                 Dim cashBid As Decimal = CType(cashTick, ZerodhaTick).WrappedTick.Bids.FirstOrDefault.Price
                                 Dim futureAsk As Decimal = CType(futureTick, ZerodhaTick).WrappedTick.Offers.FirstOrDefault.Price
                                 Dim changePer As Decimal = Math.Round(((cashBid - futureAsk) / futureAsk) * 100, 2)
-                                If changePer >= _changePer Then
+                                If changePer >= userInput.ChangePercentage Then
                                     logger.Fatal("{0}:SELL Cash LTP={1}, Future LTP={2}, Cash Bid={3}, Future Ask={4}, Change%={5}, Tick Time={6}",
                                                   myCashInstrument.TradableInstrument.TradingSymbol,
                                                   cashTick.LastPrice,
@@ -80,7 +80,7 @@ Public Class NFOStrategyInstrument
                                 Dim cashAsk As Decimal = CType(cashTick, ZerodhaTick).WrappedTick.Offers.FirstOrDefault.Price
                                 Dim futureBid As Decimal = CType(futureTick, ZerodhaTick).WrappedTick.Bids.FirstOrDefault.Price
                                 Dim changePer As Decimal = Math.Round(((futureBid - cashAsk) / cashAsk) * 100, 2)
-                                If changePer >= _changePer Then
+                                If changePer >= userInput.ChangePercentage Then
                                     logger.Fatal("{0}:BUY Cash LTP={1}, Future LTP={2}, Cash Ask={3}, Future Bid={4}, Change%={5}, Tick Time={6}",
                                                   myCashInstrument.TradableInstrument.TradingSymbol,
                                                   cashTick.LastPrice,

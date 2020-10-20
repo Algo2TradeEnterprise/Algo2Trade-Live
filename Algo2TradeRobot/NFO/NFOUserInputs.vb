@@ -9,6 +9,8 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Cash Future Arbitrage.Strategy.a2t")
 
+    Public Property ChangePercentage As Decimal
+
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 

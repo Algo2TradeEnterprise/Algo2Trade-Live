@@ -39,6 +39,8 @@ Partial Class frmNFOSettings
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtChangePer = New System.Windows.Forms.TextBox()
+        Me.lblChangePer = New System.Windows.Forms.Label()
         Me.grpTradeSettings.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -146,6 +148,8 @@ Partial Class frmNFOSettings
         '
         'grpTradeSettings
         '
+        Me.grpTradeSettings.Controls.Add(Me.txtChangePer)
+        Me.grpTradeSettings.Controls.Add(Me.lblChangePer)
         Me.grpTradeSettings.Controls.Add(Me.btnBrowse)
         Me.grpTradeSettings.Controls.Add(Me.txtInstrumentDetalis)
         Me.grpTradeSettings.Controls.Add(Me.lblInstrumentDetails)
@@ -161,7 +165,7 @@ Partial Class frmNFOSettings
         Me.grpTradeSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.grpTradeSettings.Name = "grpTradeSettings"
         Me.grpTradeSettings.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpTradeSettings.Size = New System.Drawing.Size(539, 200)
+        Me.grpTradeSettings.Size = New System.Drawing.Size(539, 232)
         Me.grpTradeSettings.TabIndex = 1
         Me.grpTradeSettings.TabStop = False
         Me.grpTradeSettings.Text = "Trade Settings"
@@ -196,11 +200,30 @@ Partial Class frmNFOSettings
         Me.lblInstrumentDetails.TabIndex = 53
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
+        'txtChangePer
+        '
+        Me.txtChangePer.Location = New System.Drawing.Point(285, 198)
+        Me.txtChangePer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtChangePer.Name = "txtChangePer"
+        Me.txtChangePer.Size = New System.Drawing.Size(242, 22)
+        Me.txtChangePer.TabIndex = 5
+        Me.txtChangePer.Tag = "Signal Time Frame"
+        '
+        'lblChangePer
+        '
+        Me.lblChangePer.AutoSize = True
+        Me.lblChangePer.Location = New System.Drawing.Point(9, 201)
+        Me.lblChangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblChangePer.Name = "lblChangePer"
+        Me.lblChangePer.Size = New System.Drawing.Size(145, 17)
+        Me.lblChangePer.TabIndex = 55
+        Me.lblChangePer.Text = "Bid To Ask Change %"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(669, 205)
+        Me.ClientSize = New System.Drawing.Size(669, 234)
         Me.Controls.Add(Me.grpTradeSettings)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -231,4 +254,6 @@ Partial Class frmNFOSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
+    Friend WithEvents txtChangePer As TextBox
+    Friend WithEvents lblChangePer As Label
 End Class
