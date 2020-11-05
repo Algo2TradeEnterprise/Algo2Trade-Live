@@ -135,7 +135,7 @@ Public Class NFOStrategyInstrument
             If CType(Me.ParentStrategy, NFOStrategy).TradingDates IsNot Nothing AndAlso CType(Me.ParentStrategy, NFOStrategy).TradingDates.Contains(Now.Date) Then
                 If currentTime >= userSettings.TradeEntryTime AndAlso _lastTick IsNot Nothing AndAlso Not _entryDoneForTheDay Then
                     Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
-                    signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value
+                    signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date
                     signalCandle.OpenPrice.Value = _lastTick.LastPrice
                     signalCandle.LowPrice.Value = _lastTick.LastPrice
                     signalCandle.HighPrice.Value = _lastTick.LastPrice
@@ -164,9 +164,21 @@ Public Class NFOStrategyInstrument
                                             .Quantity = Math.Abs(quantity)
                                          }
                         End If
-                        'If log Then
+                        If log AndAlso Not forcePrint Then
+                            Dim remarks As String = String.Format("Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
+                                                                  _tempSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                                                                  _tempSignal.DesireValue,
+                                                                  _tempSignal.NoOfSharesOwnedBeforeRebalancing,
+                                                                  _tempSignal.ClosePrice,
+                                                                  _tempSignal.TotalValueBeforeRebalancing,
+                                                                  _tempSignal.DesireValue,
+                                                                  _tempSignal.TotalValueBeforeRebalancing,
+                                                                  _tempSignal.AmountToInvest,
+                                                                  _tempSignal.NoOfSharesToBuy)
 
-                        'End If
+                            logger.Fatal(remarks)
+                            SendTradeAlertMessageAsync(remarks)
+                        End If
                     End If
                 End If
             End If
@@ -269,6 +281,18 @@ Public Class NFOStrategyInstrument
             Dim lastSignal As SignalDetails = GetLastSignalDetails(snapshotDate)
             Dim signal As SignalDetails = New SignalDetails(lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue)
             _allSignalDetails.Add(signal.SnapshotDate, signal)
+
+            Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
+                                                  signal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                                                  If(signal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
+                                                  signal.SharesOwnedAfterRebalancing,
+                                                  signal.PreviousSignal.TotalInvested,
+                                                  signal.EntryPrice,
+                                                  signal.NoOfSharesToBuy,
+                                                  signal.TotalInvested)
+            logger.Fatal(remarks)
+            SendTradeAlertMessageAsync(remarks)
+
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
         End If
         Return ret
@@ -307,8 +331,8 @@ Public Class NFOStrategyInstrument
             Me.TradingSymbol = tradingSymbol
             Me.SnapshotDate = snapshotDate
             Me.ClosePrice = closePrice
-            Me.EntryPrice = entryPrice
-            Me.DesireValue = desireValue
+            Me.EntryPrice = Math.Round(entryPrice, 2)
+            Me.DesireValue = Math.Round(desireValue, 2)
         End Sub
 
         Public ReadOnly Property PreviousSignal As SignalDetails
@@ -333,15 +357,15 @@ Public Class NFOStrategyInstrument
             End Get
         End Property
 
-        Public ReadOnly Property ToatalValueBeforeRebalancing As Double
+        Public ReadOnly Property TotalValueBeforeRebalancing As Double
             Get
-                Return Me.ClosePrice * Me.NoOfSharesOwnedBeforeRebalancing
+                Return Math.Round(Me.ClosePrice * Me.NoOfSharesOwnedBeforeRebalancing, 2)
             End Get
         End Property
 
         Public ReadOnly Property AmountToInvest As Double
             Get
-                Return Me.DesireValue - Me.ToatalValueBeforeRebalancing
+                Return Math.Round(Me.DesireValue - Me.TotalValueBeforeRebalancing, 2)
             End Get
         End Property
 
@@ -360,9 +384,9 @@ Public Class NFOStrategyInstrument
         Public ReadOnly Property TotalInvested As Double
             Get
                 If Me.PreviousSignal IsNot Nothing Then
-                    Return Me.PreviousSignal.TotalInvested + Me.NoOfSharesToBuy * Me.EntryPrice
+                    Return Math.Round(Me.PreviousSignal.TotalInvested + Me.NoOfSharesToBuy * Me.EntryPrice, 2)
                 Else
-                    Return Me.NoOfSharesToBuy * Me.EntryPrice
+                    Return Math.Round(Me.NoOfSharesToBuy * Me.EntryPrice, 2)
                 End If
             End Get
         End Property
@@ -370,9 +394,9 @@ Public Class NFOStrategyInstrument
         Public ReadOnly Property PeriodicInvestment As Double
             Get
                 If Me.PreviousSignal IsNot Nothing Then
-                    Return (Me.PreviousSignal.TotalInvested - Me.TotalInvested)
+                    Return Math.Round(Me.PreviousSignal.TotalInvested - Me.TotalInvested, 2)
                 Else
-                    Return (0 - Me.TotalInvested)
+                    Return Math.Round(0 - Me.TotalInvested, 2)
                 End If
             End Get
         End Property

@@ -31,7 +31,7 @@
                     row("Entry Price") = runningSignal.EntryPrice
                     row("Desire Value") = runningSignal.DesireValue
                     row("No. Of Shares Owned Before Rebalancing") = runningSignal.NoOfSharesOwnedBeforeRebalancing
-                    row("Total Value Before Rebalancing") = runningSignal.ToatalValueBeforeRebalancing
+                    row("Total Value Before Rebalancing") = runningSignal.TotalValueBeforeRebalancing
                     row("Amount To Invest") = runningSignal.AmountToInvest
                     row("No. Of Shares To Buy") = runningSignal.NoOfSharesToBuy
                     row("Shares Owned After Rebalancing") = runningSignal.SharesOwnedAfterRebalancing
