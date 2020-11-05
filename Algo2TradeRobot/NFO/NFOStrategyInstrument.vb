@@ -166,7 +166,7 @@ Public Class NFOStrategyInstrument
                                          {
                                             .EntryDirection = IOrder.TypeOfTransaction.Sell,
                                             .OrderType = IOrder.TypeOfOrder.Market,
-                                            .Quantity = quantity
+                                            .Quantity = Math.Abs(quantity)
                                          }
                         End If
                         'If log Then
