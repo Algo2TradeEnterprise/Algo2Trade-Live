@@ -99,11 +99,6 @@ Public Class NFOStrategyInstrument
                 'Place Order block end
                 _cts.Token.ThrowIfCancellationRequested()
 
-                If _lastTick IsNot Nothing AndAlso Now >= _lastTick.Timestamp.Value.AddMinutes(5) Then
-                    _lastTick = Nothing
-                    _entryDoneForTheDay = False
-                End If
-
                 Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
