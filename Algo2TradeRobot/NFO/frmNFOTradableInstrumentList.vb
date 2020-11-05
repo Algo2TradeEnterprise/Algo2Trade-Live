@@ -27,89 +27,56 @@
 #End Region
 
     Private _TradableStrategyInstruments As IEnumerable(Of NFOStrategyInstrument)
-    Private _CloseAllowed As Boolean
     Public Sub New(ByVal associatedTradableInstruments As IEnumerable(Of NFOStrategyInstrument))
         InitializeComponent()
         Me._TradableStrategyInstruments = associatedTradableInstruments
-        Me._CloseAllowed = True
     End Sub
 
     Private Sub frmNFOTradableInstrumentList_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         If _TradableStrategyInstruments IsNot Nothing AndAlso _TradableStrategyInstruments.Count > 0 Then
             Dim dt As New DataTable
-            dt.Columns.Add("Exit", GetType(Boolean))
             dt.Columns.Add("Instrument Name")
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
-            dt.Columns.Add("StrategyInstrument", GetType(NFOStrategyInstrument))
+            dt.Columns.Add("Historical")
+            dt.Columns.Add("Instrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
-                row("Exit") = False
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
-                row("StrategyInstrument") = instrument
+                row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
+                row("Instrument") = instrument
+
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
-            dgvTradableInstruments.Columns.Item("StrategyInstrument").Visible = False
+            dgvTradableInstruments.Columns.Item("Instrument").Visible = False
+
+            Dim detailsColumn As DataGridViewButtonColumn = New DataGridViewButtonColumn
+            detailsColumn.HeaderText = ""
+            detailsColumn.Name = "details_column"
+            detailsColumn.Text = "Check Detials"
+            detailsColumn.UseColumnTextForButtonValue = True
+            Dim detailsColumnIndex As Integer = 8
+            If dgvTradableInstruments.Columns("details_column") Is Nothing Then
+                dgvTradableInstruments.Columns.Insert(detailsColumnIndex, detailsColumn)
+            End If
+
             dgvTradableInstruments.Refresh()
         End If
-        For Each runningColumn In dgvTradableInstruments.Columns
-            runningColumn.ReadOnly = IIf(runningColumn.Index = 0, False, True)
-        Next
     End Sub
 
-    Private Async Sub btnExit_Click(sender As Object, e As EventArgs) Handles btnExit.Click
-        SetObjectText_ThreadSafe(btnExit, "Waiting for Exit")
-        SetObjectEnableDisable_ThreadSafe(btnExit, False)
-        SetObjectEnableDisable_ThreadSafe(dgvTradableInstruments, False)
-        _CloseAllowed = False
-
-        Dim strategyInstrumentsToBeStopped As List(Of NFOStrategyInstrument) = Nothing
-        For Each runningRow As DataGridViewRow In dgvTradableInstruments.Rows
-            If Convert.ToBoolean(runningRow.Cells(0).Value) Then
-                If strategyInstrumentsToBeStopped Is Nothing Then strategyInstrumentsToBeStopped = New List(Of NFOStrategyInstrument)
-                strategyInstrumentsToBeStopped.Add(CType(runningRow.Cells(7).Value, NFOStrategyInstrument))
-            End If
-        Next
-        'TODO:
-        'Set relevant flags in strategy instrument collection by reading strategyInstrumentsToBeStopped
-        If strategyInstrumentsToBeStopped IsNot Nothing AndAlso strategyInstrumentsToBeStopped.Count > 0 Then
-            For Each runningStrategyInstrumentsToBeStopped In strategyInstrumentsToBeStopped
-                runningStrategyInstrumentsToBeStopped.ForceExitByUser = True
-            Next
-            While True
-                Dim ret As Boolean = False
-                For Each runningStrategyInstrumentsToBeStopped In strategyInstrumentsToBeStopped
-                    ret = ret Or runningStrategyInstrumentsToBeStopped.ForceExitByUser
-                Next
-                If Not ret Then
-                    SetObjectText_ThreadSafe(btnExit, "Exit")
-                    SetObjectEnableDisable_ThreadSafe(btnExit, True)
-                    SetObjectEnableDisable_ThreadSafe(dgvTradableInstruments, True)
-                    _CloseAllowed = True
-                    Exit While
-                End If
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
-        Else
-            SetObjectText_ThreadSafe(btnExit, "Exit")
-            SetObjectEnableDisable_ThreadSafe(btnExit, True)
-            SetObjectEnableDisable_ThreadSafe(dgvTradableInstruments, True)
-            _CloseAllowed = True
-        End If
-    End Sub
-
-    Private Sub frmNFOTradableInstrumentList_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        If Not _CloseAllowed Then
-            e.Cancel = True
+    Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
+        If e.ColumnIndex = 8 Then
+            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(7).Value, NFOStrategyInstrument))
+            frm.ShowDialog()
         End If
     End Sub
 End Class

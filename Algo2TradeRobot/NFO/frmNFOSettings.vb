@@ -20,6 +20,7 @@ Public Class frmNFOSettings
         End If
         LoadSettings()
     End Sub
+
     Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
         Try
             _cts = New CancellationTokenSource
@@ -32,31 +33,33 @@ Public Class frmNFOSettings
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
         End Try
     End Sub
+
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtTimeFrame.Text = _settings.SignalTimeFrame
-            txtStrikeRangePer.Text = _settings.StrikePriceRangePercentage
-
+            dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
+            txtInitialInvestment.Text = _settings.InitialInvestment
+            txtExpectedIncreaseEachPeriod.Text = _settings.ExpectedIncreaseEachPeriod
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
-            txtEMA1Period.Text = _settings.EMA1Period
-            txtEMA2Period.Text = _settings.EMA2Period
+            txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
+            txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtTimeFrame.Text
-        _settings.StrikePriceRangePercentage = txtStrikeRangePer.Text
-
+        _settings.SignalTimeFrame = 1
+        _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
+        _settings.InitialInvestment = txtInitialInvestment.Text
+        _settings.ExpectedIncreaseEachPeriod = txtExpectedIncreaseEachPeriod.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
-        _settings.EMA1Period = txtEMA1Period.Text
-        _settings.EMA2Period = txtEMA2Period.Text
-
+        _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
+        _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
+
     Private Function ValidateNumbers(ByVal startNumber As Decimal, ByVal endNumber As Decimal, ByVal inputTB As TextBox, Optional ByVal validateInteger As Boolean = False) As Boolean
         Dim ret As Boolean = False
         If IsNumeric(inputTB.Text) Then
@@ -69,18 +72,22 @@ Public Class frmNFOSettings
                 ret = True
             End If
         End If
-        If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
+        If Not ret Then
+            If endNumber = Decimal.MaxValue OrElse (endNumber = Integer.MaxValue AndAlso validateInteger) Then
+                Throw New ApplicationException(String.Format("{0} cannot have a value < {1}", inputTB.Tag, startNumber))
+            Else
+                Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
+            End If
+        End If
         Return ret
     End Function
+
     Private Sub ValidateFile()
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 240, txtTimeFrame, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtStrikeRangePer)
-
-        ValidateNumbers(1, Integer.MaxValue, txtEMA1Period, True)
-        ValidateNumbers(1, Integer.MaxValue, txtEMA2Period, True)
+        ValidateNumbers(1, Decimal.MaxValue, txtInitialInvestment)
+        ValidateNumbers(1, Decimal.MaxValue, txtExpectedIncreaseEachPeriod)
 
         ValidateFile()
     End Sub
@@ -98,4 +105,5 @@ Public Class frmNFOSettings
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
         End If
     End Sub
+
 End Class
