@@ -33,6 +33,8 @@ Public Class NFOUserInputs
     Public Property VWAP_EMAPeriod As Integer
     Public Property DayClose_SMAPeriod As Integer
     Public Property DayClose_ATRPeriod As Integer
+    Public Property Close_RSIPeriod As Integer
+    Public Property RSIValue As Decimal
 
     'Telegram
     Public Property TelegramAPIKey As String

@@ -66,6 +66,8 @@ Public Class frmNFOSettings
             txtDayCloseATRPeriod.Text = _settings.DayClose_ATRPeriod
             txtVWAPEMAPeriod.Text = _settings.VWAP_EMAPeriod
             txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
+            txtCloseRSIPeriod.Text = _settings.Close_RSIPeriod
+            txtRSIValue.Text = _settings.RSIValue
         End If
     End Sub
 
@@ -98,6 +100,8 @@ Public Class frmNFOSettings
         _settings.DayClose_ATRPeriod = txtDayCloseATRPeriod.Text
         _settings.VWAP_EMAPeriod = txtVWAPEMAPeriod.Text
         _settings.DayClose_SMAPeriod = txtDayCloseSMAPeriod.Text
+        _settings.Close_RSIPeriod = txtCloseRSIPeriod.Text
+        _settings.RSIValue = txtRSIValue.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -125,6 +129,8 @@ Public Class frmNFOSettings
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseATRPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtVWAPEMAPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
+        ValidateNumbers(1, Integer.MaxValue, txtCloseRSIPeriod, True)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtRSIValue)
 
         ValidateFile()
     End Sub

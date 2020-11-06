@@ -41,6 +41,7 @@ Public Class NFOStrategyInstrument
     Private ReadOnly _dummyVWAPConsumer As VWAPConsumer
     Private ReadOnly _dummyEMAConsumer As EMAConsumer
     Private ReadOnly _dummyPivotConsumer As PivotsConsumer
+    Private ReadOnly _dummyRSIConsumer As RSIConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -69,7 +70,7 @@ Public Class NFOStrategyInstrument
                 Dim hkConsumer As HeikinAshiConsumer = New HeikinAshiConsumer(chartConsumer)
                 Dim vwapConsumer As VWAPConsumer = New VWAPConsumer(hkConsumer)
                 vwapConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {New EMAConsumer(vwapConsumer, userSettings.VWAP_EMAPeriod, TypeOfField.VWAP)}
-                hkConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {vwapConsumer, New PivotsConsumer(hkConsumer)}
+                hkConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {vwapConsumer, New PivotsConsumer(hkConsumer), New RSIConsumer(hkConsumer, userSettings.Close_RSIPeriod)}
                 chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer) From {hkConsumer}
                 RawPayloadDependentConsumers.Add(chartConsumer)
 
@@ -77,6 +78,7 @@ Public Class NFOStrategyInstrument
                 _dummyVWAPConsumer = New VWAPConsumer(hkConsumer)
                 _dummyEMAConsumer = New EMAConsumer(vwapConsumer, userSettings.VWAP_EMAPeriod, TypeOfField.VWAP)
                 _dummyPivotConsumer = New PivotsConsumer(hkConsumer)
+                _dummyRSIConsumer = New RSIConsumer(hkConsumer, userSettings.Close_RSIPeriod)
             Else
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
@@ -158,6 +160,7 @@ Public Class NFOStrategyInstrument
         Dim vwapData As VWAPConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyVWAPConsumer)
         Dim emaData As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMAConsumer)
         Dim pivotData As PivotsConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyPivotConsumer)
+        Dim rsiData As RSIConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyRSIConsumer)
 
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
             runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
@@ -186,315 +189,331 @@ Public Class NFOStrategyInstrument
                                 Dim vwapEMA As EMAConsumer.EMAPayload = emaData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
                                 If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
                                     Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                                    Dim signalCandle As OHLCPayload = hkCandle
-                                    If signalCandle IsNot Nothing AndAlso signalCandle.PreviousPayload IsNot Nothing AndAlso
-                                        signalCandle.PreviousPayload.SnapshotDateTime.Date = Now.Date Then
-                                        Dim message As String = String.Format("{0} ->Signal Candle Time:{1}.",
-                                                                              Me.TradableInstrument.TradingSymbol,
-                                                                              signalCandle.SnapshotDateTime.ToString("HH:mm:ss"))
-                                        Dim positiveSignal As Boolean = False
+                                    If rsiData.ConsumerPayloads IsNot Nothing AndAlso rsiData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+                                        Dim rsi As RSIConsumer.RSIPayload = rsiData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
 
-                                        If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
-                                            Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})>MVWAP({2})[BUY]. [INFO1] [INFO2]",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
+                                        Dim signalCandle As OHLCPayload = hkCandle
+                                        If signalCandle IsNot Nothing AndAlso signalCandle.PreviousPayload IsNot Nothing AndAlso
+                                            signalCandle.PreviousPayload.SnapshotDateTime.Date = Now.Date Then
+                                            Dim message As String = String.Format("{0} ->Signal Candle Time:{1}.",
+                                                                                  Me.TradableInstrument.TradingSymbol,
+                                                                                  signalCandle.SnapshotDateTime.ToString("HH:mm:ss"))
+                                            Dim positiveSignal As Boolean = False
 
-                                            takeTrade = takeTrade And (signalCandle.CandleColor = Color.Green)
-                                            message = String.Format("{0} Signal Candle Color({1})=Green[{2}].",
-                                                                    message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Green)
+                                            If vwap.VWAP.Value > vwapEMA.EMA.Value Then 'Buy
+                                                Dim takeTrade As Boolean = True
+                                                message = String.Format("{0} VWAP({1})>MVWAP({2})[BUY]. [INFO1] [INFO2]",
+                                                                        message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
-                                            takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Red)
-                                            message = String.Format("{0} Previous Candle Color({1})=Red[{2}].",
-                                                                    message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Red)
+                                                takeTrade = takeTrade And (signalCandle.CandleColor = Color.Green)
+                                                message = String.Format("{0} Signal Candle Color({1})=Green[{2}].",
+                                                                        message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Green)
 
-                                            takeTrade = takeTrade And (signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
-                                            message = String.Format("{0} Signal Candle High({1})>Previous Candle High({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
-                                                                    Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
-                                                                    signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
+                                                takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Red)
+                                                message = String.Format("{0} Previous Candle Color({1})=Red[{2}].",
+                                                                        message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Red)
 
-                                            takeTrade = takeTrade And (signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
-                                            message = String.Format("{0} Signal Candle Low:({1})>Previous Candle Low({2})[{3}]",
-                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
-                                                                    Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
-                                                                    signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
+                                                takeTrade = takeTrade And (signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
+                                                message = String.Format("{0} Signal Candle High({1})>Previous Candle High({2})[{3}].",
+                                                                        message, Math.Round(signalCandle.HighPrice.Value, 2),
+                                                                        Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
+                                                                        signalCandle.HighPrice.Value > signalCandle.PreviousPayload.HighPrice.Value)
 
-                                            'takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
-                                            'message = String.Format("{0} Signal Candle Close({1})>VWAP({2})[{3}].",
-                                            '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
-                                            '                        Math.Round(vwap.VWAP.Value, 2),
-                                            '                        signalCandle.ClosePrice.Value > vwap.VWAP.Value)
-                                            takeTrade = takeTrade And (signalCandle.HighPrice.Value > vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle High({1})>VWAP({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
-                                                                    Math.Round(vwap.VWAP.Value, 2),
-                                                                    signalCandle.HighPrice.Value > vwap.VWAP.Value)
+                                                takeTrade = takeTrade And (signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
+                                                message = String.Format("{0} Signal Candle Low:({1})>Previous Candle Low({2})[{3}]",
+                                                                        message, Math.Round(signalCandle.LowPrice.Value, 2),
+                                                                        Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
+                                                                        signalCandle.LowPrice.Value > signalCandle.PreviousPayload.LowPrice.Value)
 
-                                            takeTrade = takeTrade And (vwap.VWAP.Value > pivots.Pivot.Value)
-                                            message = String.Format("{0} VWAP({1})>Central Pivot({2})[{3}].",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2),
-                                                                    Math.Round(pivots.Pivot.Value, 2),
-                                                                    vwap.VWAP.Value > pivots.Pivot.Value)
+                                                'takeTrade = takeTrade And (signalCandle.ClosePrice.Value > vwap.VWAP.Value)
+                                                'message = String.Format("{0} Signal Candle Close({1})>VWAP({2})[{3}].",
+                                                '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                                '                        Math.Round(vwap.VWAP.Value, 2),
+                                                '                        signalCandle.ClosePrice.Value > vwap.VWAP.Value)
+                                                takeTrade = takeTrade And (signalCandle.HighPrice.Value > vwap.VWAP.Value)
+                                                message = String.Format("{0} Signal Candle High({1})>VWAP({2})[{3}].",
+                                                                        message, Math.Round(signalCandle.HighPrice.Value, 2),
+                                                                        Math.Round(vwap.VWAP.Value, 2),
+                                                                        signalCandle.HighPrice.Value > vwap.VWAP.Value)
 
-                                            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                takeTrade = takeTrade And (currentTick.LastPrice > _lastDayMA)
-                                                message = String.Format("{0} LTP({1})>Last Day MA({2})[{3}].",
-                                                                        message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice > _lastDayMA)
-                                            End If
+                                                takeTrade = takeTrade And (vwap.VWAP.Value > pivots.Pivot.Value)
+                                                message = String.Format("{0} VWAP({1})>Central Pivot({2})[{3}].",
+                                                                        message, Math.Round(vwap.VWAP.Value, 2),
+                                                                        Math.Round(pivots.Pivot.Value, 2),
+                                                                        vwap.VWAP.Value > pivots.Pivot.Value)
 
-                                            If takeTrade Then
-                                                Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                Dim stoploss As Decimal = Decimal.MinValue
-                                                Dim slRemark As String = ""
-                                                If vwap.VWAP.Value > stoploss AndAlso vwap.VWAP.Value < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "VWAP"
-                                                End If
-                                                If pivots.Pivot.Value > stoploss AndAlso pivots.Pivot.Value < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Central Pivot"
-                                                End If
-                                                If pivots.Resistance1 > stoploss AndAlso pivots.Resistance1 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Resistance1"
-                                                End If
-                                                If pivots.Resistance2 > stoploss AndAlso pivots.Resistance2 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Resistance2"
-                                                End If
-                                                If pivots.Resistance3 > stoploss AndAlso pivots.Resistance3 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Resistance3"
-                                                End If
-                                                If pivots.Support1 > stoploss AndAlso pivots.Support1 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Support1"
-                                                End If
-                                                If pivots.Support2 > stoploss AndAlso pivots.Support2 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Support2"
-                                                End If
-                                                If pivots.Support3 > stoploss AndAlso pivots.Support3 < entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                    slRemark = "Support3"
-                                                End If
+                                                takeTrade = takeTrade And (rsi.RSI.Value > userSettings.RSIValue)
+                                                message = String.Format("{0} RSI({1})>RSI Value({2})[{3}].",
+                                                                        message, Math.Round(rsi.RSI.Value, 2),
+                                                                        Math.Round(userSettings.RSIValue, 2),
+                                                                        rsi.RSI.Value > userSettings.RSIValue)
 
-                                                message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
-
-                                                Dim slPoint As Decimal = entryPrice - stoploss
-                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
-                                                    takeTrade = takeTrade And (slPoint < instrumentData.Range)
-
-                                                    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
-                                                                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                                                    takeTrade = takeTrade And (currentTick.LastPrice > _lastDayMA)
+                                                    message = String.Format("{0} LTP({1})>Last Day MA({2})[{3}].",
+                                                                            message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice > _lastDayMA)
                                                 End If
 
                                                 If takeTrade Then
-                                                    Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    Dim target As Decimal = entryPrice + targetPoint
-                                                    Dim moved As Decimal = entryPrice - currentTick.Low
+                                                    Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                    Dim stoploss As Decimal = Decimal.MinValue
+                                                    Dim slRemark As String = ""
+                                                    If vwap.VWAP.Value > stoploss AndAlso vwap.VWAP.Value < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "VWAP"
+                                                    End If
+                                                    If pivots.Pivot.Value > stoploss AndAlso pivots.Pivot.Value < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Central Pivot"
+                                                    End If
+                                                    If pivots.Resistance1 > stoploss AndAlso pivots.Resistance1 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Resistance1"
+                                                    End If
+                                                    If pivots.Resistance2 > stoploss AndAlso pivots.Resistance2 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Resistance2"
+                                                    End If
+                                                    If pivots.Resistance3 > stoploss AndAlso pivots.Resistance3 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Resistance3"
+                                                    End If
+                                                    If pivots.Support1 > stoploss AndAlso pivots.Support1 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Support1"
+                                                    End If
+                                                    If pivots.Support2 > stoploss AndAlso pivots.Support2 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Support2"
+                                                    End If
+                                                    If pivots.Support3 > stoploss AndAlso pivots.Support3 < entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                        slRemark = "Support3"
+                                                    End If
 
-                                                    message = message.Replace("[INFO2]", String.Format("Target:{0}, Day Low:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.Low, moved, Math.Round(_lastDayATR, 2)))
+                                                    message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
 
-                                                    Dim leftOverMovement As Decimal = _lastDayATR - moved
-                                                    takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+                                                    Dim slPoint As Decimal = entryPrice - stoploss
+                                                    If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                        takeTrade = takeTrade And (slPoint < instrumentData.Range)
 
-                                                    message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
-                                                                            message,
-                                                                            targetPoint,
-                                                                            userSettings.TargetToLeftMovementPercentage,
-                                                                            Math.Round(leftOverMovement, 2),
-                                                                            targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+                                                        message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                                                message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                    End If
 
                                                     If takeTrade Then
-                                                        Dim quantity As Integer = Me.TradableInstrument.LotSize
-                                                        If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                            quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
+                                                        Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        Dim target As Decimal = entryPrice + targetPoint
+                                                        Dim moved As Decimal = entryPrice - currentTick.Low
+
+                                                        message = message.Replace("[INFO2]", String.Format("Target:{0}, Day Low:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.Low, moved, Math.Round(_lastDayATR, 2)))
+
+                                                        Dim leftOverMovement As Decimal = _lastDayATR - moved
+                                                        takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                        message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
+                                                                                message,
+                                                                                targetPoint,
+                                                                                userSettings.TargetToLeftMovementPercentage,
+                                                                                Math.Round(leftOverMovement, 2),
+                                                                                targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                        If takeTrade Then
+                                                            Dim quantity As Integer = Me.TradableInstrument.LotSize
+                                                            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                                                                quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
+                                                            End If
+
+                                                            _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
+                                                                                         Me.TradableInstrument.TradingSymbol,
+                                                                                         entryPrice,
+                                                                                         stoploss,
+                                                                                         entryPrice - stoploss,
+                                                                                         slRemark,
+                                                                                         target,
+                                                                                         target - entryPrice,
+                                                                                         quantity,
+                                                                                         signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                         vbNewLine,
+                                                                                         _ChartURL)
+
+                                                            positiveSignal = True
                                                         End If
-
-                                                        _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
-                                                                                     Me.TradableInstrument.TradingSymbol,
-                                                                                     entryPrice,
-                                                                                     stoploss,
-                                                                                     entryPrice - stoploss,
-                                                                                     slRemark,
-                                                                                     target,
-                                                                                     target - entryPrice,
-                                                                                     quantity,
-                                                                                     signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                                     vbNewLine,
-                                                                                     _ChartURL)
-
-                                                        positiveSignal = True
+                                                    Else
+                                                        message = message.Replace("[INFO2]", "")
                                                     End If
                                                 Else
+                                                    message = message.Replace("[INFO1]", "")
                                                     message = message.Replace("[INFO2]", "")
                                                 End If
-                                            Else
-                                                message = message.Replace("[INFO1]", "")
-                                                message = message.Replace("[INFO2]", "")
-                                            End If
-                                        ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
-                                            Dim takeTrade As Boolean = True
-                                            message = String.Format("{0} VWAP({1})<MVWAP({2})[SELL]. [INFO1] [INFO2]",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
+                                            ElseIf vwap.VWAP.Value < vwapEMA.EMA.Value Then 'Sell
+                                                Dim takeTrade As Boolean = True
+                                                message = String.Format("{0} VWAP({1})<MVWAP({2})[SELL]. [INFO1] [INFO2]",
+                                                                        message, Math.Round(vwap.VWAP.Value, 2), Math.Round(vwapEMA.EMA.Value, 2))
 
-                                            takeTrade = takeTrade And (signalCandle.CandleColor = Color.Red)
-                                            message = String.Format("{0} Signal Candle Color({1})=Red[{2}].",
-                                                                    message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Red)
+                                                takeTrade = takeTrade And (signalCandle.CandleColor = Color.Red)
+                                                message = String.Format("{0} Signal Candle Color({1})=Red[{2}].",
+                                                                        message, signalCandle.CandleColor.Name, signalCandle.CandleColor = Color.Red)
 
-                                            takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Green)
-                                            message = String.Format("{0} Previous Candle Color({1})=Green[{2}].",
-                                                                    message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Green)
+                                                takeTrade = takeTrade And (signalCandle.PreviousPayload.CandleColor = Color.Green)
+                                                message = String.Format("{0} Previous Candle Color({1})=Green[{2}].",
+                                                                        message, signalCandle.PreviousPayload.CandleColor.Name, signalCandle.PreviousPayload.CandleColor = Color.Green)
 
-                                            takeTrade = takeTrade And (signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
-                                            message = String.Format("{0} Signal Candle High({1})<Previous Candle High({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.HighPrice.Value, 2),
-                                                                    Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
-                                                                    signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
+                                                takeTrade = takeTrade And (signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
+                                                message = String.Format("{0} Signal Candle High({1})<Previous Candle High({2})[{3}].",
+                                                                        message, Math.Round(signalCandle.HighPrice.Value, 2),
+                                                                        Math.Round(signalCandle.PreviousPayload.HighPrice.Value, 2),
+                                                                        signalCandle.HighPrice.Value < signalCandle.PreviousPayload.HighPrice.Value)
 
-                                            takeTrade = takeTrade And (signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
-                                            message = String.Format("{0} Signal Candle Low:({1})<Previous Candle Low({2})[{3}]",
-                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
-                                                                    Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
-                                                                    signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
+                                                takeTrade = takeTrade And (signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
+                                                message = String.Format("{0} Signal Candle Low:({1})<Previous Candle Low({2})[{3}]",
+                                                                        message, Math.Round(signalCandle.LowPrice.Value, 2),
+                                                                        Math.Round(signalCandle.PreviousPayload.LowPrice.Value, 2),
+                                                                        signalCandle.LowPrice.Value < signalCandle.PreviousPayload.LowPrice.Value)
 
-                                            'takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
-                                            'message = String.Format("{0} Signal Candle Close({1})<VWAP({2})[{3}].",
-                                            '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
-                                            '                        Math.Round(vwap.VWAP.Value, 2),
-                                            '                        signalCandle.ClosePrice.Value < vwap.VWAP.Value)
-                                            takeTrade = takeTrade And (signalCandle.LowPrice.Value < vwap.VWAP.Value)
-                                            message = String.Format("{0} Signal Candle Low({1})<VWAP({2})[{3}].",
-                                                                    message, Math.Round(signalCandle.LowPrice.Value, 2),
-                                                                    Math.Round(vwap.VWAP.Value, 2),
-                                                                    signalCandle.LowPrice.Value < vwap.VWAP.Value)
+                                                'takeTrade = takeTrade And (signalCandle.ClosePrice.Value < vwap.VWAP.Value)
+                                                'message = String.Format("{0} Signal Candle Close({1})<VWAP({2})[{3}].",
+                                                '                        message, Math.Round(signalCandle.ClosePrice.Value, 2),
+                                                '                        Math.Round(vwap.VWAP.Value, 2),
+                                                '                        signalCandle.ClosePrice.Value < vwap.VWAP.Value)
+                                                takeTrade = takeTrade And (signalCandle.LowPrice.Value < vwap.VWAP.Value)
+                                                message = String.Format("{0} Signal Candle Low({1})<VWAP({2})[{3}].",
+                                                                        message, Math.Round(signalCandle.LowPrice.Value, 2),
+                                                                        Math.Round(vwap.VWAP.Value, 2),
+                                                                        signalCandle.LowPrice.Value < vwap.VWAP.Value)
 
-                                            takeTrade = takeTrade And (vwap.VWAP.Value < pivots.Pivot.Value)
-                                            message = String.Format("{0} VWAP({1})<Central Pivot({2})[{3}].",
-                                                                    message, Math.Round(vwap.VWAP.Value, 2),
-                                                                    Math.Round(pivots.Pivot.Value, 2),
-                                                                    vwap.VWAP.Value < pivots.Pivot.Value)
+                                                takeTrade = takeTrade And (vwap.VWAP.Value < pivots.Pivot.Value)
+                                                message = String.Format("{0} VWAP({1})<Central Pivot({2})[{3}].",
+                                                                        message, Math.Round(vwap.VWAP.Value, 2),
+                                                                        Math.Round(pivots.Pivot.Value, 2),
+                                                                        vwap.VWAP.Value < pivots.Pivot.Value)
 
-                                            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
-                                                message = String.Format("{0} LTP({1})<Last Day MA({2})[{3}].",
-                                                                        message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice < _lastDayMA)
-                                            End If
+                                                takeTrade = takeTrade And (rsi.RSI.Value < userSettings.RSIValue)
+                                                message = String.Format("{0} RSI({1})<RSI Value({2})[{3}].",
+                                                                        message, Math.Round(rsi.RSI.Value, 2),
+                                                                        Math.Round(userSettings.RSIValue, 2),
+                                                                        rsi.RSI.Value < userSettings.RSIValue)
 
-                                            If takeTrade Then
-                                                Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                                Dim stoploss As Decimal = Decimal.MaxValue
-                                                Dim slRemark As String = ""
-                                                If vwap.VWAP.Value < stoploss AndAlso vwap.VWAP.Value > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "VWAP"
-                                                End If
-                                                If pivots.Pivot.Value < stoploss AndAlso pivots.Pivot.Value > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Central Pivot"
-                                                End If
-                                                If pivots.Resistance1 < stoploss AndAlso pivots.Resistance1 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Resistance1"
-                                                End If
-                                                If pivots.Resistance2 < stoploss AndAlso pivots.Resistance2 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Resistance2"
-                                                End If
-                                                If pivots.Resistance3 < stoploss AndAlso pivots.Resistance3 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Resistance3"
-                                                End If
-                                                If pivots.Support1 < stoploss AndAlso pivots.Support1 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Support1"
-                                                End If
-                                                If pivots.Support2 < stoploss AndAlso pivots.Support2 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Support2"
-                                                End If
-                                                If pivots.Support3 < stoploss AndAlso pivots.Support3 > entryPrice Then
-                                                    stoploss = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    slRemark = "Support3"
-                                                End If
-
-                                                message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
-
-                                                Dim slPoint As Decimal = stoploss - entryPrice
-                                                If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
-                                                    takeTrade = takeTrade And (slPoint < instrumentData.Range)
-
-                                                    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
-                                                                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                                                    takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
+                                                    message = String.Format("{0} LTP({1})<Last Day MA({2})[{3}].",
+                                                                            message, currentTick.LastPrice, Math.Round(_lastDayMA, 2), currentTick.LastPrice < _lastDayMA)
                                                 End If
 
                                                 If takeTrade Then
-                                                    Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                                    Dim target As Decimal = entryPrice - targetPoint
-                                                    Dim moved As Decimal = currentTick.High - entryPrice
+                                                    Dim entryPrice As Decimal = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                                    Dim stoploss As Decimal = Decimal.MaxValue
+                                                    Dim slRemark As String = ""
+                                                    If vwap.VWAP.Value < stoploss AndAlso vwap.VWAP.Value > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "VWAP"
+                                                    End If
+                                                    If pivots.Pivot.Value < stoploss AndAlso pivots.Pivot.Value > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Central Pivot"
+                                                    End If
+                                                    If pivots.Resistance1 < stoploss AndAlso pivots.Resistance1 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Resistance1"
+                                                    End If
+                                                    If pivots.Resistance2 < stoploss AndAlso pivots.Resistance2 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Resistance2"
+                                                    End If
+                                                    If pivots.Resistance3 < stoploss AndAlso pivots.Resistance3 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Resistance3"
+                                                    End If
+                                                    If pivots.Support1 < stoploss AndAlso pivots.Support1 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Support1"
+                                                    End If
+                                                    If pivots.Support2 < stoploss AndAlso pivots.Support2 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Support2"
+                                                    End If
+                                                    If pivots.Support3 < stoploss AndAlso pivots.Support3 > entryPrice Then
+                                                        stoploss = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        slRemark = "Support3"
+                                                    End If
 
-                                                    message = message.Replace("[INFO2]", String.Format("Target:{0}, Day High:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.High, moved, Math.Round(_lastDayATR, 2)))
+                                                    message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
 
-                                                    Dim leftOverMovement As Decimal = _lastDayATR - moved
-                                                    takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+                                                    Dim slPoint As Decimal = stoploss - entryPrice
+                                                    If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                        takeTrade = takeTrade And (slPoint < instrumentData.Range)
 
-                                                    message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
-                                                                            message,
-                                                                            targetPoint,
-                                                                            userSettings.TargetToLeftMovementPercentage,
-                                                                            Math.Round(leftOverMovement, 2),
-                                                                            targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+                                                        message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                                                message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                    End If
 
                                                     If takeTrade Then
-                                                        Dim quantity As Integer = Me.TradableInstrument.LotSize
-                                                        If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                            quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
+                                                        Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                                        Dim target As Decimal = entryPrice - targetPoint
+                                                        Dim moved As Decimal = currentTick.High - entryPrice
+
+                                                        message = message.Replace("[INFO2]", String.Format("Target:{0}, Day High:{1}, Moved:{2}, Last Day ATR:{3}.", target, currentTick.High, moved, Math.Round(_lastDayATR, 2)))
+
+                                                        Dim leftOverMovement As Decimal = _lastDayATR - moved
+                                                        takeTrade = takeTrade And (targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                        message = String.Format("{0} Target Point({1})<{2}% Movement left({3})[{4}]",
+                                                                                message,
+                                                                                targetPoint,
+                                                                                userSettings.TargetToLeftMovementPercentage,
+                                                                                Math.Round(leftOverMovement, 2),
+                                                                                targetPoint < leftOverMovement * userSettings.TargetToLeftMovementPercentage / 100)
+
+                                                        If takeTrade Then
+                                                            Dim quantity As Integer = Me.TradableInstrument.LotSize
+                                                            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                                                                quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
+                                                            End If
+
+                                                            _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
+                                                                                         Me.TradableInstrument.TradingSymbol,
+                                                                                         entryPrice,
+                                                                                         stoploss,
+                                                                                         stoploss - entryPrice,
+                                                                                         slRemark,
+                                                                                         target,
+                                                                                         entryPrice - target,
+                                                                                         quantity,
+                                                                                         signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                         vbNewLine,
+                                                                                         _ChartURL)
+
+                                                            positiveSignal = True
                                                         End If
-
-                                                        _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
-                                                                                     Me.TradableInstrument.TradingSymbol,
-                                                                                     entryPrice,
-                                                                                     stoploss,
-                                                                                     stoploss - entryPrice,
-                                                                                     slRemark,
-                                                                                     target,
-                                                                                     entryPrice - target,
-                                                                                     quantity,
-                                                                                     signalCandle.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                                     vbNewLine,
-                                                                                     _ChartURL)
-
-                                                        positiveSignal = True
+                                                    Else
+                                                        message = message.Replace("[INFO2]", "")
                                                     End If
                                                 Else
+                                                    message = message.Replace("[INFO1]", "")
                                                     message = message.Replace("[INFO2]", "")
                                                 End If
-                                            Else
-                                                message = message.Replace("[INFO1]", "")
-                                                message = message.Replace("[INFO2]", "")
                                             End If
-                                        End If
-                                        If message IsNot Nothing AndAlso message.Trim <> "" Then
-                                            Select Case userSettings.DisplayLogType
-                                                Case NFOUserInputs.TypeOfDisplayLog.All
-                                                    OnHeartbeat(message)
-                                                Case NFOUserInputs.TypeOfDisplayLog.Negative
-                                                    If Not positiveSignal Then
+                                            If message IsNot Nothing AndAlso message.Trim <> "" Then
+                                                Select Case userSettings.DisplayLogType
+                                                    Case NFOUserInputs.TypeOfDisplayLog.All
                                                         OnHeartbeat(message)
-                                                    Else
+                                                    Case NFOUserInputs.TypeOfDisplayLog.Negative
+                                                        If Not positiveSignal Then
+                                                            OnHeartbeat(message)
+                                                        Else
+                                                            logger.Debug(message)
+                                                        End If
+                                                    Case NFOUserInputs.TypeOfDisplayLog.Positive
+                                                        If positiveSignal Then
+                                                            OnHeartbeat(message)
+                                                        Else
+                                                            logger.Debug(message)
+                                                        End If
+                                                    Case Else
                                                         logger.Debug(message)
-                                                    End If
-                                                Case NFOUserInputs.TypeOfDisplayLog.Positive
-                                                    If positiveSignal Then
-                                                        OnHeartbeat(message)
-                                                    Else
-                                                        logger.Debug(message)
-                                                    End If
-                                                Case Else
-                                                    logger.Debug(message)
-                                                    Throw New NotImplementedException
-                                            End Select
+                                                        Throw New NotImplementedException
+                                                End Select
+                                            End If
                                         End If
                                     End If
                                 End If
@@ -551,7 +570,7 @@ Public Class NFOStrategyInstrument
             If userInputs.TelegramAPIKey IsNot Nothing AndAlso Not userInputs.TelegramAPIKey.Trim = "" AndAlso
                 userInputs.TelegramChatID IsNot Nothing AndAlso Not userInputs.TelegramChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramAPIKey.Trim, userInputs.TelegramChatID.Trim, _cts)
-                    Dim encodedString As String = Utilities.Strings.URLEncodeString(message)
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
                     Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
                 End Using
             End If

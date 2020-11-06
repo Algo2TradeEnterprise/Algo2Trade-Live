@@ -39,6 +39,10 @@ Partial Class frmNFOSettings
         Me.txtDayCloseATRPeriod = New System.Windows.Forms.TextBox()
         Me.lblDayCloseATRPeriod = New System.Windows.Forms.Label()
         Me.grpOther = New System.Windows.Forms.GroupBox()
+        Me.cmbRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.ComboBox()
+        Me.lblRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.Label()
+        Me.cmbDisplayLogType = New System.Windows.Forms.ComboBox()
+        Me.lblDisplayLogType = New System.Windows.Forms.Label()
         Me.chkbMCX = New System.Windows.Forms.CheckBox()
         Me.chkbNFO = New System.Windows.Forms.CheckBox()
         Me.chkbNSE = New System.Windows.Forms.CheckBox()
@@ -53,10 +57,10 @@ Partial Class frmNFOSettings
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.lblDisplayLogType = New System.Windows.Forms.Label()
-        Me.cmbDisplayLogType = New System.Windows.Forms.ComboBox()
-        Me.cmbRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.ComboBox()
-        Me.lblRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.Label()
+        Me.txtCloseRSIPeriod = New System.Windows.Forms.TextBox()
+        Me.lblCloseRSIPeriod = New System.Windows.Forms.Label()
+        Me.txtRSIValue = New System.Windows.Forms.TextBox()
+        Me.lblRSIValue = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpIndicator.SuspendLayout()
         Me.grpOther.SuspendLayout()
@@ -67,7 +71,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(980, 249)
+        Me.btnSave.Location = New System.Drawing.Point(1099, 8)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -135,6 +139,10 @@ Partial Class frmNFOSettings
         '
         'grpIndicator
         '
+        Me.grpIndicator.Controls.Add(Me.txtRSIValue)
+        Me.grpIndicator.Controls.Add(Me.lblRSIValue)
+        Me.grpIndicator.Controls.Add(Me.txtCloseRSIPeriod)
+        Me.grpIndicator.Controls.Add(Me.lblCloseRSIPeriod)
         Me.grpIndicator.Controls.Add(Me.txtDayCloseSMAPeriod)
         Me.grpIndicator.Controls.Add(Me.lblDayCloseSMAPeriod)
         Me.grpIndicator.Controls.Add(Me.txtVWAPEMAPeriod)
@@ -143,7 +151,7 @@ Partial Class frmNFOSettings
         Me.grpIndicator.Controls.Add(Me.lblDayCloseATRPeriod)
         Me.grpIndicator.Location = New System.Drawing.Point(554, 107)
         Me.grpIndicator.Name = "grpIndicator"
-        Me.grpIndicator.Size = New System.Drawing.Size(538, 135)
+        Me.grpIndicator.Size = New System.Drawing.Size(538, 200)
         Me.grpIndicator.TabIndex = 3
         Me.grpIndicator.TabStop = False
         Me.grpIndicator.Text = "Indicator Details"
@@ -230,6 +238,46 @@ Partial Class frmNFOSettings
         Me.grpOther.TabIndex = 1
         Me.grpOther.TabStop = False
         Me.grpOther.Text = "Other Details"
+        '
+        'cmbRepeatSignalOnHistoricalRefresh
+        '
+        Me.cmbRepeatSignalOnHistoricalRefresh.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbRepeatSignalOnHistoricalRefresh.FormattingEnabled = True
+        Me.cmbRepeatSignalOnHistoricalRefresh.Items.AddRange(New Object() {"True", "False"})
+        Me.cmbRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(269, 243)
+        Me.cmbRepeatSignalOnHistoricalRefresh.Name = "cmbRepeatSignalOnHistoricalRefresh"
+        Me.cmbRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(255, 24)
+        Me.cmbRepeatSignalOnHistoricalRefresh.TabIndex = 75
+        '
+        'lblRepeatSignalOnHistoricalRefresh
+        '
+        Me.lblRepeatSignalOnHistoricalRefresh.AutoSize = True
+        Me.lblRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(7, 245)
+        Me.lblRepeatSignalOnHistoricalRefresh.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRepeatSignalOnHistoricalRefresh.Name = "lblRepeatSignalOnHistoricalRefresh"
+        Me.lblRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(236, 17)
+        Me.lblRepeatSignalOnHistoricalRefresh.TabIndex = 76
+        Me.lblRepeatSignalOnHistoricalRefresh.Text = "Repeat Signal On Historical Refresh"
+        '
+        'cmbDisplayLogType
+        '
+        Me.cmbDisplayLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cmbDisplayLogType.FormattingEnabled = True
+        Me.cmbDisplayLogType.Items.AddRange(New Object() {"All", "Negative", "Positive"})
+        Me.cmbDisplayLogType.Location = New System.Drawing.Point(269, 205)
+        Me.cmbDisplayLogType.Name = "cmbDisplayLogType"
+        Me.cmbDisplayLogType.Size = New System.Drawing.Size(255, 24)
+        Me.cmbDisplayLogType.TabIndex = 7
+        '
+        'lblDisplayLogType
+        '
+        Me.lblDisplayLogType.AutoSize = True
+        Me.lblDisplayLogType.Location = New System.Drawing.Point(7, 207)
+        Me.lblDisplayLogType.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDisplayLogType.Name = "lblDisplayLogType"
+        Me.lblDisplayLogType.Size = New System.Drawing.Size(118, 17)
+        Me.lblDisplayLogType.TabIndex = 74
+        Me.lblDisplayLogType.Text = "Display Log Type"
         '
         'chkbMCX
         '
@@ -361,51 +409,49 @@ Partial Class frmNFOSettings
         'opnFileSettings
         '
         '
-        'lblDisplayLogType
+        'txtCloseRSIPeriod
         '
-        Me.lblDisplayLogType.AutoSize = True
-        Me.lblDisplayLogType.Location = New System.Drawing.Point(7, 207)
-        Me.lblDisplayLogType.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblDisplayLogType.Name = "lblDisplayLogType"
-        Me.lblDisplayLogType.Size = New System.Drawing.Size(118, 17)
-        Me.lblDisplayLogType.TabIndex = 74
-        Me.lblDisplayLogType.Text = "Display Log Type"
+        Me.txtCloseRSIPeriod.Location = New System.Drawing.Point(178, 134)
+        Me.txtCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtCloseRSIPeriod.Name = "txtCloseRSIPeriod"
+        Me.txtCloseRSIPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtCloseRSIPeriod.TabIndex = 60
+        Me.txtCloseRSIPeriod.Tag = "RSI Period(Close)"
         '
-        'cmbDisplayLogType
+        'lblCloseRSIPeriod
         '
-        Me.cmbDisplayLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbDisplayLogType.FormattingEnabled = True
-        Me.cmbDisplayLogType.Items.AddRange(New Object() {"All", "Negative", "Positive"})
-        Me.cmbDisplayLogType.Location = New System.Drawing.Point(269, 205)
-        Me.cmbDisplayLogType.Name = "cmbDisplayLogType"
-        Me.cmbDisplayLogType.Size = New System.Drawing.Size(255, 24)
-        Me.cmbDisplayLogType.TabIndex = 7
+        Me.lblCloseRSIPeriod.AutoSize = True
+        Me.lblCloseRSIPeriod.Location = New System.Drawing.Point(7, 137)
+        Me.lblCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblCloseRSIPeriod.Name = "lblCloseRSIPeriod"
+        Me.lblCloseRSIPeriod.Size = New System.Drawing.Size(120, 17)
+        Me.lblCloseRSIPeriod.TabIndex = 61
+        Me.lblCloseRSIPeriod.Text = "RSI Period(Close)"
         '
-        'cmbRepeatSignalOnHistoricalRefresh
+        'txtRSIValue
         '
-        Me.cmbRepeatSignalOnHistoricalRefresh.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbRepeatSignalOnHistoricalRefresh.FormattingEnabled = True
-        Me.cmbRepeatSignalOnHistoricalRefresh.Items.AddRange(New Object() {"True", "False"})
-        Me.cmbRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(269, 243)
-        Me.cmbRepeatSignalOnHistoricalRefresh.Name = "cmbRepeatSignalOnHistoricalRefresh"
-        Me.cmbRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(255, 24)
-        Me.cmbRepeatSignalOnHistoricalRefresh.TabIndex = 75
+        Me.txtRSIValue.Location = New System.Drawing.Point(178, 169)
+        Me.txtRSIValue.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtRSIValue.Name = "txtRSIValue"
+        Me.txtRSIValue.Size = New System.Drawing.Size(348, 22)
+        Me.txtRSIValue.TabIndex = 62
+        Me.txtRSIValue.Tag = "RSI Value"
         '
-        'lblRepeatSignalOnHistoricalRefresh
+        'lblRSIValue
         '
-        Me.lblRepeatSignalOnHistoricalRefresh.AutoSize = True
-        Me.lblRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(7, 245)
-        Me.lblRepeatSignalOnHistoricalRefresh.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblRepeatSignalOnHistoricalRefresh.Name = "lblRepeatSignalOnHistoricalRefresh"
-        Me.lblRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(236, 17)
-        Me.lblRepeatSignalOnHistoricalRefresh.TabIndex = 76
-        Me.lblRepeatSignalOnHistoricalRefresh.Text = "Repeat Signal On Historical Refresh"
+        Me.lblRSIValue.AutoSize = True
+        Me.lblRSIValue.Location = New System.Drawing.Point(7, 172)
+        Me.lblRSIValue.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRSIValue.Name = "lblRSIValue"
+        Me.lblRSIValue.Size = New System.Drawing.Size(70, 17)
+        Me.lblRSIValue.TabIndex = 63
+        Me.lblRSIValue.Text = "RSI Value"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1096, 312)
+        Me.ClientSize = New System.Drawing.Size(1217, 312)
         Me.Controls.Add(Me.grpOther)
         Me.Controls.Add(Me.grpIndicator)
         Me.Controls.Add(Me.grpTelegram)
@@ -460,4 +506,8 @@ Partial Class frmNFOSettings
     Friend WithEvents lblDisplayLogType As Label
     Friend WithEvents cmbRepeatSignalOnHistoricalRefresh As ComboBox
     Friend WithEvents lblRepeatSignalOnHistoricalRefresh As Label
+    Friend WithEvents txtCloseRSIPeriod As TextBox
+    Friend WithEvents lblCloseRSIPeriod As Label
+    Friend WithEvents txtRSIValue As TextBox
+    Friend WithEvents lblRSIValue As Label
 End Class
