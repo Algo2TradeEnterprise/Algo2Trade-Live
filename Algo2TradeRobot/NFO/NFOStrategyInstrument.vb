@@ -286,7 +286,7 @@ Public Class NFOStrategyInstrument
                                                   signal.SnapshotDate.ToString("dd-MMM-yyyy"),
                                                   If(signal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
                                                   signal.SharesOwnedAfterRebalancing,
-                                                  signal.PreviousSignal.TotalInvested,
+                                                  If(signal.PreviousSignal IsNot Nothing, signal.PreviousSignal.TotalInvested, 0),
                                                   signal.EntryPrice,
                                                   signal.NoOfSharesToBuy,
                                                   signal.TotalInvested)
