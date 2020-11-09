@@ -106,6 +106,8 @@ Public Class NFOStrategyInstrument
                                         candleCreator.IndicatorCreator.CalculateEMA(currentXMinute, runningConsumer.OnwardLevelConsumers.FirstOrDefault)
                                     ElseIf counter = 2 Then
                                         candleCreator.IndicatorCreator.CalculatePivots(currentXMinute, runningConsumer)
+                                    ElseIf counter = 3 Then
+                                        candleCreator.IndicatorCreator.CalculateRSI(currentXMinute, runningConsumer)
                                     End If
                                 Next
                             Next
