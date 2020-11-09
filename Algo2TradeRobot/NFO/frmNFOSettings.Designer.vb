@@ -32,6 +32,10 @@ Partial Class frmNFOSettings
         Me.txtTelegramAPIKey = New System.Windows.Forms.TextBox()
         Me.lblTelegramAPIKey = New System.Windows.Forms.Label()
         Me.grpIndicator = New System.Windows.Forms.GroupBox()
+        Me.txtRSIValue = New System.Windows.Forms.TextBox()
+        Me.lblRSIValue = New System.Windows.Forms.Label()
+        Me.txtCloseRSIPeriod = New System.Windows.Forms.TextBox()
+        Me.lblCloseRSIPeriod = New System.Windows.Forms.Label()
         Me.txtDayCloseSMAPeriod = New System.Windows.Forms.TextBox()
         Me.lblDayCloseSMAPeriod = New System.Windows.Forms.Label()
         Me.txtVWAPEMAPeriod = New System.Windows.Forms.TextBox()
@@ -57,10 +61,6 @@ Partial Class frmNFOSettings
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
-        Me.txtCloseRSIPeriod = New System.Windows.Forms.TextBox()
-        Me.lblCloseRSIPeriod = New System.Windows.Forms.Label()
-        Me.txtRSIValue = New System.Windows.Forms.TextBox()
-        Me.lblRSIValue = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpIndicator.SuspendLayout()
         Me.grpOther.SuspendLayout()
@@ -155,6 +155,44 @@ Partial Class frmNFOSettings
         Me.grpIndicator.TabIndex = 3
         Me.grpIndicator.TabStop = False
         Me.grpIndicator.Text = "Indicator Details"
+        '
+        'txtRSIValue
+        '
+        Me.txtRSIValue.Location = New System.Drawing.Point(178, 169)
+        Me.txtRSIValue.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtRSIValue.Name = "txtRSIValue"
+        Me.txtRSIValue.Size = New System.Drawing.Size(348, 22)
+        Me.txtRSIValue.TabIndex = 62
+        Me.txtRSIValue.Tag = "RSI Value"
+        '
+        'lblRSIValue
+        '
+        Me.lblRSIValue.AutoSize = True
+        Me.lblRSIValue.Location = New System.Drawing.Point(7, 172)
+        Me.lblRSIValue.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRSIValue.Name = "lblRSIValue"
+        Me.lblRSIValue.Size = New System.Drawing.Size(68, 17)
+        Me.lblRSIValue.TabIndex = 63
+        Me.lblRSIValue.Text = "RSI Level"
+        '
+        'txtCloseRSIPeriod
+        '
+        Me.txtCloseRSIPeriod.Location = New System.Drawing.Point(178, 134)
+        Me.txtCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtCloseRSIPeriod.Name = "txtCloseRSIPeriod"
+        Me.txtCloseRSIPeriod.Size = New System.Drawing.Size(348, 22)
+        Me.txtCloseRSIPeriod.TabIndex = 60
+        Me.txtCloseRSIPeriod.Tag = "RSI Period(Close)"
+        '
+        'lblCloseRSIPeriod
+        '
+        Me.lblCloseRSIPeriod.AutoSize = True
+        Me.lblCloseRSIPeriod.Location = New System.Drawing.Point(7, 137)
+        Me.lblCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblCloseRSIPeriod.Name = "lblCloseRSIPeriod"
+        Me.lblCloseRSIPeriod.Size = New System.Drawing.Size(120, 17)
+        Me.lblCloseRSIPeriod.TabIndex = 61
+        Me.lblCloseRSIPeriod.Text = "RSI Period(Close)"
         '
         'txtDayCloseSMAPeriod
         '
@@ -408,44 +446,6 @@ Partial Class frmNFOSettings
         '
         'opnFileSettings
         '
-        '
-        'txtCloseRSIPeriod
-        '
-        Me.txtCloseRSIPeriod.Location = New System.Drawing.Point(178, 134)
-        Me.txtCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtCloseRSIPeriod.Name = "txtCloseRSIPeriod"
-        Me.txtCloseRSIPeriod.Size = New System.Drawing.Size(348, 22)
-        Me.txtCloseRSIPeriod.TabIndex = 60
-        Me.txtCloseRSIPeriod.Tag = "RSI Period(Close)"
-        '
-        'lblCloseRSIPeriod
-        '
-        Me.lblCloseRSIPeriod.AutoSize = True
-        Me.lblCloseRSIPeriod.Location = New System.Drawing.Point(7, 137)
-        Me.lblCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblCloseRSIPeriod.Name = "lblCloseRSIPeriod"
-        Me.lblCloseRSIPeriod.Size = New System.Drawing.Size(120, 17)
-        Me.lblCloseRSIPeriod.TabIndex = 61
-        Me.lblCloseRSIPeriod.Text = "RSI Period(Close)"
-        '
-        'txtRSIValue
-        '
-        Me.txtRSIValue.Location = New System.Drawing.Point(178, 169)
-        Me.txtRSIValue.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtRSIValue.Name = "txtRSIValue"
-        Me.txtRSIValue.Size = New System.Drawing.Size(348, 22)
-        Me.txtRSIValue.TabIndex = 62
-        Me.txtRSIValue.Tag = "RSI Value"
-        '
-        'lblRSIValue
-        '
-        Me.lblRSIValue.AutoSize = True
-        Me.lblRSIValue.Location = New System.Drawing.Point(7, 172)
-        Me.lblRSIValue.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblRSIValue.Name = "lblRSIValue"
-        Me.lblRSIValue.Size = New System.Drawing.Size(70, 17)
-        Me.lblRSIValue.TabIndex = 63
-        Me.lblRSIValue.Text = "RSI Value"
         '
         'frmNFOSettings
         '
