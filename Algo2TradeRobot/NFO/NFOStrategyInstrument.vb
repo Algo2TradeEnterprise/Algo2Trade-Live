@@ -294,6 +294,7 @@ Public Class NFOStrategyInstrument
             SendTradeAlertMessageAsync(remarks)
 
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
+            ret = True
         End If
         Return ret
     End Function

@@ -38,7 +38,6 @@
             dt.Columns.Add("Instrument Name")
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
-            dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
             dt.Columns.Add("Historical")
@@ -48,7 +47,6 @@
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
-                row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
                 row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
@@ -62,11 +60,21 @@
             Dim detailsColumn As DataGridViewButtonColumn = New DataGridViewButtonColumn
             detailsColumn.HeaderText = ""
             detailsColumn.Name = "details_column"
-            detailsColumn.Text = "Check Detials"
+            detailsColumn.Text = "Check Signals"
             detailsColumn.UseColumnTextForButtonValue = True
-            Dim detailsColumnIndex As Integer = 8
+            Dim detailsColumnIndex As Integer = 7
             If dgvTradableInstruments.Columns("details_column") Is Nothing Then
                 dgvTradableInstruments.Columns.Insert(detailsColumnIndex, detailsColumn)
+            End If
+
+            Dim addColumn As DataGridViewButtonColumn = New DataGridViewButtonColumn
+            addColumn.HeaderText = ""
+            addColumn.Name = "add_column"
+            addColumn.Text = "Add Signal"
+            addColumn.UseColumnTextForButtonValue = True
+            Dim resetColumnIndex As Integer = 8
+            If dgvTradableInstruments.Columns("add_column") Is Nothing Then
+                dgvTradableInstruments.Columns.Insert(resetColumnIndex, addColumn)
             End If
 
             dgvTradableInstruments.Refresh()
@@ -74,8 +82,11 @@
     End Sub
 
     Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
-        If e.ColumnIndex = 8 Then
-            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(7).Value, NFOStrategyInstrument))
+        If e.ColumnIndex = 7 Then
+            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(6).Value, NFOStrategyInstrument))
+            frm.ShowDialog()
+        ElseIf e.ColumnIndex = 8 Then
+            Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(6).Value, NFOStrategyInstrument))
             frm.ShowDialog()
         End If
     End Sub
