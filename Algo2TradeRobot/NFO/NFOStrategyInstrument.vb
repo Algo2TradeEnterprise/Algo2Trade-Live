@@ -132,7 +132,9 @@ Public Class NFOStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
-            If CType(Me.ParentStrategy, NFOStrategy).TradingDates IsNot Nothing AndAlso CType(Me.ParentStrategy, NFOStrategy).TradingDates.Contains(Now.Date) Then
+            If True Then
+                Throw New NotImplementedException()
+                'If CType(Me.ParentStrategy, NFOStrategy).TradingDates IsNot Nothing AndAlso CType(Me.ParentStrategy, NFOStrategy).TradingDates.Contains(Now.Date) Then
                 If currentTime >= userSettings.TradeEntryTime AndAlso _lastTick IsNot Nothing AndAlso Not _entryDoneForTheDay Then
                     Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
                     signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date
