@@ -38,14 +38,14 @@ Partial Class frmSignalDetails
         Me.dgvSignalDetails.ReadOnly = True
         Me.dgvSignalDetails.RowHeadersVisible = False
         Me.dgvSignalDetails.RowTemplate.Height = 24
-        Me.dgvSignalDetails.Size = New System.Drawing.Size(1782, 553)
+        Me.dgvSignalDetails.Size = New System.Drawing.Size(1465, 553)
         Me.dgvSignalDetails.TabIndex = 0
         '
         'frmSignalDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1782, 553)
+        Me.ClientSize = New System.Drawing.Size(1465, 553)
         Me.Controls.Add(Me.dgvSignalDetails)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
