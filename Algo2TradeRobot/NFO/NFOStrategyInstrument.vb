@@ -23,6 +23,8 @@ Public Class NFOStrategyInstrument
         End Get
     End Property
 
+    Public ReadOnly Property TradingDay As DayOfWeek
+    Public ReadOnly Property TakeTradeToday As Boolean
 
     Private _lastTick As ITick = Nothing
     Private _entryDoneForTheDay As Boolean = False
@@ -47,6 +49,21 @@ Public Class NFOStrategyInstrument
         AddHandler _APIAdapter.WaitingFor, AddressOf OnWaitingFor
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+        Select Case CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.TradableInstrument.TradingSymbol).TradingDay.ToUpper.Trim
+            Case DayOfWeek.Monday.ToString.ToUpper
+                Me.TradingDay = DayOfWeek.Monday
+            Case DayOfWeek.Tuesday.ToString.ToUpper
+                Me.TradingDay = DayOfWeek.Tuesday
+            Case DayOfWeek.Wednesday.ToString.ToUpper
+                Me.TradingDay = DayOfWeek.Wednesday
+            Case DayOfWeek.Thursday.ToString.ToUpper
+                Me.TradingDay = DayOfWeek.Thursday
+            Case DayOfWeek.Friday.ToString.ToUpper
+                Me.TradingDay = DayOfWeek.Friday
+            Case Else
+                Throw New NotImplementedException
+        End Select
     End Sub
 
     Public Overrides Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -57,6 +74,31 @@ Public Class NFOStrategyInstrument
         Try
             Me.TradableInstrument.FetchHistorical = False
             GetLastSignalDetails(Now.Date)
+
+            If Now.DayOfWeek = Me.TradingDay Then
+                If Not (CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
+                    CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(Now.Date)) Then
+                    _TakeTradeToday = True
+                End If
+            Else
+                Dim daysUntilTuesday As Integer = (CInt(Me.TradingDay) - CInt(Now.DayOfWeek) + 7) Mod 7
+                Dim nextTradingDate As Date = Now.Date.AddDays(daysUntilTuesday).Date
+                If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
+                    CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) Then
+                    While nextTradingDate.Date >= Now.Date
+                        If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) OrElse
+                            nextTradingDate.DayOfWeek = DayOfWeek.Saturday OrElse nextTradingDate.DayOfWeek = DayOfWeek.Sunday Then
+                            nextTradingDate = nextTradingDate.AddDays(-1)
+                        Else
+                            If nextTradingDate.Date = Now.Date Then
+                                _TakeTradeToday = True
+                            End If
+                            Exit While
+                        End If
+                    End While
+                End If
+            End If
+
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
@@ -132,9 +174,7 @@ Public Class NFOStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
-            If True Then
-                Throw New NotImplementedException()
-                'If CType(Me.ParentStrategy, NFOStrategy).TradingDates IsNot Nothing AndAlso CType(Me.ParentStrategy, NFOStrategy).TradingDates.Contains(Now.Date) Then
+            If Me.TakeTradeToday Then
                 If currentTime >= userSettings.TradeEntryTime AndAlso _lastTick IsNot Nothing AndAlso Not _entryDoneForTheDay Then
                     Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
                     signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date

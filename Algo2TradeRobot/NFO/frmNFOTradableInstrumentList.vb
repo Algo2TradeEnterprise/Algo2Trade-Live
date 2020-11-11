@@ -38,18 +38,18 @@
             dt.Columns.Add("Instrument Name")
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
-            dt.Columns.Add("Lot Size")
             dt.Columns.Add("Tick Size")
-            dt.Columns.Add("Historical")
+            dt.Columns.Add("Trading Day")
+            dt.Columns.Add("Take Trade Today")
             dt.Columns.Add("Instrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
-                row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Tick Size") = instrument.TradableInstrument.TickSize
-                row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
+                row("Trading Day") = instrument.TradingDay.ToString
+                row("Take Trade Today") = instrument.TakeTradeToday
                 row("Instrument") = instrument
 
                 dt.Rows.Add(row)
