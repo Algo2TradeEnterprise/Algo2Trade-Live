@@ -11,8 +11,13 @@ Public Class NFOUserInputs
 
     Public Property StrikePriceRangePercentage As Decimal
 
-    Public Property EMA1Period As Integer
-    Public Property EMA2Period As Integer
+    Public Property LTEMA1Period As Integer
+    Public Property LTEMA2Period As Integer
+
+    Public Property HigherTimeframe As Integer
+    Public Property HTEMA1Period As Integer
+    Public Property HTEMA2Period As Integer
+
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)

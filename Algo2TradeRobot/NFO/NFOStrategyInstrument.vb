@@ -25,8 +25,10 @@ Public Class NFOStrategyInstrument
 
     Private _lastPrevPayloadPlaceOrder As String = ""
 
-    Private ReadOnly _dummyEMA1Consumer As EMAConsumer
-    Private ReadOnly _dummyEMA2Consumer As EMAConsumer
+    Private ReadOnly _dummyLTEMA1Consumer As EMAConsumer
+    Private ReadOnly _dummyLTEMA2Consumer As EMAConsumer
+    Private ReadOnly _dummyHTEMA1Consumer As EMAConsumer
+    Private ReadOnly _dummyHTEMA2Consumer As EMAConsumer
 
     Public _Direction As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
 
@@ -61,13 +63,21 @@ Public Class NFOStrategyInstrument
             RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
             If Me.ParentStrategy.IsStrategyCandleStickBased Then
                 Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
-                Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(userInputs.SignalTimeFrame)
-                chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer)
-                chartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(chartConsumer, userInputs.EMA1Period, TypeOfField.Close))
-                chartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(chartConsumer, userInputs.EMA2Period, TypeOfField.Close))
-                RawPayloadDependentConsumers.Add(chartConsumer)
-                _dummyEMA1Consumer = New EMAConsumer(chartConsumer, userInputs.EMA1Period, TypeOfField.Close)
-                _dummyEMA2Consumer = New EMAConsumer(chartConsumer, userInputs.EMA2Period, TypeOfField.Close)
+                Dim ltchartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(userInputs.SignalTimeFrame)
+                ltchartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer)
+                ltchartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(ltchartConsumer, userInputs.LTEMA1Period, TypeOfField.Close))
+                ltchartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(ltchartConsumer, userInputs.LTEMA2Period, TypeOfField.Close))
+                RawPayloadDependentConsumers.Add(ltchartConsumer)
+                _dummyLTEMA1Consumer = New EMAConsumer(ltchartConsumer, userInputs.LTEMA1Period, TypeOfField.Close)
+                _dummyLTEMA2Consumer = New EMAConsumer(ltchartConsumer, userInputs.LTEMA2Period, TypeOfField.Close)
+
+                Dim htchartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(userInputs.HigherTimeframe)
+                htchartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer)
+                htchartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(htchartConsumer, userInputs.HTEMA1Period, TypeOfField.Close))
+                htchartConsumer.OnwardLevelConsumers.Add(New EMAConsumer(htchartConsumer, userInputs.HTEMA2Period, TypeOfField.Close))
+                RawPayloadDependentConsumers.Add(htchartConsumer)
+                _dummyHTEMA1Consumer = New EMAConsumer(htchartConsumer, userInputs.HTEMA1Period, TypeOfField.Close)
+                _dummyHTEMA2Consumer = New EMAConsumer(htchartConsumer, userInputs.HTEMA2Period, TypeOfField.Close)
             End If
         End If
         Me.ForceExitByUser = False
@@ -446,26 +456,38 @@ Public Class NFOStrategyInstrument
         Dim parameters As PlaceOrderParameters = Nothing
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         If _ParentInstrument Then
-            Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
-            Dim ema1Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMA1Consumer)
-            Dim ema2Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMA2Consumer)
+            Dim ltRunningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+            Dim htRunningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.HigherTimeframe)
+            Dim ltema1Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyLTEMA1Consumer)
+            Dim ltema2Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyLTEMA2Consumer)
+            Dim htema1Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHTEMA1Consumer)
+            Dim htema2Consumer As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHTEMA2Consumer)
             Dim currentTime As Date = Now()
             Dim currentTick As ITick = Me.TradableInstrument.LastTick
 
             Try
-                If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
-                    If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
-                        _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
-                        logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandlePayloadSnapshotDateTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, EMA({4}):{5}, EMA({6}):{7}, Exchange Start Time:{8}, Exchange End Time:{9}, Current Time:{10}, Is My Another Contract Available:{11}, Contract Rollover Time:{12}, TradingSymbol:{13}",
-                                    runningCandlePayload.SnapshotDateTime.ToString,
-                                    runningCandlePayload.ToString,
+                If ltRunningCandlePayload IsNot Nothing AndAlso ltRunningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                    htRunningCandlePayload IsNot Nothing AndAlso htRunningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                    Me.TradableInstrument.IsHistoricalCompleted Then
+                    If Not ltRunningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
+                        _lastPrevPayloadPlaceOrder = ltRunningCandlePayload.PreviousPayload.ToString
+                        logger.Debug("PlaceOrder-> LT Potential Signal Candle is:{0}. Will check rest parameters.", ltRunningCandlePayload.PreviousPayload.ToString)
+                        logger.Debug("PlaceOrder-> HT Potential Signal Candle is:{0}. Will check rest parameters.", htRunningCandlePayload.PreviousPayload.ToString)
+                        logger.Debug("PlaceOrder-> Rest all parameters: LTRunningCandleTime:{0}, LTPayloadGeneratedBy:{1}, HTRunningCandleTime:{2}, HTPayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, IsFirstTimeInformationCollected:{5}, LT EMA({6}):{7}, LT EMA({8}):{9}, HT EMA({10}):{11}, HT EMA({12}):{13}, Exchange Start Time:{14}, Exchange End Time:{15}, Current Time:{16}, Is My Another Contract Available:{17}, Contract Rollover Time:{18}, TradingSymbol:{19}",
+                                    ltRunningCandlePayload.SnapshotDateTime.ToString,
+                                    ltRunningCandlePayload.PayloadGeneratedBy.ToString,
+                                    htRunningCandlePayload.SnapshotDateTime.ToString,
+                                    htRunningCandlePayload.PayloadGeneratedBy.ToString,
                                     Me.TradableInstrument.IsHistoricalCompleted,
                                     Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                    userSettings.EMA1Period,
-                                    ema1Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
-                                    userSettings.EMA2Period,
-                                    ema2Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                    userSettings.LTEMA1Period,
+                                    ltema1Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                    userSettings.LTEMA2Period,
+                                    ltema2Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                    userSettings.HTEMA1Period,
+                                    htema1Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
+                                    userSettings.HTEMA2Period,
+                                    htema2Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.SnapshotDateTime).ToString,
                                     Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
                                     Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
                                     currentTime.ToString,
@@ -481,7 +503,7 @@ Public Class NFOStrategyInstrument
             If (ForceExitByUser OrElse ForceExitForContractRollover OrElse ForceEntryForContractRollover) AndAlso
                 currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
                 currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
-                Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing Then
+                Me.TradableInstrument.IsHistoricalCompleted AndAlso ltRunningCandlePayload IsNot Nothing Then
 
                 Dim quantity As Integer = GetQuantityToTrade()
 
@@ -499,14 +521,14 @@ Public Class NFOStrategyInstrument
 
                 If quantity > 0 Then
                     Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    parameters = New PlaceOrderParameters(runningCandlePayload) With
+                    parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                     .Price = price,
                                     .Quantity = Math.Abs(quantity),
                                     .Supporting = New List(Of Object) From {"Exit"}}
                 Else
                     Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                    parameters = New PlaceOrderParameters(runningCandlePayload) With
+                    parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                   {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                    .Price = price,
                                    .Quantity = Math.Abs(quantity),
@@ -517,68 +539,76 @@ Public Class NFOStrategyInstrument
                     quantity = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).ModifiedQuantity
                     If quantity > 0 Then
                         Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        parameters = New PlaceOrderParameters(runningCandlePayload) With
+                        parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                         .Price = price,
                                         .Quantity = Math.Abs(quantity)}
                     Else
                         Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        parameters = New PlaceOrderParameters(runningCandlePayload) With
+                        parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                       {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                        .Price = price,
                                        .Quantity = Math.Abs(quantity)}
                     End If
                 End If
 
-            ElseIf currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
-                runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
-                runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
+            ElseIf currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
+                ltRunningCandlePayload IsNot Nothing AndAlso ltRunningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso ltRunningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                htRunningCandlePayload IsNot Nothing AndAlso htRunningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso htRunningCandlePayload.PreviousPayload IsNot Nothing Then
                 If (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
                     (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
                     (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
-                    If ema1Consumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
-                        ema2Consumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+                    If ltema1Consumer.ConsumerPayloads.ContainsKey(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+                        ltema2Consumer.ConsumerPayloads.ContainsKey(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+                        htema1Consumer.ConsumerPayloads.ContainsKey(htRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+                        htema2Consumer.ConsumerPayloads.ContainsKey(htRunningCandlePayload.PreviousPayload.SnapshotDateTime) Then
                         'Check condition for entry
-                        Dim ema1 As Decimal = CType(ema1Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-                        Dim ema2 As Decimal = CType(ema2Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        Dim ltema1 As Decimal = CType(ltema1Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        Dim ltema2 As Decimal = CType(ltema2Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        Dim htema1 As Decimal = CType(htema1Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        Dim htema2 As Decimal = CType(htema2Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
 
                         'If ema1 > ema2 AndAlso ema2 > ltEma3 AndAlso runningCandlePayload.PreviousPayload.ClosePrice.Value > ltEma3 Then
-                        If ema1 > ema2 Then
+                        If ltema1 > ltema2 AndAlso htema1 > htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             If quantity = 0 Then
                                 quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).InitialQuantity
                                 Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(runningCandlePayload) With
+                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                                 .Price = price,
                                                 .Quantity = Math.Abs(quantity)}
                             End If
                             'ElseIf ema1 < ema2 AndAlso ema2 < ltEma3 AndAlso runningCandlePayload.PreviousPayload.ClosePrice.Value < ltEma3 Then
-                        ElseIf ema1 < ema2 Then
+                        ElseIf ltema1 < ltema2 AndAlso htema1 < htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             If quantity = 0 Then
                                 quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).InitialQuantity
                                 Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(runningCandlePayload) With
+                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                            {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                             .Price = price,
                                             .Quantity = Math.Abs(quantity)}
                             End If
                         End If
 
-                        'Check condition for exit
-                        Dim preEma1 As Decimal = CType(ema1Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-                        Dim preEma2 As Decimal = CType(ema2Consumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        ''Check condition for exit
+                        'Dim preltEma1 As Decimal = CType(ltema1Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        'Dim preltEma2 As Decimal = CType(ltema2Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        'Dim prehtEma1 As Decimal = CType(htema1Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+                        'Dim prehtEma2 As Decimal = CType(htema2Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
+
                         'If (preEma1 > preEma2 AndAlso ema1 < ema2) AndAlso
                         '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Sell) Then
-                        If preEma1 > preEma2 AndAlso ema1 < ema2 Then
+                        'If preltEma1 > preltEma2 AndAlso ltema1 < ltema2 Then
+                        If ltema1 < ltema2 AndAlso htema1 < htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
                             '    quantity = 1
                             'End If
                             If quantity > 0 Then
                                 Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(runningCandlePayload) With
+                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                         .Price = price,
                                         .Quantity = Math.Abs(quantity),
@@ -586,14 +616,15 @@ Public Class NFOStrategyInstrument
                             End If
                             'ElseIf (preEma1 < preEma2 AndAlso ema1 > ema2) AndAlso
                             '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Buy) Then
-                        ElseIf preEma1 < preEma2 AndAlso ema1 > ema2 Then
+                            'ElseIf preltEma1 < preltEma2 AndAlso ltema1 > ltema2 Then
+                        ElseIf ltema1 > ltema2 AndAlso htema1 > htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
                             '    quantity = -1
                             'End If
                             If quantity < 0 Then
                                 Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(runningCandlePayload) With
+                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                         .Price = price,
                                         .Quantity = Math.Abs(quantity),
