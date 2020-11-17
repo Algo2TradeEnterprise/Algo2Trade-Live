@@ -11,14 +11,12 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public TakeTradeLock As Integer = 0
-
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller, True)
+        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -43,22 +41,18 @@ Public Class NFOStrategy
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
-                For Each runningStock In userInputs.InstrumentsData
+                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    If (runningStock.InstrumentType.ToUpper = "NSE" AndAlso userInputs.RunNSE) OrElse
-                        (runningStock.InstrumentType.ToUpper = "NFO" AndAlso userInputs.RunNFO) OrElse
-                        (runningStock.InstrumentType.ToUpper = "MCX" AndAlso userInputs.RunMCX) Then
-                        Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                              Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
-                                                                                                     x.RawExchange = runningStock.InstrumentType.ToUpper
-                                                                                          End Function)
+                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                                            End Function)
 
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If runningInstrument IsNot Nothing Then
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                            ret = True
-                        End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    If runningTradableInstrument IsNot Nothing Then
+                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                        ret = True
                     End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -129,6 +123,7 @@ Public Class NFOStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
-        Throw New NotImplementedException()
+        Dim ret As Tuple(Of Boolean, String) = Nothing
+        Return ret
     End Function
 End Class

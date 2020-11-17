@@ -18,8 +18,6 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
-        cmbDisplayLogType.SelectedIndex = 0
-        cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
         LoadSettings()
     End Sub
 
@@ -39,69 +37,32 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtSignalTimeFrame.Text = _settings.SignalTimeFrame
+            dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
+            txtSignalTimeframe.Text = _settings.SignalTimeFrame
+            txtMartingaleMultiplier.Text = _settings.MartingaleMultiplier
+            txtMaxMartingaleIteration.Text = _settings.MaxMartingaleIteration
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            chkbNSE.Checked = _settings.RunNSE
-            chkbNFO.Checked = _settings.RunNFO
-            chkbMCX.Checked = _settings.RunMCX
-            txtTargetMultiplier.Text = _settings.TargetMultiplier
-            txtTargetToLeftMovementPercentage.Text = _settings.TargetToLeftMovementPercentage
-            Select Case _settings.DisplayLogType
-                Case NFOUserInputs.TypeOfDisplayLog.All
-                    cmbDisplayLogType.SelectedIndex = 0
-                Case NFOUserInputs.TypeOfDisplayLog.Negative
-                    cmbDisplayLogType.SelectedIndex = 1
-                Case NFOUserInputs.TypeOfDisplayLog.Positive
-                    cmbDisplayLogType.SelectedIndex = 2
-            End Select
-            If _settings.RepeatSignalOnHistoricalRefresh Then
-                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
-            Else
-                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 1
-            End If
 
-            txtTelegramAPIKey.Text = _settings.TelegramAPIKey
-            txtTelegramChatID.Text = _settings.TelegramChatID
+            txtInitialCapital.Text = _settings.InitialCapital
 
-            txtDayCloseATRPeriod.Text = _settings.DayClose_ATRPeriod
-            txtVWAPEMAPeriod.Text = _settings.VWAP_EMAPeriod
-            txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
-            txtCloseRSIPeriod.Text = _settings.Close_RSIPeriod
-            txtRSIValue.Text = _settings.RSIValue
+            txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
+            txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
+            txtTelegramCapitalChatID.Text = _settings.TelegramCapitalChatID
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeFrame.Text
+        _settings.SignalTimeFrame = txtSignalTimeframe.Text
+        _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
+        _settings.MartingaleMultiplier = txtMartingaleMultiplier.Text
+        _settings.MaxMartingaleIteration = txtMaxMartingaleIteration.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        _settings.RunNSE = chkbNSE.Checked
-        _settings.RunNFO = chkbNFO.Checked
-        _settings.RunMCX = chkbMCX.Checked
-        _settings.TargetMultiplier = txtTargetMultiplier.Text
-        _settings.TargetToLeftMovementPercentage = txtTargetToLeftMovementPercentage.Text
-        Select Case cmbDisplayLogType.SelectedIndex
-            Case 0
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.All
-            Case 1
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Negative
-            Case 2
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Positive
-        End Select
-        Select Case cmbRepeatSignalOnHistoricalRefresh.SelectedIndex
-            Case 0
-                _settings.RepeatSignalOnHistoricalRefresh = True
-            Case 1
-                _settings.RepeatSignalOnHistoricalRefresh = False
-        End Select
 
-        _settings.TelegramAPIKey = txtTelegramAPIKey.Text
-        _settings.TelegramChatID = txtTelegramChatID.Text
+        _settings.InitialCapital = txtInitialCapital.Text
 
-        _settings.DayClose_ATRPeriod = txtDayCloseATRPeriod.Text
-        _settings.VWAP_EMAPeriod = txtVWAPEMAPeriod.Text
-        _settings.DayClose_SMAPeriod = txtDayCloseSMAPeriod.Text
-        _settings.Close_RSIPeriod = txtCloseRSIPeriod.Text
-        _settings.RSIValue = txtRSIValue.Text
+        _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
+        _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
+        _settings.TelegramCapitalChatID = txtTelegramCapitalChatID.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -118,25 +79,28 @@ Public Class frmNFOSettings
                 ret = True
             End If
         End If
-        If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
+        If Not ret Then
+            If endNumber = Decimal.MaxValue OrElse (endNumber = Integer.MaxValue AndAlso validateInteger) Then
+                Throw New ApplicationException(String.Format("{0} cannot have a value < {1}", inputTB.Tag, startNumber))
+            Else
+                Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
+            End If
+        End If
         Return ret
     End Function
 
-    Private Sub ValidateInputs()
-        ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(0, 100, txtTargetToLeftMovementPercentage)
-        ValidateNumbers(0, Decimal.MaxValue, txtTargetMultiplier)
-        ValidateNumbers(1, Integer.MaxValue, txtDayCloseATRPeriod, True)
-        ValidateNumbers(1, Integer.MaxValue, txtVWAPEMAPeriod, True)
-        ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
-        ValidateNumbers(1, Integer.MaxValue, txtCloseRSIPeriod, True)
-        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtRSIValue)
-
-        ValidateFile()
-    End Sub
-
     Private Sub ValidateFile()
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
+    End Sub
+
+    Private Sub ValidateInputs()
+        ValidateNumbers(1, 375, txtSignalTimeframe, True)
+        ValidateNumbers(1, Integer.MaxValue, txtMartingaleMultiplier, True)
+        ValidateNumbers(1, Integer.MaxValue, txtMaxMartingaleIteration, True)
+
+        ValidateNumbers(1, Decimal.MaxValue, txtInitialCapital)
+
+        ValidateFile()
     End Sub
 
     Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
@@ -152,4 +116,5 @@ Public Class frmNFOSettings
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
         End If
     End Sub
+
 End Class
