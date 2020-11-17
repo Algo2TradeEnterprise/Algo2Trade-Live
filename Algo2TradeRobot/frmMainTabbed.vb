@@ -339,8 +339,6 @@ Public Class frmMainTabbed
                 Dim bf As BinaryFormatter = New BinaryFormatter()
                 _nfoUserInputs = CType(bf.Deserialize(fs), NFOUserInputs)
                 fs.Close()
-                _nfoUserInputs.InstrumentsData = Nothing
-                _nfoUserInputs.FillInstrumentDetails(_nfoUserInputs.InstrumentDetailsFilePath, _cts)
             Else
                 Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
             End If

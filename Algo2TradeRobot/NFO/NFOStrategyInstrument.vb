@@ -29,7 +29,7 @@ Public Class NFOStrategyInstrument
     Private _lastDayMA As Decimal = Decimal.MinValue
     Private _lastDayATR As Decimal = Decimal.MinValue
 
-    Private _lastPrevPayload As OHLCPayload = Nothing
+    'Private _lastPrevPayload As OHLCPayload = Nothing
     Private _lastPrevPayloadString As String = ""
     Private _lastMessage As String = ""
     Private _lastMessageSend As Date = Now.Date
@@ -153,11 +153,7 @@ Public Class NFOStrategyInstrument
         Dim currentTime As Date = Now()
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim instrumentData As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData.Find(Function(x)
-                                                                                                      Return x.TradingSymbol.ToUpper = Me.TradableInstrument.TradingSymbol.ToUpper AndAlso
-                                                                                                      x.InstrumentType.ToUpper = Me.TradableInstrument.RawExchange.ToUpper
-                                                                                                  End Function)
-        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+        Dim runningCandle As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
         Dim hkData As HeikinAshiConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyHKConsumer)
         Dim vwapData As VWAPConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyVWAPConsumer)
         Dim emaData As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMAConsumer)
@@ -165,34 +161,27 @@ Public Class NFOStrategyInstrument
         Dim rsiData As RSIConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyRSIConsumer)
 
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
-            runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
-            runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
-            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
+            runningCandle IsNot Nothing AndAlso runningCandle.SnapshotDateTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
+            runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
+            If runningCandle IsNot Nothing AndAlso runningCandle.PreviousPayload IsNot Nothing Then
                 Dim checkSignal As Boolean = False
-                If userSettings.RepeatSignalOnHistoricalRefresh Then
-                    If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadString Then
-                        checkSignal = True
-                        _lastPrevPayloadString = runningCandlePayload.PreviousPayload.ToString
-                    End If
-                Else
-                    If _lastPrevPayload Is Nothing OrElse runningCandlePayload.PreviousPayload.SnapshotDateTime <> _lastPrevPayload.SnapshotDateTime Then
-                        checkSignal = True
-                        _lastPrevPayload = runningCandlePayload.PreviousPayload
-                    End If
+                If Not runningCandle.PreviousPayload.ToString = _lastPrevPayloadString Then
+                    checkSignal = True
+                    _lastPrevPayloadString = runningCandle.PreviousPayload.ToString
                 End If
 
                 If checkSignal Then
                     _lastMessage = ""
-                    If hkData.ConsumerPayloads IsNot Nothing AndAlso hkData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                        Dim hkCandle As OHLCPayload = hkData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                        If vwapData.ConsumerPayloads IsNot Nothing AndAlso vwapData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                            Dim vwap As VWAPConsumer.VWAPPayload = vwapData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                            If emaData.ConsumerPayloads IsNot Nothing AndAlso emaData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                                Dim vwapEMA As EMAConsumer.EMAPayload = emaData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                                If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                                    Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
-                                    If rsiData.ConsumerPayloads IsNot Nothing AndAlso rsiData.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                                        Dim rsi As RSIConsumer.RSIPayload = rsiData.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime)
+                    If hkData.ConsumerPayloads IsNot Nothing AndAlso hkData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
+                        Dim hkCandle As OHLCPayload = hkData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
+                        If vwapData.ConsumerPayloads IsNot Nothing AndAlso vwapData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
+                            Dim vwap As VWAPConsumer.VWAPPayload = vwapData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
+                            If emaData.ConsumerPayloads IsNot Nothing AndAlso emaData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
+                                Dim vwapEMA As EMAConsumer.EMAPayload = emaData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
+                                If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
+                                    Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
+                                    If rsiData.ConsumerPayloads IsNot Nothing AndAlso rsiData.ConsumerPayloads.ContainsKey(runningCandle.PreviousPayload.SnapshotDateTime) Then
+                                        Dim rsi As RSIConsumer.RSIPayload = rsiData.ConsumerPayloads(runningCandle.PreviousPayload.SnapshotDateTime)
 
                                         Dim signalCandle As OHLCPayload = hkCandle
                                         If signalCandle IsNot Nothing AndAlso signalCandle.PreviousPayload IsNot Nothing AndAlso
@@ -244,11 +233,11 @@ Public Class NFOStrategyInstrument
                                                                         Math.Round(pivots.Pivot.Value, 2),
                                                                         vwap.VWAP.Value > pivots.Pivot.Value)
 
-                                                takeTrade = takeTrade And (rsi.RSI.Value > userSettings.RSIValue)
-                                                message = String.Format("{0} RSI({1})>RSI Value({2})[{3}].",
+                                                takeTrade = takeTrade And (rsi.RSI.Value > userSettings.RSILevel)
+                                                message = String.Format("{0} RSI({1})>RSI Level({2})[{3}].",
                                                                         message, Math.Round(rsi.RSI.Value, 2),
-                                                                        Math.Round(userSettings.RSIValue, 2),
-                                                                        rsi.RSI.Value > userSettings.RSIValue)
+                                                                        Math.Round(userSettings.RSILevel, 2),
+                                                                        rsi.RSI.Value > userSettings.RSILevel)
 
                                                 If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                     takeTrade = takeTrade And (currentTick.LastPrice > _lastDayMA)
@@ -296,12 +285,12 @@ Public Class NFOStrategyInstrument
                                                     message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
 
                                                     Dim slPoint As Decimal = entryPrice - stoploss
-                                                    If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
-                                                        takeTrade = takeTrade And (slPoint < instrumentData.Range)
+                                                    'If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                    '    takeTrade = takeTrade And (slPoint < instrumentData.Range)
 
-                                                        message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
-                                                                                message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
-                                                    End If
+                                                    '    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                    '                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                    'End If
 
                                                     If takeTrade Then
                                                         Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
@@ -323,7 +312,7 @@ Public Class NFOStrategyInstrument
                                                         If takeTrade Then
                                                             Dim quantity As Integer = Me.TradableInstrument.LotSize
                                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                                quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
+                                                                'quantity = CalculateQuantityFromStoploss(entryPrice, stoploss, Math.Abs(instrumentData.Range) * -1)
                                                             End If
 
                                                             _lastMessage = String.Format("BUY - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
@@ -390,11 +379,11 @@ Public Class NFOStrategyInstrument
                                                                         Math.Round(pivots.Pivot.Value, 2),
                                                                         vwap.VWAP.Value < pivots.Pivot.Value)
 
-                                                takeTrade = takeTrade And (rsi.RSI.Value < userSettings.RSIValue)
-                                                message = String.Format("{0} RSI({1})<RSI Value({2})[{3}].",
+                                                takeTrade = takeTrade And (rsi.RSI.Value < userSettings.RSILevel)
+                                                message = String.Format("{0} RSI({1})<RSI Level({2})[{3}].",
                                                                         message, Math.Round(rsi.RSI.Value, 2),
-                                                                        Math.Round(userSettings.RSIValue, 2),
-                                                                        rsi.RSI.Value < userSettings.RSIValue)
+                                                                        Math.Round(userSettings.RSILevel, 2),
+                                                                        rsi.RSI.Value < userSettings.RSILevel)
 
                                                 If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
                                                     takeTrade = takeTrade And (currentTick.LastPrice < _lastDayMA)
@@ -442,12 +431,12 @@ Public Class NFOStrategyInstrument
                                                     message = message.Replace("[INFO1]", String.Format("Entry:{0}, Stoploss:{1}({2}).", entryPrice, stoploss, slRemark))
 
                                                     Dim slPoint As Decimal = stoploss - entryPrice
-                                                    If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
-                                                        takeTrade = takeTrade And (slPoint < instrumentData.Range)
+                                                    'If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then
+                                                    '    takeTrade = takeTrade And (slPoint < instrumentData.Range)
 
-                                                        message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
-                                                                                message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
-                                                    End If
+                                                    '    message = String.Format("{0} SL Point({1})<Range({2})[{3}].",
+                                                    '                            message, slPoint, instrumentData.Range, slPoint < instrumentData.Range)
+                                                    'End If
 
                                                     If takeTrade Then
                                                         Dim targetPoint As Decimal = ConvertFloorCeling(slPoint * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
@@ -469,7 +458,7 @@ Public Class NFOStrategyInstrument
                                                         If takeTrade Then
                                                             Dim quantity As Integer = Me.TradableInstrument.LotSize
                                                             If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
-                                                                quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
+                                                                'quantity = CalculateQuantityFromStoploss(stoploss, entryPrice, Math.Abs(instrumentData.Range) * -1)
                                                             End If
 
                                                             _lastMessage = String.Format("SELL - {0} - Entry:{1} - Stoploss:{2}(Rs. {3})({4}) - Target:{5}(Rs. {6}) - Quantity:{7} - Signal Candle:{8}.{9}{10}",
@@ -496,25 +485,25 @@ Public Class NFOStrategyInstrument
                                                 End If
                                             End If
                                             If message IsNot Nothing AndAlso message.Trim <> "" Then
-                                                Select Case userSettings.DisplayLogType
-                                                    Case NFOUserInputs.TypeOfDisplayLog.All
-                                                        OnHeartbeat(message)
-                                                    Case NFOUserInputs.TypeOfDisplayLog.Negative
-                                                        If Not positiveSignal Then
-                                                            OnHeartbeat(message)
-                                                        Else
-                                                            logger.Debug(message)
-                                                        End If
-                                                    Case NFOUserInputs.TypeOfDisplayLog.Positive
-                                                        If positiveSignal Then
-                                                            OnHeartbeat(message)
-                                                        Else
-                                                            logger.Debug(message)
-                                                        End If
-                                                    Case Else
-                                                        logger.Debug(message)
-                                                        Throw New NotImplementedException
-                                                End Select
+                                                'Select Case userSettings.DisplayLogType
+                                                '    Case NFOUserInputs.TypeOfDisplayLog.All
+                                                OnHeartbeat(message)
+                                                '    Case NFOUserInputs.TypeOfDisplayLog.Negative
+                                                '        If Not positiveSignal Then
+                                                '            OnHeartbeat(message)
+                                                '        Else
+                                                '            logger.Debug(message)
+                                                '        End If
+                                                '    Case NFOUserInputs.TypeOfDisplayLog.Positive
+                                                '        If positiveSignal Then
+                                                '            OnHeartbeat(message)
+                                                '        Else
+                                                '            logger.Debug(message)
+                                                '        End If
+                                                '    Case Else
+                                                '        logger.Debug(message)
+                                                '        Throw New NotImplementedException
+                                                'End Select
                                             End If
                                         End If
                                     End If

@@ -43,27 +43,25 @@ Partial Class frmNFOSettings
         Me.txtDayCloseATRPeriod = New System.Windows.Forms.TextBox()
         Me.lblDayCloseATRPeriod = New System.Windows.Forms.Label()
         Me.grpOther = New System.Windows.Forms.GroupBox()
-        Me.cmbRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.ComboBox()
-        Me.lblRepeatSignalOnHistoricalRefresh = New System.Windows.Forms.Label()
-        Me.cmbDisplayLogType = New System.Windows.Forms.ComboBox()
-        Me.lblDisplayLogType = New System.Windows.Forms.Label()
-        Me.chkbMCX = New System.Windows.Forms.CheckBox()
-        Me.chkbNFO = New System.Windows.Forms.CheckBox()
-        Me.chkbNSE = New System.Windows.Forms.CheckBox()
-        Me.lblRunInstruments = New System.Windows.Forms.Label()
-        Me.btnBrowse = New System.Windows.Forms.Button()
-        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
-        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.txtTargetMultiplier = New System.Windows.Forms.TextBox()
         Me.lblTargetMultiplier = New System.Windows.Forms.Label()
         Me.txtTargetToLeftMovementPercentage = New System.Windows.Forms.TextBox()
         Me.lblTargetToLeftMovementPercentage = New System.Windows.Forms.Label()
         Me.txtSignalTimeFrame = New System.Windows.Forms.TextBox()
         Me.lblSignalTimeFrame = New System.Windows.Forms.Label()
-        Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
+        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtMinPrice = New System.Windows.Forms.TextBox()
+        Me.lblMinPrice = New System.Windows.Forms.Label()
+        Me.txtMaxPrice = New System.Windows.Forms.TextBox()
+        Me.lblMaxPrice = New System.Windows.Forms.Label()
+        Me.txtMinVolume = New System.Windows.Forms.TextBox()
+        Me.lblMinVolume = New System.Windows.Forms.Label()
+        Me.txtMinATRPer = New System.Windows.Forms.TextBox()
+        Me.lblMinATRPer = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpIndicator.SuspendLayout()
         Me.grpOther.SuspendLayout()
+        Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
         'btnSave
@@ -95,7 +93,7 @@ Partial Class frmNFOSettings
         Me.grpTelegram.Location = New System.Drawing.Point(554, 3)
         Me.grpTelegram.Name = "grpTelegram"
         Me.grpTelegram.Size = New System.Drawing.Size(538, 97)
-        Me.grpTelegram.TabIndex = 2
+        Me.grpTelegram.TabIndex = 3
         Me.grpTelegram.TabStop = False
         Me.grpTelegram.Text = "Telegram Details"
         '
@@ -149,10 +147,10 @@ Partial Class frmNFOSettings
         Me.grpIndicator.Controls.Add(Me.lblVWAPEMAPeriod)
         Me.grpIndicator.Controls.Add(Me.txtDayCloseATRPeriod)
         Me.grpIndicator.Controls.Add(Me.lblDayCloseATRPeriod)
-        Me.grpIndicator.Location = New System.Drawing.Point(554, 107)
+        Me.grpIndicator.Location = New System.Drawing.Point(554, 102)
         Me.grpIndicator.Name = "grpIndicator"
         Me.grpIndicator.Size = New System.Drawing.Size(538, 200)
-        Me.grpIndicator.TabIndex = 3
+        Me.grpIndicator.TabIndex = 4
         Me.grpIndicator.TabStop = False
         Me.grpIndicator.Text = "Indicator Details"
         '
@@ -162,7 +160,7 @@ Partial Class frmNFOSettings
         Me.txtRSIValue.Margin = New System.Windows.Forms.Padding(4)
         Me.txtRSIValue.Name = "txtRSIValue"
         Me.txtRSIValue.Size = New System.Drawing.Size(348, 22)
-        Me.txtRSIValue.TabIndex = 62
+        Me.txtRSIValue.TabIndex = 4
         Me.txtRSIValue.Tag = "RSI Value"
         '
         'lblRSIValue
@@ -181,7 +179,7 @@ Partial Class frmNFOSettings
         Me.txtCloseRSIPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtCloseRSIPeriod.Name = "txtCloseRSIPeriod"
         Me.txtCloseRSIPeriod.Size = New System.Drawing.Size(348, 22)
-        Me.txtCloseRSIPeriod.TabIndex = 60
+        Me.txtCloseRSIPeriod.TabIndex = 3
         Me.txtCloseRSIPeriod.Tag = "RSI Period(Close)"
         '
         'lblCloseRSIPeriod
@@ -219,7 +217,7 @@ Partial Class frmNFOSettings
         Me.txtVWAPEMAPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtVWAPEMAPeriod.Name = "txtVWAPEMAPeriod"
         Me.txtVWAPEMAPeriod.Size = New System.Drawing.Size(348, 22)
-        Me.txtVWAPEMAPeriod.TabIndex = 1
+        Me.txtVWAPEMAPeriod.TabIndex = 0
         Me.txtVWAPEMAPeriod.Tag = "EMA Period(VWAP)"
         '
         'lblVWAPEMAPeriod
@@ -238,7 +236,7 @@ Partial Class frmNFOSettings
         Me.txtDayCloseATRPeriod.Margin = New System.Windows.Forms.Padding(4)
         Me.txtDayCloseATRPeriod.Name = "txtDayCloseATRPeriod"
         Me.txtDayCloseATRPeriod.Size = New System.Drawing.Size(348, 22)
-        Me.txtDayCloseATRPeriod.TabIndex = 0
+        Me.txtDayCloseATRPeriod.TabIndex = 1
         Me.txtDayCloseATRPeriod.Tag = "ATR Period(Day Close)"
         '
         'lblDayCloseATRPeriod
@@ -253,17 +251,6 @@ Partial Class frmNFOSettings
         '
         'grpOther
         '
-        Me.grpOther.Controls.Add(Me.cmbRepeatSignalOnHistoricalRefresh)
-        Me.grpOther.Controls.Add(Me.lblRepeatSignalOnHistoricalRefresh)
-        Me.grpOther.Controls.Add(Me.cmbDisplayLogType)
-        Me.grpOther.Controls.Add(Me.lblDisplayLogType)
-        Me.grpOther.Controls.Add(Me.chkbMCX)
-        Me.grpOther.Controls.Add(Me.chkbNFO)
-        Me.grpOther.Controls.Add(Me.chkbNSE)
-        Me.grpOther.Controls.Add(Me.lblRunInstruments)
-        Me.grpOther.Controls.Add(Me.btnBrowse)
-        Me.grpOther.Controls.Add(Me.txtInstrumentDetalis)
-        Me.grpOther.Controls.Add(Me.lblInstrumentDetails)
         Me.grpOther.Controls.Add(Me.txtTargetMultiplier)
         Me.grpOther.Controls.Add(Me.lblTargetMultiplier)
         Me.grpOther.Controls.Add(Me.txtTargetToLeftMovementPercentage)
@@ -272,134 +259,24 @@ Partial Class frmNFOSettings
         Me.grpOther.Controls.Add(Me.lblSignalTimeFrame)
         Me.grpOther.Location = New System.Drawing.Point(8, 2)
         Me.grpOther.Name = "grpOther"
-        Me.grpOther.Size = New System.Drawing.Size(540, 305)
+        Me.grpOther.Size = New System.Drawing.Size(540, 125)
         Me.grpOther.TabIndex = 1
         Me.grpOther.TabStop = False
         Me.grpOther.Text = "Other Details"
         '
-        'cmbRepeatSignalOnHistoricalRefresh
-        '
-        Me.cmbRepeatSignalOnHistoricalRefresh.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbRepeatSignalOnHistoricalRefresh.FormattingEnabled = True
-        Me.cmbRepeatSignalOnHistoricalRefresh.Items.AddRange(New Object() {"True", "False"})
-        Me.cmbRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(269, 243)
-        Me.cmbRepeatSignalOnHistoricalRefresh.Name = "cmbRepeatSignalOnHistoricalRefresh"
-        Me.cmbRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(255, 24)
-        Me.cmbRepeatSignalOnHistoricalRefresh.TabIndex = 75
-        '
-        'lblRepeatSignalOnHistoricalRefresh
-        '
-        Me.lblRepeatSignalOnHistoricalRefresh.AutoSize = True
-        Me.lblRepeatSignalOnHistoricalRefresh.Location = New System.Drawing.Point(7, 245)
-        Me.lblRepeatSignalOnHistoricalRefresh.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblRepeatSignalOnHistoricalRefresh.Name = "lblRepeatSignalOnHistoricalRefresh"
-        Me.lblRepeatSignalOnHistoricalRefresh.Size = New System.Drawing.Size(236, 17)
-        Me.lblRepeatSignalOnHistoricalRefresh.TabIndex = 76
-        Me.lblRepeatSignalOnHistoricalRefresh.Text = "Repeat Signal On Historical Refresh"
-        '
-        'cmbDisplayLogType
-        '
-        Me.cmbDisplayLogType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cmbDisplayLogType.FormattingEnabled = True
-        Me.cmbDisplayLogType.Items.AddRange(New Object() {"All", "Negative", "Positive"})
-        Me.cmbDisplayLogType.Location = New System.Drawing.Point(269, 205)
-        Me.cmbDisplayLogType.Name = "cmbDisplayLogType"
-        Me.cmbDisplayLogType.Size = New System.Drawing.Size(255, 24)
-        Me.cmbDisplayLogType.TabIndex = 7
-        '
-        'lblDisplayLogType
-        '
-        Me.lblDisplayLogType.AutoSize = True
-        Me.lblDisplayLogType.Location = New System.Drawing.Point(7, 207)
-        Me.lblDisplayLogType.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblDisplayLogType.Name = "lblDisplayLogType"
-        Me.lblDisplayLogType.Size = New System.Drawing.Size(118, 17)
-        Me.lblDisplayLogType.TabIndex = 74
-        Me.lblDisplayLogType.Text = "Display Log Type"
-        '
-        'chkbMCX
-        '
-        Me.chkbMCX.AutoSize = True
-        Me.chkbMCX.Location = New System.Drawing.Point(399, 97)
-        Me.chkbMCX.Name = "chkbMCX"
-        Me.chkbMCX.Size = New System.Drawing.Size(59, 21)
-        Me.chkbMCX.TabIndex = 4
-        Me.chkbMCX.Text = "MCX"
-        Me.chkbMCX.UseVisualStyleBackColor = True
-        '
-        'chkbNFO
-        '
-        Me.chkbNFO.AutoSize = True
-        Me.chkbNFO.Location = New System.Drawing.Point(335, 97)
-        Me.chkbNFO.Name = "chkbNFO"
-        Me.chkbNFO.Size = New System.Drawing.Size(59, 21)
-        Me.chkbNFO.TabIndex = 3
-        Me.chkbNFO.Text = "NFO"
-        Me.chkbNFO.UseVisualStyleBackColor = True
-        '
-        'chkbNSE
-        '
-        Me.chkbNSE.AutoSize = True
-        Me.chkbNSE.Location = New System.Drawing.Point(271, 97)
-        Me.chkbNSE.Name = "chkbNSE"
-        Me.chkbNSE.Size = New System.Drawing.Size(58, 21)
-        Me.chkbNSE.TabIndex = 2
-        Me.chkbNSE.Text = "NSE"
-        Me.chkbNSE.UseVisualStyleBackColor = True
-        '
-        'lblRunInstruments
-        '
-        Me.lblRunInstruments.AutoSize = True
-        Me.lblRunInstruments.Location = New System.Drawing.Point(7, 99)
-        Me.lblRunInstruments.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblRunInstruments.Name = "lblRunInstruments"
-        Me.lblRunInstruments.Size = New System.Drawing.Size(111, 17)
-        Me.lblRunInstruments.TabIndex = 72
-        Me.lblRunInstruments.Text = "Run Instruments"
-        '
-        'btnBrowse
-        '
-        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(484, 60)
-        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
-        Me.btnBrowse.Name = "btnBrowse"
-        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 1
-        Me.btnBrowse.Text = "..."
-        Me.btnBrowse.UseVisualStyleBackColor = True
-        '
-        'txtInstrumentDetalis
-        '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(269, 61)
-        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
-        Me.txtInstrumentDetalis.ReadOnly = True
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(208, 22)
-        Me.txtInstrumentDetalis.TabIndex = 1
-        '
-        'lblInstrumentDetails
-        '
-        Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(7, 64)
-        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
-        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
-        Me.lblInstrumentDetails.TabIndex = 70
-        Me.lblInstrumentDetails.Text = "Instrument Details"
-        '
         'txtTargetMultiplier
         '
-        Me.txtTargetMultiplier.Location = New System.Drawing.Point(269, 131)
+        Me.txtTargetMultiplier.Location = New System.Drawing.Point(269, 58)
         Me.txtTargetMultiplier.Margin = New System.Windows.Forms.Padding(4)
         Me.txtTargetMultiplier.Name = "txtTargetMultiplier"
         Me.txtTargetMultiplier.Size = New System.Drawing.Size(255, 22)
-        Me.txtTargetMultiplier.TabIndex = 5
+        Me.txtTargetMultiplier.TabIndex = 1
         Me.txtTargetMultiplier.Tag = "Target Multiplier"
         '
         'lblTargetMultiplier
         '
         Me.lblTargetMultiplier.AutoSize = True
-        Me.lblTargetMultiplier.Location = New System.Drawing.Point(6, 134)
+        Me.lblTargetMultiplier.Location = New System.Drawing.Point(6, 61)
         Me.lblTargetMultiplier.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTargetMultiplier.Name = "lblTargetMultiplier"
         Me.lblTargetMultiplier.Size = New System.Drawing.Size(110, 17)
@@ -408,17 +285,17 @@ Partial Class frmNFOSettings
         '
         'txtTargetToLeftMovementPercentage
         '
-        Me.txtTargetToLeftMovementPercentage.Location = New System.Drawing.Point(269, 168)
+        Me.txtTargetToLeftMovementPercentage.Location = New System.Drawing.Point(269, 91)
         Me.txtTargetToLeftMovementPercentage.Margin = New System.Windows.Forms.Padding(4)
         Me.txtTargetToLeftMovementPercentage.Name = "txtTargetToLeftMovementPercentage"
         Me.txtTargetToLeftMovementPercentage.Size = New System.Drawing.Size(255, 22)
-        Me.txtTargetToLeftMovementPercentage.TabIndex = 6
+        Me.txtTargetToLeftMovementPercentage.TabIndex = 2
         Me.txtTargetToLeftMovementPercentage.Tag = "Target To Left Movement %"
         '
         'lblTargetToLeftMovementPercentage
         '
         Me.lblTargetToLeftMovementPercentage.AutoSize = True
-        Me.lblTargetToLeftMovementPercentage.Location = New System.Drawing.Point(7, 171)
+        Me.lblTargetToLeftMovementPercentage.Location = New System.Drawing.Point(7, 94)
         Me.lblTargetToLeftMovementPercentage.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblTargetToLeftMovementPercentage.Name = "lblTargetToLeftMovementPercentage"
         Me.lblTargetToLeftMovementPercentage.Size = New System.Drawing.Size(184, 17)
@@ -444,14 +321,105 @@ Partial Class frmNFOSettings
         Me.lblSignalTimeFrame.TabIndex = 61
         Me.lblSignalTimeFrame.Text = "Signal Time Frame(min)"
         '
-        'opnFileSettings
+        'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtMinATRPer)
+        Me.GroupBox1.Controls.Add(Me.lblMinATRPer)
+        Me.GroupBox1.Controls.Add(Me.txtMinVolume)
+        Me.GroupBox1.Controls.Add(Me.lblMinVolume)
+        Me.GroupBox1.Controls.Add(Me.txtMaxPrice)
+        Me.GroupBox1.Controls.Add(Me.lblMaxPrice)
+        Me.GroupBox1.Controls.Add(Me.txtMinPrice)
+        Me.GroupBox1.Controls.Add(Me.lblMinPrice)
+        Me.GroupBox1.Location = New System.Drawing.Point(8, 128)
+        Me.GroupBox1.Name = "GroupBox1"
+        Me.GroupBox1.Size = New System.Drawing.Size(540, 174)
+        Me.GroupBox1.TabIndex = 2
+        Me.GroupBox1.TabStop = False
+        Me.GroupBox1.Text = "Stock Selection Details"
+        '
+        'txtMinPrice
+        '
+        Me.txtMinPrice.Location = New System.Drawing.Point(269, 22)
+        Me.txtMinPrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinPrice.Name = "txtMinPrice"
+        Me.txtMinPrice.Size = New System.Drawing.Size(255, 22)
+        Me.txtMinPrice.TabIndex = 0
+        Me.txtMinPrice.Tag = "Minimum Price"
+        '
+        'lblMinPrice
+        '
+        Me.lblMinPrice.AutoSize = True
+        Me.lblMinPrice.Location = New System.Drawing.Point(6, 25)
+        Me.lblMinPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinPrice.Name = "lblMinPrice"
+        Me.lblMinPrice.Size = New System.Drawing.Size(99, 17)
+        Me.lblMinPrice.TabIndex = 80
+        Me.lblMinPrice.Text = "Minimum Price"
+        '
+        'txtMaxPrice
+        '
+        Me.txtMaxPrice.Location = New System.Drawing.Point(269, 54)
+        Me.txtMaxPrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxPrice.Name = "txtMaxPrice"
+        Me.txtMaxPrice.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxPrice.TabIndex = 1
+        Me.txtMaxPrice.Tag = "Maximum Price"
+        '
+        'lblMaxPrice
+        '
+        Me.lblMaxPrice.AutoSize = True
+        Me.lblMaxPrice.Location = New System.Drawing.Point(6, 57)
+        Me.lblMaxPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxPrice.Name = "lblMaxPrice"
+        Me.lblMaxPrice.Size = New System.Drawing.Size(102, 17)
+        Me.lblMaxPrice.TabIndex = 82
+        Me.lblMaxPrice.Text = "Maximum Price"
+        '
+        'txtMinVolume
+        '
+        Me.txtMinVolume.Location = New System.Drawing.Point(269, 87)
+        Me.txtMinVolume.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinVolume.Name = "txtMinVolume"
+        Me.txtMinVolume.Size = New System.Drawing.Size(255, 22)
+        Me.txtMinVolume.TabIndex = 2
+        Me.txtMinVolume.Tag = "Minimum Volume"
+        '
+        'lblMinVolume
+        '
+        Me.lblMinVolume.AutoSize = True
+        Me.lblMinVolume.Location = New System.Drawing.Point(6, 90)
+        Me.lblMinVolume.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinVolume.Name = "lblMinVolume"
+        Me.lblMinVolume.Size = New System.Drawing.Size(114, 17)
+        Me.lblMinVolume.TabIndex = 84
+        Me.lblMinVolume.Text = "Minimum Volume"
+        '
+        'txtMinATRPer
+        '
+        Me.txtMinATRPer.Location = New System.Drawing.Point(269, 119)
+        Me.txtMinATRPer.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMinATRPer.Name = "txtMinATRPer"
+        Me.txtMinATRPer.Size = New System.Drawing.Size(255, 22)
+        Me.txtMinATRPer.TabIndex = 3
+        Me.txtMinATRPer.Tag = "Minimum ATR %"
+        '
+        'lblMinATRPer
+        '
+        Me.lblMinATRPer.AutoSize = True
+        Me.lblMinATRPer.Location = New System.Drawing.Point(6, 122)
+        Me.lblMinATRPer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinATRPer.Name = "lblMinATRPer"
+        Me.lblMinATRPer.Size = New System.Drawing.Size(111, 17)
+        Me.lblMinATRPer.TabIndex = 86
+        Me.lblMinATRPer.Text = "Minimum ATR %"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1217, 312)
+        Me.ClientSize = New System.Drawing.Size(1217, 305)
+        Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.grpOther)
         Me.Controls.Add(Me.grpIndicator)
         Me.Controls.Add(Me.grpTelegram)
@@ -469,6 +437,8 @@ Partial Class frmNFOSettings
         Me.grpIndicator.PerformLayout()
         Me.grpOther.ResumeLayout(False)
         Me.grpOther.PerformLayout()
+        Me.GroupBox1.ResumeLayout(False)
+        Me.GroupBox1.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
@@ -494,20 +464,17 @@ Partial Class frmNFOSettings
     Friend WithEvents lblTargetToLeftMovementPercentage As Label
     Friend WithEvents txtSignalTimeFrame As TextBox
     Friend WithEvents lblSignalTimeFrame As Label
-    Friend WithEvents btnBrowse As Button
-    Friend WithEvents txtInstrumentDetalis As TextBox
-    Friend WithEvents lblInstrumentDetails As Label
-    Friend WithEvents opnFileSettings As OpenFileDialog
-    Friend WithEvents chkbMCX As CheckBox
-    Friend WithEvents chkbNFO As CheckBox
-    Friend WithEvents chkbNSE As CheckBox
-    Friend WithEvents lblRunInstruments As Label
-    Friend WithEvents cmbDisplayLogType As ComboBox
-    Friend WithEvents lblDisplayLogType As Label
-    Friend WithEvents cmbRepeatSignalOnHistoricalRefresh As ComboBox
-    Friend WithEvents lblRepeatSignalOnHistoricalRefresh As Label
     Friend WithEvents txtCloseRSIPeriod As TextBox
     Friend WithEvents lblCloseRSIPeriod As Label
     Friend WithEvents txtRSIValue As TextBox
     Friend WithEvents lblRSIValue As Label
+    Friend WithEvents GroupBox1 As GroupBox
+    Friend WithEvents txtMinPrice As TextBox
+    Friend WithEvents lblMinPrice As Label
+    Friend WithEvents txtMaxPrice As TextBox
+    Friend WithEvents lblMaxPrice As Label
+    Friend WithEvents txtMinVolume As TextBox
+    Friend WithEvents lblMinVolume As Label
+    Friend WithEvents txtMinATRPer As TextBox
+    Friend WithEvents lblMinATRPer As Label
 End Class

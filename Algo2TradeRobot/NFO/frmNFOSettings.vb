@@ -18,8 +18,6 @@ Public Class frmNFOSettings
         If _strategyRunning Then
             btnSave.Enabled = False
         End If
-        cmbDisplayLogType.SelectedIndex = 0
-        cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
         LoadSettings()
     End Sub
 
@@ -27,7 +25,6 @@ Public Class frmNFOSettings
         Try
             _cts = New CancellationTokenSource
             If _settings Is Nothing Then _settings = New NFOUserInputs
-            _settings.InstrumentsData = Nothing
             ValidateInputs()
             SaveSettings()
             Me.Close()
@@ -40,25 +37,13 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
-            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-            chkbNSE.Checked = _settings.RunNSE
-            chkbNFO.Checked = _settings.RunNFO
-            chkbMCX.Checked = _settings.RunMCX
             txtTargetMultiplier.Text = _settings.TargetMultiplier
             txtTargetToLeftMovementPercentage.Text = _settings.TargetToLeftMovementPercentage
-            Select Case _settings.DisplayLogType
-                Case NFOUserInputs.TypeOfDisplayLog.All
-                    cmbDisplayLogType.SelectedIndex = 0
-                Case NFOUserInputs.TypeOfDisplayLog.Negative
-                    cmbDisplayLogType.SelectedIndex = 1
-                Case NFOUserInputs.TypeOfDisplayLog.Positive
-                    cmbDisplayLogType.SelectedIndex = 2
-            End Select
-            If _settings.RepeatSignalOnHistoricalRefresh Then
-                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 0
-            Else
-                cmbRepeatSignalOnHistoricalRefresh.SelectedIndex = 1
-            End If
+
+            txtMinPrice.Text = _settings.MinimumPrice
+            txtMaxPrice.Text = _settings.MaximumPrice
+            txtMinVolume.Text = _settings.MinimumVolume
+            txtMinATRPer.Text = _settings.MinimumATRPercentage
 
             txtTelegramAPIKey.Text = _settings.TelegramAPIKey
             txtTelegramChatID.Text = _settings.TelegramChatID
@@ -67,32 +52,19 @@ Public Class frmNFOSettings
             txtVWAPEMAPeriod.Text = _settings.VWAP_EMAPeriod
             txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
             txtCloseRSIPeriod.Text = _settings.Close_RSIPeriod
-            txtRSIValue.Text = _settings.RSIValue
+            txtRSIValue.Text = _settings.RSILevel
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
-        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-        _settings.RunNSE = chkbNSE.Checked
-        _settings.RunNFO = chkbNFO.Checked
-        _settings.RunMCX = chkbMCX.Checked
         _settings.TargetMultiplier = txtTargetMultiplier.Text
         _settings.TargetToLeftMovementPercentage = txtTargetToLeftMovementPercentage.Text
-        Select Case cmbDisplayLogType.SelectedIndex
-            Case 0
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.All
-            Case 1
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Negative
-            Case 2
-                _settings.DisplayLogType = NFOUserInputs.TypeOfDisplayLog.Positive
-        End Select
-        Select Case cmbRepeatSignalOnHistoricalRefresh.SelectedIndex
-            Case 0
-                _settings.RepeatSignalOnHistoricalRefresh = True
-            Case 1
-                _settings.RepeatSignalOnHistoricalRefresh = False
-        End Select
+
+        _settings.MinimumPrice = txtMinPrice.Text
+        _settings.MaximumPrice = txtMaxPrice.Text
+        _settings.MinimumVolume = txtMinVolume.Text
+        _settings.MinimumATRPercentage = txtMinATRPer.Text
 
         _settings.TelegramAPIKey = txtTelegramAPIKey.Text
         _settings.TelegramChatID = txtTelegramChatID.Text
@@ -101,7 +73,7 @@ Public Class frmNFOSettings
         _settings.VWAP_EMAPeriod = txtVWAPEMAPeriod.Text
         _settings.DayClose_SMAPeriod = txtDayCloseSMAPeriod.Text
         _settings.Close_RSIPeriod = txtCloseRSIPeriod.Text
-        _settings.RSIValue = txtRSIValue.Text
+        _settings.RSILevel = txtRSIValue.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -126,30 +98,16 @@ Public Class frmNFOSettings
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
         ValidateNumbers(0, 100, txtTargetToLeftMovementPercentage)
         ValidateNumbers(0, Decimal.MaxValue, txtTargetMultiplier)
+
+        ValidateNumbers(0, Decimal.MaxValue, txtMinPrice)
+        ValidateNumbers(CDec(txtMinPrice.Text), Decimal.MaxValue, txtMaxPrice)
+        ValidateNumbers(0, Long.MaxValue, txtMinVolume)
+        ValidateNumbers(0, Decimal.MaxValue, txtMinATRPer)
+
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseATRPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtVWAPEMAPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtCloseRSIPeriod, True)
         ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtRSIValue)
-
-        ValidateFile()
-    End Sub
-
-    Private Sub ValidateFile()
-        _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
-    End Sub
-
-    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
-        opnFileSettings.Filter = "|*.csv"
-        opnFileSettings.ShowDialog()
-    End Sub
-
-    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
-        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
-        If extension = ".csv" Then
-            txtInstrumentDetalis.Text = opnFileSettings.FileName
-        Else
-            MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
-        End If
     End Sub
 End Class

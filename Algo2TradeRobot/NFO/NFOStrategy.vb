@@ -42,27 +42,48 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
-                For Each runningStock In userInputs.InstrumentsData
+            Dim atrInstruments As List(Of IInstrument) = Nothing
+            Using fillInstruments As New NFOFillInstrumentDetails(_cts, Me)
+                atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
+            End Using
+            If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
+                For Each runningStock In atrInstruments
                     _cts.Token.ThrowIfCancellationRequested()
-                    If (runningStock.InstrumentType.ToUpper = "NSE" AndAlso userInputs.RunNSE) OrElse
-                        (runningStock.InstrumentType.ToUpper = "NFO" AndAlso userInputs.RunNFO) OrElse
-                        (runningStock.InstrumentType.ToUpper = "MCX" AndAlso userInputs.RunMCX) Then
-                        Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                              Return x.TradingSymbol.ToUpper = runningStock.TradingSymbol.ToUpper AndAlso
-                                                                                                     x.RawExchange = runningStock.InstrumentType.ToUpper
-                                                                                          End Function)
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                    ret = True
+                Next
+            End If
 
-                        _cts.Token.ThrowIfCancellationRequested()
+            Dim cdsStocks As List(Of String) = New List(Of String) From {"USDINR", "EURINR", "GBPINR", "JPYINR"}
+            For Each runningStock In cdsStocks
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim runningInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
+                                                                                                   Return x.RawInstrumentName.ToUpper = runningStock.ToUpper AndAlso
+                                                                                                   x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                               End Function)
+                If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                    Dim minExpiry As Date = runningInstruments.Min(Function(x)
+                                                                       If x.Expiry.Value > Now.Date Then
+                                                                           Return x.Expiry.Value
+                                                                       Else
+                                                                           Return Date.MaxValue
+                                                                       End If
+                                                                   End Function)
+                    If minExpiry <> Date.MinValue Then
+                        Dim runningInstrument As IInstrument = runningInstruments.Find(Function(x)
+                                                                                           Return x.Expiry.Value = minExpiry
+                                                                                       End Function)
                         If runningInstrument IsNot Nothing Then
                             If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                             retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
                             ret = True
                         End If
                     End If
-                Next
-                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
-            End If
+                End If
+            Next
+
+            TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
         End If
 
         If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
