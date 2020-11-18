@@ -8,6 +8,9 @@ Public Class NFOUserInputs
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Screener Live.Strategy.a2t")
 
     Public Property TargetToLeftMovementPercentage As Decimal
+    Public Property NSEMaxLossPerTrade As Decimal
+    Public Property OverallMaxProfit As Decimal
+    Public Property OverallMaxLoss As Decimal
 
     Public Property MinimumPrice As Decimal
     Public Property MaximumPrice As Decimal

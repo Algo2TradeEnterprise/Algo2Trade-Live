@@ -49,39 +49,41 @@ Public Class NFOStrategy
             If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
                 For Each runningStock In atrInstruments
                     _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.Add(runningStock)
-                    ret = True
+                    If runningStock.TradingSymbol.ToUpper = "BHARTIARTL" Then
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                        ret = True
+                    End If
                 Next
             End If
 
-            Dim cdsStocks As List(Of String) = New List(Of String) From {"USDINR", "EURINR", "GBPINR", "JPYINR"}
-            For Each runningStock In cdsStocks
-                _cts.Token.ThrowIfCancellationRequested()
-                Dim runningInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
-                                                                                                   Return x.RawInstrumentName.ToUpper = runningStock.ToUpper AndAlso
-                                                                                                   x.InstrumentType = IInstrument.TypeOfInstrument.Futures
-                                                                                               End Function)
-                If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
-                    Dim minExpiry As Date = runningInstruments.Min(Function(x)
-                                                                       If x.Expiry.Value > Now.Date Then
-                                                                           Return x.Expiry.Value
-                                                                       Else
-                                                                           Return Date.MaxValue
-                                                                       End If
-                                                                   End Function)
-                    If minExpiry <> Date.MinValue Then
-                        Dim runningInstrument As IInstrument = runningInstruments.Find(Function(x)
-                                                                                           Return x.Expiry.Value = minExpiry
-                                                                                       End Function)
-                        If runningInstrument IsNot Nothing Then
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                            ret = True
-                        End If
-                    End If
-                End If
-            Next
+            'Dim cdsStocks As List(Of String) = New List(Of String) From {"USDINR", "EURINR", "GBPINR", "JPYINR"}
+            'For Each runningStock In cdsStocks
+            '    _cts.Token.ThrowIfCancellationRequested()
+            '    Dim runningInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
+            '                                                                                       Return x.RawInstrumentName.ToUpper = runningStock.ToUpper AndAlso
+            '                                                                                       x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+            '                                                                                   End Function)
+            '    If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+            '        Dim minExpiry As Date = runningInstruments.Min(Function(x)
+            '                                                           If x.Expiry.Value > Now.Date Then
+            '                                                               Return x.Expiry.Value
+            '                                                           Else
+            '                                                               Return Date.MaxValue
+            '                                                           End If
+            '                                                       End Function)
+            '        If minExpiry <> Date.MinValue Then
+            '            Dim runningInstrument As IInstrument = runningInstruments.Find(Function(x)
+            '                                                                               Return x.Expiry.Value = minExpiry
+            '                                                                           End Function)
+            '            If runningInstrument IsNot Nothing Then
+            '                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+            '                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+            '                ret = True
+            '            End If
+            '        End If
+            '    End If
+            'Next
 
             TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
         End If
@@ -134,6 +136,7 @@ Public Class NFOStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
+            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -150,6 +153,19 @@ Public Class NFOStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
-        Throw New NotImplementedException()
+        Dim ret As Tuple(Of Boolean, String) = Nothing
+        Dim userSettings As NFOUserInputs = Me.UserSettings
+        Dim overallPL As Decimal = Me.GetTotalPLAfterBrokerage
+        Dim currentTime As Date = Now
+        If currentTime >= Me.UserSettings.EODExitTime Then
+            ret = New Tuple(Of Boolean, String)(True, "EOD Exit")
+        ElseIf overallPL <= userSettings.OverallMaxLoss Then
+            logger.Debug("Max loss reached. Overall PL: {0}", overallPL)
+            ret = New Tuple(Of Boolean, String)(True, "Max Loss Per Day Reached")
+        ElseIf overallPL >= userSettings.OverallMaxProfit Then
+            logger.Debug("Max Profit reached. Overall PL: {0}", overallPL)
+            ret = New Tuple(Of Boolean, String)(True, "Max Profit Per Day Reached")
+        End If
+        Return ret
     End Function
 End Class

@@ -39,6 +39,10 @@ Public Class frmNFOSettings
             txtSignalTimeFrame.Text = _settings.SignalTimeFrame
             txtTargetMultiplier.Text = _settings.TargetMultiplier
             txtTargetToLeftMovementPercentage.Text = _settings.TargetToLeftMovementPercentage
+            txtMaxLossPerTrade.Text = _settings.NSEMaxLossPerTrade
+            txtOverallMaxProfit.Text = _settings.OverallMaxProfit
+            txtOverallMaxLoss.Text = _settings.OverallMaxLoss
+            dtpckrEODExitTime.Value = _settings.EODExitTime
 
             txtMinPrice.Text = _settings.MinimumPrice
             txtMaxPrice.Text = _settings.MaximumPrice
@@ -60,6 +64,10 @@ Public Class frmNFOSettings
         _settings.SignalTimeFrame = txtSignalTimeFrame.Text
         _settings.TargetMultiplier = txtTargetMultiplier.Text
         _settings.TargetToLeftMovementPercentage = txtTargetToLeftMovementPercentage.Text
+        _settings.NSEMaxLossPerTrade = Math.Abs(CDec(txtMaxLossPerTrade.Text)) * -1
+        _settings.OverallMaxProfit = Math.Abs(CDec(txtOverallMaxProfit.Text))
+        _settings.OverallMaxLoss = Math.Abs(CDec(txtOverallMaxLoss.Text)) * -1
+        _settings.EODExitTime = dtpckrEODExitTime.Value
 
         _settings.MinimumPrice = txtMinPrice.Text
         _settings.MaximumPrice = txtMaxPrice.Text
