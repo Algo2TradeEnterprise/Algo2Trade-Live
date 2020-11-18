@@ -278,17 +278,23 @@ Public Class NFOStrategyInstrument
         Dim ret As Dictionary(Of Date, OHLCPayload) = Nothing
         Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Nothing
         _cts.Token.ThrowIfCancellationRequested()
-        Dim AliceEODHistoricalURL As String = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
-        Dim historicalDataURL As String = String.Format(AliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+        Dim zerodhaEODHistoricalURL As String = "https://kite.zerodha.com/oms/instruments/historical/{0}/day?oi=1&from={1}&to={2}"
+        Dim historicalDataURL As String = String.Format(zerodhaEODHistoricalURL, instrument.InstrumentIdentifier, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"))
         Dim proxyToBeUsed As HttpProxy = Nothing
         Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
             'AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
             'AddHandler browser.Heartbeat, AddressOf OnHeartbeat
             'AddHandler browser.WaitingFor, AddressOf OnWaitingFor
             'AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-
+            browser.KeepAlive = True
             Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
-            headers.Add("X-Authorization-Token", Me.ParentStrategy.ParentController.APIConnection.ENCToken)
+            headers.Add("Host", "kite.zerodha.com")
+            headers.Add("Accept", "*/*")
+            headers.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8,ko;q=0.7")
+            headers.Add("Authorization", String.Format("enctoken {0}", Me.ParentStrategy.ParentController.APIConnection.ENCToken))
+            headers.Add("Referer", "https://kite.zerodha.com/static/build/chart.html?v=2.4.0")
+            headers.Add("sec-fetch-mode", "cors")
+            headers.Add("sec-fetch-site", "same-origin")
 
             Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL, HttpMethod.Get, Nothing, False, headers, True, "application/json").ConfigureAwait(False)
             If l Is Nothing OrElse l.Item2 Is Nothing Then
@@ -304,11 +310,11 @@ Public Class NFOStrategyInstrument
             'RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         End Using
         If historicalCandlesJSONDict.ContainsKey("data") Then
-            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
+            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")("candles")
             Dim previousPayload As OHLCPayload = Nothing
             For Each historicalCandle In historicalCandles
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim runningSnapshotTime As Date = UnixToDateTime(historicalCandle(0))
+                Dim runningSnapshotTime As Date = GetDateTimeTillMinutes(historicalCandle(0))
 
                 Dim runningPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
                 With runningPayload
@@ -334,7 +340,7 @@ Public Class NFOStrategyInstrument
     Private Async Function CompletePreProcessing() As Task(Of Boolean)
         Dim ret As Boolean = False
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim eodPayload As Dictionary(Of Date, OHLCPayload) = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.Date.AddYears(-1), Now.Date).ConfigureAwait(False)
+        Dim eodPayload As Dictionary(Of Date, OHLCPayload) = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.AddYears(-1), Now.AddDays(-1)).ConfigureAwait(False)
         If eodPayload IsNot Nothing AndAlso eodPayload.Count > 0 Then
             Dim atrPayload As Dictionary(Of Date, Decimal) = Nothing
             CalculateATR(14, eodPayload, atrPayload)
