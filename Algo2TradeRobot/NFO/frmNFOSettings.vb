@@ -44,10 +44,11 @@ Public Class frmNFOSettings
             txtOverallMaxLoss.Text = _settings.OverallMaxLoss
             dtpckrEODExitTime.Value = _settings.EODExitTime
 
-            txtMinPrice.Text = _settings.MinimumPrice
-            txtMaxPrice.Text = _settings.MaximumPrice
+            txtMinPrice.Text = _settings.MinimumStockPrice
+            txtMaxPrice.Text = _settings.MaximumStockPrice
             txtMinVolume.Text = _settings.MinimumVolume
             txtMinATRPer.Text = _settings.MinimumATRPercentage
+            txtNumberOfStocks.Text = _settings.NumberOfStocks
 
             txtTelegramAPIKey.Text = _settings.TelegramAPIKey
             txtTelegramChatID.Text = _settings.TelegramChatID
@@ -69,10 +70,11 @@ Public Class frmNFOSettings
         _settings.OverallMaxLoss = Math.Abs(CDec(txtOverallMaxLoss.Text)) * -1
         _settings.EODExitTime = dtpckrEODExitTime.Value
 
-        _settings.MinimumPrice = txtMinPrice.Text
-        _settings.MaximumPrice = txtMaxPrice.Text
+        _settings.MinimumStockPrice = txtMinPrice.Text
+        _settings.MaximumStockPrice = txtMaxPrice.Text
         _settings.MinimumVolume = txtMinVolume.Text
         _settings.MinimumATRPercentage = txtMinATRPer.Text
+        _settings.NumberOfStocks = txtNumberOfStocks.Text
 
         _settings.TelegramAPIKey = txtTelegramAPIKey.Text
         _settings.TelegramChatID = txtTelegramChatID.Text

@@ -202,8 +202,8 @@ Public Class NFOFillInstrumentDetails
                                                                                                            _cts.Token.ThrowIfCancellationRequested()
                                                                                                            If eodHistoricalData IsNot Nothing AndAlso eodHistoricalData.Count > 100 Then
                                                                                                                _cts.Token.ThrowIfCancellationRequested()
-                                                                                                               If eodHistoricalData.LastOrDefault.Value.ClosePrice.Value >= _userInputs.MinimumPrice AndAlso
-                                                                                                                    eodHistoricalData.LastOrDefault.Value.ClosePrice.Value <= _userInputs.MaximumPrice Then
+                                                                                                               If eodHistoricalData.LastOrDefault.Value.ClosePrice.Value >= _userInputs.MinimumStockPrice AndAlso
+                                                                                                                    eodHistoricalData.LastOrDefault.Value.ClosePrice.Value <= _userInputs.MaximumStockPrice Then
                                                                                                                    Dim atrPayload As Dictionary(Of Date, Decimal) = Nothing
                                                                                                                    CalculateATR(14, eodHistoricalData, atrPayload)
                                                                                                                    _cts.Token.ThrowIfCancellationRequested()

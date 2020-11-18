@@ -43,6 +43,14 @@ Partial Class frmNFOSettings
         Me.txtDayCloseATRPeriod = New System.Windows.Forms.TextBox()
         Me.lblDayCloseATRPeriod = New System.Windows.Forms.Label()
         Me.grpOther = New System.Windows.Forms.GroupBox()
+        Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
+        Me.lblEODExitTime = New System.Windows.Forms.Label()
+        Me.txtOverallMaxLoss = New System.Windows.Forms.TextBox()
+        Me.lblOverallMaxLoss = New System.Windows.Forms.Label()
+        Me.txtOverallMaxProfit = New System.Windows.Forms.TextBox()
+        Me.lblOverallMaxProfit = New System.Windows.Forms.Label()
+        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
+        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
         Me.txtTargetMultiplier = New System.Windows.Forms.TextBox()
         Me.lblTargetMultiplier = New System.Windows.Forms.Label()
         Me.txtTargetToLeftMovementPercentage = New System.Windows.Forms.TextBox()
@@ -58,14 +66,8 @@ Partial Class frmNFOSettings
         Me.lblMaxPrice = New System.Windows.Forms.Label()
         Me.txtMinPrice = New System.Windows.Forms.TextBox()
         Me.lblMinPrice = New System.Windows.Forms.Label()
-        Me.txtMaxLossPerTrade = New System.Windows.Forms.TextBox()
-        Me.lblMaxLossPerTrade = New System.Windows.Forms.Label()
-        Me.txtOverallMaxProfit = New System.Windows.Forms.TextBox()
-        Me.lblOverallMaxProfit = New System.Windows.Forms.Label()
-        Me.txtOverallMaxLoss = New System.Windows.Forms.TextBox()
-        Me.lblOverallMaxLoss = New System.Windows.Forms.Label()
-        Me.lblEODExitTime = New System.Windows.Forms.Label()
-        Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
+        Me.txtNumberOfStocks = New System.Windows.Forms.TextBox()
+        Me.lblNumberOfStocks = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpIndicator.SuspendLayout()
         Me.grpOther.SuspendLayout()
@@ -280,6 +282,82 @@ Partial Class frmNFOSettings
         Me.grpOther.TabStop = False
         Me.grpOther.Text = "Other Details"
         '
+        'dtpckrEODExitTime
+        '
+        Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
+        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(269, 218)
+        Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
+        Me.dtpckrEODExitTime.ShowUpDown = True
+        Me.dtpckrEODExitTime.Size = New System.Drawing.Size(188, 22)
+        Me.dtpckrEODExitTime.TabIndex = 6
+        '
+        'lblEODExitTime
+        '
+        Me.lblEODExitTime.AutoSize = True
+        Me.lblEODExitTime.Location = New System.Drawing.Point(7, 222)
+        Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblEODExitTime.Name = "lblEODExitTime"
+        Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
+        Me.lblEODExitTime.TabIndex = 75
+        Me.lblEODExitTime.Text = "EOD Exit Time"
+        '
+        'txtOverallMaxLoss
+        '
+        Me.txtOverallMaxLoss.Location = New System.Drawing.Point(269, 186)
+        Me.txtOverallMaxLoss.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtOverallMaxLoss.Name = "txtOverallMaxLoss"
+        Me.txtOverallMaxLoss.Size = New System.Drawing.Size(188, 22)
+        Me.txtOverallMaxLoss.TabIndex = 5
+        Me.txtOverallMaxLoss.Tag = "Overall Max Loss"
+        '
+        'lblOverallMaxLoss
+        '
+        Me.lblOverallMaxLoss.AutoSize = True
+        Me.lblOverallMaxLoss.Location = New System.Drawing.Point(7, 189)
+        Me.lblOverallMaxLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblOverallMaxLoss.Name = "lblOverallMaxLoss"
+        Me.lblOverallMaxLoss.Size = New System.Drawing.Size(116, 17)
+        Me.lblOverallMaxLoss.TabIndex = 73
+        Me.lblOverallMaxLoss.Text = "Overall Max Loss"
+        '
+        'txtOverallMaxProfit
+        '
+        Me.txtOverallMaxProfit.Location = New System.Drawing.Point(269, 154)
+        Me.txtOverallMaxProfit.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtOverallMaxProfit.Name = "txtOverallMaxProfit"
+        Me.txtOverallMaxProfit.Size = New System.Drawing.Size(188, 22)
+        Me.txtOverallMaxProfit.TabIndex = 4
+        Me.txtOverallMaxProfit.Tag = "Overall Max Profit"
+        '
+        'lblOverallMaxProfit
+        '
+        Me.lblOverallMaxProfit.AutoSize = True
+        Me.lblOverallMaxProfit.Location = New System.Drawing.Point(7, 157)
+        Me.lblOverallMaxProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblOverallMaxProfit.Name = "lblOverallMaxProfit"
+        Me.lblOverallMaxProfit.Size = New System.Drawing.Size(119, 17)
+        Me.lblOverallMaxProfit.TabIndex = 71
+        Me.lblOverallMaxProfit.Text = "Overall Max Profit"
+        '
+        'txtMaxLossPerTrade
+        '
+        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(269, 122)
+        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
+        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(188, 22)
+        Me.txtMaxLossPerTrade.TabIndex = 3
+        Me.txtMaxLossPerTrade.Tag = "Max Loss Per Trade"
+        '
+        'lblMaxLossPerTrade
+        '
+        Me.lblMaxLossPerTrade.AutoSize = True
+        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(7, 125)
+        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
+        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
+        Me.lblMaxLossPerTrade.TabIndex = 69
+        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
+        '
         'txtTargetMultiplier
         '
         Me.txtTargetMultiplier.Location = New System.Drawing.Point(269, 58)
@@ -339,6 +417,8 @@ Partial Class frmNFOSettings
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtNumberOfStocks)
+        Me.GroupBox1.Controls.Add(Me.lblNumberOfStocks)
         Me.GroupBox1.Controls.Add(Me.txtMinATRPer)
         Me.GroupBox1.Controls.Add(Me.lblMinATRPer)
         Me.GroupBox1.Controls.Add(Me.txtMinVolume)
@@ -430,81 +510,24 @@ Partial Class frmNFOSettings
         Me.lblMinPrice.TabIndex = 80
         Me.lblMinPrice.Text = "Minimum Price"
         '
-        'txtMaxLossPerTrade
+        'txtNumberOfStocks
         '
-        Me.txtMaxLossPerTrade.Location = New System.Drawing.Point(269, 122)
-        Me.txtMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtMaxLossPerTrade.Name = "txtMaxLossPerTrade"
-        Me.txtMaxLossPerTrade.Size = New System.Drawing.Size(188, 22)
-        Me.txtMaxLossPerTrade.TabIndex = 3
-        Me.txtMaxLossPerTrade.Tag = "Max Loss Per Trade"
+        Me.txtNumberOfStocks.Location = New System.Drawing.Point(151, 150)
+        Me.txtNumberOfStocks.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtNumberOfStocks.Name = "txtNumberOfStocks"
+        Me.txtNumberOfStocks.Size = New System.Drawing.Size(97, 22)
+        Me.txtNumberOfStocks.TabIndex = 4
+        Me.txtNumberOfStocks.Tag = "Number Of Stocks"
         '
-        'lblMaxLossPerTrade
+        'lblNumberOfStocks
         '
-        Me.lblMaxLossPerTrade.AutoSize = True
-        Me.lblMaxLossPerTrade.Location = New System.Drawing.Point(7, 125)
-        Me.lblMaxLossPerTrade.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaxLossPerTrade.Name = "lblMaxLossPerTrade"
-        Me.lblMaxLossPerTrade.Size = New System.Drawing.Size(135, 17)
-        Me.lblMaxLossPerTrade.TabIndex = 69
-        Me.lblMaxLossPerTrade.Text = "Max Loss Per Trade"
-        '
-        'txtOverallMaxProfit
-        '
-        Me.txtOverallMaxProfit.Location = New System.Drawing.Point(269, 154)
-        Me.txtOverallMaxProfit.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtOverallMaxProfit.Name = "txtOverallMaxProfit"
-        Me.txtOverallMaxProfit.Size = New System.Drawing.Size(188, 22)
-        Me.txtOverallMaxProfit.TabIndex = 4
-        Me.txtOverallMaxProfit.Tag = "Overall Max Profit"
-        '
-        'lblOverallMaxProfit
-        '
-        Me.lblOverallMaxProfit.AutoSize = True
-        Me.lblOverallMaxProfit.Location = New System.Drawing.Point(7, 157)
-        Me.lblOverallMaxProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblOverallMaxProfit.Name = "lblOverallMaxProfit"
-        Me.lblOverallMaxProfit.Size = New System.Drawing.Size(119, 17)
-        Me.lblOverallMaxProfit.TabIndex = 71
-        Me.lblOverallMaxProfit.Text = "Overall Max Profit"
-        '
-        'txtOverallMaxLoss
-        '
-        Me.txtOverallMaxLoss.Location = New System.Drawing.Point(269, 186)
-        Me.txtOverallMaxLoss.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtOverallMaxLoss.Name = "txtOverallMaxLoss"
-        Me.txtOverallMaxLoss.Size = New System.Drawing.Size(188, 22)
-        Me.txtOverallMaxLoss.TabIndex = 5
-        Me.txtOverallMaxLoss.Tag = "Overall Max Loss"
-        '
-        'lblOverallMaxLoss
-        '
-        Me.lblOverallMaxLoss.AutoSize = True
-        Me.lblOverallMaxLoss.Location = New System.Drawing.Point(7, 189)
-        Me.lblOverallMaxLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblOverallMaxLoss.Name = "lblOverallMaxLoss"
-        Me.lblOverallMaxLoss.Size = New System.Drawing.Size(116, 17)
-        Me.lblOverallMaxLoss.TabIndex = 73
-        Me.lblOverallMaxLoss.Text = "Overall Max Loss"
-        '
-        'lblEODExitTime
-        '
-        Me.lblEODExitTime.AutoSize = True
-        Me.lblEODExitTime.Location = New System.Drawing.Point(7, 222)
-        Me.lblEODExitTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblEODExitTime.Name = "lblEODExitTime"
-        Me.lblEODExitTime.Size = New System.Drawing.Size(99, 17)
-        Me.lblEODExitTime.TabIndex = 75
-        Me.lblEODExitTime.Text = "EOD Exit Time"
-        '
-        'dtpckrEODExitTime
-        '
-        Me.dtpckrEODExitTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrEODExitTime.Location = New System.Drawing.Point(269, 218)
-        Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
-        Me.dtpckrEODExitTime.ShowUpDown = True
-        Me.dtpckrEODExitTime.Size = New System.Drawing.Size(188, 22)
-        Me.dtpckrEODExitTime.TabIndex = 6
+        Me.lblNumberOfStocks.AutoSize = True
+        Me.lblNumberOfStocks.Location = New System.Drawing.Point(6, 153)
+        Me.lblNumberOfStocks.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblNumberOfStocks.Name = "lblNumberOfStocks"
+        Me.lblNumberOfStocks.Size = New System.Drawing.Size(123, 17)
+        Me.lblNumberOfStocks.TabIndex = 88
+        Me.lblNumberOfStocks.Text = "Number Of Stocks"
         '
         'frmNFOSettings
         '
@@ -577,4 +600,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblOverallMaxLoss As Label
     Friend WithEvents dtpckrEODExitTime As DateTimePicker
     Friend WithEvents lblEODExitTime As Label
+    Friend WithEvents txtNumberOfStocks As TextBox
+    Friend WithEvents lblNumberOfStocks As Label
 End Class

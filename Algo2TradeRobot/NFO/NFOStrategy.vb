@@ -47,13 +47,15 @@ Public Class NFOStrategy
                 atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
             End Using
             If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
+                Dim stkCtr As Integer = 0
                 For Each runningStock In atrInstruments
                     _cts.Token.ThrowIfCancellationRequested()
-                    If runningStock.TradingSymbol.ToUpper = "BHARTIARTL" Then
-                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                        retTradableInstrumentsAsPerStrategy.Add(runningStock)
-                        ret = True
-                    End If
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                    ret = True
+
+                    stkCtr += 1
+                    If stkCtr >= userInputs.NumberOfStocks Then Exit For
                 Next
             End If
 
