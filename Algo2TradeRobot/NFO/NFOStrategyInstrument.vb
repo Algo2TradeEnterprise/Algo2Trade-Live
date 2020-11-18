@@ -451,7 +451,7 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-
+#Region "Signal Check"
     Private Async Function CheckSignalAsync(ByVal runningCandle As OHLCPayload) As Task(Of Tuple(Of Boolean, IOrder.TypeOfTransaction, Decimal, Decimal, Decimal, Integer))
         Dim ret As Tuple(Of Boolean, IOrder.TypeOfTransaction, Decimal, Decimal, Decimal, Integer) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
@@ -834,6 +834,7 @@ Public Class NFOStrategyInstrument
         End If
         Return ret
     End Function
+#End Region
 
 #Region "Required Functions"
     Private Function CalculateTriggerBuffer(ByVal price As Decimal) As Decimal
