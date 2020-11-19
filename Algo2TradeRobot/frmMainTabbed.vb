@@ -1398,6 +1398,15 @@ Public Class frmMainTabbed
 #End Region
 
 #Region "EX Users"
+    Private Sub lblMaximizeLog_Click(sender As Object, e As EventArgs) Handles lblMaximizeLog.Click
+        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        If pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0 Then
+            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 70
+        Else
+            pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+        End If
+    End Sub
+
     Private Sub frmMainTabbed_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         GlobalDiagnosticsContext.Set("appname", My.Application.Info.AssemblyName)
         GlobalDiagnosticsContext.Set("version", My.Application.Info.Version.ToString)
@@ -1416,8 +1425,8 @@ Public Class frmMainTabbed
         End If
         Me.Text = String.Format("Algo2Trade Robot v{0}{1}", My.Application.Info.Version, If(formRemarks IsNot Nothing, String.Format(" - {0}", formRemarks), ""))
 
-        'pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
-        'pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        pnlMomentumReversalBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(MCXStrategy))
