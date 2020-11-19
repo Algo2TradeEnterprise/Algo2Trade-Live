@@ -827,7 +827,7 @@ Public Class NFOStrategyInstrument
 
                     If direction = IOrder.TypeOfTransaction.Buy Then
                         entryPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-
+                        stoplossPrice = Decimal.MinValue
                         If vwap.VWAP.Value > stoplossPrice AndAlso vwap.VWAP.Value < entryPrice Then
                             stoplossPrice = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                             stoplossRemark = "VWAP"
@@ -874,7 +874,7 @@ Public Class NFOStrategyInstrument
                         targetPrice = entryPrice + targetPoint
                     ElseIf direction = IOrder.TypeOfTransaction.Sell Then
                         entryPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-
+                        stoplossPrice = Decimal.MaxValue
                         If vwap.VWAP.Value < stoplossPrice AndAlso vwap.VWAP.Value > entryPrice Then
                             stoplossPrice = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                             stoplossRemark = "VWAP"
@@ -918,10 +918,11 @@ Public Class NFOStrategyInstrument
                         stoplossPrice = stoplossPrice + slBuffer
 
                         Dim targetPoint As Decimal = ConvertFloorCeling((stoplossPrice - entryPrice) * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        Dim target As Decimal = entryPrice - targetPoint
+                        targetPrice = entryPrice - targetPoint
                     End If
 
-                    If entryPrice <> Decimal.MinValue AndAlso stoplossPrice <> Decimal.MinValue AndAlso targetPrice <> Decimal.MinValue Then
+                    If entryPrice <> Decimal.MinValue AndAlso stoplossPrice <> Decimal.MinValue AndAlso
+                        stoplossPrice <> Decimal.MaxValue AndAlso targetPrice <> Decimal.MinValue Then
                         ret = New SignalDetails With
                             {
                              .EntryPrice = entryPrice,
