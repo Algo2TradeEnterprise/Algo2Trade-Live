@@ -131,6 +131,12 @@ Public Class NFOStrategyInstrument
                         Throw Me.ParentStrategy.ParentController.OrphanException
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
+                    If Me._RMSException IsNot Nothing AndAlso
+                    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                        OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                        Throw Me._RMSException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
                     'Place Order block start
                     Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                     If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
@@ -190,17 +196,27 @@ Public Class NFOStrategyInstrument
         Dim parameters As PlaceOrderParameters = Nothing
         If runningCandle IsNot Nothing AndAlso runningCandle.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
             runningCandle.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso Not IsActiveInstrument() AndAlso
-            Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLoss AndAlso
-            Me.ParentStrategy.GetTotalPLAfterBrokerage() < userSettings.OverallMaxProfit AndAlso Not Me.StrategyExitAllTriggerd Then
+            Not Me.StrategyExitAllTriggerd AndAlso Me.ParentStrategy.GetTotalPLAfterBrokerage() > userSettings.OverallMaxLoss AndAlso
+            Me.ParentStrategy.GetTotalPLAfterBrokerage() < userSettings.OverallMaxProfit Then
             Dim signal As Tuple(Of Boolean, IOrder.TypeOfTransaction, Decimal, Decimal, Decimal, Integer) = Await CheckSignalAsync(runningCandle).ConfigureAwait(False)
             If signal IsNot Nothing AndAlso signal.Item1 Then
-                Dim signalCandle As OHLCPayload = runningCandle.PreviousPayload
-                If signal.Item2 = IOrder.TypeOfTransaction.Buy Then
-                    Dim triggerPrice As Decimal = signal.Item3
-                    Dim price As Decimal = triggerPrice + CalculateLimitBuffer(triggerPrice)
+                Dim signalCandle As OHLCPayload = Nothing
+                Dim lastOrder As IBusinessOrder = GetLastPlacedOrder()
+                If lastOrder IsNot Nothing Then
+                    Dim lastOrderSignalCandle As OHLCPayload = GetSignalCandleOfAnOrder(lastOrder.ParentOrderIdentifier, userSettings.SignalTimeFrame)
+                    If lastOrderSignalCandle IsNot Nothing AndAlso lastOrderSignalCandle.SnapshotDateTime <> runningCandle.PreviousPayload.SnapshotDateTime Then
+                        signalCandle = runningCandle.PreviousPayload
+                    End If
+                Else
+                    signalCandle = runningCandle.PreviousPayload
+                End If
+                If signalCandle IsNot Nothing Then
+                    If signal.Item2 = IOrder.TypeOfTransaction.Buy Then
+                        Dim triggerPrice As Decimal = signal.Item3
+                        Dim price As Decimal = triggerPrice + CalculateLimitBuffer(triggerPrice)
 
-                    If currentTick.LastPrice < triggerPrice Then
-                        parameters = New PlaceOrderParameters(signalCandle) With
+                        If currentTick.LastPrice < triggerPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                      .TriggerPrice = triggerPrice,
                                      .Price = price,
@@ -208,13 +224,13 @@ Public Class NFOStrategyInstrument
                                      .SquareOffValue = signal.Item5,
                                      .OrderType = IOrder.TypeOfOrder.SL,
                                      .Quantity = signal.Item6}
-                    End If
-                ElseIf signal.Item2 = IOrder.TypeOfTransaction.Sell Then
-                    Dim triggerPrice As Decimal = signal.Item3
-                    Dim price As Decimal = triggerPrice - CalculateLimitBuffer(triggerPrice)
+                        End If
+                    ElseIf signal.Item2 = IOrder.TypeOfTransaction.Sell Then
+                        Dim triggerPrice As Decimal = signal.Item3
+                        Dim price As Decimal = triggerPrice - CalculateLimitBuffer(triggerPrice)
 
-                    If currentTick.LastPrice > triggerPrice Then
-                        parameters = New PlaceOrderParameters(signalCandle) With
+                        If currentTick.LastPrice > triggerPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .TriggerPrice = triggerPrice,
                                      .Price = price,
@@ -222,6 +238,7 @@ Public Class NFOStrategyInstrument
                                      .SquareOffValue = signal.Item5,
                                      .OrderType = IOrder.TypeOfOrder.SL,
                                      .Quantity = signal.Item6}
+                        End If
                     End If
                 End If
             End If
@@ -950,6 +967,22 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Required Functions"
+    Public Function GetLastPlacedOrder() As IBusinessOrder
+        Dim ret As IBusinessOrder = Nothing
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            Dim allExecutedOrders As IEnumerable(Of IBusinessOrder) = OrderDetails.Values.Where(Function(x)
+                                                                                                    Return x.ParentOrder IsNot Nothing AndAlso
+                                                                                                        x.ParentOrder.Status = IOrder.TypeOfStatus.Rejected
+                                                                                                End Function)
+            If allExecutedOrders IsNot Nothing AndAlso allExecutedOrders.Count > 0 Then
+                ret = allExecutedOrders.OrderBy(Function(y)
+                                                    Return y.ParentOrder.TimeStamp
+                                                End Function).LastOrDefault
+            End If
+        End If
+        Return ret
+    End Function
+
     Private Function CalculateTriggerBuffer(ByVal price As Decimal) As Decimal
         Dim ret As Decimal = Me.TradableInstrument.TickSize
         If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.CDS Then
