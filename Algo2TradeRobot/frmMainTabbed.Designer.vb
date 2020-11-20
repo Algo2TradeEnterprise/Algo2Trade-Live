@@ -41,6 +41,7 @@ Partial Class frmMainTabbed
         Me.btnNFOSettings = New System.Windows.Forms.Button()
         Me.linklblNFOTradableInstruments = New System.Windows.Forms.LinkLabel()
         Me.btnExportDisplayLog = New System.Windows.Forms.Button()
+        Me.lblMaximizeLog = New System.Windows.Forms.Label()
         Me.pnlMomentumReversalBodyVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.PictureBox2 = New System.Windows.Forms.PictureBox()
         Me.pnlMomentumReversalBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
@@ -79,7 +80,6 @@ Partial Class frmMainTabbed
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrMCXTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrCDSTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.lblMaximizeLog = New System.Windows.Forms.Label()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -168,7 +168,7 @@ Partial Class frmMainTabbed
         Me.tabNFO.Padding = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Size = New System.Drawing.Size(1363, 693)
         Me.tabNFO.TabIndex = 0
-        Me.tabNFO.Text = "Screener"
+        Me.tabNFO.Text = "Algo2Trade"
         Me.tabNFO.UseVisualStyleBackColor = True
         '
         'pnlMomentumReversalMainPanelHorizontalSplitter
@@ -308,6 +308,15 @@ Partial Class frmMainTabbed
         Me.btnExportDisplayLog.TabIndex = 13
         Me.btnExportDisplayLog.Text = "Export"
         Me.btnExportDisplayLog.UseVisualStyleBackColor = True
+        '
+        'lblMaximizeLog
+        '
+        Me.lblMaximizeLog.AutoSize = True
+        Me.lblMaximizeLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lblMaximizeLog.Location = New System.Drawing.Point(359, 0)
+        Me.lblMaximizeLog.Name = "lblMaximizeLog"
+        Me.lblMaximizeLog.Size = New System.Drawing.Size(83, 39)
+        Me.lblMaximizeLog.TabIndex = 14
         '
         'pnlMomentumReversalBodyVerticalSplitter
         '
@@ -818,15 +827,6 @@ Partial Class frmMainTabbed
         'tmrCDSTickerStatus
         '
         Me.tmrCDSTickerStatus.Enabled = True
-        '
-        'lblMaximizeLog
-        '
-        Me.lblMaximizeLog.AutoSize = True
-        Me.lblMaximizeLog.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblMaximizeLog.Location = New System.Drawing.Point(359, 0)
-        Me.lblMaximizeLog.Name = "lblMaximizeLog"
-        Me.lblMaximizeLog.Size = New System.Drawing.Size(83, 39)
-        Me.lblMaximizeLog.TabIndex = 14
         '
         'frmMainTabbed
         '
