@@ -972,7 +972,7 @@ Public Class NFOStrategyInstrument
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             Dim allExecutedOrders As IEnumerable(Of IBusinessOrder) = OrderDetails.Values.Where(Function(x)
                                                                                                     Return x.ParentOrder IsNot Nothing AndAlso
-                                                                                                        x.ParentOrder.Status = IOrder.TypeOfStatus.Rejected
+                                                                                                        x.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected
                                                                                                 End Function)
             If allExecutedOrders IsNot Nothing AndAlso allExecutedOrders.Count > 0 Then
                 ret = allExecutedOrders.OrderBy(Function(y)
