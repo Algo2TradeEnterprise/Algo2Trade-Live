@@ -37,9 +37,12 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
-            txtInitialInvestment.Text = _settings.InitialInvestment
-            txtExpectedIncreaseEachPeriod.Text = _settings.ExpectedIncreaseEachPeriod
+            txtSignalTimeframe.Text = _settings.SignalTimeFrame
+            txtDaysBack.Text = _settings.DaysBack
+            txtEntrySDMultiplier.Text = _settings.EntrySDMultiplier
+            txtExitSDMultiplier.Text = _settings.ExitSDMultiplier
+            rbSameSideExit.Checked = _settings.SameSideExit
+            rbOppositeSide.Checked = _settings.OppositeSideExit
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
             txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
@@ -48,10 +51,12 @@ Public Class frmNFOSettings
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = 1
-        _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
-        _settings.InitialInvestment = txtInitialInvestment.Text
-        _settings.ExpectedIncreaseEachPeriod = txtExpectedIncreaseEachPeriod.Text
+        _settings.SignalTimeFrame = txtSignalTimeframe.Text
+        _settings.DaysBack = txtDaysBack.Text
+        _settings.EntrySDMultiplier = txtEntrySDMultiplier.Text
+        _settings.ExitSDMultiplier = txtExitSDMultiplier.Text
+        _settings.SameSideExit = rbSameSideExit.Checked
+        _settings.OppositeSideExit = rbOppositeSide.Checked
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
@@ -86,8 +91,8 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, Decimal.MaxValue, txtInitialInvestment)
-        ValidateNumbers(1, Decimal.MaxValue, txtExpectedIncreaseEachPeriod)
+        ValidateNumbers(1, Integer.MaxValue, txtSignalTimeframe, True)
+        ValidateNumbers(1, Integer.MaxValue, txtDaysBack, True)
 
         ValidateFile()
     End Sub

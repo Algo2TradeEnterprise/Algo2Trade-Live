@@ -1,26 +1,24 @@
 ﻿Imports NLog
-Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Utilities.Network
-Imports HtmlAgilityPack
 
 Public Class NFOStrategy
     Inherits Strategy
+
 #Region "Logging and Status Progress"
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public ReadOnly Property NSEHolidays As List(Of Date)
+    Public Property TradablePairInstruments As IEnumerable(Of NFOPairInstrument)
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -41,32 +39,66 @@ Public Class NFOStrategy
         _cts.Token.ThrowIfCancellationRequested()
         Dim ret As Boolean = False
         Dim retTradableInstrumentsAsPerStrategy As List(Of IInstrument) = Nothing
+        Dim retTradablePairInstrumentsAsPerStrategy As Dictionary(Of String, List(Of IInstrument)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            _NSEHolidays = Await GetNSEEquityHolidaysAsync().ConfigureAwait(False)
-
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
-                                                                                            End Function)
-
+                    Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
                     _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then
-                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                        ret = True
+                    Dim stock1Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                       Return x.TradingSymbol = instrument.Value.Stock1
+                                                                                   End Function)
+                    pairStocks.Add(stock1Instrument)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim stock2Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                       Return x.TradingSymbol = instrument.Value.Stock2
+                                                                                   End Function)
+                    pairStocks.Add(stock2Instrument)
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim stock1FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                      Return x.RawInstrumentName = instrument.Value.Stock1 AndAlso
+                                                                                                      x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                                  End Function)
+                    Dim stk1futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock1FutInstrument)
+                    If stk1futContracts IsNot Nothing AndAlso stk1futContracts.Count > 0 Then
+                        For Each runningContract In stk1futContracts
+                            _cts.Token.ThrowIfCancellationRequested()
+                            pairStocks.Add(runningContract)
+                        Next
                     End If
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim stock2FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                      Return x.RawInstrumentName = instrument.Value.Stock2 AndAlso
+                                                                                                      x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                                  End Function)
+                    Dim stk2futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock2FutInstrument)
+                    If stk2futContracts IsNot Nothing AndAlso stk2futContracts.Count > 0 Then
+                        For Each runningContract In stk2futContracts
+                            _cts.Token.ThrowIfCancellationRequested()
+                            pairStocks.Add(runningContract)
+                        Next
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+
+                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                    retTradableInstrumentsAsPerStrategy.AddRange(pairStocks)
+
+                    If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
+                    retTradablePairInstrumentsAsPerStrategy.Add(instrument.Value.PairName, pairStocks)
+
+                    ret = True
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
         End If
 
-        If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 Then
+        If retTradableInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradableInstrumentsAsPerStrategy.Count > 0 AndAlso
+            retTradablePairInstrumentsAsPerStrategy IsNot Nothing AndAlso retTradablePairInstrumentsAsPerStrategy.Count > 0 Then
             'tradableInstrumentsAsPerStrategy = tradableInstrumentsAsPerStrategy.Take(5).ToList
             'Now create the strategy tradable instruments
             Dim retTradableStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
@@ -97,10 +129,60 @@ Public Class NFOStrategy
                 'runningTradableInstrument.FirstLevelConsumers.Add(runningTradableStrategyInstrument)
             Next
             TradableStrategyInstruments = retTradableStrategyInstruments
+
+            Dim retTradablePairInstruments As List(Of NFOPairInstrument) = Nothing
+            For Each runningTradablePairInstrument In retTradablePairInstrumentsAsPerStrategy
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim dependentStrategyInstruments As List(Of NFOStrategyInstrument) = New List(Of NFOStrategyInstrument)
+                For Each runningInstrument In runningTradablePairInstrument.Value
+                    Dim dpndStrategyIns As StrategyInstrument = Me.TradableStrategyInstruments.ToList.Find(Function(x)
+                                                                                                               Return x.TradableInstrument.InstrumentIdentifier = runningInstrument.InstrumentIdentifier
+                                                                                                           End Function)
+                    dependentStrategyInstruments.Add(dpndStrategyIns)
+                Next
+
+                If retTradablePairInstruments Is Nothing Then retTradablePairInstruments = New List(Of NFOPairInstrument)
+                Dim runningPairInstrument As New NFOPairInstrument(dependentStrategyInstruments, Me, runningTradablePairInstrument.Key, _cts)
+                AddHandler runningPairInstrument.Heartbeat, AddressOf OnHeartbeat
+                AddHandler runningPairInstrument.WaitingFor, AddressOf OnWaitingFor
+                AddHandler runningPairInstrument.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler runningPairInstrument.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+
+                retTradablePairInstruments.Add(runningPairInstrument)
+            Next
+            TradablePairInstruments = retTradablePairInstruments
         Else
             Throw New ApplicationException(String.Format("Cannot run this strategy as no strategy instruments could be created from the tradable instruments, stratgey:{0}", Me.ToString))
         End If
 
+        Return ret
+    End Function
+
+    Private Function GetCurrentFutureContracts(ByVal allFutureContracts As List(Of IInstrument)) As List(Of IInstrument)
+        Dim ret As List(Of IInstrument) = Nothing
+        If allFutureContracts IsNot Nothing AndAlso allFutureContracts.Count > 0 Then
+            Dim minExpiry As Date = allFutureContracts.Min(Function(x)
+                                                               Return x.Expiry.Value.Date
+                                                           End Function)
+            Dim minExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
+                                                                                Return x.Expiry.Value.Date = minExpiry.Date
+                                                                            End Function)
+            If ret Is Nothing Then ret = New List(Of IInstrument)
+            ret.Add(minExpryFutInstrmt)
+            If minExpiry.Date = Now.Date Then
+                Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
+                                                                       If x.Expiry.Value.Date > minExpiry.Date Then
+                                                                           Return x.Expiry.Value.Date
+                                                                       Else
+                                                                           Return Date.MaxValue
+                                                                       End If
+                                                                   End Function)
+                Dim nxtMinExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
+                                                                                       Return x.Expiry.Value.Date = nextMinExpiry.Date
+                                                                                   End Function)
+                ret.Add(nxtMinExpryFutInstrmt)
+            End If
+        End If
         Return ret
     End Function
 
@@ -110,9 +192,9 @@ Public Class NFOStrategy
         Try
             _cts.Token.ThrowIfCancellationRequested()
             Dim tasks As New List(Of Task)()
-            For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
+            For Each tradablePairInstrument In TradablePairInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
+                tasks.Add(Task.Run(AddressOf tradablePairInstrument.MonitorPairAsync, _cts.Token))
             Next
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
@@ -133,57 +215,6 @@ Public Class NFOStrategy
 
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
-        Return ret
-    End Function
-
-    Private Async Function GetNSEEquityHolidaysAsync() As Task(Of List(Of Date))
-        Dim ret As List(Of Date) = Nothing
-        Dim holidayURL As String = "https://www1.nseindia.com/global/content/market_timings_holidays/market_timings_holidays.jsp?pageName=0&dateRange=&fromDate={0}&toDate={1}&tabActive=trading&load=false"
-        Dim futureHolidayURL As String = String.Format(holidayURL, Now.ToString("dd-MM-yyyy"), Now.AddDays(15).ToString("dd-MM-yyyy"))
-        Dim outputResponse As HtmlDocument = Nothing
-        HttpBrowser.KillCookies()
-        Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-
-            browser.KeepAlive = True
-            Dim headersToBeSent As New Dictionary(Of String, String)
-            headersToBeSent.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-            headersToBeSent.Add("Accept-Encoding", "gzip, deflate, br")
-            headersToBeSent.Add("Accept-Language", "en-US,en;q=0.9")
-            headersToBeSent.Add("Host", "www1.nseindia.com")
-            headersToBeSent.Add("Sec-Fetch-Dest", "document")
-            headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
-            headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
-            headersToBeSent.Add("Sec-Fetch-Site", "none")
-            headersToBeSent.Add("Sec-Fetch-User", "?1")
-
-            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(futureHolidayURL, HttpMethod.Get, Nothing, False, headersToBeSent, True, "text/html").ConfigureAwait(False)
-            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                outputResponse = l.Item2
-            End If
-            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-        End Using
-        If outputResponse IsNot Nothing AndAlso outputResponse.DocumentNode IsNot Nothing Then
-            If outputResponse.DocumentNode.SelectNodes("//table") IsNot Nothing AndAlso outputResponse.DocumentNode.SelectNodes("//table").Count = 1 Then
-                Dim table As HtmlNode = outputResponse.DocumentNode.SelectNodes("//table")(0)
-                If table IsNot Nothing And table.SelectNodes("tr") IsNot Nothing AndAlso table.SelectNodes("tr").Count > 1 Then
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If table.SelectNodes("//td[@class='number']") IsNot Nothing AndAlso table.SelectNodes("//td[@class='number']").Count Then
-                        For Each runningData As HtmlNode In table.SelectNodes("//td[@class='number']")
-                            Dim holiday As Date = Date.ParseExact(runningData.InnerText, "dd-MMM-yyyy", Nothing)
-                            If ret Is Nothing Then ret = New List(Of Date)
-                            ret.Add(holiday)
-                        Next
-                    End If
-                End If
-            End If
-        End If
         Return ret
     End Function
 End Class
