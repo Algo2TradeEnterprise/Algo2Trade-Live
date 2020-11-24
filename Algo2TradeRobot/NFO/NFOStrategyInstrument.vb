@@ -167,6 +167,7 @@ Public Class NFOStrategyInstrument
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
+                    logger.Fatal(Utilities.Strings.JsonSerialize(currentTick))
                 End If
             Catch ex As Exception
                 logger.Error(ex)
