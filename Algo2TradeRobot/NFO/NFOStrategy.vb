@@ -162,14 +162,18 @@ Public Class NFOStrategy
         Dim ret As List(Of IInstrument) = Nothing
         If allFutureContracts IsNot Nothing AndAlso allFutureContracts.Count > 0 Then
             Dim minExpiry As Date = allFutureContracts.Min(Function(x)
-                                                               Return x.Expiry.Value.Date
+                                                               If x.Expiry.Value.AddDays(-1).Date >= Now.Date Then
+                                                                   Return x.Expiry.Value.Date
+                                                               Else
+                                                                   Return Date.MaxValue
+                                                               End If
                                                            End Function)
             Dim minExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
                                                                                 Return x.Expiry.Value.Date = minExpiry.Date
                                                                             End Function)
             If ret Is Nothing Then ret = New List(Of IInstrument)
             ret.Add(minExpryFutInstrmt)
-            If minExpiry.Date = Now.Date Then
+            If minExpiry.Date.AddDays(-1) = Now.Date Then
                 Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
                                                                        If x.Expiry.Value.Date > minExpiry.Date Then
                                                                            Return x.Expiry.Value.Date

@@ -66,21 +66,20 @@ Public Class NFOStrategyInstrument
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
-                If Me._RMSException IsNot Nothing AndAlso
-                    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                    Throw Me._RMSException
-                End If
+                'If Me._RMSException IsNot Nothing AndAlso
+                '    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                '    Throw Me._RMSException
+                'End If
 
                 Dim modifyTargetOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(False).ConfigureAwait(False)
                 If modifyTargetOrderTrigger IsNot Nothing AndAlso modifyTargetOrderTrigger.Count > 0 Then
                     Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.ModifyTargetOrder, Nothing).ConfigureAwait(False)
                     If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                         Dim modifyOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                        'If modifyOrderResponse.ContainsKey("data") AndAlso
-                        '    modifyOrderResponse("data").ContainsKey("status") AndAlso modifyOrderResponse("data")("status") = "Ok" Then
-                        Exit While
-                        'End If
+                        If modifyTargetOrderTrigger.FirstOrDefault.Item4.ToUpper.Contains("MARKET") Then
+                            Exit While
+                        End If
                     End If
                 End If
 
@@ -98,11 +97,11 @@ Public Class NFOStrategyInstrument
             If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                 Throw Me.ParentStrategy.ParentController.OrphanException
             End If
-            If Me._RMSException IsNot Nothing AndAlso
-                _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                Throw Me._RMSException
-            End If
+            'If Me._RMSException IsNot Nothing AndAlso
+            '    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+            '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+            '    Throw Me._RMSException
+            'End If
 
             If command = ExecuteCommands.PlaceRegularLimitCNCOrder Then
                 _quantityToTrade = data
