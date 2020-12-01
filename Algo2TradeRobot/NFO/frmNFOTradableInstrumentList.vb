@@ -39,12 +39,14 @@
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
             dt.Columns.Add("Tick Size")
+            dt.Columns.Add("Historical")
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
                 row("Tick Size") = instrument.TradableInstrument.TickSize
+                row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
 
                 dt.Rows.Add(row)
             Next

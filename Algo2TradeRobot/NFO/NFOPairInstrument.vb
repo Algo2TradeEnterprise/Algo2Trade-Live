@@ -87,7 +87,6 @@ Public Class NFOPairInstrument
                         _cts.Token.ThrowIfCancellationRequested()
                         If tradedSignal Is Nothing AndAlso File.Exists(_filename) Then
                             tradedSignal = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(_filename)
-                            'meadSd = New Tuple(Of Boolean, Decimal, Decimal)(True, tradedSignal.Mean, tradedSignal.SD)
                         End If
                         If meadSd IsNot Nothing AndAlso meadSd.Item1 Then
                             Dim ins1Candle As OHLCPayload = signalCheckingInstrument1.GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
@@ -112,10 +111,9 @@ Public Class NFOPairInstrument
                                 If tradedSignal IsNot Nothing Then
                                     If tradedSignal.SignalType = "+" Then
                                         If userSettings.SameSideExit Then
-                                            message = String.Format("{0} -> [{8}]Exit Signal, Traded Signal: Positive, Signal Time:{1}, Exit Side:{2}, Ratio({3})<={4}[Mean({5})+{6}*SD({7})][{8}]",
+                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, Ratio({2})<={3}[Mean({4})+{5}*SD({6})][{7}]",
                                                                     Me.PairName,
                                                                     ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    If(userSettings.SameSideExit, "Same Side", "Opposite Side"),
                                                                     Math.Round(ratio, 6),
                                                                     Math.Round(tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
                                                                     Math.Round(tradedSignal.Mean, 6),
@@ -123,10 +121,9 @@ Public Class NFOPairInstrument
                                                                     Math.Round(tradedSignal.SD, 6),
                                                                     ratio <= tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier)
                                         Else
-                                            message = String.Format("{0} -> [{8}]Exit Signal, Traded Signal: Positive, Signal Time:{1}, Exit Side:{2}, Ratio({3})<={4}[Mean({5})-{6}*SD({7})][{8}]",
+                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, Ratio({2})<={3}[Mean({4})-{5}*SD({6})][{7}]",
                                                                     Me.PairName,
                                                                     ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    If(userSettings.SameSideExit, "Same Side", "Opposite Side"),
                                                                     Math.Round(ratio, 6),
                                                                     Math.Round(tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
                                                                     Math.Round(tradedSignal.Mean, 6),
@@ -136,10 +133,9 @@ Public Class NFOPairInstrument
                                         End If
                                     ElseIf tradedSignal.SignalType = "-" Then
                                         If userSettings.SameSideExit Then
-                                            message = String.Format("{0} -> [{8}]Exit Signal, Traded Signal: Negative, Signal Time:{1}, Exit Side:{2}, Ratio({3})>={4}[Mean({5})-{6}*SD({7})][{8}]",
+                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, Ratio({2})>={3}[Mean({4})-{5}*SD({6})][{7}]",
                                                                     Me.PairName,
                                                                     ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    If(userSettings.SameSideExit, "Same Side", "Opposite Side"),
                                                                     Math.Round(ratio, 6),
                                                                     Math.Round(tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
                                                                     Math.Round(tradedSignal.Mean, 6),
@@ -147,10 +143,9 @@ Public Class NFOPairInstrument
                                                                     Math.Round(tradedSignal.SD, 6),
                                                                     ratio >= tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier)
                                         Else
-                                            message = String.Format("{0} -> [{8}]Exit Signal, Traded Signal: Negative, Signal Time:{1}, Exit Side:{2}, Ratio({3})>={4}[Mean({5})+{6}*SD({7})][{8}]",
+                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, Ratio({2})>={3}[Mean({4})+{5}*SD({6})][{7}]",
                                                                     Me.PairName,
                                                                     ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    If(userSettings.SameSideExit, "Same Side", "Opposite Side"),
                                                                     Math.Round(ratio, 6),
                                                                     Math.Round(tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
                                                                     Math.Round(tradedSignal.Mean, 6),
@@ -225,13 +220,13 @@ Public Class NFOPairInstrument
                                             Await Task.WhenAll(tasks).ConfigureAwait(False)
                                             If tradedData IsNot Nothing AndAlso tradedData.Count > 0 Then
                                                 If Not rollover Then
-                                                    tradedData = Nothing
+                                                    tradedSignal = Nothing
                                                     If File.Exists(_filename) Then File.Delete(_filename)
                                                 Else
                                                     While True
                                                         Dim takeTrade As Boolean = True
                                                         For Each runningData In tradedData
-                                                            takeTrade = takeTrade And Not runningData.Item1.IsActiveInstrument()
+                                                            takeTrade = takeTrade And Not runningData.Item1.IsActiveOrder()
                                                         Next
                                                         If takeTrade Then Exit While
                                                         Await Task.Delay(500).ConfigureAwait(False)

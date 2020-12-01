@@ -252,16 +252,16 @@ Public Class NFOStrategyInstrument
                             price = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
                             reason = "Market Order"
                         ElseIf currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(1) Then
-                            price = currentTick.SecondBidPrice
-                            reason = "Second Bid"
+                            price = currentTick.FirstBidPrice
+                            reason = "Second Try"
                         End If
                     ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                         If currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(2) Then
                             price = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
                             reason = "Market Order"
                         ElseIf currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(1) Then
-                            price = currentTick.SecondOfferPrice
-                            reason = "Second Offer"
+                            price = currentTick.FirstOfferPrice
+                            reason = "Second Try"
                         End If
                     End If
                     If price <> Decimal.MinValue AndAlso parentBussinessOrder.ParentOrder.Price <> price Then
@@ -307,6 +307,20 @@ Public Class NFOStrategyInstrument
                 XMinutePayloadConsumer.ConsumerPayloads.Count > 0 Then
                 ret = XMinutePayloadConsumer.ConsumerPayloads
             End If
+        End If
+        Return ret
+    End Function
+
+    Public Function IsActiveOrder() As Boolean
+        Dim ret As Boolean = False
+        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
+            For Each runningOrder In Me.OrderDetails
+                If runningOrder.Value.ParentOrder IsNot Nothing AndAlso
+                    runningOrder.Value.ParentOrder.Status = IOrder.TypeOfStatus.Open Then
+                    ret = True
+                    Exit For
+                End If
+            Next
         End If
         Return ret
     End Function
