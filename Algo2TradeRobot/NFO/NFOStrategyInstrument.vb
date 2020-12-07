@@ -308,6 +308,9 @@ Public Class NFOStrategyInstrument
             _allSignalDetails = Utilities.Strings.DeserializeToCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename)
         End If
         If AllSignalDetails IsNot Nothing AndAlso AllSignalDetails.Count > 0 Then
+            For Each runningSignal In AllSignalDetails.Values
+                runningSignal.ParentStrategyInstrument = Me
+            Next
             ret = AllSignalDetails.Where(Function(y)
                                              Return y.Key < snapshotDate
                                          End Function).OrderBy(Function(x)
@@ -380,7 +383,7 @@ Public Class NFOStrategyInstrument
                        ByVal closePrice As Decimal,
                        ByVal entryPrice As Decimal,
                        ByVal desireValue As Double)
-            Me._parentStrategyInstrument = parentStrategyInstrument
+            Me.ParentStrategyInstrument = parentStrategyInstrument
             Me.PreviousSignal = previousSignal
             Me.TradingSymbol = tradingSymbol
             Me.SnapshotDate = snapshotDate
@@ -389,7 +392,8 @@ Public Class NFOStrategyInstrument
             Me.DesireValue = Math.Round(desireValue, 2)
         End Sub
 
-        Private ReadOnly Property _parentStrategyInstrument As NFOStrategyInstrument
+        <NonSerialized>
+        Public ParentStrategyInstrument As NFOStrategyInstrument
 
         Public ReadOnly Property PreviousSignal As SignalDetails
 
@@ -417,7 +421,7 @@ Public Class NFOStrategyInstrument
             Get
                 Dim totalTax As Decimal = 0
                 If Me.NoOfSharesOwnedBeforeRebalancing <> 0 Then
-                    totalTax = _parentStrategyInstrument.GetTotalTaxAndCharges(0, Me.ClosePrice, Me.NoOfSharesOwnedBeforeRebalancing)
+                    totalTax = ParentStrategyInstrument.GetTotalTaxAndCharges(0, Me.ClosePrice, Me.NoOfSharesOwnedBeforeRebalancing)
                 End If
                 Return Math.Round(Me.ClosePrice * Me.NoOfSharesOwnedBeforeRebalancing - totalTax, 2)
             End Get
@@ -443,7 +447,7 @@ Public Class NFOStrategyInstrument
 
         Public ReadOnly Property TotalInvested As Double    'Brokerage to add
             Get
-                Dim totalTax As Decimal = _parentStrategyInstrument.GetTotalTaxAndCharges(Me.EntryPrice, 0, Me.NoOfSharesToBuy)
+                Dim totalTax As Decimal = ParentStrategyInstrument.GetTotalTaxAndCharges(Me.EntryPrice, 0, Me.NoOfSharesToBuy)
                 If Me.PreviousSignal IsNot Nothing Then
                     Return Math.Round(Me.PreviousSignal.TotalInvested + Me.NoOfSharesToBuy * Me.EntryPrice + totalTax, 2)
                 Else
