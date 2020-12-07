@@ -16,7 +16,7 @@
                 desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
             End If
             Dim price As Decimal = _strategyInstrument.TradableInstrument.LastTick.LastPrice
-            Dim signal As NFOStrategyInstrument.SignalDetails = New NFOStrategyInstrument.SignalDetails(lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue)
+            Dim signal As NFOStrategyInstrument.SignalDetails = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue)
             If allSignalDetails Is Nothing Then
                 allSignalDetails = New Dictionary(Of Date, NFOStrategyInstrument.SignalDetails)
                 allSignalDetails.Add(signal.SnapshotDate, signal)
