@@ -349,9 +349,9 @@ Public Class NFOStrategyInstrument
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            If message.Contains("&") Then
-                message = message.Replace("&", "_")
-            End If
+            'If message.Contains("&") Then
+            '    message = message.Replace("&", "_")
+            'End If
             message = String.Format("{0} -> {1}", Me.TradableInstrument.TradingSymbol, message)
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso
