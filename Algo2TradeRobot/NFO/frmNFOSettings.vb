@@ -43,7 +43,9 @@ Public Class frmNFOSettings
             txtOverallMaxProfit.Text = _settings.OverallMaxProfit
             txtOverallMaxLoss.Text = _settings.OverallMaxLoss
             dtpckrEODExitTime.Value = _settings.EODExitTime
+            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilepath
 
+            chkbAutoSelectStock.Checked = _settings.AutoSelectStock
             txtMinPrice.Text = _settings.MinimumStockPrice
             txtMaxPrice.Text = _settings.MaximumStockPrice
             txtMinVolume.Text = _settings.MinimumVolume
@@ -58,6 +60,8 @@ Public Class frmNFOSettings
             txtDayCloseSMAPeriod.Text = _settings.DayClose_SMAPeriod
             txtCloseRSIPeriod.Text = _settings.Close_RSIPeriod
             txtRSIValue.Text = _settings.RSILevel
+
+            chkbAutoSelectStock_CheckedChanged(Nothing, Nothing)
         End If
     End Sub
 
@@ -69,7 +73,9 @@ Public Class frmNFOSettings
         _settings.OverallMaxProfit = Math.Abs(CDec(txtOverallMaxProfit.Text))
         _settings.OverallMaxLoss = Math.Abs(CDec(txtOverallMaxLoss.Text)) * -1
         _settings.EODExitTime = dtpckrEODExitTime.Value
+        _settings.InstrumentDetailsFilepath = txtInstrumentDetalis.Text
 
+        _settings.AutoSelectStock = chkbAutoSelectStock.Checked
         _settings.MinimumStockPrice = txtMinPrice.Text
         _settings.MaximumStockPrice = txtMaxPrice.Text
         _settings.MinimumVolume = txtMinVolume.Text
@@ -119,5 +125,23 @@ Public Class frmNFOSettings
         ValidateNumbers(1, Integer.MaxValue, txtDayCloseSMAPeriod, True)
         ValidateNumbers(1, Integer.MaxValue, txtCloseRSIPeriod, True)
         ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtRSIValue)
+    End Sub
+
+    Private Sub chkbAutoSelectStock_CheckedChanged(sender As Object, e As EventArgs) Handles chkbAutoSelectStock.CheckedChanged
+        grpStockSelection.Enabled = chkbAutoSelectStock.Checked
+    End Sub
+
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
+        opnFileSettings.Filter = "|*.csv"
+        opnFileSettings.ShowDialog()
+    End Sub
+
+    Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
+        Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
+        If extension = ".csv" Then
+            txtInstrumentDetalis.Text = opnFileSettings.FileName
+        Else
+            MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
+        End If
     End Sub
 End Class

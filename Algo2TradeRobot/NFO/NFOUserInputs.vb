@@ -12,11 +12,14 @@ Public Class NFOUserInputs
     Public Property OverallMaxProfit As Decimal
     Public Property OverallMaxLoss As Decimal
 
+    'Stock Selection
     Public Property MinimumStockPrice As Decimal
     Public Property MaximumStockPrice As Decimal
     Public Property MinimumVolume As Long
     Public Property MinimumATRPercentage As Decimal
     Public Property NumberOfStocks As Integer
+    Public Property InstrumentDetailsFilepath As String
+    Public Property AutoSelectStock As Boolean
 
     'Indicator
     Public Property VWAP_EMAPeriod As Integer

@@ -1,4 +1,5 @@
-﻿Imports System.Text.RegularExpressions
+﻿Imports System.IO
+Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
@@ -42,51 +43,80 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            Dim atrInstruments As List(Of IInstrument) = Nothing
-            Using fillInstruments As New NFOFillInstrumentDetails(_cts, Me)
-                atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
-            End Using
-            If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
-                Dim stkCtr As Integer = 0
-                For Each runningStock In atrInstruments
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.Add(runningStock)
-                    ret = True
+            If userInputs.InstrumentDetailsFilepath IsNot Nothing AndAlso File.Exists(userInputs.InstrumentDetailsFilepath) Then
+                If userInputs.AutoSelectStock Then
+                    Dim atrInstruments As List(Of IInstrument) = Nothing
+                    Using fillInstruments As New NFOFillInstrumentDetails(_cts, Me)
+                        atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
+                    End Using
+                    If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
+                        Dim dt As DataTable = New DataTable
+                        dt.Columns.Add("Trading Symbol")
+                        For Each runningStock In atrInstruments
+                            Dim row As DataRow = dt.NewRow
+                            row("Trading Symbol") = runningStock.TradingSymbol.ToUpper
+                            dt.Rows.Add(row)
+                        Next
+                        File.Delete(userInputs.InstrumentDetailsFilepath)
+                        Using csv As New Utilities.DAL.CSVHelper(userInputs.InstrumentDetailsFilepath, ",", _cts)
+                            csv.GetCSVFromDataTable(dt)
+                        End Using
+                    End If
+                End If
 
-                    stkCtr += 1
-                    If stkCtr >= userInputs.NumberOfStocks Then Exit For
-                Next
+                Dim stockDT As DataTable = Nothing
+                Using csv As New Utilities.DAL.CSVHelper(userInputs.InstrumentDetailsFilepath, ",", _cts)
+                    stockDT = csv.GetDataTableFromCSV(1)
+                End Using
+
+                If stockDT IsNot Nothing AndAlso stockDT.Rows.Count > 0 Then
+                    Dim stkCtr As Integer = 0
+                    For Each runningRow As DataRow In stockDT.Rows
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim runningStock As String = runningRow.Item("Trading Symbol")
+
+                        Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                              Return x.TradingSymbol.ToUpper = runningStock.Trim.ToUpper AndAlso
+                                                                                              x.InstrumentType = IInstrument.TypeOfInstrument.Cash
+                                                                                          End Function)
+
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                        ret = True
+
+                        stkCtr += 1
+                        If stkCtr >= userInputs.NumberOfStocks Then Exit For
+                    Next
+                End If
+
+                'Dim cdsStocks As List(Of String) = New List(Of String) From {"USDINR", "EURINR", "GBPINR", "JPYINR"}
+                'For Each runningStock In cdsStocks
+                '    _cts.Token.ThrowIfCancellationRequested()
+                '    Dim runningInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
+                '                                                                                       Return x.RawInstrumentName.ToUpper = runningStock.ToUpper AndAlso
+                '                                                                                       x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                '                                                                                   End Function)
+                '    If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                '        Dim minExpiry As Date = runningInstruments.Min(Function(x)
+                '                                                           If x.Expiry.Value > Now.Date Then
+                '                                                               Return x.Expiry.Value
+                '                                                           Else
+                '                                                               Return Date.MaxValue
+                '                                                           End If
+                '                                                       End Function)
+                '        If minExpiry <> Date.MinValue Then
+                '            Dim runningInstrument As IInstrument = runningInstruments.Find(Function(x)
+                '                                                                               Return x.Expiry.Value = minExpiry
+                '                                                                           End Function)
+                '            If runningInstrument IsNot Nothing Then
+                '                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                '                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                '                ret = True
+                '            End If
+                '        End If
+                '    End If
+                'Next
             End If
-
-            'Dim cdsStocks As List(Of String) = New List(Of String) From {"USDINR", "EURINR", "GBPINR", "JPYINR"}
-            'For Each runningStock In cdsStocks
-            '    _cts.Token.ThrowIfCancellationRequested()
-            '    Dim runningInstruments As List(Of IInstrument) = allInstruments.ToList.FindAll(Function(x)
-            '                                                                                       Return x.RawInstrumentName.ToUpper = runningStock.ToUpper AndAlso
-            '                                                                                       x.InstrumentType = IInstrument.TypeOfInstrument.Futures
-            '                                                                                   End Function)
-            '    If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
-            '        Dim minExpiry As Date = runningInstruments.Min(Function(x)
-            '                                                           If x.Expiry.Value > Now.Date Then
-            '                                                               Return x.Expiry.Value
-            '                                                           Else
-            '                                                               Return Date.MaxValue
-            '                                                           End If
-            '                                                       End Function)
-            '        If minExpiry <> Date.MinValue Then
-            '            Dim runningInstrument As IInstrument = runningInstruments.Find(Function(x)
-            '                                                                               Return x.Expiry.Value = minExpiry
-            '                                                                           End Function)
-            '            If runningInstrument IsNot Nothing Then
-            '                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-            '                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-            '                ret = True
-            '            End If
-            '        End If
-            '    End If
-            'Next
-
             TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
         End If
 
