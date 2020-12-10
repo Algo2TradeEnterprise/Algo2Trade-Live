@@ -31,6 +31,8 @@ Partial Class frmInsertSignal
         Me.lblEntryPrice = New System.Windows.Forms.Label()
         Me.dtpckrTradingDate = New System.Windows.Forms.DateTimePicker()
         Me.lblTradingDate = New System.Windows.Forms.Label()
+        Me.txtClosePrice = New System.Windows.Forms.TextBox()
+        Me.lblClosePrice = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -56,6 +58,8 @@ Partial Class frmInsertSignal
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtClosePrice)
+        Me.GroupBox1.Controls.Add(Me.lblClosePrice)
         Me.GroupBox1.Controls.Add(Me.txtEntryPrice)
         Me.GroupBox1.Controls.Add(Me.lblEntryPrice)
         Me.GroupBox1.Controls.Add(Me.dtpckrTradingDate)
@@ -64,23 +68,23 @@ Partial Class frmInsertSignal
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(388, 84)
+        Me.GroupBox1.Size = New System.Drawing.Size(388, 109)
         Me.GroupBox1.TabIndex = 53
         Me.GroupBox1.TabStop = False
         '
         'txtEntryPrice
         '
-        Me.txtEntryPrice.Location = New System.Drawing.Point(132, 50)
+        Me.txtEntryPrice.Location = New System.Drawing.Point(132, 78)
         Me.txtEntryPrice.Margin = New System.Windows.Forms.Padding(4)
         Me.txtEntryPrice.Name = "txtEntryPrice"
         Me.txtEntryPrice.Size = New System.Drawing.Size(243, 22)
-        Me.txtEntryPrice.TabIndex = 2
+        Me.txtEntryPrice.TabIndex = 3
         Me.txtEntryPrice.Tag = "Entry Price"
         '
         'lblEntryPrice
         '
         Me.lblEntryPrice.AutoSize = True
-        Me.lblEntryPrice.Location = New System.Drawing.Point(9, 52)
+        Me.lblEntryPrice.Location = New System.Drawing.Point(9, 80)
         Me.lblEntryPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblEntryPrice.Name = "lblEntryPrice"
         Me.lblEntryPrice.Size = New System.Drawing.Size(77, 17)
@@ -106,11 +110,30 @@ Partial Class frmInsertSignal
         Me.lblTradingDate.TabIndex = 19
         Me.lblTradingDate.Text = "Trading Date"
         '
+        'txtClosePrice
+        '
+        Me.txtClosePrice.Location = New System.Drawing.Point(132, 48)
+        Me.txtClosePrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtClosePrice.Name = "txtClosePrice"
+        Me.txtClosePrice.Size = New System.Drawing.Size(243, 22)
+        Me.txtClosePrice.TabIndex = 2
+        Me.txtClosePrice.Tag = "Entry Price"
+        '
+        'lblClosePrice
+        '
+        Me.lblClosePrice.AutoSize = True
+        Me.lblClosePrice.Location = New System.Drawing.Point(9, 50)
+        Me.lblClosePrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblClosePrice.Name = "lblClosePrice"
+        Me.lblClosePrice.Size = New System.Drawing.Size(79, 17)
+        Me.lblClosePrice.TabIndex = 55
+        Me.lblClosePrice.Text = "Close Price"
+        '
         'frmInsertSignal
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(504, 90)
+        Me.ClientSize = New System.Drawing.Size(504, 114)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnInsert)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -132,4 +155,6 @@ Partial Class frmInsertSignal
     Friend WithEvents lblEntryPrice As Label
     Friend WithEvents dtpckrTradingDate As DateTimePicker
     Friend WithEvents lblTradingDate As Label
+    Friend WithEvents txtClosePrice As TextBox
+    Friend WithEvents lblClosePrice As Label
 End Class

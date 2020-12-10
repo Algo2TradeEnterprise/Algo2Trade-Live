@@ -9,17 +9,20 @@
         Me.Text = String.Format("Insert Signal - {0}", _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper)
 
         dtpckrTradingDate.Value = Now.Date
+        txtClosePrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
         txtEntryPrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
     End Sub
 
     Private Sub btnInsert_Click(sender As Object, e As EventArgs) Handles btnInsert.Click
         Try
             Dim tradingDate As Date = dtpckrTradingDate.Value.Date
-            Dim price As String = txtEntryPrice.Text
+            Dim closePrice As String = txtClosePrice.Text
+            Dim entryPrice As String = txtEntryPrice.Text
             If tradingDate.Date > Now.Date Then
                 Throw New ApplicationException(String.Format("Cannot enter signal for > {0}", Now.Date.ToString("dd-MMM-yyyy")))
             Else
-                If price IsNot Nothing AndAlso price <> "" AndAlso IsNumeric(price) Then
+                If entryPrice IsNot Nothing AndAlso entryPrice <> "" AndAlso IsNumeric(entryPrice) AndAlso
+                    closePrice IsNot Nothing AndAlso closePrice <> "" AndAlso IsNumeric(closePrice) Then
                     Dim lastSignal As NFOStrategyInstrument.SignalDetails = _strategyInstrument.GetLastSignalDetails(Now.Date)
                     If lastSignal IsNot Nothing AndAlso lastSignal.SnapshotDate >= tradingDate.Date Then
                         Throw New ApplicationException(String.Format("Cannot enter signal for < {0}", lastSignal.SnapshotDate.AddDays(1).ToString("dd-MMM-yyyy")))
@@ -28,7 +31,7 @@
                         If lastSignal IsNot Nothing Then
                             desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
                         End If
-                        If _strategyInstrument.SetSignalDetails(tradingDate, price, price, desireValue) Then
+                        If _strategyInstrument.SetSignalDetails(tradingDate, closePrice, entryPrice, desireValue) Then
                             MsgBox(String.Format("Signal Insertion Successful"), MsgBoxStyle.Information)
                             Me.Close()
                         Else
