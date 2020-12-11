@@ -368,9 +368,13 @@ Public Class NFOStrategyInstrument
 
     Private Function GetTotalTaxAndCharges(ByVal buy As Double, ByVal sell As Double, ByVal quantity As Integer) As Decimal
         Dim ret As Decimal = Decimal.MinValue
-        Dim calculator As ZerodhaBrokerageCalculator = New ZerodhaBrokerageCalculator(Me.ParentStrategy.ParentController, _cts)
-        Dim brokerageAttributes As IBrokerageAttributes = calculator.GetDeliveryEquityBrokerage(buy, sell, quantity)
-        ret = CType(brokerageAttributes, ZerodhaBrokerageAttributes).TotalTax
+        If quantity <> 0 Then
+            Dim calculator As ZerodhaBrokerageCalculator = New ZerodhaBrokerageCalculator(Me.ParentStrategy.ParentController, _cts)
+            Dim brokerageAttributes As IBrokerageAttributes = calculator.GetDeliveryEquityBrokerage(buy, sell, Math.Abs(quantity))
+            ret = CType(brokerageAttributes, ZerodhaBrokerageAttributes).TotalTax
+        Else
+            quantity = 0
+        End If
         Return ret
     End Function
 
