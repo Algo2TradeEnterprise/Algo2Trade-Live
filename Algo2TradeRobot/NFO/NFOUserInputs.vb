@@ -11,26 +11,30 @@ Public Class NFOUserInputs
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Coinciding Pair.Strategy.a2t")
 
     Public Property LoopBackPeriod As Integer
+    Public Property RolloverBeforeExpiry As Integer
 
     Public Property TelegramBotAPIKey As String
     Public Property TelegramTradeChatID As String
 
-    Public Property InstrumentDetailsFilePath As String
-    Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
+    Public Property SecotrDetailsFilePath As String
+    Public Property SectorData As Dictionary(Of String, SectorDetails)
 
     <Serializable>
     Public Class InstrumentDetails
         Public Property Stock1 As String
         Public Property Stock2 As String
-
-        Public ReadOnly Property PairName As String
-            Get
-                Return String.Format("{0} ~ {1}", Me.Stock1, Me.Stock2)
-            End Get
-        End Property
+        Public Property PairName As String
     End Class
 
-    Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
+    <Serializable>
+    Public Class SectorDetails
+        Public Property SectorName As String
+        Public Property EntrySD As Decimal
+        Public Property Target As Decimal
+        Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
+    End Class
+
+    Public Sub FillSectorDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
         If filePath IsNot Nothing Then
             If File.Exists(filePath) Then
                 Dim extension As String = Path.GetExtension(filePath)
@@ -40,9 +44,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"STOCK 1", "STOCK 2"}
+                        Dim excelColumnList As New List(Of String) From {"SECTOR", "ENTRY SD", "TARGET"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 2
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -52,40 +56,51 @@ Public Class NFOUserInputs
                             End If
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
-                            Dim stock1 As String = Nothing
-                            Dim stock2 As String = Nothing
+                            Dim sector As String = Nothing
+                            Dim entrySD As Decimal = Decimal.MinValue
+                            Dim target As Decimal = Decimal.MinValue
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        stock1 = instrumentDetails(rowCtr, columnCtr)
+                                        sector = instrumentDetails(rowCtr, columnCtr)
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Stock 1 Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                            Throw New ApplicationException(String.Format("Sector Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        stock2 = instrumentDetails(rowCtr, columnCtr)
+                                        entrySD = instrumentDetails(rowCtr, columnCtr)
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Stock 3 Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                            Throw New ApplicationException(String.Format("Entry SD Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        target = instrumentDetails(rowCtr, columnCtr)
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Target Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
                                 End If
                             Next
-                            If stock1 IsNot Nothing AndAlso stock2 IsNot Nothing Then
-                                Dim instrumentData As New InstrumentDetails
-                                With instrumentData
-                                    .Stock1 = stock1.ToUpper.Trim
-                                    .Stock2 = stock2.ToUpper.Trim
+                            If sector IsNot Nothing AndAlso entrySD <> Decimal.MinValue AndAlso target <> Decimal.MinValue Then
+                                Dim sectorData As New SectorDetails
+                                With sectorData
+                                    .SectorName = sector
+                                    .EntrySD = entrySD
+                                    .Target = target
                                 End With
-                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
-                                If Me.InstrumentsData.ContainsKey(instrumentData.PairName) Then
-                                    Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", instrumentData.PairName))
+                                If Me.SectorData Is Nothing Then Me.SectorData = New Dictionary(Of String, SectorDetails)
+                                If Me.SectorData.ContainsKey(sectorData.SectorName) Then
+                                    Throw New ApplicationException(String.Format("Duplicate Trading Symbol {0}", sectorData.SectorName))
                                 End If
-                                Me.InstrumentsData.Add(instrumentData.PairName, instrumentData)
+                                Me.SectorData.Add(sectorData.SectorName, sectorData)
                             End If
                         Next
                     Else

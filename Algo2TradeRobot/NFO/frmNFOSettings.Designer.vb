@@ -38,8 +38,10 @@ Partial Class frmNFOSettings
         Me.txtLoopBackPeriod = New System.Windows.Forms.TextBox()
         Me.lblLoopBackPeriod = New System.Windows.Forms.Label()
         Me.btnBrowse = New System.Windows.Forms.Button()
-        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
-        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtSectorDetalis = New System.Windows.Forms.TextBox()
+        Me.lblSectorDetails = New System.Windows.Forms.Label()
+        Me.txtRollover = New System.Windows.Forms.TextBox()
+        Me.lblRollover = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpTradeDetails.SuspendLayout()
         Me.SuspendLayout()
@@ -73,7 +75,7 @@ Partial Class frmNFOSettings
         Me.grpTelegram.Controls.Add(Me.lblTelegramChatID)
         Me.grpTelegram.Controls.Add(Me.txtTelegramBotAPIKey)
         Me.grpTelegram.Controls.Add(Me.lblTelegramAPI)
-        Me.grpTelegram.Location = New System.Drawing.Point(4, 121)
+        Me.grpTelegram.Location = New System.Drawing.Point(4, 159)
         Me.grpTelegram.Name = "grpTelegram"
         Me.grpTelegram.Size = New System.Drawing.Size(477, 91)
         Me.grpTelegram.TabIndex = 54
@@ -120,25 +122,27 @@ Partial Class frmNFOSettings
         '
         'grpTradeDetails
         '
+        Me.grpTradeDetails.Controls.Add(Me.txtRollover)
+        Me.grpTradeDetails.Controls.Add(Me.lblRollover)
         Me.grpTradeDetails.Controls.Add(Me.txtSignalTimeframe)
         Me.grpTradeDetails.Controls.Add(Me.lblSignalTimeframe)
         Me.grpTradeDetails.Controls.Add(Me.txtLoopBackPeriod)
         Me.grpTradeDetails.Controls.Add(Me.lblLoopBackPeriod)
         Me.grpTradeDetails.Controls.Add(Me.btnBrowse)
-        Me.grpTradeDetails.Controls.Add(Me.txtInstrumentDetalis)
-        Me.grpTradeDetails.Controls.Add(Me.lblInstrumentDetails)
+        Me.grpTradeDetails.Controls.Add(Me.txtSectorDetalis)
+        Me.grpTradeDetails.Controls.Add(Me.lblSectorDetails)
         Me.grpTradeDetails.Location = New System.Drawing.Point(4, 0)
         Me.grpTradeDetails.Margin = New System.Windows.Forms.Padding(4)
         Me.grpTradeDetails.Name = "grpTradeDetails"
         Me.grpTradeDetails.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpTradeDetails.Size = New System.Drawing.Size(477, 120)
+        Me.grpTradeDetails.Size = New System.Drawing.Size(477, 152)
         Me.grpTradeDetails.TabIndex = 1
         Me.grpTradeDetails.TabStop = False
         Me.grpTradeDetails.Text = "Trade Details"
         '
         'txtSignalTimeframe
         '
-        Me.txtSignalTimeframe.Location = New System.Drawing.Point(227, 22)
+        Me.txtSignalTimeframe.Location = New System.Drawing.Point(227, 23)
         Me.txtSignalTimeframe.Margin = New System.Windows.Forms.Padding(4)
         Me.txtSignalTimeframe.Name = "txtSignalTimeframe"
         Me.txtSignalTimeframe.Size = New System.Drawing.Size(243, 22)
@@ -148,7 +152,7 @@ Partial Class frmNFOSettings
         'lblSignalTimeframe
         '
         Me.lblSignalTimeframe.AutoSize = True
-        Me.lblSignalTimeframe.Location = New System.Drawing.Point(9, 23)
+        Me.lblSignalTimeframe.Location = New System.Drawing.Point(9, 24)
         Me.lblSignalTimeframe.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblSignalTimeframe.Name = "lblSignalTimeframe"
         Me.lblSignalTimeframe.Size = New System.Drawing.Size(154, 17)
@@ -177,7 +181,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(428, 88)
+        Me.btnBrowse.Location = New System.Drawing.Point(428, 120)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
@@ -185,30 +189,49 @@ Partial Class frmNFOSettings
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
-        'txtInstrumentDetalis
+        'txtSectorDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 89)
-        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
-        Me.txtInstrumentDetalis.ReadOnly = True
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(194, 22)
-        Me.txtInstrumentDetalis.TabIndex = 5
+        Me.txtSectorDetalis.Location = New System.Drawing.Point(227, 121)
+        Me.txtSectorDetalis.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtSectorDetalis.Name = "txtSectorDetalis"
+        Me.txtSectorDetalis.ReadOnly = True
+        Me.txtSectorDetalis.Size = New System.Drawing.Size(194, 22)
+        Me.txtSectorDetalis.TabIndex = 5
         '
-        'lblInstrumentDetails
+        'lblSectorDetails
         '
-        Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 92)
-        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
-        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
-        Me.lblInstrumentDetails.TabIndex = 8
-        Me.lblInstrumentDetails.Text = "Instrument Details"
+        Me.lblSectorDetails.AutoSize = True
+        Me.lblSectorDetails.Location = New System.Drawing.Point(8, 124)
+        Me.lblSectorDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSectorDetails.Name = "lblSectorDetails"
+        Me.lblSectorDetails.Size = New System.Drawing.Size(96, 17)
+        Me.lblSectorDetails.TabIndex = 8
+        Me.lblSectorDetails.Text = "Sector Details"
+        '
+        'txtRollover
+        '
+        Me.txtRollover.Location = New System.Drawing.Point(227, 89)
+        Me.txtRollover.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtRollover.Name = "txtRollover"
+        Me.txtRollover.Size = New System.Drawing.Size(243, 22)
+        Me.txtRollover.TabIndex = 2
+        Me.txtRollover.Tag = "Days Back"
+        '
+        'lblRollover
+        '
+        Me.lblRollover.AutoSize = True
+        Me.lblRollover.Location = New System.Drawing.Point(8, 91)
+        Me.lblRollover.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblRollover.Name = "lblRollover"
+        Me.lblRollover.Size = New System.Drawing.Size(194, 17)
+        Me.lblRollover.TabIndex = 55
+        Me.lblRollover.Text = "Rollover Before Expiry (Days)"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(602, 215)
+        Me.ClientSize = New System.Drawing.Size(602, 255)
         Me.Controls.Add(Me.grpTelegram)
         Me.Controls.Add(Me.grpTradeDetails)
         Me.Controls.Add(Me.btnSave)
@@ -241,6 +264,8 @@ Partial Class frmNFOSettings
     Friend WithEvents txtLoopBackPeriod As TextBox
     Friend WithEvents lblLoopBackPeriod As Label
     Friend WithEvents btnBrowse As Button
-    Friend WithEvents txtInstrumentDetalis As TextBox
-    Friend WithEvents lblInstrumentDetails As Label
+    Friend WithEvents txtSectorDetalis As TextBox
+    Friend WithEvents lblSectorDetails As Label
+    Friend WithEvents txtRollover As TextBox
+    Friend WithEvents lblRollover As Label
 End Class

@@ -1,5 +1,8 @@
 ﻿Imports NLog
+Imports System.IO
+Imports Utilities.DAL
 Imports System.Threading
+Imports Utilities.Network
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -47,61 +50,91 @@ Public Class NFOStrategy
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
+            If userInputs.SectorData IsNot Nothing AndAlso userInputs.SectorData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                Dim subscribedInstrument As List(Of String)=New List(Of String)
-                For Each instrument In userInputs.InstrumentsData
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim stock1Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                       Return x.TradingSymbol = instrument.Value.Stock1
-                                                                                   End Function)
-                    pairStocks.Add(stock1Instrument)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim stock2Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                       Return x.TradingSymbol = instrument.Value.Stock2
-                                                                                   End Function)
-                    pairStocks.Add(stock2Instrument)
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim stock1FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                      Return x.RawInstrumentName = instrument.Value.Stock1 AndAlso
-                                                                                                      x.InstrumentType = IInstrument.TypeOfInstrument.Futures
-                                                                                                  End Function)
-                    Dim stk1futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock1FutInstrument)
-                    If stk1futContracts IsNot Nothing AndAlso stk1futContracts.Count > 0 Then
-                        For Each runningContract In stk1futContracts
+                Dim subscribedInstrument As List(Of String) = New List(Of String)
+                For Each runningSector In userInputs.SectorData
+                    Dim stockList As List(Of String) = Await GetSectoralStocklist(runningSector.Key).ConfigureAwait(False)
+                    If stockList IsNot Nothing AndAlso stockList.Count > 0 Then
+                        runningSector.Value.InstrumentsData = New Dictionary(Of String, NFOUserInputs.InstrumentDetails)
+                        Dim uniquePairlist As List(Of String) = Nothing
+                        For Each runningStock1 In stockList
                             _cts.Token.ThrowIfCancellationRequested()
-                            pairStocks.Add(runningContract)
+                            For Each runningStock2 In stockList
+                                _cts.Token.ThrowIfCancellationRequested()
+                                If runningStock1 <> runningStock2 Then
+                                    Dim stocks As List(Of String) = New List(Of String) From {runningStock1.Trim.ToUpper, runningStock2.Trim.ToUpper}
+                                    stocks.Sort()
+                                    Dim pairName As String = String.Format("{0} ~ {1}", stocks(0), stocks(1))
+                                    If uniquePairlist Is Nothing Then uniquePairlist = New List(Of String)
+                                    If Not uniquePairlist.Contains(pairName) Then
+                                        uniquePairlist.Add(pairName)
+                                        runningSector.Value.InstrumentsData.Add(pairName, New NFOUserInputs.InstrumentDetails With {.Stock1 = stocks(0), .Stock2 = stocks(1), .PairName = pairName})
+                                    End If
+                                End If
+                            Next
                         Next
                     End If
+                Next
+                For Each runningSector In userInputs.SectorData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim stock2FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                      Return x.RawInstrumentName = instrument.Value.Stock2 AndAlso
-                                                                                                      x.InstrumentType = IInstrument.TypeOfInstrument.Futures
-                                                                                                  End Function)
-                    Dim stk2futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock2FutInstrument)
-                    If stk2futContracts IsNot Nothing AndAlso stk2futContracts.Count > 0 Then
-                        For Each runningContract In stk2futContracts
+                    For Each runningPairInstrument In runningSector.Value.InstrumentsData
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim stock1Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                           Return x.TradingSymbol = runningPairInstrument.Value.Stock1
+                                                                                       End Function)
+                        pairStocks.Add(stock1Instrument)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim stock2Instrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                           Return x.TradingSymbol = runningPairInstrument.Value.Stock2
+                                                                                       End Function)
+                        pairStocks.Add(stock2Instrument)
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim stock1FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                          Return x.RawInstrumentName = runningPairInstrument.Value.Stock1 AndAlso
+                                                                                                          x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                                      End Function)
+                        If stock1FutInstrument IsNot Nothing AndAlso stock1FutInstrument.Count > 0 Then
+                            Dim stk1futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock1FutInstrument)
+                            If stk1futContracts IsNot Nothing AndAlso stk1futContracts.Count > 0 Then
+                                For Each runningContract In stk1futContracts
+                                    _cts.Token.ThrowIfCancellationRequested()
+                                    pairStocks.Add(runningContract)
+                                Next
+                            End If
                             _cts.Token.ThrowIfCancellationRequested()
-                            pairStocks.Add(runningContract)
-                        Next
-                    End If
-                    _cts.Token.ThrowIfCancellationRequested()
+                            Dim stock2FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                              Return x.RawInstrumentName = runningPairInstrument.Value.Stock2 AndAlso
+                                                                                                              x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                                          End Function)
+                            If stock2FutInstrument IsNot Nothing AndAlso stock2FutInstrument.Count > 0 Then
+                                Dim stk2futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock2FutInstrument)
+                                If stk2futContracts IsNot Nothing AndAlso stk2futContracts.Count > 0 Then
+                                    For Each runningContract In stk2futContracts
+                                        _cts.Token.ThrowIfCancellationRequested()
+                                        pairStocks.Add(runningContract)
+                                    Next
+                                End If
+                                _cts.Token.ThrowIfCancellationRequested()
 
-                    For Each runningStock In pairStocks
-                        If Not subscribedInstrument.Contains(runningStock.TradingSymbol) Then
-                            subscribedInstrument.Add(runningStock.TradingSymbol)
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                                For Each runningStock In pairStocks
+                                    If Not subscribedInstrument.Contains(runningStock.TradingSymbol) Then
+                                        subscribedInstrument.Add(runningStock.TradingSymbol)
+                                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                        retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                                    End If
+                                Next
+
+                                If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
+                                retTradablePairInstrumentsAsPerStrategy.Add(runningPairInstrument.Value.PairName, pairStocks)
+
+                                ret = True
+                                'Exit For
+                            End If
                         End If
                     Next
-
-                    If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
-                    retTradablePairInstrumentsAsPerStrategy.Add(instrument.Value.PairName, pairStocks)
-
-                    ret = True
-                    'Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
@@ -172,8 +205,9 @@ Public Class NFOStrategy
         Dim ret As List(Of IInstrument) = Nothing
         'TODO: Expiry Day
         If allFutureContracts IsNot Nothing AndAlso allFutureContracts.Count > 0 Then
+            Dim userInputs As NFOUserInputs = Me.UserSettings
             Dim minExpiry As Date = allFutureContracts.Min(Function(x)
-                                                               If x.Expiry.Value.AddDays(-1).Date >= Now.Date Then
+                                                               If x.Expiry.Value.AddDays(userInputs.RolloverBeforeExpiry * -1).Date >= Now.Date Then
                                                                    Return x.Expiry.Value.Date
                                                                Else
                                                                    Return Date.MaxValue
@@ -184,7 +218,7 @@ Public Class NFOStrategy
                                                                             End Function)
             If ret Is Nothing Then ret = New List(Of IInstrument)
             ret.Add(minExpryFutInstrmt)
-            If minExpiry.Date.AddDays(-1) = Now.Date Then
+            If minExpiry.Date.AddDays(userInputs.RolloverBeforeExpiry * -1) = Now.Date Then
                 Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
                                                                        If x.Expiry.Value.Date > minExpiry.Date Then
                                                                            Return x.Expiry.Value.Date
@@ -232,4 +266,94 @@ Public Class NFOStrategy
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Return ret
     End Function
+
+#Region "Sector StockList"
+    Private Function GetSectorURL(ByVal typeOfSector As String) As String
+        Dim ret As String = Nothing
+        Select Case typeOfSector.ToUpper.Trim
+            Case "NIFTYAUTO"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyautolist.csv"
+            Case "NIFTYBANK"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftybanklist.csv"
+            Case "NIFTYENERGY"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyenergylist.csv"
+            Case "NIFTYFINSERV"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyfinancelist.csv"
+            Case "NIFTYFMCG"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyfmcglist.csv"
+            Case "NIFTYIT"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyitlist.csv"
+            Case "NIFTYMEDIA"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftymedialist.csv"
+            Case "NIFTYMETAL"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftymetallist.csv"
+            Case "NIFTYPHARMA"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftypharmalist.csv"
+            Case "NIFTYPSUBANK"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftypsubanklist.csv"
+            Case "NIFTYREALTY"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyrealtylist.csv"
+            Case "NIFTYCOMMODITIES"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftycommoditieslist.csv"
+            Case "NIFTYCONSUMPTION"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyconsumptionlist.csv"
+            Case "NIFTYINFRA"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyinfralist.csv"
+            Case "NIFTYPSE"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftypselist.csv"
+            Case "NIFTYSERVSECTOR"
+                ret = "https://www1.nseindia.com/content/indices/ind_niftyservicelist.csv"
+            Case "NIFTYPVTBANK"
+                ret = "https://www1.nseindia.com/content/indices/ind_nifty_privatebanklist.csv"
+            Case Else
+                Throw New NotImplementedException
+        End Select
+        Return ret
+    End Function
+
+    Private Async Function GetSectorStockFileAsync(ByVal typeOfSector As String, ByVal filename As String) As Task(Of Boolean)
+        Dim ret As Boolean = False
+        Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, TimeSpan.FromSeconds(30), _cts)
+            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+            'AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+
+            browser.KeepAlive = True
+            Dim headersToBeSent As New Dictionary(Of String, String)
+            headersToBeSent.Add("Host", "www1.nseindia.com")
+            headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
+            headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
+            headersToBeSent.Add("Sec-Fetch-Site", "none")
+
+            Dim targetURL As String = GetSectorURL(typeOfSector)
+            If targetURL IsNot Nothing Then
+                ret = Await browser.GetFileAsync(targetURL, filename, False, headersToBeSent).ConfigureAwait(False)
+            End If
+        End Using
+        Return ret
+    End Function
+    Public Async Function GetSectoralStocklist(ByVal typeOfSector As String) As Task(Of List(Of String))
+        Dim ret As List(Of String) = Nothing
+        Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("Sectoral Index {0}.csv", typeOfSector.ToString))
+        Dim fileAvailable As Boolean = Await GetSectorStockFileAsync(typeOfSector, filename).ConfigureAwait(False)
+        If fileAvailable AndAlso File.Exists(filename) Then
+            'OnHeartbeat("Reading stock file")
+            Dim dt As DataTable = Nothing
+            Using csv As New CSVHelper(filename, ",", _cts)
+                'AddHandler csv.Heartbeat, AddressOf OnHeartbeat
+                dt = csv.GetDataTableFromCSV(1)
+            End Using
+            If dt IsNot Nothing AndAlso dt.Rows.Count > 0 Then
+                For i = 0 To dt.Rows.Count - 1
+                    Dim symbol As String = dt.Rows(i).Item("Symbol").ToString.ToUpper
+                    If ret Is Nothing Then ret = New List(Of String)
+                    ret.Add(symbol)
+                Next
+            End If
+        End If
+        If File.Exists(filename) Then File.Delete(filename)
+        Return ret
+    End Function
+#End Region
 End Class

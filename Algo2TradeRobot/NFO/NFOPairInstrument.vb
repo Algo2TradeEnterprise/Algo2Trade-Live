@@ -70,6 +70,16 @@ Public Class NFOPairInstrument
         Try
             If _DependentInstruments IsNot Nothing AndAlso _DependentInstruments.Count > 0 Then
                 Dim userSettings As NFOUserInputs = Me._ParentStrategy.UserSettings
+                Dim pairDetails As NFOUserInputs.SectorDetails = Nothing
+                For Each runningSector In userSettings.SectorData
+                    If runningSector.Value.InstrumentsData IsNot Nothing Then
+                        If runningSector.Value.InstrumentsData.ContainsKey(Me.PairName) Then
+                            pairDetails = runningSector.Value
+                            Exit For
+                        End If
+                    End If
+                Next
+
                 Dim signalCheckingInstruments As List(Of NFOStrategyInstrument) = _DependentInstruments.FindAll(Function(x)
                                                                                                                     Return x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash
                                                                                                                 End Function)
@@ -166,19 +176,22 @@ Public Class NFOPairInstrument
                                                                                    End Function)
                                             Dim entryPrice As Decimal = runningInstrument.Value.Item2
                                             Dim entryQty As Decimal = runningInstrument.Value.Item1
-                                            Dim ltp As Decimal = ins.TradableInstrument.LastTick.LastPrice
+                                            Dim price As Decimal = ins.TradableInstrument.LastTick.LastPrice
 
                                             If entryQty > 0 Then
-                                                totalPl += (ltp - entryPrice) * Math.Abs(entryQty)
+                                                totalPl += (price - entryPrice) * Math.Abs(entryQty)
                                             Else
-                                                totalPl += (entryPrice - ltp) * Math.Abs(entryQty)
+                                                totalPl += (entryPrice - price) * Math.Abs(entryQty)
                                             End If
                                         Else
                                             totalPl = 0
                                             Exit For
                                         End If
                                     Next
-                                    If totalPl >= 10000 Then
+
+                                    message = String.Format("{0} -> Exit Signal, PL:{1}", Me.PairName, totalPl)
+
+                                    If totalPl >= pairDetails.Target Then
                                         exitTrade = True
                                     End If
                                     If exitTrade Then
@@ -406,6 +419,15 @@ Public Class NFOPairInstrument
         Dim ret As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
         If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
             Dim userInput As NFOUserInputs = _ParentStrategy.UserSettings
+            Dim pairDetails As NFOUserInputs.SectorDetails = Nothing
+            For Each runningSector In userInput.SectorData
+                If runningSector.Value.InstrumentsData IsNot Nothing Then
+                    If runningSector.Value.InstrumentsData.ContainsKey(Me.PairName) Then
+                        pairDetails = runningSector.Value
+                        Exit For
+                    End If
+                End If
+            Next
             Dim ins1Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins1.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
             Dim ins2Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins2.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
             If ins1Payload IsNot Nothing AndAlso ins2Payload IsNot Nothing AndAlso ins1Payload.Count = ins2Payload.Count AndAlso ins2Payload.Count > userInput.LoopBackPeriod Then
@@ -470,7 +492,7 @@ Public Class NFOPairInstrument
                             Dim interceptOnPriceOfY As Double = (rgrsn.Intercept / originalY) * 100
                             Dim pvalue As Double = 0
 
-                            Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= 3 AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
+                            Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= pairDetails.EntrySD AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
 
                             ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol)
                         End If

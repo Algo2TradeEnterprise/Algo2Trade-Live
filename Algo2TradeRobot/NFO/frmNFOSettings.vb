@@ -25,7 +25,7 @@ Public Class frmNFOSettings
         Try
             _cts = New CancellationTokenSource
             If _settings Is Nothing Then _settings = New NFOUserInputs
-            _settings.InstrumentsData = Nothing
+            _settings.SectorData = Nothing
             ValidateInputs()
             SaveSettings()
             Me.Close()
@@ -39,7 +39,8 @@ Public Class frmNFOSettings
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeframe.Text = _settings.SignalTimeFrame
             txtLoopBackPeriod.Text = _settings.LoopBackPeriod
-            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            txtRollover.Text = _settings.RolloverBeforeExpiry
+            txtSectorDetalis.Text = _settings.SecotrDetailsFilePath
 
             txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
             txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
@@ -49,7 +50,8 @@ Public Class frmNFOSettings
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeframe.Text
         _settings.LoopBackPeriod = txtLoopBackPeriod.Text
-        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.RolloverBeforeExpiry = txtRollover.Text
+        _settings.SecotrDetailsFilePath = txtSectorDetalis.Text
 
         _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
         _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
@@ -80,11 +82,13 @@ Public Class frmNFOSettings
     End Function
 
     Private Sub ValidateFile()
-        _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
+        _settings.FillSectorDetails(txtSectorDetalis.Text, _cts)
     End Sub
+
     Private Sub ValidateInputs()
         ValidateNumbers(1, Integer.MaxValue, txtSignalTimeframe, True)
         ValidateNumbers(1, Integer.MaxValue, txtLoopBackPeriod, True)
+        ValidateNumbers(0, 20, txtRollover, True)
 
         ValidateFile()
     End Sub
@@ -97,7 +101,7 @@ Public Class frmNFOSettings
     Private Sub opnFileSettings_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles opnFileSettings.FileOk
         Dim extension As String = Path.GetExtension(opnFileSettings.FileName)
         If extension = ".csv" Then
-            txtInstrumentDetalis.Text = opnFileSettings.FileName
+            txtSectorDetalis.Text = opnFileSettings.FileName
         Else
             MsgBox("File Type not supported. Please Try again.", MsgBoxStyle.Critical)
         End If
