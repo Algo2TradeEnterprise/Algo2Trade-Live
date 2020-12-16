@@ -16,9 +16,11 @@ Public Class NFOStrategyInstrument
 #End Region
 
 
-    Private ReadOnly _signalDetailsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.SignalDetails.a2t", Me.TradableInstrument.TradingSymbol))
-    Private _allSignalDetails As Dictionary(Of Date, SignalDetails) = Nothing
-    Public ReadOnly Property AllSignalDetails As Dictionary(Of Date, SignalDetails)
+    Private ReadOnly _viSignalDetailsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.VI.SignalDetails.a2t", Me.TradableInstrument.TradingSymbol))
+    Private ReadOnly _btstSignalDetailsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.BTST.SignalDetails.a2t", Me.TradableInstrument.TradingSymbol))
+
+    Private _allSignalDetails As Dictionary(Of Date, VISignalDetails) = Nothing
+    Public ReadOnly Property AllSignalDetails As Dictionary(Of Date, VISignalDetails)
         Get
             Return _allSignalDetails
         End Get
@@ -29,7 +31,7 @@ Public Class NFOStrategyInstrument
 
     Private _lastTick As ITick = Nothing
     Private _entryDoneForTheDay As Boolean = False
-    Private _tempSignal As SignalDetails = Nothing
+    Private _tempSignal As VISignalDetails = Nothing
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -62,9 +64,13 @@ Public Class NFOStrategyInstrument
                 Me.TradingDay = DayOfWeek.Thursday
             Case DayOfWeek.Friday.ToString.ToUpper
                 Me.TradingDay = DayOfWeek.Friday
+            Case "New"
+                Me.TradingDay = Now.DayOfWeek
             Case Else
                 Throw New NotImplementedException
         End Select
+
+        Me.TradableInstrument.FetchHistorical = False
     End Sub
 
     Public Overrides Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -73,77 +79,80 @@ Public Class NFOStrategyInstrument
 
     Public Overrides Async Function MonitorAsync() As Task
         Try
-            Me.TradableInstrument.FetchHistorical = False
-            GetLastSignalDetails(Now.Date)
+            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                'GetLastSignalDetails(Now.Date)
 
-            If Now.DayOfWeek = Me.TradingDay Then
-                If Not (CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
-                    CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(Now.Date)) Then
-                    _TakeTradeToday = True
-                End If
-            Else
-                Dim daysUntilTuesday As Integer = (CInt(Me.TradingDay) - CInt(Now.DayOfWeek) + 7) Mod 7
-                Dim nextTradingDate As Date = Now.Date.AddDays(daysUntilTuesday).Date
-                If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
-                    CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) Then
-                    While nextTradingDate.Date >= Now.Date
-                        If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) OrElse
-                            nextTradingDate.DayOfWeek = DayOfWeek.Saturday OrElse nextTradingDate.DayOfWeek = DayOfWeek.Sunday Then
-                            nextTradingDate = nextTradingDate.AddDays(-1)
-                        Else
-                            If nextTradingDate.Date = Now.Date Then
-                                _TakeTradeToday = True
+                If Now.DayOfWeek = Me.TradingDay Then
+                    If Not (CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
+                        CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(Now.Date)) Then
+                        _TakeTradeToday = True
+                    End If
+                Else
+                    Dim daysUntilTuesday As Integer = (CInt(Me.TradingDay) - CInt(Now.DayOfWeek) + 7) Mod 7
+                    Dim nextTradingDate As Date = Now.Date.AddDays(daysUntilTuesday).Date
+                    If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays IsNot Nothing AndAlso
+                        CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) Then
+                        While nextTradingDate.Date >= Now.Date
+                            If CType(Me.ParentStrategy, NFOStrategy).NSEHolidays.Contains(nextTradingDate.Date) OrElse
+                                nextTradingDate.DayOfWeek = DayOfWeek.Saturday OrElse nextTradingDate.DayOfWeek = DayOfWeek.Sunday Then
+                                nextTradingDate = nextTradingDate.AddDays(-1)
+                            Else
+                                If nextTradingDate.Date = Now.Date Then
+                                    _TakeTradeToday = True
+                                End If
+                                Exit While
                             End If
-                            Exit While
-                        End If
-                    End While
+                        End While
+                    End If
                 End If
+
+                While True
+                    If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                        Throw Me.ParentStrategy.ParentController.OrphanException
+                    End If
+                    If Me._RMSException IsNot Nothing AndAlso
+                        _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                        OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                        Throw Me._RMSException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+
+                    'If _tempSignal IsNot Nothing Then
+                    '    If _tempSignal.NoOfSharesToBuy = 0 Then
+                    '        SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue)
+                    '        _tempSignal = Nothing
+                    '        _entryDoneForTheDay = True
+                    '    Else
+                    '        Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
+                    '        If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                    '            SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue)
+                    '            _tempSignal = Nothing
+                    '            _entryDoneForTheDay = True
+                    '        End If
+                    '    End If
+                    'End If
+
+
+
+                    'Place Order block start
+                    Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                    If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                        placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
+                        If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                            Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                            If placeOrderResponse.ContainsKey("data") AndAlso
+                                placeOrderResponse("data").ContainsKey("order_id") Then
+                                _entryDoneForTheDay = True
+                            End If
+                        End If
+                    End If
+                    'Place Order block end
+                    _cts.Token.ThrowIfCancellationRequested()
+
+                    Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
+                End While
             End If
-
-            While True
-                If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                    Throw Me.ParentStrategy.ParentController.OrphanException
-                End If
-                If Me._RMSException IsNot Nothing AndAlso
-                    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                    Throw Me._RMSException
-                End If
-                _cts.Token.ThrowIfCancellationRequested()
-
-                If _tempSignal IsNot Nothing Then
-                    If _tempSignal.NoOfSharesToBuy = 0 Then
-                        SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue)
-                        _tempSignal = Nothing
-                        _entryDoneForTheDay = True
-                    Else
-                        Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
-                        If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                            SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue)
-                            _tempSignal = Nothing
-                            _entryDoneForTheDay = True
-                        End If
-                    End If
-                End If
-
-                'Place Order block start
-                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
-                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                    Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
-                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                        Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                        If placeOrderResponse.ContainsKey("data") AndAlso
-                            placeOrderResponse("data").ContainsKey("order_id") Then
-                            _entryDoneForTheDay = True
-                        End If
-                    End If
-                End If
-                'Place Order block end
-                _cts.Token.ThrowIfCancellationRequested()
-
-                Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
-            End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
             'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
@@ -185,43 +194,43 @@ Public Class NFOStrategyInstrument
                     signalCandle.ClosePrice.Value = _lastTick.LastPrice
                     signalCandle.Volume.Value = _lastTick.Volume
                     If signalCandle IsNot Nothing Then
-                        Dim lastSignal As SignalDetails = GetLastSignalDetails(signalCandle.SnapshotDateTime)
-                        Dim desireValue As Double = userSettings.InitialInvestment
-                        If lastSignal IsNot Nothing Then
-                            desireValue = lastSignal.DesireValue + userSettings.ExpectedIncreaseEachPeriod
-                        End If
-                        _tempSignal = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, signalCandle.SnapshotDateTime, signalCandle.ClosePrice.Value, 0, desireValue)
-                        Dim quantity As Decimal = _tempSignal.NoOfSharesToBuy
-                        If quantity > 0 Then
-                            parameters = New PlaceOrderParameters(signalCandle) With
-                                         {
-                                            .EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                            .OrderType = IOrder.TypeOfOrder.Market,
-                                            .Quantity = quantity
-                                         }
-                        ElseIf quantity < 0 Then
-                            parameters = New PlaceOrderParameters(signalCandle) With
-                                         {
-                                            .EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                            .OrderType = IOrder.TypeOfOrder.Market,
-                                            .Quantity = Math.Abs(quantity)
-                                         }
-                        End If
-                        If log AndAlso Not forcePrint Then
-                            Dim remarks As String = String.Format("Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
-                                                                  _tempSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
-                                                                  _tempSignal.DesireValue,
-                                                                  _tempSignal.NoOfSharesOwnedBeforeRebalancing,
-                                                                  _tempSignal.ClosePrice,
-                                                                  _tempSignal.TotalValueBeforeRebalancing,
-                                                                  _tempSignal.DesireValue,
-                                                                  _tempSignal.TotalValueBeforeRebalancing,
-                                                                  _tempSignal.AmountToInvest,
-                                                                  _tempSignal.NoOfSharesToBuy)
+                        'Dim lastSignal As SignalDetails = GetLastSignalDetails(signalCandle.SnapshotDateTime)
+                        'Dim desireValue As Double = userSettings.InitialInvestment
+                        'If lastSignal IsNot Nothing Then
+                        '    desireValue = lastSignal.DesireValue + userSettings.ExpectedIncreaseEachPeriod
+                        'End If
+                        '_tempSignal = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, signalCandle.SnapshotDateTime, signalCandle.ClosePrice.Value, 0, desireValue)
+                        'Dim quantity As Decimal = _tempSignal.NoOfSharesToBuy
+                        'If quantity > 0 Then
+                        '    parameters = New PlaceOrderParameters(signalCandle) With
+                        '                 {
+                        '                    .EntryDirection = IOrder.TypeOfTransaction.Buy,
+                        '                    .OrderType = IOrder.TypeOfOrder.Market,
+                        '                    .Quantity = quantity
+                        '                 }
+                        'ElseIf quantity < 0 Then
+                        '    parameters = New PlaceOrderParameters(signalCandle) With
+                        '                 {
+                        '                    .EntryDirection = IOrder.TypeOfTransaction.Sell,
+                        '                    .OrderType = IOrder.TypeOfOrder.Market,
+                        '                    .Quantity = Math.Abs(quantity)
+                        '                 }
+                        'End If
+                        'If log AndAlso Not forcePrint Then
+                        '    Dim remarks As String = String.Format("Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
+                        '                                          _tempSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                        '                                          _tempSignal.DesireValue,
+                        '                                          _tempSignal.NoOfSharesOwnedBeforeRebalancing,
+                        '                                          _tempSignal.ClosePrice,
+                        '                                          _tempSignal.TotalValueBeforeRebalancing,
+                        '                                          _tempSignal.DesireValue,
+                        '                                          _tempSignal.TotalValueBeforeRebalancing,
+                        '                                          _tempSignal.AmountToInvest,
+                        '                                          _tempSignal.NoOfSharesToBuy)
 
-                            logger.Fatal(remarks)
-                            SendTradeAlertMessageAsync(remarks)
-                        End If
+                        '    logger.Fatal(remarks)
+                        '    SendTradeAlertMessageAsync(remarks)
+                        'End If
                     End If
                 End If
             End If
@@ -302,48 +311,48 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Public Function GetLastSignalDetails(ByVal snapshotDate As Date) As SignalDetails
-        Dim ret As SignalDetails = Nothing
-        If File.Exists(_signalDetailsFilename) Then
-            _allSignalDetails = Utilities.Strings.DeserializeToCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename)
-        End If
-        If AllSignalDetails IsNot Nothing AndAlso AllSignalDetails.Count > 0 Then
-            For Each runningSignal In AllSignalDetails.Values
-                runningSignal.ParentStrategyInstrument = Me
-            Next
-            ret = AllSignalDetails.Where(Function(y)
-                                             Return y.Key < snapshotDate
-                                         End Function).OrderBy(Function(x)
-                                                                   Return x.Key
-                                                               End Function).LastOrDefault.Value
-        End If
-        Return ret
-    End Function
+    'Public Function GetLastSignalDetails(ByVal snapshotDate As Date) As SignalDetails
+    '    Dim ret As SignalDetails = Nothing
+    '    If File.Exists(_signalDetailsFilename) Then
+    '        _allSignalDetails = Utilities.Strings.DeserializeToCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename)
+    '    End If
+    '    If AllSignalDetails IsNot Nothing AndAlso AllSignalDetails.Count > 0 Then
+    '        For Each runningSignal In AllSignalDetails.Values
+    '            runningSignal.ParentStrategyInstrument = Me
+    '        Next
+    '        ret = AllSignalDetails.Where(Function(y)
+    '                                         Return y.Key < snapshotDate
+    '                                     End Function).OrderBy(Function(x)
+    '                                                               Return x.Key
+    '                                                           End Function).LastOrDefault.Value
+    '    End If
+    '    Return ret
+    'End Function
 
-    Public Function SetSignalDetails(ByVal snapshotDate As Date, ByVal closePrice As Decimal, ByVal entryPrice As Decimal, ByVal desireValue As Double) As Boolean
-        Dim ret As Boolean = False
-        If _allSignalDetails Is Nothing Then _allSignalDetails = New Dictionary(Of Date, SignalDetails)
-        If Not _allSignalDetails.ContainsKey(snapshotDate) Then
-            Dim lastSignal As SignalDetails = GetLastSignalDetails(snapshotDate)
-            Dim signal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue)
-            _allSignalDetails.Add(signal.SnapshotDate, signal)
+    'Public Function SetSignalDetails(ByVal snapshotDate As Date, ByVal closePrice As Decimal, ByVal entryPrice As Decimal, ByVal desireValue As Double) As Boolean
+    '    Dim ret As Boolean = False
+    '    If _allSignalDetails Is Nothing Then _allSignalDetails = New Dictionary(Of Date, SignalDetails)
+    '    If Not _allSignalDetails.ContainsKey(snapshotDate) Then
+    '        Dim lastSignal As SignalDetails = GetLastSignalDetails(snapshotDate)
+    '        Dim signal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue)
+    '        _allSignalDetails.Add(signal.SnapshotDate, signal)
 
-            Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
-                                                  signal.SnapshotDate.ToString("dd-MMM-yyyy"),
-                                                  If(signal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
-                                                  signal.SharesOwnedAfterRebalancing,
-                                                  If(signal.PreviousSignal IsNot Nothing, signal.PreviousSignal.TotalInvested, 0),
-                                                  signal.EntryPrice,
-                                                  signal.NoOfSharesToBuy,
-                                                  signal.TotalInvested)
-            logger.Fatal(remarks)
-            SendTradeAlertMessageAsync(remarks)
+    '        Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
+    '                                              signal.SnapshotDate.ToString("dd-MMM-yyyy"),
+    '                                              If(signal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
+    '                                              signal.SharesOwnedAfterRebalancing,
+    '                                              If(signal.PreviousSignal IsNot Nothing, signal.PreviousSignal.TotalInvested, 0),
+    '                                              signal.EntryPrice,
+    '                                              signal.NoOfSharesToBuy,
+    '                                              signal.TotalInvested)
+    '        logger.Fatal(remarks)
+    '        SendTradeAlertMessageAsync(remarks)
 
-            Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
-            ret = True
-        End If
-        Return ret
-    End Function
+    '        Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
+    '        ret = True
+    '    End If
+    '    Return ret
+    'End Function
 
     Private Async Function SendTradeAlertMessageAsync(ByVal message As String) As Task
         Try
@@ -378,10 +387,11 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
+#Region "Inner Class"
     <Serializable>
-    Public Class SignalDetails
+    Public Class VISignalDetails
         Public Sub New(ByVal parentStrategyInstrument As NFOStrategyInstrument,
-                       ByVal previousSignal As SignalDetails,
+                       ByVal previousSignal As VISignalDetails,
                        ByVal tradingSymbol As String,
                        ByVal snapshotDate As Date,
                        ByVal closePrice As Decimal,
@@ -399,7 +409,7 @@ Public Class NFOStrategyInstrument
         <NonSerialized>
         Public ParentStrategyInstrument As NFOStrategyInstrument
 
-        Public ReadOnly Property PreviousSignal As SignalDetails
+        Public ReadOnly Property PreviousSignal As VISignalDetails
 
         Public ReadOnly Property TradingSymbol As String
 
@@ -470,6 +480,13 @@ Public Class NFOStrategyInstrument
             End Get
         End Property
     End Class
+
+    <Serializable>
+    Private Class BTSTSignalDetails
+        Public Property TradedDate As Date
+        Public Property InstrumentsData As Dictionary(Of String, Integer)
+    End Class
+#End Region
 
 #Region "Not Required For This Strategy"
     Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task

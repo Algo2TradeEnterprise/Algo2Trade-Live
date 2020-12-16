@@ -59,6 +59,19 @@ Public Class NFOStrategy
                     If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     If runningTradableInstrument IsNot Nothing Then
                         retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+
+                        Dim futInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
+                                                                                                    Return x.RawInstrumentName = instrument.Value.TradingSymbol AndAlso
+                                                                                                      x.InstrumentType = IInstrument.TypeOfInstrument.Futures
+                                                                                                End Function)
+                        Dim futContracts As List(Of IInstrument) = GetCurrentFutureContracts(futInstrument)
+                        If futContracts IsNot Nothing AndAlso futContracts.Count > 0 Then
+                            For Each runningContract In futContracts
+                                _cts.Token.ThrowIfCancellationRequested()
+                                retTradableInstrumentsAsPerStrategy.Add(runningContract)
+                            Next
+                        End If
+
                         ret = True
                     End If
                 Next
@@ -101,6 +114,38 @@ Public Class NFOStrategy
             Throw New ApplicationException(String.Format("Cannot run this strategy as no strategy instruments could be created from the tradable instruments, stratgey:{0}", Me.ToString))
         End If
 
+        Return ret
+    End Function
+
+    Private Function GetCurrentFutureContracts(ByVal allFutureContracts As List(Of IInstrument)) As List(Of IInstrument)
+        Dim ret As List(Of IInstrument) = Nothing
+        If allFutureContracts IsNot Nothing AndAlso allFutureContracts.Count > 0 Then
+            Dim minExpiry As Date = allFutureContracts.Min(Function(x)
+                                                               If x.Expiry.Value.AddDays(-1).Date >= Now.Date Then
+                                                                   Return x.Expiry.Value.Date
+                                                               Else
+                                                                   Return Date.MaxValue
+                                                               End If
+                                                           End Function)
+            Dim minExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
+                                                                                Return x.Expiry.Value.Date = minExpiry.Date
+                                                                            End Function)
+            If ret Is Nothing Then ret = New List(Of IInstrument)
+            ret.Add(minExpryFutInstrmt)
+            If minExpiry.Date.AddDays(-1) = Now.Date Then
+                Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
+                                                                       If x.Expiry.Value.Date > minExpiry.Date Then
+                                                                           Return x.Expiry.Value.Date
+                                                                       Else
+                                                                           Return Date.MaxValue
+                                                                       End If
+                                                                   End Function)
+                Dim nxtMinExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
+                                                                                       Return x.Expiry.Value.Date = nextMinExpiry.Date
+                                                                                   End Function)
+                ret.Add(nxtMinExpryFutInstrmt)
+            End If
+        End If
         Return ret
     End Function
 
