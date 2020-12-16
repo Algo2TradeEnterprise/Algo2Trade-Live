@@ -38,11 +38,7 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeframe.Text = _settings.SignalTimeFrame
-            txtDaysBack.Text = _settings.DaysBack
-            txtEntrySDMultiplier.Text = _settings.EntrySDMultiplier
-            txtExitSDMultiplier.Text = _settings.ExitSDMultiplier
-            rbSameSideExit.Checked = _settings.SameSideExit
-            rbOppositeSide.Checked = _settings.OppositeSideExit
+            txtLoopBackPeriod.Text = _settings.LoopBackPeriod
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
             txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
@@ -52,11 +48,7 @@ Public Class frmNFOSettings
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeframe.Text
-        _settings.DaysBack = txtDaysBack.Text
-        _settings.EntrySDMultiplier = txtEntrySDMultiplier.Text
-        _settings.ExitSDMultiplier = txtExitSDMultiplier.Text
-        _settings.SameSideExit = rbSameSideExit.Checked
-        _settings.OppositeSideExit = rbOppositeSide.Checked
+        _settings.LoopBackPeriod = txtLoopBackPeriod.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
@@ -92,7 +84,7 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, Integer.MaxValue, txtSignalTimeframe, True)
-        ValidateNumbers(1, Integer.MaxValue, txtDaysBack, True)
+        ValidateNumbers(1, Integer.MaxValue, txtLoopBackPeriod, True)
 
         ValidateFile()
     End Sub

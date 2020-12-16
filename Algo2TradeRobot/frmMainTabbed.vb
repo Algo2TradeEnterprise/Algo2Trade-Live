@@ -452,7 +452,7 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 2, _nfoUserInputs, _nfoUserInputs.DaysBack * 5, _cts)
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 2, _nfoUserInputs, Math.Ceiling(Math.Ceiling(_nfoUserInputs.LoopBackPeriod / Math.Ceiling(375 / _nfoUserInputs.SignalTimeFrame)) * 1.5), _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()

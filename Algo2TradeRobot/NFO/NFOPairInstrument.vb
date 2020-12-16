@@ -35,10 +35,10 @@ Public Class NFOPairInstrument
     <Serializable>
     Private Class SignalDetails
         Public TradedDate As Date
-        Public Property Mean As Decimal
-        Public Property SD As Decimal
+        Public Property ZScore As Decimal
+        Public Property YStock As String
         Public Property SignalType As String
-        Public Property InstrumentsData As Dictionary(Of String, Integer)
+        Public Property InstrumentsData As Dictionary(Of String, Tuple(Of Integer, Decimal))
     End Class
 #End Region
 
@@ -79,7 +79,7 @@ Public Class NFOPairInstrument
 
                     Dim tradedSignal As SignalDetails = Nothing
                     Dim rolloverTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 28, 0)
-                    Dim meadSd As Tuple(Of Boolean, Decimal, Decimal) = Nothing
+                    Dim rgsn As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
                     While True
                         If _ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw _ParentStrategy.ParentController.OrphanException
@@ -88,14 +88,13 @@ Public Class NFOPairInstrument
                         If tradedSignal Is Nothing AndAlso File.Exists(_filename) Then
                             tradedSignal = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(_filename)
                         End If
-                        If meadSd IsNot Nothing AndAlso meadSd.Item1 Then
+                        If rgsn IsNot Nothing AndAlso rgsn.Item1 Then
                             Dim ins1Candle As OHLCPayload = signalCheckingInstrument1.GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
                             Dim ins2Candle As OHLCPayload = signalCheckingInstrument2.GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
                             If ins1Candle IsNot Nothing AndAlso ins2Candle IsNot Nothing AndAlso
                                 ins1Candle.SnapshotDateTime = ins2Candle.SnapshotDateTime AndAlso
-                                ins1Candle.PreviousPayload IsNot Nothing AndAlso ins2Candle.PreviousPayload IsNot Nothing AndAlso
-                                ins1Candle.PreviousPayload.SnapshotDateTime.Date = Now.Date Then
-                                Dim ratio As Decimal = ins1Candle.PreviousPayload.ClosePrice.Value / ins2Candle.PreviousPayload.ClosePrice.Value
+                                ins1Candle.PreviousPayload IsNot Nothing AndAlso ins2Candle.PreviousPayload IsNot Nothing Then
+
                                 Dim log As Boolean = False
                                 Dim message As String = Nothing
                                 Try
@@ -107,52 +106,43 @@ Public Class NFOPairInstrument
                                 Catch ex As Exception
                                     logger.Warn(ex)
                                 End Try
+                                If log Then
+                                    rgsn = CalculateRegression(signalCheckingInstrument1, signalCheckingInstrument2)
+                                End If
 
                                 If tradedSignal IsNot Nothing Then
-                                    If tradedSignal.SignalType = "+" Then
-                                        If userSettings.SameSideExit Then
-                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, Ratio({2})<={3}[Mean({4})+{5}*SD({6})][{7}]",
-                                                                    Me.PairName,
-                                                                    ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    Math.Round(ratio, 6),
-                                                                    Math.Round(tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
-                                                                    Math.Round(tradedSignal.Mean, 6),
-                                                                    userSettings.ExitSDMultiplier,
-                                                                    Math.Round(tradedSignal.SD, 6),
-                                                                    ratio <= tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier)
-                                        Else
-                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, Ratio({2})<={3}[Mean({4})-{5}*SD({6})][{7}]",
-                                                                    Me.PairName,
-                                                                    ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    Math.Round(ratio, 6),
-                                                                    Math.Round(tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
-                                                                    Math.Round(tradedSignal.Mean, 6),
-                                                                    userSettings.ExitSDMultiplier,
-                                                                    Math.Round(tradedSignal.SD, 6),
-                                                                    ratio <= tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier)
+                                    'Exit
+                                    Dim priceChange As Dictionary(Of String, Decimal) = Nothing
+                                    For Each runningInstrument In tradedSignal.InstrumentsData
+                                        If runningInstrument.Value.Item2 = 0 Then
+                                            Dim ins As NFOStrategyInstrument =
+                                                        _DependentInstruments.Find(Function(x)
+                                                                                       Return x.TradableInstrument.TradingSymbol.ToUpper = runningInstrument.Key.ToUpper
+                                                                                   End Function)
+                                            If ins IsNot Nothing Then
+                                                Dim lastOrder As IBusinessOrder = ins.GetLastExecutedOrder()
+                                                If lastOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                                    If priceChange Is Nothing Then priceChange = New Dictionary(Of String, Decimal)
+                                                    priceChange.Add(runningInstrument.Key, lastOrder.ParentOrder.AveragePrice)
+                                                End If
+                                            End If
                                         End If
-                                    ElseIf tradedSignal.SignalType = "-" Then
-                                        If userSettings.SameSideExit Then
-                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, Ratio({2})>={3}[Mean({4})-{5}*SD({6})][{7}]",
-                                                                    Me.PairName,
-                                                                    ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    Math.Round(ratio, 6),
-                                                                    Math.Round(tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
-                                                                    Math.Round(tradedSignal.Mean, 6),
-                                                                    userSettings.ExitSDMultiplier,
-                                                                    Math.Round(tradedSignal.SD, 6),
-                                                                    ratio >= tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier)
-                                        Else
-                                            message = String.Format("{0} -> [{7}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, Ratio({2})>={3}[Mean({4})+{5}*SD({6})][{7}]",
-                                                                    Me.PairName,
-                                                                    ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                    Math.Round(ratio, 6),
-                                                                    Math.Round(tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier, 6),
-                                                                    Math.Round(tradedSignal.Mean, 6),
-                                                                    userSettings.ExitSDMultiplier,
-                                                                    Math.Round(tradedSignal.SD, 6),
-                                                                    ratio >= tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier)
-                                        End If
+                                    Next
+                                    If priceChange IsNot Nothing AndAlso priceChange.Count > 0 Then
+                                        Dim tempInstrumentsData As Dictionary(Of String, Tuple(Of Integer, Decimal)) = tradedSignal.InstrumentsData
+                                        tradedSignal.InstrumentsData = New Dictionary(Of String, Tuple(Of Integer, Decimal))
+                                        For Each runningIns In tempInstrumentsData
+                                            If runningIns.Value.Item2 = 0 Then
+                                                If priceChange.ContainsKey(runningIns.Key) Then
+                                                    tradedSignal.InstrumentsData.Add(runningIns.Key, New Tuple(Of Integer, Decimal)(runningIns.Value.Item1, priceChange(runningIns.Key)))
+                                                Else
+                                                    tradedSignal.InstrumentsData.Add(runningIns.Key, New Tuple(Of Integer, Decimal)(runningIns.Value.Item1, runningIns.Value.Item2))
+                                                End If
+                                            Else
+                                                tradedSignal.InstrumentsData.Add(runningIns.Key, New Tuple(Of Integer, Decimal)(runningIns.Value.Item1, runningIns.Value.Item2))
+                                            End If
+                                        Next
+                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, tradedSignal)
                                     End If
 
                                     Dim exitTrade As Boolean = False
@@ -166,41 +156,45 @@ Public Class NFOPairInstrument
                                             rollover = True
                                         End If
                                     End If
-                                    If tradedSignal.SignalType = "+" Then
-                                        If userSettings.SameSideExit Then
-                                            If ratio <= tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier Then
-                                                exitTrade = True
+
+                                    Dim totalPl As Decimal = 0
+                                    For Each runningInstrument In tradedSignal.InstrumentsData
+                                        If runningInstrument.Value.Item2 <> 0 Then
+                                            Dim ins As NFOStrategyInstrument =
+                                                        _DependentInstruments.Find(Function(x)
+                                                                                       Return x.TradableInstrument.TradingSymbol.ToUpper = runningInstrument.Key.ToUpper
+                                                                                   End Function)
+                                            Dim entryPrice As Decimal = runningInstrument.Value.Item2
+                                            Dim entryQty As Decimal = runningInstrument.Value.Item1
+                                            Dim ltp As Decimal = ins.TradableInstrument.LastTick.LastPrice
+
+                                            If entryQty > 0 Then
+                                                totalPl += (ltp - entryPrice) * Math.Abs(entryQty)
+                                            Else
+                                                totalPl += (entryPrice - ltp) * Math.Abs(entryQty)
                                             End If
                                         Else
-                                            If ratio <= tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier Then
-                                                exitTrade = True
-                                            End If
+                                            totalPl = 0
+                                            Exit For
                                         End If
-                                    ElseIf tradedSignal.SignalType = "-" Then
-                                        If userSettings.SameSideExit Then
-                                            If ratio >= tradedSignal.Mean - tradedSignal.SD * userSettings.ExitSDMultiplier Then
-                                                exitTrade = True
-                                            End If
-                                        Else
-                                            If ratio >= tradedSignal.Mean + tradedSignal.SD * userSettings.ExitSDMultiplier Then
-                                                exitTrade = True
-                                            End If
-                                        End If
+                                    Next
+                                    If totalPl >= 10000 Then
+                                        exitTrade = True
                                     End If
                                     If exitTrade Then
                                         Dim tradeToExit As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
-                                        For Each ruuningInstrument In tradedSignal.InstrumentsData
+                                        For Each runningInstrument In tradedSignal.InstrumentsData
                                             Dim ins As NFOStrategyInstrument =
                                                     _DependentInstruments.Find(Function(x)
-                                                                                   Return x.TradableInstrument.TradingSymbol.ToUpper = ruuningInstrument.Key.ToUpper
+                                                                                   Return x.TradableInstrument.TradingSymbol.ToUpper = runningInstrument.Key.ToUpper
                                                                                End Function)
                                             If ins IsNot Nothing Then
                                                 Dim reFut As Regex = New Regex("(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)FUT$")
-                                                If reFut.IsMatch(ruuningInstrument.Key.ToUpper) Then
-                                                    tradeToExit.Add(ins.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins, ruuningInstrument.Value * -1, tradedSignal.SignalType))
+                                                If reFut.IsMatch(runningInstrument.Key.ToUpper) Then
+                                                    tradeToExit.Add(ins.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins, runningInstrument.Value.Item1 * -1, tradedSignal.SignalType))
                                                 Else
                                                     If Not rollover Then
-                                                        tradeToExit.Add(ins.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins, ruuningInstrument.Value * -1, tradedSignal.SignalType))
+                                                        tradeToExit.Add(ins.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins, runningInstrument.Value.Item1 * -1, tradedSignal.SignalType))
                                                     End If
                                                 End If
                                             End If
@@ -222,15 +216,8 @@ Public Class NFOPairInstrument
                                                 If Not rollover Then
                                                     tradedSignal = Nothing
                                                     If File.Exists(_filename) Then File.Delete(_filename)
+                                                    _ParentStrategy.ActiveTradeCount -= 1
                                                 Else
-                                                    While True
-                                                        Dim takeTrade As Boolean = True
-                                                        For Each runningData In tradedData
-                                                            takeTrade = takeTrade And Not runningData.Item1.IsActiveOrder()
-                                                        Next
-                                                        If takeTrade Then Exit While
-                                                        Await Task.Delay(500).ConfigureAwait(False)
-                                                    End While
                                                     Dim tradeToTake As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
                                                     For Each runningData In tradedData
                                                         If tradedSignal.InstrumentsData.ContainsKey(runningData.Item1.TradableInstrument.TradingSymbol) Then
@@ -253,7 +240,7 @@ Public Class NFOPairInstrument
                                                     Await Task.WhenAll(rolltasks).ConfigureAwait(False)
                                                     If rollData IsNot Nothing AndAlso rollData.Count > 0 Then
                                                         For Each runningSignal In rollData
-                                                            tradedSignal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, runningSignal.Item2)
+                                                            tradedSignal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, New Tuple(Of Integer, Decimal)(runningSignal.Item2, 0))
                                                         Next
                                                         Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, tradedSignal)
                                                     End If
@@ -263,73 +250,120 @@ Public Class NFOPairInstrument
                                     End If
                                 Else
                                     'Entry
-                                    Dim tradeToTake As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = Nothing
-                                    message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Ratio({2})>={3}[Mean({4})+{5}*SD({6})][{7}], Ratio({2})<={8}[Mean({4})-{5}*SD({6})[{9}]",
-                                                            Me.PairName,
-                                                            ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                            Math.Round(ratio, 6),
-                                                            Math.Round(meadSd.Item2 + meadSd.Item3 * userSettings.EntrySDMultiplier, 6),
-                                                            Math.Round(meadSd.Item2, 6),
-                                                            userSettings.EntrySDMultiplier,
-                                                            Math.Round(meadSd.Item3, 6),
-                                                            ratio >= meadSd.Item2 + meadSd.Item3 * userSettings.EntrySDMultiplier,
-                                                            Math.Round(meadSd.Item2 - meadSd.Item3 * userSettings.EntrySDMultiplier, 6),
-                                                            ratio <= meadSd.Item2 - meadSd.Item3 * userSettings.EntrySDMultiplier)
+                                    If rgsn IsNot Nothing AndAlso rgsn.Item1 Then
+                                        message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Take:{4}",
+                                                                Me.PairName,
+                                                                ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                rgsn.Item4,
+                                                                rgsn.Item5,
+                                                                rgsn.Item2)
 
-                                    If ratio >= meadSd.Item2 + meadSd.Item3 * userSettings.EntrySDMultiplier Then
-                                        'Stock 2 BUY, Stock 1 SELL
-                                        tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
-                                        Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
-                                        Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
-                                        tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * -1, "+"))
-                                        tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots, "+"))
+                                        If rgsn.Item2 Then
+                                            Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
+                                            Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
+                                            If Not File.Exists(signalCheckingInstrument1.TradeFileName) AndAlso Not File.Exists(signalCheckingInstrument2.TradeFileName) AndAlso
+                                                Not File.Exists(ins1Future.TradeFileName) AndAlso Not File.Exists(ins2Future.TradeFileName) Then
+                                                Dim tradeToTake As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = Nothing
+                                                If rgsn.Item4 > 0 Then
+                                                    tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
 
-                                        Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * ins1Future.TradableInstrument.LastTick.LastPrice
-                                        Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * ins2Future.TradableInstrument.LastTick.LastPrice
-                                        If ins2Turnover < ins1Turnover Then
-                                            Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
-                                            tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "+"))
-                                        End If
-                                    ElseIf ratio <= meadSd.Item2 - meadSd.Item3 * userSettings.EntrySDMultiplier Then
-                                        'Stock 1 BUY, Stock 2 SELL
-                                        tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
-                                        Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
-                                        Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
-                                        tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots, "-"))
-                                        tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * -1, "-"))
+                                                    Dim stk1Mul As Integer = 0
+                                                    Dim stk2Mul As Integer = 0
+                                                    If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
+                                                        stk1Mul = -1
+                                                        stk2Mul = 1
+                                                    Else
+                                                        stk1Mul = 1
+                                                        stk2Mul = -1
+                                                    End If
 
-                                        Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * ins1Future.TradableInstrument.LastTick.LastPrice
-                                        Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.PairName).NumberOfLots * ins2Future.TradableInstrument.LastTick.LastPrice
-                                        If ins1Turnover < ins2Turnover Then
-                                            Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
-                                            tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "-"))
-                                        End If
-                                    End If
-                                    If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
-                                        Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
-                                        Dim tasks = tradeToTake.Select(Async Function(x)
-                                                                           Try
-                                                                               Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
-                                                                               tradedData.Add(x.Value)
-                                                                           Catch nex As Exception
-                                                                               logger.Error(nex.ToString)
-                                                                               Throw nex
-                                                                           End Try
-                                                                           Return True
-                                                                       End Function)
-                                        Await Task.WhenAll(tasks).ConfigureAwait(False)
-                                        If tradedData IsNot Nothing AndAlso tradedData.Count > 0 Then
-                                            Dim signal As SignalDetails = New SignalDetails
-                                            signal.TradedDate = Now.Date
-                                            signal.Mean = meadSd.Item2
-                                            signal.SD = meadSd.Item3
-                                            signal.SignalType = tradedData.FirstOrDefault.Item3
-                                            signal.InstrumentsData = New Dictionary(Of String, Integer)
-                                            For Each runningSignal In tradedData
-                                                signal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, runningSignal.Item2)
-                                            Next
+                                                    tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "+"))
+                                                    tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "+"))
 
-                                            Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, signal)
+                                                    Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
+                                                    Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
+                                                    If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
+                                                        Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
+                                                        tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "+"))
+                                                    ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
+                                                        Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
+                                                        tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "+"))
+                                                    End If
+                                                ElseIf rgsn.Item4 < 0 Then
+                                                    tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
+
+                                                    Dim stk1Mul As Integer = 0
+                                                    Dim stk2Mul As Integer = 0
+                                                    If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
+                                                        stk1Mul = 1
+                                                        stk2Mul = -1
+                                                    Else
+                                                        stk1Mul = -1
+                                                        stk2Mul = 1
+                                                    End If
+
+                                                    tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "-"))
+                                                    tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "-"))
+
+                                                    Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
+                                                    Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
+                                                    If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
+                                                        Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
+                                                        tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "-"))
+                                                    ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
+                                                        Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
+                                                        tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "-"))
+                                                    End If
+                                                End If
+                                                If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
+                                                    Try
+                                                        While 1 = Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 1)
+                                                            Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                                                        End While
+                                                        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+
+                                                        If _ParentStrategy.ActiveTradeCount < 1 Then
+                                                            _ParentStrategy.ActiveTradeCount += 1
+                                                            Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
+                                                            Dim tasks = tradeToTake.Select(Async Function(x)
+                                                                                               Try
+                                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                                   tradedData.Add(x.Value)
+                                                                                               Catch nex As Exception
+                                                                                                   logger.Error(nex.ToString)
+                                                                                                   Throw nex
+                                                                                               End Try
+                                                                                               Return True
+                                                                                           End Function)
+                                                            Await Task.WhenAll(tasks).ConfigureAwait(False)
+                                                            If tradedData IsNot Nothing AndAlso tradedData.Count > 0 Then
+                                                                Dim signal As SignalDetails = New SignalDetails
+                                                                signal.TradedDate = ins1Candle.SnapshotDateTime
+                                                                signal.ZScore = rgsn.Item4
+                                                                signal.YStock = rgsn.Item5
+                                                                signal.SignalType = tradedData.FirstOrDefault.Item3
+                                                                signal.InstrumentsData = New Dictionary(Of String, Tuple(Of Integer, Decimal))
+                                                                For Each runningSignal In tradedData
+                                                                    signal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, New Tuple(Of Integer, Decimal)(runningSignal.Item2, 0))
+                                                                Next
+
+                                                                Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, signal)
+                                                            End If
+                                                        End If
+                                                    Catch ex As Exception
+                                                        logger.Error(ex.ToString)
+                                                    Finally
+                                                        Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 0)
+                                                    End Try
+                                                End If
+                                            Else
+                                                message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Take:{4}. Will not take trade as any of the pair instruments is active.",
+                                                                        Me.PairName,
+                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                        rgsn.Item4,
+                                                                        rgsn.Item5,
+                                                                        rgsn.Item2)
+                                            End If
                                         End If
                                     End If
                                 End If
@@ -338,7 +372,7 @@ Public Class NFOPairInstrument
                                 End If
                             End If
                         Else
-                            meadSd = CalculateMeanSD(signalCheckingInstrument1, signalCheckingInstrument2)
+                            rgsn = CalculateRegression(signalCheckingInstrument1, signalCheckingInstrument2)
                         End If
 
                         Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
@@ -368,66 +402,201 @@ Public Class NFOPairInstrument
         Return ret
     End Function
 
-    Private Function CalculateMeanSD(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Tuple(Of Boolean, Decimal, Decimal)
-        Dim ret As Tuple(Of Boolean, Decimal, Decimal) = Nothing
+    Private Function CalculateRegression(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Tuple(Of Boolean, Boolean, Date, Decimal, String)
+        Dim ret As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
         If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
-            ins1.TradableInstrument.FetchHistorical = False
-            ins2.TradableInstrument.FetchHistorical = False
+            Dim userInput As NFOUserInputs = _ParentStrategy.UserSettings
             Dim ins1Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins1.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
             Dim ins2Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins2.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
-            If ins1Payload IsNot Nothing AndAlso ins2Payload IsNot Nothing AndAlso ins1Payload.Count = ins2Payload.Count Then
-                Dim ratioPayload As Dictionary(Of Date, Decimal) = Nothing
-                Dim noOfDays As Integer = 0
-                Dim lastDay As Date = Date.MinValue
-                For Each runningPayload In ins1Payload.OrderByDescending(Function(x)
-                                                                             Return x.Key
-                                                                         End Function)
-                    If runningPayload.Key.Date <> Now.Date Then
-                        If ins2Payload.ContainsKey(runningPayload.Key) Then
-                            If lastDay <> runningPayload.Key.Date Then
-                                lastDay = runningPayload.Key.Date
-                                noOfDays += 1
-                                If noOfDays > CType(_ParentStrategy.UserSettings, NFOUserInputs).DaysBack Then Exit For
-                            End If
-                            Dim ins1Candle As OHLCPayload = ins1Payload(runningPayload.Key)
-                            Dim ins2Candle As OHLCPayload = ins2Payload(runningPayload.Key)
-                            If ratioPayload Is Nothing Then ratioPayload = New Dictionary(Of Date, Decimal)
-                            ratioPayload.Add(runningPayload.Key, ins1Candle.ClosePrice.Value / ins2Candle.ClosePrice.Value)
+            If ins1Payload IsNot Nothing AndAlso ins2Payload IsNot Nothing AndAlso ins1Payload.Count = ins2Payload.Count AndAlso ins2Payload.Count > userInput.LoopBackPeriod Then
+                Dim ins1CurrentXMinPayload As OHLCPayload = ins1.GetXMinuteCurrentCandle(userInput.SignalTimeFrame)
+                Dim ins2CurrentXMinPayload As OHLCPayload = ins2.GetXMinuteCurrentCandle(userInput.SignalTimeFrame)
+                If ins1CurrentXMinPayload IsNot Nothing AndAlso ins2CurrentXMinPayload IsNot Nothing AndAlso
+                    ins1CurrentXMinPayload.SnapshotDateTime = ins2CurrentXMinPayload.SnapshotDateTime Then
+                    Dim tempnSubPayloadsStk1 As List(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
+                    Dim tempnSubPayloadsStk2 As List(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
+
+                    Dim ctr1 As Integer = 0
+                    For Each runningPayload In ins1Payload.OrderByDescending(Function(x)
+                                                                                 Return x.Key
+                                                                             End Function)
+                        If runningPayload.Key < ins1CurrentXMinPayload.SnapshotDateTime Then
+                            If tempnSubPayloadsStk1 Is Nothing Then tempnSubPayloadsStk1 = New List(Of KeyValuePair(Of Date, OHLCPayload))
+                            tempnSubPayloadsStk1.Add(New KeyValuePair(Of Date, OHLCPayload)(runningPayload.Key, runningPayload.Value))
+                            ctr1 += 1
+                            If ctr1 >= userInput.LoopBackPeriod Then Exit For
+                        End If
+                    Next
+
+                    Dim ctr2 As Integer = 0
+                    For Each runningPayload In ins2Payload.OrderByDescending(Function(x)
+                                                                                 Return x.Key
+                                                                             End Function)
+                        If runningPayload.Key < ins2CurrentXMinPayload.SnapshotDateTime Then
+                            If tempnSubPayloadsStk2 Is Nothing Then tempnSubPayloadsStk2 = New List(Of KeyValuePair(Of Date, OHLCPayload))
+                            tempnSubPayloadsStk2.Add(New KeyValuePair(Of Date, OHLCPayload)(runningPayload.Key, runningPayload.Value))
+                            ctr2 += 1
+                            If ctr2 >= userInput.LoopBackPeriod Then Exit For
+                        End If
+                    Next
+
+                    If tempnSubPayloadsStk1 IsNot Nothing AndAlso tempnSubPayloadsStk1.Count = userInput.LoopBackPeriod AndAlso
+                        tempnSubPayloadsStk2 IsNot Nothing AndAlso tempnSubPayloadsStk2.Count = userInput.LoopBackPeriod AndAlso
+                        tempnSubPayloadsStk1.FirstOrDefault.Key = tempnSubPayloadsStk2.FirstOrDefault.Key AndAlso
+                        tempnSubPayloadsStk1.LastOrDefault.Key = tempnSubPayloadsStk2.LastOrDefault.Key Then
+                        Dim nSubPayloadsStk1 As List(Of KeyValuePair(Of Date, OHLCPayload)) = tempnSubPayloadsStk1.OrderBy(Function(x) x.Key).ToList
+                        Dim nSubPayloadsStk2 As List(Of KeyValuePair(Of Date, OHLCPayload)) = tempnSubPayloadsStk2.OrderBy(Function(x) x.Key).ToList
+
+                        Dim forwardRgsn As Regression = LinearRegression(nSubPayloadsStk1, nSubPayloadsStk2)
+                        Dim reverseRgsn As Regression = LinearRegression(nSubPayloadsStk2, nSubPayloadsStk1)
+
+                        Dim xRawValues As List(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
+                        Dim yRawValues As List(Of KeyValuePair(Of Date, OHLCPayload)) = Nothing
+                        Dim rgrsn As Regression = Nothing
+                        If forwardRgsn.ErrorRatio < reverseRgsn.ErrorRatio Then
+                            xRawValues = nSubPayloadsStk1
+                            yRawValues = nSubPayloadsStk2
+                            rgrsn = forwardRgsn
                         Else
-                            Throw New ApplicationException("Data mismatch")
+                            xRawValues = nSubPayloadsStk2
+                            yRawValues = nSubPayloadsStk1
+                            rgrsn = reverseRgsn
+                        End If
+                        If xRawValues IsNot Nothing AndAlso yRawValues IsNot Nothing AndAlso rgrsn IsNot Nothing Then
+                            Dim predictedY As Double = xRawValues.LastOrDefault.Value.ClosePrice.Value * rgrsn.Slope + rgrsn.Intercept
+                            Dim originalY As Double = yRawValues.LastOrDefault.Value.ClosePrice.Value
+                            Dim residual As Double = originalY - predictedY
+                            Dim stdErrorOrZScore As Double = residual / rgrsn.StandardErrorOfResiduals
+                            Dim interceptOnPriceOfY As Double = (rgrsn.Intercept / originalY) * 100
+                            Dim pvalue As Double = 0
+
+                            Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= 3 AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
+
+                            ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol)
                         End If
                     End If
-                Next
-                If ratioPayload IsNot Nothing AndAlso ratioPayload.Count > 0 Then
-                    Dim mean As Decimal = ratioPayload.Average(Function(x) x.Value)
-                    Dim sd As Decimal = CalculateStandardDeviationPA(ratioPayload)
-
-                    ret = New Tuple(Of Boolean, Decimal, Decimal)(True, mean, sd)
                 End If
             End If
         End If
         Return ret
     End Function
 
-    Private Function CalculateStandardDeviationPA(ByVal inputPayload As Dictionary(Of Date, Decimal)) As Double
+#Region "Regression"
+    <Serializable>
+    Private Class Regression
+        Public Property Correl As Double
+        Public Property RSquared As Double
+        Public Property StandardErrorOfResiduals As Double
+        Public Property Intercept As Double
+        Public Property Slope As Double
+        Public Property InterceptError As Double
+        Public ReadOnly Property ErrorRatio As Double
+            Get
+                If Me.StandardErrorOfResiduals <> 0 Then
+                    Return Me.InterceptError / Me.StandardErrorOfResiduals
+                Else
+                    Return Double.MinValue
+                End If
+            End Get
+        End Property
+    End Class
+
+    Private Function LinearRegression(ByVal xRawVals As List(Of KeyValuePair(Of Date, OHLCPayload)),
+                                     ByVal yRawVals As List(Of KeyValuePair(Of Date, OHLCPayload))) As Regression
+        Dim ret As Regression = Nothing
+        If xRawVals IsNot Nothing AndAlso yRawVals IsNot Nothing AndAlso xRawVals.Count = yRawVals.Count Then
+            Dim xValues As Dictionary(Of Date, Double) = Nothing
+            For Each runningPayload In xRawVals
+                If xValues Is Nothing Then xValues = New Dictionary(Of Date, Double)
+                xValues.Add(runningPayload.Key, runningPayload.Value.ClosePrice.Value)
+            Next
+
+            Dim yValues As Dictionary(Of Date, Double) = Nothing
+            For Each runningPayload In yRawVals
+                If yValues Is Nothing Then yValues = New Dictionary(Of Date, Double)
+                yValues.Add(runningPayload.Key, runningPayload.Value.ClosePrice.Value)
+            Next
+
+            Dim xVals As Double() = xValues.Values.ToArray
+            Dim yVals As Double() = yValues.Values.ToArray
+            Dim sumOfX As Double = 0
+            Dim sumOfY As Double = 0
+            Dim sumOfXSq As Double = 0
+            Dim sumOfYSq As Double = 0
+            Dim sumCodeviates As Double = 0
+
+            For i = 0 To xVals.Length - 1
+                Dim x = xVals(i)
+                Dim y = yVals(i)
+                sumCodeviates += x * y
+                sumOfX += x
+                sumOfY += y
+                sumOfXSq += x * x
+                sumOfYSq += y * y
+            Next
+
+            ret = New Regression
+            Dim count = xVals.Length
+            Dim ssX = sumOfXSq - ((sumOfX * sumOfX) / count)
+            Dim ssY = sumOfYSq - ((sumOfY * sumOfY) / count)
+            Dim rNumerator = (count * sumCodeviates) - (sumOfX * sumOfY)
+            Dim rDenom = (count * sumOfXSq - (sumOfX * sumOfX)) * (count * sumOfYSq - (sumOfY * sumOfY))
+            Dim sCo = sumCodeviates - ((sumOfX * sumOfY) / count)
+            Dim meanX = sumOfX / count
+            Dim meanY = sumOfY / count
+            Dim dblR = rNumerator / Math.Sqrt(rDenom)
+            ret.Correl = dblR
+            ret.RSquared = dblR * dblR
+            ret.Intercept = meanY - ((sCo / ssX) * meanX)
+            ret.Slope = sCo / ssX
+            Dim standardDeviationOfY As Double = CalculateStandardDeviationS(yValues)
+            Dim adjustedRSquare As Double = 1 - ((count - 1) / (count - 2)) * (1 - ret.RSquared)
+            ret.StandardErrorOfResiduals = Math.Sqrt(1 - adjustedRSquare) * standardDeviationOfY
+
+            Dim meanOfX As Double = xValues.Values.Average()
+            Dim varpOfX As Double = CalculateVARP(xValues)
+            If varpOfX <> 0 Then
+                ret.InterceptError = (ret.StandardErrorOfResiduals / Math.Sqrt(count)) * Math.Sqrt(1 + meanOfX ^ 2 / varpOfX)
+            Else
+                ret.InterceptError = 0
+            End If
+        Else
+            Throw New Exception("Input values should be with the same length.")
+        End If
+        Return ret
+    End Function
+
+    Private Function CalculateStandardDeviationS(ByVal inputPayload As Dictionary(Of Date, Double)) As Double
         Dim ret As Double = Nothing
         If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
-            Dim sum As Double = 0
-            For Each runningPayload In inputPayload.Keys
-                sum = sum + inputPayload(runningPayload)
-            Next
-            Dim mean As Double = sum / inputPayload.Count
+            Dim mean As Double = inputPayload.Values.Average()
             Dim sumVariance As Double = 0
             For Each runningPayload In inputPayload.Keys
                 sumVariance = sumVariance + Math.Pow((inputPayload(runningPayload) - mean), 2)
             Next
-            Dim sampleVariance As Double = sumVariance / (inputPayload.Count)
+            Dim sampleVariance As Double = sumVariance / (inputPayload.Count - 1)
             Dim standardDeviation As Double = Math.Sqrt(sampleVariance)
             ret = standardDeviation
         End If
         Return ret
     End Function
 
+    Private Function CalculateVARP(ByVal inputPayload As Dictionary(Of Date, Double)) As Double
+        Dim ret As Double = Nothing
+        If inputPayload IsNot Nothing AndAlso inputPayload.Count > 0 Then
+            Dim mean As Double = inputPayload.Values.Average()
+            Dim var As Dictionary(Of Date, Double) = Nothing
+            For Each runningPayload In inputPayload.Keys
+                If var Is Nothing Then var = New Dictionary(Of Date, Double)
+                var.Add(runningPayload, Math.Pow(inputPayload(runningPayload) - mean, 2))
+            Next
+            ret = var.Values.Average
+        End If
+        Return ret
+    End Function
+#End Region
+
+#Region "Telegram"
     Private Async Function SendTradeAlertMessageAsync(ByVal message As String) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
@@ -445,4 +614,6 @@ Public Class NFOPairInstrument
             logger.Warn(ex.ToString)
         End Try
     End Function
+#End Region
+
 End Class

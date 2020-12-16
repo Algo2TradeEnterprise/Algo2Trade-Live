@@ -11,6 +11,9 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Public ActiveTradeCount As Integer = 0
+    Public ActiveTradeCountLock As Integer = 0
+
     Public Property TradablePairInstruments As IEnumerable(Of NFOPairInstrument)
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
@@ -46,6 +49,7 @@ Public Class NFOStrategy
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                Dim subscribedInstrument As List(Of String)=New List(Of String)
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
@@ -85,13 +89,19 @@ Public Class NFOStrategy
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
 
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    retTradableInstrumentsAsPerStrategy.AddRange(pairStocks)
+                    For Each runningStock In pairStocks
+                        If Not subscribedInstrument.Contains(runningStock.TradingSymbol) Then
+                            subscribedInstrument.Add(runningStock.TradingSymbol)
+                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                            retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                        End If
+                    Next
 
                     If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
                     retTradablePairInstrumentsAsPerStrategy.Add(instrument.Value.PairName, pairStocks)
 
                     ret = True
+                    'Exit For
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
             End If
@@ -160,6 +170,7 @@ Public Class NFOStrategy
 
     Private Function GetCurrentFutureContracts(ByVal allFutureContracts As List(Of IInstrument)) As List(Of IInstrument)
         Dim ret As List(Of IInstrument) = Nothing
+        'TODO: Expiry Day
         If allFutureContracts IsNot Nothing AndAlso allFutureContracts.Count > 0 Then
             Dim minExpiry As Date = allFutureContracts.Min(Function(x)
                                                                If x.Expiry.Value.AddDays(-1).Date >= Now.Date Then

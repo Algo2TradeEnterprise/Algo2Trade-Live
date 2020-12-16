@@ -10,11 +10,7 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Coinciding Pair.Strategy.a2t")
 
-    Public Property DaysBack As Integer
-    Public Property EntrySDMultiplier As Decimal
-    Public Property ExitSDMultiplier As Decimal
-    Public Property SameSideExit As Boolean
-    Public Property OppositeSideExit As Boolean
+    Public Property LoopBackPeriod As Integer
 
     Public Property TelegramBotAPIKey As String
     Public Property TelegramTradeChatID As String
@@ -26,10 +22,10 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property Stock1 As String
         Public Property Stock2 As String
-        Public Property NumberOfLots As Integer
+
         Public ReadOnly Property PairName As String
             Get
-                Return String.Format("{0}-{1}", Me.Stock1, Me.Stock2)
+                Return String.Format("{0} ~ {1}", Me.Stock1, Me.Stock2)
             End Get
         End Property
     End Class
@@ -44,9 +40,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"STOCK 1", "STOCK 2", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"STOCK 1", "STOCK 2"}
 
-                        For colCtr = 0 To 2
+                        For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -58,7 +54,6 @@ Public Class NFOUserInputs
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim stock1 As String = Nothing
                             Dim stock2 As String = Nothing
-                            Dim numberOfLots As Integer = Integer.MinValue
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -78,28 +73,13 @@ Public Class NFOUserInputs
                                             Throw New ApplicationException(String.Format("Stock 3 Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
-                                ElseIf columnCtr = 2 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                            Val(instrumentDetails(rowCtr, columnCtr)) = CInt(instrumentDetails(rowCtr, columnCtr)) Then
-                                            numberOfLots = instrumentDetails(rowCtr, columnCtr)
-                                        Else
-                                            Throw New ApplicationException(String.Format("Number Of Lots should be Integer type. RowNumber: {0}", rowCtr))
-                                        End If
-                                    Else
-                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Number Of Lots Missing or Blank Row. RowNumber: {0}", rowCtr))
-                                        End If
-                                    End If
                                 End If
                             Next
-                            If stock1 IsNot Nothing Then
+                            If stock1 IsNot Nothing AndAlso stock2 IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails
                                 With instrumentData
-                                    .Stock1 = stock1.ToUpper
-                                    .Stock2 = stock2.ToUpper
-                                    .NumberOfLots = numberOfLots
+                                    .Stock1 = stock1.ToUpper.Trim
+                                    .Stock2 = stock2.ToUpper.Trim
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.PairName) Then
