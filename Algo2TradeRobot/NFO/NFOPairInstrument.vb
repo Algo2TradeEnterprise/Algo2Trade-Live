@@ -60,6 +60,9 @@ Public Class NFOPairInstrument
         Me.PairName = pairName
         _cts = canceller
         _filename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} Trades.a2t", Me.PairName))
+        If File.Exists(_filename) Then
+            _ParentStrategy.ActiveTradeCount += 1
+        End If
     End Sub
 
     Public Overrides Function ToString() As String
@@ -190,6 +193,7 @@ Public Class NFOPairInstrument
                                     Next
 
                                     message = String.Format("{0} -> Exit Signal, PL:{1}", Me.PairName, totalPl)
+                                    OnHeartbeat(message)
 
                                     If totalPl >= pairDetails.Target Then
                                         exitTrade = True
@@ -216,7 +220,7 @@ Public Class NFOPairInstrument
                                             Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
                                             Dim tasks = tradeToExit.Select(Async Function(x)
                                                                                Try
-                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
                                                                                    tradedData.Add(x.Value)
                                                                                Catch nex As Exception
                                                                                    logger.Error(nex.ToString)
@@ -242,7 +246,7 @@ Public Class NFOPairInstrument
                                                     Dim rollData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
                                                     Dim rolltasks = tradeToTake.Select(Async Function(x)
                                                                                            Try
-                                                                                               Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                               Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
                                                                                                rollData.Add(x.Value)
                                                                                            Catch nex As Exception
                                                                                                logger.Error(nex.ToString)
@@ -487,16 +491,21 @@ Public Class NFOPairInstrument
                             rgrsn = reverseRgsn
                         End If
                         If xRawValues IsNot Nothing AndAlso yRawValues IsNot Nothing AndAlso rgrsn IsNot Nothing Then
-                            Dim predictedY As Double = xRawValues.LastOrDefault.Value.ClosePrice.Value * rgrsn.Slope + rgrsn.Intercept
-                            Dim originalY As Double = yRawValues.LastOrDefault.Value.ClosePrice.Value
-                            Dim residual As Double = originalY - predictedY
-                            Dim stdErrorOrZScore As Double = residual / rgrsn.StandardErrorOfResiduals
-                            Dim interceptOnPriceOfY As Double = (rgrsn.Intercept / originalY) * 100
-                            Dim pvalue As Double = 0
+                            If xRawValues.LastOrDefault.Value.ClosePrice.Value >= 100 AndAlso xRawValues.LastOrDefault.Value.ClosePrice.Value <= 5000 AndAlso
+                                yRawValues.LastOrDefault.Value.ClosePrice.Value >= 100 AndAlso yRawValues.LastOrDefault.Value.ClosePrice.Value <= 5000 Then
+                                Dim predictedY As Double = xRawValues.LastOrDefault.Value.ClosePrice.Value * rgrsn.Slope + rgrsn.Intercept
+                                Dim originalY As Double = yRawValues.LastOrDefault.Value.ClosePrice.Value
+                                Dim residual As Double = originalY - predictedY
+                                Dim stdErrorOrZScore As Double = residual / rgrsn.StandardErrorOfResiduals
+                                Dim interceptOnPriceOfY As Double = (rgrsn.Intercept / originalY) * 100
+                                Dim pvalue As Double = 0
 
-                            Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= pairDetails.EntrySD AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
+                                Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= pairDetails.EntrySD AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
 
-                            ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol)
+                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol)
+                            Else
+                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, False, ins1CurrentXMinPayload.SnapshotDateTime, 0, yRawValues.LastOrDefault.Value.TradingSymbol)
+                            End If
                         End If
                     End If
                 End If
