@@ -418,6 +418,8 @@ Public Class NFOPairInstrument
     Private Function CalculateRegression(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Tuple(Of Boolean, Boolean, Date, Decimal, String)
         Dim ret As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
         If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
+            ins1.TradableInstrument.FetchHistorical = False
+            ins2.TradableInstrument.FetchHistorical = False
             Dim userInput As NFOUserInputs = _ParentStrategy.UserSettings
             Dim pairDetails As NFOUserInputs.SectorDetails = Nothing
             For Each runningSector In userInput.SectorData
