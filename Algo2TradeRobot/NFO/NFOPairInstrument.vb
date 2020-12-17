@@ -92,7 +92,7 @@ Public Class NFOPairInstrument
 
                     Dim tradedSignal As SignalDetails = Nothing
                     Dim rolloverTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 28, 0)
-                    Dim rgsn As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
+                    Dim rgsn As Tuple(Of Boolean, Boolean, Date, Decimal, String, Decimal, Decimal) = Nothing
                     While True
                         If _ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw _ParentStrategy.ParentController.OrphanException
@@ -220,7 +220,7 @@ Public Class NFOPairInstrument
                                             Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
                                             Dim tasks = tradeToExit.Select(Async Function(x)
                                                                                Try
-                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
                                                                                    tradedData.Add(x.Value)
                                                                                Catch nex As Exception
                                                                                    logger.Error(nex.ToString)
@@ -246,7 +246,7 @@ Public Class NFOPairInstrument
                                                     Dim rollData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
                                                     Dim rolltasks = tradeToTake.Select(Async Function(x)
                                                                                            Try
-                                                                                               Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                               Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
                                                                                                rollData.Add(x.Value)
                                                                                            Catch nex As Exception
                                                                                                logger.Error(nex.ToString)
@@ -268,118 +268,248 @@ Public Class NFOPairInstrument
                                 Else
                                     'Entry
                                     If rgsn IsNot Nothing AndAlso rgsn.Item1 Then
-                                        message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Take:{4}",
-                                                                Me.PairName,
-                                                                ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                                rgsn.Item4,
-                                                                rgsn.Item5,
-                                                                rgsn.Item2)
-
                                         If rgsn.Item2 Then
-                                            Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
-                                            Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
-                                            If Not File.Exists(signalCheckingInstrument1.TradeFileName) AndAlso Not File.Exists(signalCheckingInstrument2.TradeFileName) AndAlso
-                                                Not File.Exists(ins1Future.TradeFileName) AndAlso Not File.Exists(ins2Future.TradeFileName) Then
-                                                Dim tradeToTake As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = Nothing
-                                                If rgsn.Item4 > 0 Then
-                                                    tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
+                                            If rgsn.Item3.AddMinutes(5) <= signalCheckingInstrument1.TradableInstrument.LastTick.Timestamp.Value Then
+                                                message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                            Me.PairName,
+                                                                            ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                            rgsn.Item4,
+                                                                            rgsn.Item5,
+                                                                            rgsn.Item6,
+                                                                            rgsn.Item7)
 
-                                                    Dim stk1Mul As Integer = 0
-                                                    Dim stk2Mul As Integer = 0
-                                                    If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
-                                                        stk1Mul = -1
-                                                        stk2Mul = 1
-                                                    Else
-                                                        stk1Mul = 1
-                                                        stk2Mul = -1
-                                                    End If
+                                                Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
+                                                Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
+                                                If Not File.Exists(signalCheckingInstrument1.TradeFileName) AndAlso Not File.Exists(signalCheckingInstrument2.TradeFileName) AndAlso
+                                                    Not File.Exists(ins1Future.TradeFileName) AndAlso Not File.Exists(ins2Future.TradeFileName) Then
+                                                    Dim tradeToTake As Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String)) = Nothing
+                                                    If rgsn.Item4 > 0 Then
+                                                        tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
 
-                                                    tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "+"))
-                                                    tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "+"))
+                                                        Dim stk1Mul As Integer = 0
+                                                        Dim stk2Mul As Integer = 0
+                                                        If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
+                                                            stk1Mul = -1
+                                                            stk2Mul = 1
+                                                        Else
+                                                            stk1Mul = 1
+                                                            stk2Mul = -1
+                                                        End If
 
-                                                    Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
-                                                    Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
-                                                    If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
-                                                        Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
-                                                        tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "+"))
-                                                    ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
-                                                        Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
-                                                        tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "+"))
-                                                    End If
-                                                ElseIf rgsn.Item4 < 0 Then
-                                                    tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
+                                                        tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "+"))
+                                                        tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "+"))
 
-                                                    Dim stk1Mul As Integer = 0
-                                                    Dim stk2Mul As Integer = 0
-                                                    If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
-                                                        stk1Mul = 1
-                                                        stk2Mul = -1
-                                                    Else
-                                                        stk1Mul = -1
-                                                        stk2Mul = 1
-                                                    End If
-
-                                                    tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "-"))
-                                                    tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "-"))
-
-                                                    Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
-                                                    Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
-                                                    If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
-                                                        Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
-                                                        tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "-"))
-                                                    ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
-                                                        Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
-                                                        tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "-"))
-                                                    End If
-                                                End If
-                                                If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
-                                                    Try
-                                                        While 1 = Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 1)
-                                                            Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
-                                                        End While
-                                                        Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
-
-                                                        If _ParentStrategy.ActiveTradeCount < 1 Then
-                                                            _ParentStrategy.ActiveTradeCount += 1
-                                                            Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
-                                                            Dim tasks = tradeToTake.Select(Async Function(x)
-                                                                                               Try
-                                                                                                   Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularMarketCNCOrder, x.Value.Item2).ConfigureAwait(False)
-                                                                                                   tradedData.Add(x.Value)
-                                                                                               Catch nex As Exception
-                                                                                                   logger.Error(nex.ToString)
-                                                                                                   Throw nex
-                                                                                               End Try
-                                                                                               Return True
-                                                                                           End Function)
-                                                            Await Task.WhenAll(tasks).ConfigureAwait(False)
-                                                            If tradedData IsNot Nothing AndAlso tradedData.Count > 0 Then
-                                                                Dim signal As SignalDetails = New SignalDetails
-                                                                signal.TradedDate = ins1Candle.SnapshotDateTime
-                                                                signal.ZScore = rgsn.Item4
-                                                                signal.YStock = rgsn.Item5
-                                                                signal.SignalType = tradedData.FirstOrDefault.Item3
-                                                                signal.InstrumentsData = New Dictionary(Of String, Tuple(Of Integer, Decimal))
-                                                                For Each runningSignal In tradedData
-                                                                    signal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, New Tuple(Of Integer, Decimal)(runningSignal.Item2, 0))
-                                                                Next
-
-                                                                Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, signal)
+                                                        Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
+                                                        Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
+                                                        If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
+                                                            Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
+                                                            tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "+"))
+                                                        ElseIf stk2Mul = 1 AndAlso ins2Turnover > ins1Turnover Then
+                                                            Dim beta = (ins2Turnover / (ins1Turnover + ins2Turnover)) - (ins1Turnover / (ins1Turnover + ins2Turnover))
+                                                            If beta * 100 > 5 Then
+                                                                tradeToTake = Nothing
+                                                                message = String.Format("{0} -> Trade Neglect: Unable to cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            Else
+                                                                message = String.Format("{0} -> Trade Taken: Cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            End If
+                                                        ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
+                                                            Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
+                                                            tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "+"))
+                                                        ElseIf stk1Mul = 1 AndAlso ins1Turnover > ins2Turnover Then
+                                                            Dim beta = (ins1Turnover / (ins1Turnover + ins2Turnover)) - (ins2Turnover / (ins1Turnover + ins2Turnover))
+                                                            If beta * 100 > 5 Then
+                                                                tradeToTake = Nothing
+                                                                message = String.Format("{0} -> Trade Neglect: Unable to cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            Else
+                                                                message = String.Format("{0} -> Trade Taken: Cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
                                                             End If
                                                         End If
-                                                    Catch ex As Exception
-                                                        logger.Error(ex.ToString)
-                                                    Finally
-                                                        Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 0)
-                                                    End Try
+                                                    ElseIf rgsn.Item4 < 0 Then
+                                                        tradeToTake = New Dictionary(Of String, Tuple(Of NFOStrategyInstrument, Integer, String))
+
+                                                        Dim stk1Mul As Integer = 0
+                                                        Dim stk2Mul As Integer = 0
+                                                        If rgsn.Item5.ToUpper = signalCheckingInstrument1.TradableInstrument.TradingSymbol Then
+                                                            stk1Mul = 1
+                                                            stk2Mul = -1
+                                                        Else
+                                                            stk1Mul = -1
+                                                            stk2Mul = 1
+                                                        End If
+
+                                                        tradeToTake.Add(ins1Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins1Future, ins1Future.TradableInstrument.LotSize * stk1Mul, "-"))
+                                                        tradeToTake.Add(ins2Future.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(ins2Future, ins2Future.TradableInstrument.LotSize * stk2Mul, "-"))
+
+                                                        Dim ins1Turnover As Decimal = ins1Future.TradableInstrument.LotSize * ins1Future.TradableInstrument.LastTick.LastPrice
+                                                        Dim ins2Turnover As Decimal = ins2Future.TradableInstrument.LotSize * ins2Future.TradableInstrument.LastTick.LastPrice
+                                                        If stk2Mul = 1 AndAlso ins2Turnover < ins1Turnover Then
+                                                            Dim quantity As Integer = Math.Ceiling((ins1Turnover - ins2Turnover) / ins2Candle.ClosePrice.Value)
+                                                            tradeToTake.Add(signalCheckingInstrument2.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument2, quantity, "-"))
+                                                        ElseIf stk2Mul = 1 AndAlso ins2Turnover > ins1Turnover Then
+                                                            Dim beta = (ins2Turnover / (ins1Turnover + ins2Turnover)) - (ins1Turnover / (ins1Turnover + ins2Turnover))
+                                                            If beta * 100 > 5 Then
+                                                                tradeToTake = Nothing
+                                                                message = String.Format("{0} -> Trade Neglect: Unable to cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            Else
+                                                                message = String.Format("{0} -> Trade Taken: Cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            End If
+                                                        ElseIf stk1Mul = 1 AndAlso ins1Turnover < ins2Turnover Then
+                                                            Dim quantity As Integer = Math.Ceiling((ins2Turnover - ins1Turnover) / ins1Candle.ClosePrice.Value)
+                                                            tradeToTake.Add(signalCheckingInstrument1.TradableInstrument.InstrumentIdentifier, New Tuple(Of NFOStrategyInstrument, Integer, String)(signalCheckingInstrument1, quantity, "-"))
+                                                        ElseIf stk1Mul = 1 AndAlso ins1Turnover > ins2Turnover Then
+                                                            Dim beta = (ins1Turnover / (ins1Turnover + ins2Turnover)) - (ins2Turnover / (ins1Turnover + ins2Turnover))
+                                                            If beta * 100 > 5 Then
+                                                                tradeToTake = Nothing
+                                                                message = String.Format("{0} -> Trade Neglect: Unable to cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            Else
+                                                                message = String.Format("{0} -> Trade Taken: Cash neutral({6}). Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        Math.Round(beta * 100, 2))
+                                                            End If
+                                                        End If
+                                                    End If
+                                                    If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
+                                                        Try
+                                                            While 1 = Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 1)
+                                                                Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+                                                            End While
+                                                            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+
+                                                            If _ParentStrategy.ActiveTradeCount < userSettings.OverallTradeCount Then
+                                                                _ParentStrategy.ActiveTradeCount += 1
+
+                                                                SendTradeAlertMessageAsync(message)
+
+                                                                Dim tradedData As Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String)) = New Concurrent.ConcurrentBag(Of Tuple(Of NFOStrategyInstrument, Integer, String))
+                                                                Dim tasks = tradeToTake.Select(Async Function(x)
+                                                                                                   Try
+                                                                                                       Await x.Value.Item1.MonitorAsync(StrategyInstrument.ExecuteCommands.PlaceRegularLimitCNCOrder, x.Value.Item2).ConfigureAwait(False)
+                                                                                                       tradedData.Add(x.Value)
+                                                                                                   Catch nex As Exception
+                                                                                                       logger.Error(nex.ToString)
+                                                                                                       Throw nex
+                                                                                                   End Try
+                                                                                                   Return True
+                                                                                               End Function)
+                                                                Await Task.WhenAll(tasks).ConfigureAwait(False)
+                                                                If tradedData IsNot Nothing AndAlso tradedData.Count > 0 Then
+                                                                    Dim signal As SignalDetails = New SignalDetails
+                                                                    signal.TradedDate = ins1Candle.SnapshotDateTime
+                                                                    signal.ZScore = rgsn.Item4
+                                                                    signal.YStock = rgsn.Item5
+                                                                    signal.SignalType = tradedData.FirstOrDefault.Item3
+                                                                    signal.InstrumentsData = New Dictionary(Of String, Tuple(Of Integer, Decimal))
+                                                                    For Each runningSignal In tradedData
+                                                                        signal.InstrumentsData.Add(runningSignal.Item1.TradableInstrument.TradingSymbol, New Tuple(Of Integer, Decimal)(runningSignal.Item2, 0))
+                                                                    Next
+
+                                                                    Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_filename, signal)
+                                                                End If
+                                                            Else
+                                                                message = String.Format("{0} -> Trade Neglect: Maximum trade count({6}) exceed. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                                        Me.PairName,
+                                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                                        rgsn.Item4,
+                                                                                        rgsn.Item5,
+                                                                                        rgsn.Item6,
+                                                                                        rgsn.Item7,
+                                                                                        userSettings.OverallTradeCount)
+                                                            End If
+                                                        Catch ex As Exception
+                                                            logger.Error(ex.ToString)
+                                                        Finally
+                                                            Interlocked.Exchange(_ParentStrategy.ActiveTradeCountLock, 0)
+                                                        End Try
+                                                    End If
+                                                Else
+                                                    message = String.Format("{0} -> Trade Neglect: Any of the pair instruments is active. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                            Me.PairName,
+                                                                            ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                            rgsn.Item4,
+                                                                            rgsn.Item5,
+                                                                            rgsn.Item6,
+                                                                            rgsn.Item7)
                                                 End If
                                             Else
-                                                message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Take:{4}. Will not take trade as any of the pair instruments is active.",
+                                                message = String.Format("{0} -> Trade Neglect: Not fresh signal. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                            Me.PairName,
+                                                                            ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                            rgsn.Item4,
+                                                                            rgsn.Item5,
+                                                                            rgsn.Item6,
+                                                                            rgsn.Item7)
+                                            End If
+                                        Else
+                                            If rgsn.Item5 Is Nothing OrElse rgsn.Item5.Trim = "" Then
+                                                message = String.Format("{0} -> Trade Neglect: Price of any pair <100 or >5000. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
                                                                         Me.PairName,
                                                                         ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                         rgsn.Item4,
                                                                         rgsn.Item5,
-                                                                        rgsn.Item2)
+                                                                        rgsn.Item6,
+                                                                        rgsn.Item7)
+                                            Else
+                                                message = String.Format("{0} -> Trade Neglect: SD/Corel/Intercept%OnY mismatch. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                                        Me.PairName,
+                                                                        ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                                        rgsn.Item4,
+                                                                        rgsn.Item5,
+                                                                        rgsn.Item6,
+                                                                        rgsn.Item7)
                                             End If
                                         End If
                                     End If
@@ -419,8 +549,8 @@ Public Class NFOPairInstrument
         Return ret
     End Function
 
-    Private Function CalculateRegression(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Tuple(Of Boolean, Boolean, Date, Decimal, String)
-        Dim ret As Tuple(Of Boolean, Boolean, Date, Decimal, String) = Nothing
+    Private Function CalculateRegression(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Tuple(Of Boolean, Boolean, Date, Decimal, String, Decimal, Decimal)
+        Dim ret As Tuple(Of Boolean, Boolean, Date, Decimal, String, Decimal, Decimal) = Nothing
         If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
             ins1.TradableInstrument.FetchHistorical = False
             ins2.TradableInstrument.FetchHistorical = False
@@ -500,11 +630,11 @@ Public Class NFOPairInstrument
                                 Dim interceptOnPriceOfY As Double = (rgrsn.Intercept / originalY) * 100
                                 Dim pvalue As Double = 0
 
-                                Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= 80 AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= pairDetails.EntrySD AndAlso Math.Round(interceptOnPriceOfY, 4) < 10
+                                Dim take As Boolean = Math.Round(rgrsn.Correl * 100, 4) >= userInput.Correlation AndAlso Math.Abs(Math.Round(stdErrorOrZScore, 4)) >= pairDetails.EntrySD AndAlso Math.Round(interceptOnPriceOfY, 4) < userInput.InterpectPercentage
 
-                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol)
+                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String, Decimal, Decimal)(True, take, ins1CurrentXMinPayload.SnapshotDateTime, Math.Round(stdErrorOrZScore, 4), yRawValues.LastOrDefault.Value.TradingSymbol, Math.Round(rgrsn.Correl * 100, 4), Math.Round(interceptOnPriceOfY, 4))
                             Else
-                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String)(True, False, ins1CurrentXMinPayload.SnapshotDateTime, 0, yRawValues.LastOrDefault.Value.TradingSymbol)
+                                ret = New Tuple(Of Boolean, Boolean, Date, Decimal, String, Decimal, Decimal)(True, False, ins1CurrentXMinPayload.SnapshotDateTime, 0, "", 0, 0)
                             End If
                         End If
                     End If
@@ -634,7 +764,7 @@ Public Class NFOPairInstrument
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            message = String.Format("{0} -> {1}", Me.PairName, message)
+            'message = String.Format("{0} -> {1}", Me.PairName, message)
             Dim userInputs As NFOUserInputs = _ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 userInputs.TelegramTradeChatID IsNot Nothing AndAlso Not userInputs.TelegramTradeChatID.Trim = "" Then

@@ -40,6 +40,7 @@ Public Class frmNFOSettings
             txtSignalTimeframe.Text = _settings.SignalTimeFrame
             txtLoopBackPeriod.Text = _settings.LoopBackPeriod
             txtRollover.Text = _settings.RolloverBeforeExpiry
+            txtOverallTradeCount.Text = _settings.OverallTradeCount
             txtSectorDetalis.Text = _settings.SecotrDetailsFilePath
 
             txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
@@ -51,7 +52,10 @@ Public Class frmNFOSettings
         _settings.SignalTimeFrame = txtSignalTimeframe.Text
         _settings.LoopBackPeriod = txtLoopBackPeriod.Text
         _settings.RolloverBeforeExpiry = txtRollover.Text
+        _settings.OverallTradeCount = txtOverallTradeCount.Text
         _settings.SecotrDetailsFilePath = txtSectorDetalis.Text
+        _settings.Correlation = 80
+        _settings.InterpectPercentage = 10
 
         _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
         _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text

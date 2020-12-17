@@ -12,6 +12,9 @@ Public Class NFOUserInputs
 
     Public Property LoopBackPeriod As Integer
     Public Property RolloverBeforeExpiry As Integer
+    Public Property OverallTradeCount As Integer
+    Public Property Correlation As Decimal
+    Public Property InterpectPercentage As Decimal
 
     Public Property TelegramBotAPIKey As String
     Public Property TelegramTradeChatID As String
