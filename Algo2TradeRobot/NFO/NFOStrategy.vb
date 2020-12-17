@@ -128,8 +128,9 @@ Public Class NFOStrategy
                                 Next
 
                                 If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
-                                retTradablePairInstrumentsAsPerStrategy.Add(runningPairInstrument.Value.PairName, pairStocks)
-
+                                If Not retTradablePairInstrumentsAsPerStrategy.ContainsKey(runningPairInstrument.Value.PairName) Then
+                                    retTradablePairInstrumentsAsPerStrategy.Add(runningPairInstrument.Value.PairName, pairStocks)
+                                End If
                                 ret = True
                                 'Exit For
                             End If
