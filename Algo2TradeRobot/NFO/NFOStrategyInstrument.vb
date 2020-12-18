@@ -30,6 +30,7 @@ Public Class NFOStrategyInstrument
     Public ReadOnly Property TradingDay As DayOfWeek
     Public Property TakeTradeToday As Boolean
 
+    Private _eodPayload As Dictionary(Of Date, OHLCPayload) = Nothing
     Private _validRainbow As RainbowMA = Nothing
     Private _lastTick As ITick = Nothing
     Private _entryDoneForTheDay As Boolean = False
@@ -216,12 +217,35 @@ Public Class NFOStrategyInstrument
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
             If Not Me.TakeTradeToday AndAlso _validRainbow IsNot Nothing AndAlso _lastTick IsNot Nothing Then
                 If _lastTick.LastPrice > _lastTick.Open Then
-                    If _lastTick.LastPrice > Math.Max(_validRainbow.SMA1, Math.Max(_validRainbow.SMA2, Math.Max(_validRainbow.SMA3, Math.Max(_validRainbow.SMA4, Math.Max(_validRainbow.SMA5, Math.Max(_validRainbow.SMA6, Math.Max(_validRainbow.SMA7, Math.Max(_validRainbow.SMA8, Math.Max(_validRainbow.SMA9, _validRainbow.SMA10))))))))) Then
-                        CType(Me.ParentStrategy, NFOStrategy).EligibleInstruments.Add(Me)
-                    Else
-                        If log Then
-                            Dim message As String = "Rainbow not satisfied"
-                            OnHeartbeat(message)
+                    If _eodPayload IsNot Nothing AndAlso _eodPayload.Count > 0 Then
+                        If _eodPayload.ContainsKey(Now.Date) Then
+                            _eodPayload(Now.Date).ClosePrice.Value = _lastTick.LastPrice
+                        Else
+                            Dim currentCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
+                            currentCandle.TradingSymbol = Me.TradableInstrument.TradingSymbol
+                            currentCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date
+                            currentCandle.OpenPrice.Value = _lastTick.LastPrice
+                            currentCandle.LowPrice.Value = _lastTick.LastPrice
+                            currentCandle.HighPrice.Value = _lastTick.LastPrice
+                            currentCandle.ClosePrice.Value = _lastTick.LastPrice
+                            currentCandle.Volume.Value = _lastTick.Volume
+                            currentCandle.PreviousPayload = _eodPayload.LastOrDefault.Value
+
+                            _eodPayload.Add(currentCandle.SnapshotDateTime, currentCandle)
+                        End If
+                        Dim rainbowPayload As Dictionary(Of Date, RainbowMA) = Nothing
+                        CalculateRainbowMovingAverage(7, _eodPayload, rainbowPayload)
+                        Dim rainbow As RainbowMA = rainbowPayload(Now.Date)
+
+                        Dim maxRainbow As Decimal = Math.Max(rainbow.SMA1, Math.Max(rainbow.SMA2, Math.Max(rainbow.SMA3, Math.Max(rainbow.SMA4, Math.Max(rainbow.SMA5, Math.Max(rainbow.SMA6, Math.Max(rainbow.SMA7, Math.Max(rainbow.SMA8, Math.Max(rainbow.SMA9, rainbow.SMA10)))))))))
+                        logger.Debug("LTP {0}, Max Rainbow {1}", _lastTick.LastPrice, maxRainbow)
+                        If _lastTick.LastPrice > maxRainbow Then
+                            CType(Me.ParentStrategy, NFOStrategy).EligibleInstruments.Add(Me)
+                        Else
+                            If log Then
+                                Dim message As String = "Rainbow not satisfied"
+                                OnHeartbeat(message)
+                            End If
                         End If
                     End If
                 Else
@@ -727,14 +751,14 @@ Public Class NFOStrategyInstrument
     Private Async Function CompletePreProcessing() As Task(Of Boolean)
         Dim ret As Boolean = False
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim eodPayload As Dictionary(Of Date, OHLCPayload) = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.AddYears(-1), Now.AddDays(-1)).ConfigureAwait(False)
-        If eodPayload IsNot Nothing AndAlso eodPayload.Count > 0 Then
+        _eodPayload = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.AddYears(-1), Now.AddDays(-1)).ConfigureAwait(False)
+        If _eodPayload IsNot Nothing AndAlso _eodPayload.Count > 0 Then
             Dim rainbowPayload As Dictionary(Of Date, RainbowMA) = Nothing
-            CalculateRainbowMovingAverage(7, eodPayload, rainbowPayload)
+            CalculateRainbowMovingAverage(7, _eodPayload, rainbowPayload)
 
-            For Each runningPayload In eodPayload.OrderByDescending(Function(x)
-                                                                        Return x.Key
-                                                                    End Function)
+            For Each runningPayload In _eodPayload.OrderByDescending(Function(x)
+                                                                         Return x.Key
+                                                                     End Function)
                 Dim rainbow As RainbowMA = rainbowPayload(runningPayload.Key)
                 If runningPayload.Value.ClosePrice.Value > Math.Max(rainbow.SMA1, Math.Max(rainbow.SMA2, Math.Max(rainbow.SMA3, Math.Max(rainbow.SMA4, Math.Max(rainbow.SMA5, Math.Max(rainbow.SMA6, Math.Max(rainbow.SMA7, Math.Max(rainbow.SMA8, Math.Max(rainbow.SMA9, rainbow.SMA10))))))))) Then
                     If runningPayload.Value.CandleColor = Color.Green Then
