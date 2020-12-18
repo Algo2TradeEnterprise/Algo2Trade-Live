@@ -40,6 +40,8 @@
                 dt.Columns.Add("Total Invested")
                 dt.Columns.Add("Periodic Investment")
 
+                Dim payments As List(Of Double) = New List(Of Double)
+                Dim days As List(Of Date) = New List(Of Date)
                 For Each runningSignal In allSignalDetails.Values
                     Dim row As DataRow = dt.NewRow
                     'row("Trading Symbol") = runningSignal.TradingSymbol
@@ -56,10 +58,17 @@
                     row("Periodic Investment") = runningSignal.PeriodicInvestment
 
                     dt.Rows.Add(row)
+
+                    payments.Add(runningSignal.PeriodicInvestment)
+                    days.Add(runningSignal.SnapshotDate)
                 Next
+                payments.Add(allSignalDetails.LastOrDefault.Value.SharesOwnedAfterRebalancing * price)
+                days.Add(Now)
 
                 dgvSignalDetails.DataSource = dt
                 dgvSignalDetails.Refresh()
+
+                'lblXIRR.Text = String.Format("XIRR: {0}", Utilities.Numbers.CalculateXIRR(payments.ToArray, days.ToArray).ToString("F"))
             End If
         End If
     End Sub
