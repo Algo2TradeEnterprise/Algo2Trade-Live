@@ -1,7 +1,9 @@
 ﻿Imports NLog
 Imports System.IO
+Imports System.Net.Http
 Imports System.Threading
 Imports Utilities.Numbers
+Imports Utilities.Network
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -48,7 +50,7 @@ Public Class NFOStrategyInstrument
             End If
         End If
 
-        If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then Me.TradableInstrument.FetchHistorical = False
+        Me.TradableInstrument.FetchHistorical = False
         TradeFileName = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.Trade.a2t", Me.TradableInstrument.TradingSymbol))
     End Sub
 
@@ -330,6 +332,72 @@ Public Class NFOStrategyInstrument
         End If
         Return ret
     End Function
+
+#Region "Historical Data Fetcher"
+    Private _historicalLock As Integer = 0
+    Public Async Function ProcessHistoricalAsync(ByVal fromDate As Date, ByVal toDate As Date) As Task
+        Try
+            While 1 = Interlocked.Exchange(_historicalLock, 1)
+                Await Task.Delay(10, _cts.Token).ConfigureAwait(False)
+            End While
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            If Not Me.TradableInstrument.IsHistoricalCompleted Then
+                Dim histoticalJsonDic As Dictionary(Of String, Object) = Await GetEODHistoricalDataAsync(Me.TradableInstrument, fromDate, toDate).ConfigureAwait(False)
+                Await Me.ParentStrategy.ParentController.PopulateRawPayloadManuallyAsync(Me.TradableInstrument.InstrumentIdentifier, histoticalJsonDic).ConfigureAwait(False)
+            End If
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+            Throw ex
+        Finally
+            Interlocked.Exchange(_historicalLock, 0)
+        End Try
+    End Function
+
+    Private Async Function GetEODHistoricalDataAsync(ByVal instrument As IInstrument, ByVal fromDate As Date, ByVal toDate As Date) As Task(Of Dictionary(Of String, Object))
+        Dim ret As Dictionary(Of String, Object) = Nothing
+        _cts.Token.ThrowIfCancellationRequested()
+        Dim zerodhaHistoricalURL As String = "https://kite.zerodha.com/oms/instruments/historical/{0}/day?oi=1&from={1}&to={2}"
+        If Me.ParentStrategy.UserSettings.SignalTimeFrame >= 375 Then
+            zerodhaHistoricalURL = "https://kite.zerodha.com/oms/instruments/historical/{0}/day?oi=1&from={1}&to={2}"
+        ElseIf Me.ParentStrategy.UserSettings.SignalTimeFrame > 60 Then
+            zerodhaHistoricalURL = zerodhaHistoricalURL.Replace("day", String.Format("{0}hour", CInt(Me.ParentStrategy.UserSettings.SignalTimeFrame / 60)))
+        Else
+            zerodhaHistoricalURL = zerodhaHistoricalURL.Replace("day", String.Format("{0}minute", Me.ParentStrategy.UserSettings.SignalTimeFrame))
+        End If
+
+        Dim historicalDataURL As String = String.Format(zerodhaHistoricalURL, instrument.InstrumentIdentifier, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"))
+        Dim proxyToBeUsed As HttpProxy = Nothing
+        Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
+            'AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            'AddHandler browser.Heartbeat, AddressOf OnHeartbeat
+            'AddHandler browser.WaitingFor, AddressOf OnWaitingFor
+            'AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+            browser.KeepAlive = True
+            Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
+            headers.Add("Host", "kite.zerodha.com")
+            headers.Add("Accept", "*/*")
+            headers.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8,ko;q=0.7")
+            headers.Add("Authorization", String.Format("enctoken {0}", Me.ParentStrategy.ParentController.APIConnection.ENCToken))
+            headers.Add("Referer", "https://kite.zerodha.com/static/build/chart.html?v=2.4.0")
+            headers.Add("sec-fetch-mode", "cors")
+            headers.Add("sec-fetch-site", "same-origin")
+
+            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL, HttpMethod.Get, Nothing, False, headers, True, "application/json").ConfigureAwait(False)
+            If l Is Nothing OrElse l.Item2 Is Nothing Then
+                Throw New ApplicationException(String.Format("No response while getting eod historical data for: {0}", historicalDataURL))
+            End If
+            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
+                ret = l.Item2
+            End If
+
+            'RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+            'RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
+            'RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
+            'RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+        End Using
+        Return ret
+    End Function
+#End Region
 
 #Region "Not Required For This Strategy"
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))

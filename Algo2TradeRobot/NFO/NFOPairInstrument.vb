@@ -519,6 +519,8 @@ Public Class NFOPairInstrument
                                 End If
                             End If
                         Else
+                            Await signalCheckingInstrument1.ProcessHistoricalAsync(Now.AddDays(Me._ParentStrategy.MaxNumberOfDaysForHistoricalFetch * -1), Now).ConfigureAwait(False)
+                            Await signalCheckingInstrument2.ProcessHistoricalAsync(Now.AddDays(Me._ParentStrategy.MaxNumberOfDaysForHistoricalFetch * -1), Now).ConfigureAwait(False)
                             rgsn = CalculateRegression(signalCheckingInstrument1, signalCheckingInstrument2)
                         End If
 
