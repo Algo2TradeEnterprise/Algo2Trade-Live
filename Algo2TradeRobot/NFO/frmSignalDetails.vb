@@ -41,7 +41,7 @@
                 dt.Columns.Add("Periodic Investment")
 
                 Dim payments As List(Of Double) = New List(Of Double)
-                Dim days As List(Of Date) = New List(Of Date)
+                Dim days As List(Of Double) = New List(Of Double)
                 For Each runningSignal In allSignalDetails.Values
                     Dim row As DataRow = dt.NewRow
                     'row("Trading Symbol") = runningSignal.TradingSymbol
@@ -60,16 +60,65 @@
                     dt.Rows.Add(row)
 
                     payments.Add(runningSignal.PeriodicInvestment)
-                    days.Add(runningSignal.SnapshotDate)
+                    days.Add(runningSignal.SnapshotDate.DayOfYear)
                 Next
                 payments.Add(allSignalDetails.LastOrDefault.Value.SharesOwnedAfterRebalancing * price)
-                days.Add(Now)
+                days.Add(Now.DayOfYear)
 
                 dgvSignalDetails.DataSource = dt
                 dgvSignalDetails.Refresh()
 
-                'lblXIRR.Text = String.Format("XIRR: {0}", Utilities.Numbers.CalculateXIRR(payments.ToArray, days.ToArray).ToString("F"))
+                lblXIRR.Text = String.Format("XIRR: {0}", (Newtons_method(0.1, total_f_xirr(payments.ToArray, days.ToArray), total_df_xirr(payments.ToArray, days.ToArray))*100).ToString("F"))
             End If
         End If
     End Sub
+
+    Public Const tol As Double = 0.001
+    Public Delegate Function fx(ByVal x As Double) As Double
+
+    Public Shared Function composeFunctions(ByVal f1 As fx, ByVal f2 As fx) As fx
+        Return Function(ByVal x As Double) f1(x) + f2(x)
+    End Function
+
+    Public Shared Function f_xirr(ByVal p As Double, ByVal dt As Double, ByVal dt0 As Double) As fx
+        Return Function(ByVal x As Double) p * Math.Pow((1.0 + x), ((dt0 - dt) / 365.0))
+    End Function
+
+    Public Shared Function df_xirr(ByVal p As Double, ByVal dt As Double, ByVal dt0 As Double) As fx
+        Return Function(ByVal x As Double) (1.0 / 365.0) * (dt0 - dt) * p * Math.Pow((x + 1.0), (((dt0 - dt) / 365.0) - 1.0))
+    End Function
+
+    Public Shared Function total_f_xirr(ByVal payments As Double(), ByVal days As Double()) As fx
+        Dim resf As fx = Function(ByVal x As Double) 0.0
+
+        For i As Integer = 0 To payments.Length - 1
+            resf = composeFunctions(resf, f_xirr(payments(i), days(i), days(0)))
+        Next
+
+        Return resf
+    End Function
+
+    Public Shared Function total_df_xirr(ByVal payments As Double(), ByVal days As Double()) As fx
+        Dim resf As fx = Function(ByVal x As Double) 0.0
+
+        For i As Integer = 0 To payments.Length - 1
+            resf = composeFunctions(resf, df_xirr(payments(i), days(i), days(0)))
+        Next
+
+        Return resf
+    End Function
+
+    Public Shared Function Newtons_method(ByVal guess As Double, ByVal f As fx, ByVal df As fx) As Double
+        Dim x0 As Double = guess
+        Dim x1 As Double = 0.0
+        Dim err As Double = 1.0E+100
+
+        While err > tol
+            x1 = x0 - f(x0) / df(x0)
+            err = Math.Abs(x1 - x0)
+            x0 = x1
+        End While
+
+        Return x0
+    End Function
 End Class
