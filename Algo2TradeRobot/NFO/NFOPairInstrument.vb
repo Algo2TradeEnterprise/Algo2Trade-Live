@@ -485,31 +485,31 @@ Public Class NFOPairInstrument
                                                                             rgsn.Item7)
                                                 End If
                                             Else
-                                                message = String.Format("{0} -> Trade Neglect: Not fresh signal. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                If log Then logger.Info(String.Format("{0} -> Trade Neglect: Not fresh signal. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
                                                                             Me.PairName,
                                                                             ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                             rgsn.Item4,
                                                                             rgsn.Item5,
                                                                             rgsn.Item6,
-                                                                            rgsn.Item7)
+                                                                            rgsn.Item7))
                                             End If
                                         Else
                                             If rgsn.Item5 Is Nothing OrElse rgsn.Item5.Trim = "" Then
-                                                message = String.Format("{0} -> Trade Neglect: Price of any pair <100 or >5000. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                If log Then logger.Info(String.Format("{0} -> Trade Neglect: Price of any pair <100 or >5000. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
                                                                         Me.PairName,
                                                                         ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                         rgsn.Item4,
                                                                         rgsn.Item5,
                                                                         rgsn.Item6,
-                                                                        rgsn.Item7)
+                                                                        rgsn.Item7))
                                             Else
-                                                message = String.Format("{0} -> Trade Neglect: SD/Corel/Intercept%OnY mismatch. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
+                                                If log Then logger.Info(String.Format("{0} -> Trade Neglect: SD/Corel/Intercept%OnY mismatch. Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
                                                                         Me.PairName,
                                                                         ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
                                                                         rgsn.Item4,
                                                                         rgsn.Item5,
                                                                         rgsn.Item6,
-                                                                        rgsn.Item7)
+                                                                        rgsn.Item7))
                                             End If
                                         End If
                                     End If
