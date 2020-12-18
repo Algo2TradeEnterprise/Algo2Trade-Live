@@ -6,6 +6,7 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Utilities.Network
 Imports HtmlAgilityPack
+Imports System.IO
 
 Public Class NFOStrategy
     Inherits Strategy
@@ -13,6 +14,7 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Public Property EligibleInstruments As Concurrent.ConcurrentBag(Of NFOStrategyInstrument)
     Public ReadOnly Property NSEHolidays As List(Of Date)
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
@@ -108,12 +110,14 @@ Public Class NFOStrategy
         Dim lastException As Exception = Nothing
 
         Try
+            EligibleInstruments = New Concurrent.ConcurrentBag(Of NFOStrategyInstrument)
             _cts.Token.ThrowIfCancellationRequested()
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
+            tasks.Add(Task.Run(AddressOf CheckEligibilityAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -129,6 +133,52 @@ Public Class NFOStrategy
 
     Public Overrides Function ToString() As String
         Return Me.GetType().Name
+    End Function
+
+    Private Async Function CheckEligibilityAsync() As Task
+        Try
+            Dim userInput As NFOUserInputs = Me.UserSettings
+            While True
+                If Now >= userInput.TradeEntryTime Then
+                    If Me.EligibleInstruments IsNot Nothing AndAlso Me.EligibleInstruments.Count > 0 Then
+                        Await Task.Delay(1000).ConfigureAwait(False)
+                        For Each runningStock In userInput.InstrumentsData
+                            Dim instrument As NFOStrategyInstrument = Me.EligibleInstruments.Where(Function(x)
+                                                                                                       Return x.TradableInstrument.TradingSymbol = runningStock.Key.ToUpper.Trim
+                                                                                                   End Function).FirstOrDefault
+                            If instrument IsNot Nothing Then
+                                instrument.TakeTradeToday = True
+                                runningStock.Value.TradingDay = Now.DayOfWeek.ToString
+                                Exit For
+                            End If
+                        Next
+
+                        If File.Exists(userInput.InstrumentDetailsFilePath) Then
+                            File.Delete(userInput.InstrumentDetailsFilePath)
+                            Dim dt As DataTable = New DataTable
+                            dt.Columns.Add("Trading Symbol")
+                            dt.Columns.Add("Trading Day")
+                            For Each runningStock In userInput.InstrumentsData
+                                Dim row As DataRow = dt.NewRow
+                                row("Trading Symbol") = runningStock.Value.TradingSymbol.Trim
+                                row("Trading Day") = runningStock.Value.TradingDay.Trim
+                                dt.Rows.Add(row)
+                            Next
+
+                            Using csv As New Utilities.DAL.CSVHelper(userInput.InstrumentDetailsFilePath, ",", _cts)
+                                csv.GetCSVFromDataTable(dt)
+                            End Using
+                        End If
+
+                        Exit While
+                    End If
+                End If
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+            Throw ex
+        End Try
     End Function
 
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)

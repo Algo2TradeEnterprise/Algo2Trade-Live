@@ -41,6 +41,8 @@
             dt.Columns.Add("Tick Size")
             dt.Columns.Add("Trading Day")
             dt.Columns.Add("Take Trade Today")
+            dt.Columns.Add("Pre Process")
+            dt.Columns.Add("Running")
             dt.Columns.Add("Instrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
@@ -50,6 +52,8 @@
                 row("Tick Size") = instrument.TradableInstrument.TickSize
                 row("Trading Day") = instrument.TradingDay.ToString
                 row("Take Trade Today") = instrument.TakeTradeToday
+                row("Pre Process") = instrument.PreProcessingDone
+                row("Running") = instrument.StrategyInstrumentRunning
                 row("Instrument") = instrument
 
                 dt.Rows.Add(row)
@@ -62,7 +66,7 @@
             detailsColumn.Name = "details_column"
             detailsColumn.Text = "Check Signals"
             detailsColumn.UseColumnTextForButtonValue = True
-            Dim detailsColumnIndex As Integer = 7
+            Dim detailsColumnIndex As Integer = 9
             If dgvTradableInstruments.Columns("details_column") Is Nothing Then
                 dgvTradableInstruments.Columns.Insert(detailsColumnIndex, detailsColumn)
             End If
@@ -72,9 +76,9 @@
             addColumn.Name = "add_column"
             addColumn.Text = "Add Signal"
             addColumn.UseColumnTextForButtonValue = True
-            Dim resetColumnIndex As Integer = 8
+            Dim addColumnIndex As Integer = 10
             If dgvTradableInstruments.Columns("add_column") Is Nothing Then
-                dgvTradableInstruments.Columns.Insert(resetColumnIndex, addColumn)
+                dgvTradableInstruments.Columns.Insert(addColumnIndex, addColumn)
             End If
 
             dgvTradableInstruments.Refresh()
@@ -83,10 +87,10 @@
 
     Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
         If e.ColumnIndex = 7 Then
-            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(6).Value, NFOStrategyInstrument))
+            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument))
             frm.ShowDialog()
         ElseIf e.ColumnIndex = 8 Then
-            Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(6).Value, NFOStrategyInstrument))
+            Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument))
             frm.ShowDialog()
         End If
     End Sub
