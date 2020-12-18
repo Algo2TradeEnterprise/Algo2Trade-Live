@@ -40,6 +40,7 @@ Public Class frmNFOSettings
             dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
             txtInitialInvestment.Text = _settings.InitialInvestment
             txtExpectedIncreaseEachPeriod.Text = _settings.ExpectedIncreaseEachPeriod
+            txtActiveInstrumentCount.Text = _settings.ActiveInstrumentCount
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
             txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
@@ -52,6 +53,7 @@ Public Class frmNFOSettings
         _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
         _settings.InitialInvestment = txtInitialInvestment.Text
         _settings.ExpectedIncreaseEachPeriod = txtExpectedIncreaseEachPeriod.Text
+        _settings.ActiveInstrumentCount = txtActiveInstrumentCount.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text

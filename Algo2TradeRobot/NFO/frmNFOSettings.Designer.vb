@@ -42,6 +42,8 @@ Partial Class frmNFOSettings
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtActiveInstrumentCount = New System.Windows.Forms.TextBox()
+        Me.lblActiveInstrumentCount = New System.Windows.Forms.Label()
         Me.grpTelegram.SuspendLayout()
         Me.grpTradeDetails.SuspendLayout()
         Me.SuspendLayout()
@@ -75,7 +77,7 @@ Partial Class frmNFOSettings
         Me.grpTelegram.Controls.Add(Me.lblTelegramChatID)
         Me.grpTelegram.Controls.Add(Me.txtTelegramBotAPIKey)
         Me.grpTelegram.Controls.Add(Me.lblTelegramAPI)
-        Me.grpTelegram.Location = New System.Drawing.Point(4, 170)
+        Me.grpTelegram.Location = New System.Drawing.Point(4, 195)
         Me.grpTelegram.Name = "grpTelegram"
         Me.grpTelegram.Size = New System.Drawing.Size(477, 91)
         Me.grpTelegram.TabIndex = 54
@@ -122,6 +124,8 @@ Partial Class frmNFOSettings
         '
         'grpTradeDetails
         '
+        Me.grpTradeDetails.Controls.Add(Me.txtActiveInstrumentCount)
+        Me.grpTradeDetails.Controls.Add(Me.lblActiveInstrumentCount)
         Me.grpTradeDetails.Controls.Add(Me.txtInitialInvestment)
         Me.grpTradeDetails.Controls.Add(Me.lblInitialInvestment)
         Me.grpTradeDetails.Controls.Add(Me.txtExpectedIncreaseEachPeriod)
@@ -135,7 +139,7 @@ Partial Class frmNFOSettings
         Me.grpTradeDetails.Margin = New System.Windows.Forms.Padding(4)
         Me.grpTradeDetails.Name = "grpTradeDetails"
         Me.grpTradeDetails.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpTradeDetails.Size = New System.Drawing.Size(477, 169)
+        Me.grpTradeDetails.Size = New System.Drawing.Size(477, 194)
         Me.grpTradeDetails.TabIndex = 53
         Me.grpTradeDetails.TabStop = False
         Me.grpTradeDetails.Text = "Trade Details"
@@ -201,38 +205,57 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(428, 128)
+        Me.btnBrowse.Location = New System.Drawing.Point(428, 160)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
-        Me.btnBrowse.TabIndex = 3
+        Me.btnBrowse.TabIndex = 4
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 129)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(227, 161)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
         Me.txtInstrumentDetalis.Size = New System.Drawing.Size(194, 22)
-        Me.txtInstrumentDetalis.TabIndex = 3
+        Me.txtInstrumentDetalis.TabIndex = 4
         '
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 132)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(8, 164)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
         Me.lblInstrumentDetails.TabIndex = 8
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
+        'txtActiveInstrumentCount
+        '
+        Me.txtActiveInstrumentCount.Location = New System.Drawing.Point(227, 126)
+        Me.txtActiveInstrumentCount.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtActiveInstrumentCount.Name = "txtActiveInstrumentCount"
+        Me.txtActiveInstrumentCount.Size = New System.Drawing.Size(243, 22)
+        Me.txtActiveInstrumentCount.TabIndex = 3
+        Me.txtActiveInstrumentCount.Tag = "Active Instrument Count"
+        '
+        'lblActiveInstrumentCount
+        '
+        Me.lblActiveInstrumentCount.AutoSize = True
+        Me.lblActiveInstrumentCount.Location = New System.Drawing.Point(8, 128)
+        Me.lblActiveInstrumentCount.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblActiveInstrumentCount.Name = "lblActiveInstrumentCount"
+        Me.lblActiveInstrumentCount.Size = New System.Drawing.Size(157, 17)
+        Me.lblActiveInstrumentCount.TabIndex = 55
+        Me.lblActiveInstrumentCount.Text = "Active Instrument Count"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(602, 266)
+        Me.ClientSize = New System.Drawing.Size(602, 292)
         Me.Controls.Add(Me.grpTelegram)
         Me.Controls.Add(Me.grpTradeDetails)
         Me.Controls.Add(Me.btnSave)
@@ -269,4 +292,6 @@ Partial Class frmNFOSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
+    Friend WithEvents txtActiveInstrumentCount As TextBox
+    Friend WithEvents lblActiveInstrumentCount As Label
 End Class

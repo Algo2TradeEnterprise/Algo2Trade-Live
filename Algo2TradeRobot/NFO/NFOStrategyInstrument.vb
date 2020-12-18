@@ -69,6 +69,10 @@ Public Class NFOStrategyInstrument
             Case Else
                 Me.TradingDay = DayOfWeek.Sunday
         End Select
+
+        If File.Exists(_signalDetailsFilename) Then
+            CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+        End If
     End Sub
 
     Public Overrides Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -89,15 +93,10 @@ Public Class NFOStrategyInstrument
                 Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
                 If Me.TradingDay = DayOfWeek.Sunday Then
                     If _validRainbow IsNot Nothing Then
-                        Dim validInstruments = userSettings.InstrumentsData.Where(Function(x)
-                                                                                      Return x.Value.TradingDay.ToUpper.Trim = Now.DayOfWeek.ToString.ToUpper.Trim
-                                                                                  End Function)
-                        If validInstruments IsNot Nothing AndAlso validInstruments.Count > 0 Then
-                            remarks = String.Format("Already {0} is active for {1}",
-                                                    validInstruments.FirstOrDefault.Value.TradingSymbol,
-                                                    validInstruments.FirstOrDefault.Value.TradingDay)
-                        Else
+                        If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < CType(Me.ParentStrategy.UserSettings, NFOUserInputs).ActiveInstrumentCount Then
                             eligibleToTakeTrade = True
+                        Else
+                            remarks = "Max Active Instrument count exceed"
                         End If
                     Else
                         remarks = "No valid rainbow is available"
@@ -166,7 +165,7 @@ Public Class NFOStrategyInstrument
                             If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                                 Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                                 If placeOrderResponse.ContainsKey("data") AndAlso
-                                placeOrderResponse("data").ContainsKey("order_id") Then
+                                    placeOrderResponse("data").ContainsKey("order_id") Then
                                     _entryDoneForTheDay = True
                                 End If
                             End If
@@ -215,9 +214,21 @@ Public Class NFOStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
-            If Not Me.TakeTradeToday AndAlso _validRainbow IsNot Nothing AndAlso _lastTick IsNot Nothing AndAlso _lastTick.LastPrice > _lastTick.Open Then
-                If _lastTick.LastPrice > Math.Max(_validRainbow.SMA1, Math.Max(_validRainbow.SMA2, Math.Max(_validRainbow.SMA3, Math.Max(_validRainbow.SMA4, Math.Max(_validRainbow.SMA5, Math.Max(_validRainbow.SMA6, Math.Max(_validRainbow.SMA7, Math.Max(_validRainbow.SMA8, Math.Max(_validRainbow.SMA9, _validRainbow.SMA10))))))))) Then
-                    CType(Me.ParentStrategy, NFOStrategy).EligibleInstruments.Add(Me)
+            If Not Me.TakeTradeToday AndAlso _validRainbow IsNot Nothing AndAlso _lastTick IsNot Nothing Then
+                If _lastTick.LastPrice > _lastTick.Open Then
+                    If _lastTick.LastPrice > Math.Max(_validRainbow.SMA1, Math.Max(_validRainbow.SMA2, Math.Max(_validRainbow.SMA3, Math.Max(_validRainbow.SMA4, Math.Max(_validRainbow.SMA5, Math.Max(_validRainbow.SMA6, Math.Max(_validRainbow.SMA7, Math.Max(_validRainbow.SMA8, Math.Max(_validRainbow.SMA9, _validRainbow.SMA10))))))))) Then
+                        CType(Me.ParentStrategy, NFOStrategy).EligibleInstruments.Add(Me)
+                    Else
+                        If log Then
+                            Dim message As String = "Rainbow not satisfied"
+                            OnHeartbeat(message)
+                        End If
+                    End If
+                Else
+                    If log Then
+                        Dim message As String = "Candle Color not satisfied"
+                        OnHeartbeat(message)
+                    End If
                 End If
             End If
             If Me.TakeTradeToday Then

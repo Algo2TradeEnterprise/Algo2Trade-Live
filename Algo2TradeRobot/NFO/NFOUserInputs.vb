@@ -25,6 +25,7 @@ Public Class NFOUserInputs
 
     Public Property InitialInvestment As Decimal
     Public Property ExpectedIncreaseEachPeriod As Decimal
+    Public Property ActiveInstrumentCount As Integer
 
 
     Public Property InstrumentDetailsFilePath As String

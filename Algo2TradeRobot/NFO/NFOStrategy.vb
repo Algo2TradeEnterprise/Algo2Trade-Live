@@ -15,6 +15,7 @@ Public Class NFOStrategy
 #End Region
 
     Public Property EligibleInstruments As Concurrent.ConcurrentBag(Of NFOStrategyInstrument)
+    Public Property TotalActiveInstrumentCount As Integer
     Public ReadOnly Property NSEHolidays As List(Of Date)
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
@@ -135,52 +136,6 @@ Public Class NFOStrategy
         Return Me.GetType().Name
     End Function
 
-    Private Async Function CheckEligibilityAsync() As Task
-        Try
-            Dim userInput As NFOUserInputs = Me.UserSettings
-            While True
-                If Now >= userInput.TradeEntryTime Then
-                    If Me.EligibleInstruments IsNot Nothing AndAlso Me.EligibleInstruments.Count > 0 Then
-                        Await Task.Delay(1000).ConfigureAwait(False)
-                        For Each runningStock In userInput.InstrumentsData
-                            Dim instrument As NFOStrategyInstrument = Me.EligibleInstruments.Where(Function(x)
-                                                                                                       Return x.TradableInstrument.TradingSymbol = runningStock.Key.ToUpper.Trim
-                                                                                                   End Function).FirstOrDefault
-                            If instrument IsNot Nothing Then
-                                instrument.TakeTradeToday = True
-                                runningStock.Value.TradingDay = Now.DayOfWeek.ToString
-                                Exit For
-                            End If
-                        Next
-
-                        If File.Exists(userInput.InstrumentDetailsFilePath) Then
-                            File.Delete(userInput.InstrumentDetailsFilePath)
-                            Dim dt As DataTable = New DataTable
-                            dt.Columns.Add("Trading Symbol")
-                            dt.Columns.Add("Trading Day")
-                            For Each runningStock In userInput.InstrumentsData
-                                Dim row As DataRow = dt.NewRow
-                                row("Trading Symbol") = runningStock.Value.TradingSymbol.Trim
-                                row("Trading Day") = runningStock.Value.TradingDay.Trim
-                                dt.Rows.Add(row)
-                            Next
-
-                            Using csv As New Utilities.DAL.CSVHelper(userInput.InstrumentDetailsFilePath, ",", _cts)
-                                csv.GetCSVFromDataTable(dt)
-                            End Using
-                        End If
-
-                        Exit While
-                    End If
-                End If
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
-        Catch ex As Exception
-            logger.Error(ex.ToString)
-            Throw ex
-        End Try
-    End Function
-
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Dim ret As Tuple(Of Boolean, String) = Nothing
         Return ret
@@ -235,5 +190,56 @@ Public Class NFOStrategy
             End If
         End If
         Return ret
+    End Function
+
+    Private Async Function CheckEligibilityAsync() As Task
+        Try
+            Dim userInput As NFOUserInputs = Me.UserSettings
+            While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
+
+                If Now >= userInput.TradeEntryTime Then
+                    If Me.EligibleInstruments IsNot Nothing AndAlso Me.EligibleInstruments.Count > 0 Then
+                        Await Task.Delay(1000).ConfigureAwait(False)
+                        For Each runningStock In userInput.InstrumentsData
+                            Dim instrument As NFOStrategyInstrument = Me.EligibleInstruments.Where(Function(x)
+                                                                                                       Return x.TradableInstrument.TradingSymbol = runningStock.Key.ToUpper.Trim
+                                                                                                   End Function).FirstOrDefault
+                            If instrument IsNot Nothing Then
+                                instrument.TakeTradeToday = True
+                                Me.TotalActiveInstrumentCount += 1
+                                runningStock.Value.TradingDay = Now.DayOfWeek.ToString
+                                Exit For
+                            End If
+                        Next
+
+                        If File.Exists(userInput.InstrumentDetailsFilePath) Then
+                            File.Delete(userInput.InstrumentDetailsFilePath)
+                            Dim dt As DataTable = New DataTable
+                            dt.Columns.Add("Trading Symbol")
+                            dt.Columns.Add("Trading Day")
+                            For Each runningStock In userInput.InstrumentsData
+                                Dim row As DataRow = dt.NewRow
+                                row("Trading Symbol") = runningStock.Value.TradingSymbol.Trim
+                                row("Trading Day") = runningStock.Value.TradingDay.Trim
+                                dt.Rows.Add(row)
+                            Next
+
+                            Using csv As New Utilities.DAL.CSVHelper(userInput.InstrumentDetailsFilePath, ",", _cts)
+                                csv.GetCSVFromDataTable(dt)
+                            End Using
+                        End If
+
+                        Exit While
+                    End If
+                End If
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+            Throw ex
+        End Try
     End Function
 End Class

@@ -6,7 +6,7 @@
     End Sub
 
     Private Sub frmSignalDetails_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        If _strategyInstrument IsNot Nothing AndAlso _strategyInstrument.StrategyInstrumentRunning Then
+        If _strategyInstrument IsNot Nothing Then
             Me.Text = String.Format("Signal Details - {0}", _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper)
 
             Dim allSignalDetails As Dictionary(Of Date, NFOStrategyInstrument.SignalDetails) = _strategyInstrument.AllSignalDetails
@@ -61,8 +61,6 @@
                 dgvSignalDetails.DataSource = dt
                 dgvSignalDetails.Refresh()
             End If
-        Else
-            MsgBox("Strategy instrument not running", MsgBoxStyle.Exclamation)
         End If
     End Sub
 End Class
