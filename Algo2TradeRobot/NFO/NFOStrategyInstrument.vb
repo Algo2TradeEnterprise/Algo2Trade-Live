@@ -87,7 +87,7 @@ Public Class NFOStrategyInstrument
                 Dim eligibleToTakeTrade As Boolean = False
                 Dim remarks As String = Nothing
                 Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-                If userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).TradingDay.ToUpper.Trim = "NONE" Then
+                If Me.TradingDay = DayOfWeek.Sunday Then
                     If _validRainbow IsNot Nothing Then
                         Dim validInstruments = userSettings.InstrumentsData.Where(Function(x)
                                                                                       Return x.Value.TradingDay.ToUpper.Trim = Now.DayOfWeek.ToString.ToUpper.Trim
