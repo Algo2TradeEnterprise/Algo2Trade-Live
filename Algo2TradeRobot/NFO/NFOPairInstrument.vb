@@ -269,7 +269,7 @@ Public Class NFOPairInstrument
                                     'Entry
                                     If rgsn IsNot Nothing AndAlso rgsn.Item1 Then
                                         If rgsn.Item2 Then
-                                            If rgsn.Item3.AddMinutes(5) <= signalCheckingInstrument1.TradableInstrument.LastTick.Timestamp.Value Then
+                                            If signalCheckingInstrument1.TradableInstrument.LastTick.Timestamp.Value <= rgsn.Item3.AddMinutes(5) Then
                                                 message = String.Format("{0} -> Entry Signal, Signal Time:{1}, Z-Score:{2}, Y-Stock:{3}, Corel:{4}, Intercept%:{5}",
                                                                             Me.PairName,
                                                                             ins1Candle.PreviousPayload.SnapshotDateTime.ToString("HH:mm:ss"),
