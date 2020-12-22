@@ -80,12 +80,16 @@ Public Class NFOStrategy
                                                                                               x.InstrumentType = IInstrument.TypeOfInstrument.Cash
                                                                                           End Function)
 
-                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                        retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                        ret = True
+                        If runningInstrument IsNot Nothing Then
+                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                            ret = True
 
-                        stkCtr += 1
-                        If stkCtr >= userInputs.NumberOfStocks Then Exit For
+                            stkCtr += 1
+                            If stkCtr >= userInputs.NumberOfStocks Then Exit For
+                        Else
+                            OnHeartbeat(String.Format("Unable to fetch instrument: {0}", runningStock.Trim.ToUpper))
+                        End If
                     Next
                 End If
 
