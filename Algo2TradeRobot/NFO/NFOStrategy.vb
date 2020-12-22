@@ -74,21 +74,22 @@ Public Class NFOStrategy
                     For Each runningRow As DataRow In stockDT.Rows
                         _cts.Token.ThrowIfCancellationRequested()
                         Dim runningStock As String = runningRow.Item("Trading Symbol")
+                        If runningStock.Trim <> "" Then
+                            Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                                  Return x.TradingSymbol.ToUpper = runningStock.Trim.ToUpper AndAlso
+                                                                                                  x.InstrumentType = IInstrument.TypeOfInstrument.Cash
+                                                                                              End Function)
 
-                        Dim runningInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
-                                                                                              Return x.TradingSymbol.ToUpper = runningStock.Trim.ToUpper AndAlso
-                                                                                              x.InstrumentType = IInstrument.TypeOfInstrument.Cash
-                                                                                          End Function)
+                            If runningInstrument IsNot Nothing Then
+                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
+                                ret = True
 
-                        If runningInstrument IsNot Nothing Then
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.Add(runningInstrument)
-                            ret = True
-
-                            stkCtr += 1
-                            If stkCtr >= userInputs.NumberOfStocks Then Exit For
-                        Else
-                            OnHeartbeat(String.Format("Unable to fetch instrument: {0}", runningStock.Trim.ToUpper))
+                                stkCtr += 1
+                                If stkCtr >= userInputs.NumberOfStocks Then Exit For
+                            Else
+                                OnHeartbeat(String.Format("Unable to fetch instrument: {0}", runningStock.Trim.ToUpper))
+                            End If
                         End If
                     Next
                 End If
