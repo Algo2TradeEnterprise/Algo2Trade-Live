@@ -1,5 +1,6 @@
 ﻿Imports NLog
 Imports System.IO
+Imports Utilities.Time
 Imports System.Net.Http
 Imports System.Threading
 Imports Utilities.Network
@@ -689,8 +690,14 @@ Public Class NFOStrategyInstrument
         Dim ret As Dictionary(Of Date, OHLCPayload) = Nothing
         Dim historicalCandlesJSONDict As Dictionary(Of String, Object) = Nothing
         _cts.Token.ThrowIfCancellationRequested()
-        Dim zerodhaEODHistoricalURL As String = "https://kite.zerodha.com/oms/instruments/historical/{0}/day?oi=1&from={1}&to={2}"
-        Dim historicalDataURL As String = String.Format(zerodhaEODHistoricalURL, instrument.InstrumentIdentifier, fromDate.ToString("yyyy-MM-dd"), toDate.ToString("yyyy-MM-dd"))
+        Dim aliceEODHistoricalURL As String = "https://ant.aliceblueonline.com/api/v1/charts?exchange={0}&token={1}&candletype=3&starttime={2}&endtime={3}&type=historical"
+        Dim historicalDataURL As String = Nothing
+        If instrument.Segment.ToUpper = "INDICES" Then
+            historicalDataURL = String.Format(aliceEODHistoricalURL.Replace("token", "name"), String.Format("{0}_{1}", instrument.RawExchange, instrument.Segment), instrument.TradingSymbol, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+        Else
+            historicalDataURL = String.Format(aliceEODHistoricalURL, instrument.RawExchange, instrument.InstrumentIdentifier, DateTimeToUnix(fromDate), DateTimeToUnix(toDate))
+        End If
+
         Dim proxyToBeUsed As HttpProxy = Nothing
         Using browser As New HttpBrowser(proxyToBeUsed, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
             'AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
@@ -699,13 +706,7 @@ Public Class NFOStrategyInstrument
             'AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
             browser.KeepAlive = True
             Dim headers As Dictionary(Of String, String) = New Dictionary(Of String, String)
-            headers.Add("Host", "kite.zerodha.com")
-            headers.Add("Accept", "*/*")
-            headers.Add("Accept-Language", "en-US,en;q=0.9,hi;q=0.8,ko;q=0.7")
-            headers.Add("Authorization", String.Format("enctoken {0}", Me.ParentStrategy.ParentController.APIConnection.ENCToken))
-            headers.Add("Referer", "https://kite.zerodha.com/static/build/chart.html?v=2.4.0")
-            headers.Add("sec-fetch-mode", "cors")
-            headers.Add("sec-fetch-site", "same-origin")
+            headers.Add("X-Authorization-Token", Me.ParentStrategy.ParentController.APIConnection.ENCToken)
 
             Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(historicalDataURL, HttpMethod.Get, Nothing, False, headers, True, "application/json").ConfigureAwait(False)
             If l Is Nothing OrElse l.Item2 Is Nothing Then
@@ -721,11 +722,11 @@ Public Class NFOStrategyInstrument
             'RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         End Using
         If historicalCandlesJSONDict.ContainsKey("data") Then
-            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")("candles")
+            Dim historicalCandles As ArrayList = historicalCandlesJSONDict("data")
             Dim previousPayload As OHLCPayload = Nothing
             For Each historicalCandle In historicalCandles
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim runningSnapshotTime As Date = Utilities.Time.GetDateTimeTillMinutes(historicalCandle(0))
+                Dim runningSnapshotTime As Date = UnixToDateTime(historicalCandle(0)).Date
 
                 Dim runningPayload As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Historical)
                 With runningPayload
@@ -751,7 +752,7 @@ Public Class NFOStrategyInstrument
     Private Async Function CompletePreProcessing() As Task(Of Boolean)
         Dim ret As Boolean = False
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        _eodPayload = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.AddYears(-1), Now.AddDays(-1)).ConfigureAwait(False)
+        _eodPayload = Await GetEODHistoricalDataAsync(Me.TradableInstrument, Now.Date.AddYears(-1), Now.Date).ConfigureAwait(False)
         If _eodPayload IsNot Nothing AndAlso _eodPayload.Count > 0 Then
             Dim rainbowPayload As Dictionary(Of Date, RainbowMA) = Nothing
             CalculateRainbowMovingAverage(7, _eodPayload, rainbowPayload)
