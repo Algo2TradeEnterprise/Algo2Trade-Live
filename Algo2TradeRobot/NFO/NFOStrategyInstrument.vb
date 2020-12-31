@@ -601,7 +601,7 @@ Public Class NFOStrategyInstrument
                         'If (preEma1 > preEma2 AndAlso ema1 < ema2) AndAlso
                         '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Sell) Then
                         'If preltEma1 > preltEma2 AndAlso ltema1 < ltema2 Then
-                        If ltema1 < ltema2 AndAlso htema1 < htema2 Then
+                        If ltema1 < ltema2 OrElse htema1 < htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
                             '    quantity = 1
@@ -617,7 +617,7 @@ Public Class NFOStrategyInstrument
                             'ElseIf (preEma1 < preEma2 AndAlso ema1 > ema2) AndAlso
                             '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Buy) Then
                             'ElseIf preltEma1 < preltEma2 AndAlso ltema1 > ltema2 Then
-                        ElseIf ltema1 > ltema2 AndAlso htema1 > htema2 Then
+                        ElseIf ltema1 > ltema2 OrElse htema1 > htema2 Then
                             Dim quantity As Integer = GetQuantityToTrade()
                             'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
                             '    quantity = -1
