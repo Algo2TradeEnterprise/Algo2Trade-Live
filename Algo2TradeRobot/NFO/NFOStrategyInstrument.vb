@@ -590,6 +590,12 @@ Public Class NFOStrategyInstrument
                                                                     Math.Round(pivots.Pivot.Value, 2),
                                                                     vwap.VWAP.Value > pivots.Pivot.Value)
 
+                                            takeTrade = takeTrade And (vwapEMA.EMA.Value > pivots.Pivot.Value)
+                                            message = String.Format("{0} MVWAP({1})<Central Pivot({2})[{3}].",
+                                                                    message, Math.Round(vwapEMA.EMA.Value, 2),
+                                                                    Math.Round(pivots.Pivot.Value, 2),
+                                                                    vwapEMA.EMA.Value > pivots.Pivot.Value)
+
                                             takeTrade = takeTrade And (rsi.RSI.Value > userSettings.RSILevel)
                                             message = String.Format("{0} RSI({1})>RSI Level({2})[{3}].",
                                                                     message, Math.Round(rsi.RSI.Value, 2),
@@ -719,6 +725,12 @@ Public Class NFOStrategyInstrument
                                                                     Math.Round(pivots.Pivot.Value, 2),
                                                                     vwap.VWAP.Value < pivots.Pivot.Value)
 
+                                            takeTrade = takeTrade And (vwapEMA.EMA.Value < pivots.Pivot.Value)
+                                            message = String.Format("{0} MVWAP({1})<Central Pivot({2})[{3}].",
+                                                                    message, Math.Round(vwapEMA.EMA.Value, 2),
+                                                                    Math.Round(pivots.Pivot.Value, 2),
+                                                                    vwapEMA.EMA.Value < pivots.Pivot.Value)
+
                                             takeTrade = takeTrade And (rsi.RSI.Value < userSettings.RSILevel)
                                             message = String.Format("{0} RSI({1})<RSI Level({2})[{3}].",
                                                                     message, Math.Round(rsi.RSI.Value, 2),
@@ -830,124 +842,132 @@ Public Class NFOStrategyInstrument
         Dim ret As SignalDetails = Nothing
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim vwapData As VWAPConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyVWAPConsumer)
+        Dim emaData As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMAConsumer)
         Dim pivotData As PivotsConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyPivotConsumer)
         If Me.TradableInstrument.IsHistoricalCompleted Then
             If vwapData.ConsumerPayloads IsNot Nothing AndAlso vwapData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
                 Dim vwap As VWAPConsumer.VWAPPayload = vwapData.ConsumerPayloads(signalCandle.SnapshotDateTime)
-                If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
-                    Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(signalCandle.SnapshotDateTime)
-                    Dim entryPrice As Decimal = Decimal.MinValue
-                    Dim stoplossPrice As Decimal = Decimal.MinValue
-                    Dim stoplossRemark As String = Nothing
-                    Dim targetPrice As Decimal = Decimal.MinValue
-                    Dim targetRemark As String = Nothing
+                If emaData.ConsumerPayloads IsNot Nothing AndAlso emaData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
+                    Dim vwapEMA As EMAConsumer.EMAPayload = emaData.ConsumerPayloads(signalCandle.SnapshotDateTime)
+                    If pivotData.ConsumerPayloads IsNot Nothing AndAlso pivotData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
+                        Dim pivots As PivotsConsumer.PivotsPayload = pivotData.ConsumerPayloads(signalCandle.SnapshotDateTime)
+                        Dim entryPrice As Decimal = Decimal.MinValue
+                        Dim stoplossPrice As Decimal = Decimal.MinValue
+                        Dim stoplossRemark As String = Nothing
+                        Dim targetPrice As Decimal = Decimal.MinValue
+                        Dim targetRemark As String = Nothing
 
-                    If direction = IOrder.TypeOfTransaction.Buy Then
-                        entryPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        stoplossPrice = Decimal.MinValue
-                        If vwap.VWAP.Value > stoplossPrice AndAlso vwap.VWAP.Value < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "VWAP"
-                        End If
-                        If pivots.Pivot.Value > stoplossPrice AndAlso pivots.Pivot.Value < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Central Pivot"
-                        End If
-                        If pivots.Resistance1 > stoplossPrice AndAlso pivots.Resistance1 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Resistance1"
-                        End If
-                        If pivots.Resistance2 > stoplossPrice AndAlso pivots.Resistance2 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Resistance2"
-                        End If
-                        If pivots.Resistance3 > stoplossPrice AndAlso pivots.Resistance3 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Resistance3"
-                        End If
-                        If pivots.Support1 > stoplossPrice AndAlso pivots.Support1 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Support1"
-                        End If
-                        If pivots.Support2 > stoplossPrice AndAlso pivots.Support2 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Support2"
-                        End If
-                        If pivots.Support3 > stoplossPrice AndAlso pivots.Support3 < entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Support3"
-                        End If
-                        If signalCandle.LowPrice.Value <= stoplossPrice Then
-                            stoplossPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                            stoplossRemark = "Candle Low"
+                        If direction = IOrder.TypeOfTransaction.Buy Then
+                            entryPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                            stoplossPrice = Decimal.MinValue
+                            If vwapEMA.EMA.Value < entryPrice Then
+                                stoplossPrice = ConvertFloorCeling(vwapEMA.EMA.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                stoplossRemark = "MVWAP"
+
+                                If pivots.Support3 > vwapEMA.EMA.Value AndAlso pivots.Support3 < vwap.VWAP.Value AndAlso pivots.Support3 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Support3"
+                                End If
+                                If pivots.Support2 > vwapEMA.EMA.Value AndAlso pivots.Support2 < vwap.VWAP.Value AndAlso pivots.Support2 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Support2"
+                                End If
+                                If pivots.Support1 > vwapEMA.EMA.Value AndAlso pivots.Support1 < vwap.VWAP.Value AndAlso pivots.Support1 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Support1"
+                                End If
+                                If pivots.Pivot.Value > vwapEMA.EMA.Value AndAlso pivots.Pivot.Value < vwap.VWAP.Value AndAlso pivots.Pivot.Value < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Central Pivot"
+                                End If
+                                If pivots.Resistance3 > vwapEMA.EMA.Value AndAlso pivots.Resistance3 < vwap.VWAP.Value AndAlso pivots.Resistance3 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Resistance3"
+                                End If
+                                If pivots.Resistance2 > vwapEMA.EMA.Value AndAlso pivots.Resistance2 < vwap.VWAP.Value AndAlso pivots.Resistance2 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Resistance2"
+                                End If
+                                If pivots.Resistance1 > vwapEMA.EMA.Value AndAlso pivots.Resistance1 < vwap.VWAP.Value AndAlso pivots.Resistance1 < entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Resistance1"
+                                End If
+
+                                If signalCandle.LowPrice.Value <= stoplossPrice Then
+                                    stoplossPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Candle Low"
+                                End If
+
+                                Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
+                                entryPrice = entryPrice + entryBuffer
+                                Dim slBuffer As Decimal = CalculateStoplossBuffer(stoplossPrice)
+                                stoplossPrice = stoplossPrice - slBuffer
+
+                                Dim targetPoint As Decimal = ConvertFloorCeling((entryPrice - stoplossPrice) * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                targetPrice = entryPrice + targetPoint
+                            End If
+                        ElseIf direction = IOrder.TypeOfTransaction.Sell Then
+                            entryPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            stoplossPrice = Decimal.MaxValue
+                            If vwapEMA.EMA.Value > entryPrice Then
+                                stoplossPrice = ConvertFloorCeling(vwapEMA.EMA.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                stoplossRemark = "MVWAP"
+
+                                If pivots.Resistance1 < vwapEMA.EMA.Value AndAlso pivots.Resistance1 > vwap.VWAP.Value AndAlso pivots.Resistance1 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Resistance1"
+                                End If
+                                If pivots.Resistance2 < vwapEMA.EMA.Value AndAlso pivots.Resistance2 > vwap.VWAP.Value AndAlso pivots.Resistance2 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Resistance2"
+                                End If
+                                If pivots.Resistance3 < vwapEMA.EMA.Value AndAlso pivots.Resistance3 > vwap.VWAP.Value AndAlso pivots.Resistance3 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Resistance3"
+                                End If
+                                If pivots.Pivot.Value < vwapEMA.EMA.Value AndAlso pivots.Pivot.Value > vwap.VWAP.Value AndAlso pivots.Pivot.Value > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Central Pivot"
+                                End If
+                                If pivots.Support1 < vwapEMA.EMA.Value AndAlso pivots.Support1 > vwap.VWAP.Value AndAlso pivots.Support1 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Support1"
+                                End If
+                                If pivots.Support2 < vwapEMA.EMA.Value AndAlso pivots.Support2 > vwap.VWAP.Value AndAlso pivots.Support2 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Support2"
+                                End If
+                                If pivots.Support3 < vwapEMA.EMA.Value AndAlso pivots.Support3 > vwap.VWAP.Value AndAlso pivots.Support3 > entryPrice Then
+                                    stoplossPrice = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Support3"
+                                End If
+
+                                If signalCandle.HighPrice.Value >= stoplossPrice Then
+                                    stoplossPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Candle High"
+                                End If
+
+                                Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
+                                entryPrice = entryPrice - entryBuffer
+                                Dim slBuffer As Decimal = CalculateStoplossBuffer(stoplossPrice)
+                                stoplossPrice = stoplossPrice + slBuffer
+
+                                Dim targetPoint As Decimal = ConvertFloorCeling((stoplossPrice - entryPrice) * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                targetPrice = entryPrice - targetPoint
+                            End If
                         End If
 
-                        Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
-                        entryPrice = entryPrice + entryBuffer
-                        Dim slBuffer As Decimal = CalculateStoplossBuffer(stoplossPrice)
-                        stoplossPrice = stoplossPrice - slBuffer
-
-                        Dim targetPoint As Decimal = ConvertFloorCeling((entryPrice - stoplossPrice) * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        targetPrice = entryPrice + targetPoint
-                    ElseIf direction = IOrder.TypeOfTransaction.Sell Then
-                        entryPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                        stoplossPrice = Decimal.MaxValue
-                        If vwap.VWAP.Value < stoplossPrice AndAlso vwap.VWAP.Value > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(vwap.VWAP.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "VWAP"
+                        If entryPrice <> Decimal.MinValue AndAlso stoplossPrice <> Decimal.MinValue AndAlso
+                            stoplossPrice <> Decimal.MaxValue AndAlso targetPrice <> Decimal.MinValue Then
+                            ret = New SignalDetails With
+                                {
+                                 .EntryPrice = entryPrice,
+                                 .StoplossPrice = stoplossPrice,
+                                 .StoplossRemark = stoplossRemark,
+                                 .TargetPrice = targetPrice,
+                                 .TargetRemark = targetRemark
+                                }
                         End If
-                        If pivots.Pivot.Value < stoplossPrice AndAlso pivots.Pivot.Value > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Pivot.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Central Pivot"
-                        End If
-                        If pivots.Resistance1 < stoplossPrice AndAlso pivots.Resistance1 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Resistance1"
-                        End If
-                        If pivots.Resistance2 < stoplossPrice AndAlso pivots.Resistance2 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Resistance2"
-                        End If
-                        If pivots.Resistance3 < stoplossPrice AndAlso pivots.Resistance3 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Resistance3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Resistance3"
-                        End If
-                        If pivots.Support1 < stoplossPrice AndAlso pivots.Support1 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support1, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Support1"
-                        End If
-                        If pivots.Support2 < stoplossPrice AndAlso pivots.Support2 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support2, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Support2"
-                        End If
-                        If pivots.Support3 < stoplossPrice AndAlso pivots.Support3 > entryPrice Then
-                            stoplossPrice = ConvertFloorCeling(pivots.Support3, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Support3"
-                        End If
-                        If signalCandle.HighPrice.Value >= stoplossPrice Then
-                            stoplossPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                            stoplossRemark = "Candle High"
-                        End If
-
-                        Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
-                        entryPrice = entryPrice - entryBuffer
-                        Dim slBuffer As Decimal = CalculateStoplossBuffer(stoplossPrice)
-                        stoplossPrice = stoplossPrice + slBuffer
-
-                        Dim targetPoint As Decimal = ConvertFloorCeling((stoplossPrice - entryPrice) * userSettings.TargetMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                        targetPrice = entryPrice - targetPoint
-                    End If
-
-                    If entryPrice <> Decimal.MinValue AndAlso stoplossPrice <> Decimal.MinValue AndAlso
-                        stoplossPrice <> Decimal.MaxValue AndAlso targetPrice <> Decimal.MinValue Then
-                        ret = New SignalDetails With
-                            {
-                             .EntryPrice = entryPrice,
-                             .StoplossPrice = stoplossPrice,
-                             .StoplossRemark = stoplossRemark,
-                             .TargetPrice = targetPrice,
-                             .TargetRemark = targetRemark
-                            }
                     End If
                 End If
             End If
@@ -1024,14 +1044,16 @@ Public Class NFOStrategyInstrument
         If Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.CDS Then
             ret = 0.005
         ElseIf Me.TradableInstrument.ExchangeDetails.ExchangeType = TypeOfExchage.NSE Then
-            If price <= 200 Then
-                ret = 0.2
-            ElseIf price > 200 AndAlso price <= 500 Then
+            If price <= 300 Then
                 ret = 0.5
-            ElseIf price > 500 AndAlso price <= 1000 Then
+            ElseIf price > 300 AndAlso price <= 1000 Then
                 ret = 1
-            ElseIf price > 1000 Then
+            ElseIf price > 1000 AndAlso price <= 2000 Then
                 ret = 2
+            ElseIf price > 2000 AndAlso price <= 5000 Then
+                ret = 3
+            ElseIf price > 5000 Then
+                ret = 4
             End If
         End If
         Return ret
