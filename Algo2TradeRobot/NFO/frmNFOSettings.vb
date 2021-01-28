@@ -19,6 +19,7 @@ Public Class frmNFOSettings
             btnSave.Enabled = False
         End If
         LoadSettings()
+        chkbAutoSelectStock_CheckedChanged(Nothing, Nothing)
     End Sub
 
     Private Sub btnSave_Click(sender As Object, e As EventArgs) Handles btnSave.Click
@@ -38,26 +39,36 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
-            txtInitialInvestment.Text = _settings.InitialInvestment
-            txtExpectedIncreaseEachPeriod.Text = _settings.ExpectedIncreaseEachPeriod
-            txtActiveInstrumentCount.Text = _settings.ActiveInstrumentCount
-            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
+            nmrcActiveInstrumentCount.Value = _settings.ActiveInstrumentCount
 
-            txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
-            txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
+            nmrcATRPeriod.Value = _settings.ATRPeriod
+            nmrcPivotPeriod.Value = _settings.PivotPeriod
+            nmrcPivotTrendPeriod.Value = _settings.PivotTrendPeriod
+
+            txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilepath
+            chkbAutoSelectStock.Checked = _settings.AutoSelectStock
+            txtMinimumStockPrice.Text = _settings.MinimumStockPrice
+            txtMaximumStockPrice.Text = _settings.MaximumStockPrice
+            txtMinimumVolume.Text = _settings.MinimumVolume
+            txtMinimumATR.Text = _settings.MinimumATRPercentage
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = 1
         _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
-        _settings.InitialInvestment = txtInitialInvestment.Text
-        _settings.ExpectedIncreaseEachPeriod = txtExpectedIncreaseEachPeriod.Text
-        _settings.ActiveInstrumentCount = txtActiveInstrumentCount.Text
-        _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
+        _settings.ActiveInstrumentCount = nmrcActiveInstrumentCount.Value
 
-        _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
-        _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
+        _settings.ATRPeriod = nmrcATRPeriod.Value
+        _settings.PivotPeriod = nmrcPivotPeriod.Value
+        _settings.PivotTrendPeriod = nmrcPivotTrendPeriod.Value
+
+        _settings.InstrumentDetailsFilepath = txtInstrumentDetalis.Text
+        _settings.AutoSelectStock = chkbAutoSelectStock.Checked
+        _settings.MinimumStockPrice = txtMinimumStockPrice.Text
+        _settings.MaximumStockPrice = txtMaximumStockPrice.Text
+        _settings.MinimumVolume = txtMinimumVolume.Text
+        _settings.MinimumATRPercentage = txtMinimumATR.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -87,14 +98,17 @@ Public Class frmNFOSettings
     Private Sub ValidateFile()
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
+
     Private Sub ValidateInputs()
-        ValidateNumbers(1, Decimal.MaxValue, txtInitialInvestment)
-        ValidateNumbers(1, Decimal.MaxValue, txtExpectedIncreaseEachPeriod)
+        ValidateNumbers(1, Decimal.MaxValue, txtMinimumStockPrice)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaximumStockPrice)
+        ValidateNumbers(1, Decimal.MaxValue, txtMinimumATR)
+        ValidateNumbers(1, Long.MaxValue, txtMinimumVolume)
 
         ValidateFile()
     End Sub
 
-    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs)
         opnFileSettings.Filter = "|*.csv"
         opnFileSettings.ShowDialog()
     End Sub
@@ -108,4 +122,7 @@ Public Class frmNFOSettings
         End If
     End Sub
 
+    Private Sub chkbAutoSelectStock_CheckedChanged(sender As Object, e As EventArgs) Handles chkbAutoSelectStock.CheckedChanged
+        pnlStockSelectionDetails.Enabled = chkbAutoSelectStock.Checked
+    End Sub
 End Class

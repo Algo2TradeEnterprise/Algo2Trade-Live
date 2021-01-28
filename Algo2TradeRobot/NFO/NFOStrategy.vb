@@ -1,11 +1,8 @@
 ﻿Imports NLog
-Imports System.Net.Http
 Imports System.Threading
 Imports Algo2TradeCore.Controller
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
-Imports Utilities.Network
-Imports HtmlAgilityPack
 Imports System.IO
 
 Public Class NFOStrategy
@@ -14,9 +11,10 @@ Public Class NFOStrategy
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Public Property EligibleInstruments As Concurrent.ConcurrentBag(Of NFOStrategyInstrument)
+    Public Property OptionInstruments As List(Of IInstrument)
+
     Public Property TotalActiveInstrumentCount As Integer
-    Public ReadOnly Property NSEHolidays As List(Of Date)
+    Public TradePlacementLock As Integer
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
@@ -47,22 +45,73 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            _NSEHolidays = Await GetNSEEquityHolidaysAsync().ConfigureAwait(False)
-
             Dim userInputs As NFOUserInputs = Me.UserSettings
+            If userInputs.InstrumentDetailsFilepath IsNot Nothing AndAlso File.Exists(userInputs.InstrumentDetailsFilepath) Then
+                If userInputs.AutoSelectStock Then
+                    Dim atrInstruments As List(Of String) = Nothing
+                    Using fillInstruments As New NFOFillInstrumentDetails(_cts, Me)
+                        atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
+                    End Using
+                    If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
+                        Dim dt As DataTable = New DataTable
+                        dt.Columns.Add("Trading Symbol")
+                        For Each runningStock In atrInstruments
+                            Dim row As DataRow = dt.NewRow
+                            row("Trading Symbol") = runningStock
+                            dt.Rows.Add(row)
+                        Next
+                        File.Delete(userInputs.InstrumentDetailsFilepath)
+                        Using csv As New Utilities.DAL.CSVHelper(userInputs.InstrumentDetailsFilepath, ",", _cts)
+                            csv.GetCSVFromDataTable(dt)
+                        End Using
+
+                        userInputs.FillInstrumentDetails(userInputs.InstrumentDetailsFilepath, _cts)
+                    End If
+                End If
+            End If
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+
+                Dim runningInstruments As List(Of String) = GetRunningInstrumentList()
+                If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
+                    For Each runinstrument In runningInstruments
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                    Return x.TradingSymbol.ToUpper = runinstrument.ToUpper
+                                                                                                End Function)
+
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        If runningTradableInstrument IsNot Nothing Then
+                            retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            If myOptionContracts IsNot Nothing Then
+                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                                Me.OptionInstruments.AddRange(myOptionContracts)
+                            End If
+                            ret = True
+                        End If
+                    Next
+                End If
+
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
-                                                                                            End Function)
+                    If runningInstruments Is Nothing OrElse Not runningInstruments.Contains(instrument.Value.TradingSymbol, StringComparer.OrdinalIgnoreCase) Then
+                        Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                                    Return x.TradingSymbol.ToUpper = instrument.Value.TradingSymbol.ToUpper
+                                                                                                End Function)
 
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                    If runningTradableInstrument IsNot Nothing Then
-                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                        ret = True
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                        If runningTradableInstrument IsNot Nothing Then
+                            retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            If myOptionContracts IsNot Nothing Then
+                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                                Me.OptionInstruments.AddRange(myOptionContracts)
+                            End If
+                            ret = True
+                        End If
                     End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -107,18 +156,73 @@ Public Class NFOStrategy
         Return ret
     End Function
 
+    Private Function GetCurrentOptionContracts(ByVal allInstruments As List(Of IInstrument), ByVal cashInstrument As IInstrument) As List(Of IInstrument)
+        Dim ret As List(Of IInstrument) = Nothing
+        If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
+            Dim myOptionContracts As List(Of IInstrument) = allInstruments.FindAll(Function(x)
+                                                                                       Return x.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
+                                                                                       x.RawInstrumentName.ToUpper = cashInstrument.RawInstrumentName.ToUpper
+                                                                                   End Function)
+
+            Dim minExpiry As Date = myOptionContracts.Min(Function(x)
+                                                              If Now.Date <= x.Expiry.Value.AddDays(-2).Date Then
+                                                                  Return x.Expiry.Value.Date
+                                                              Else
+                                                                  Return Date.MaxValue
+                                                              End If
+                                                          End Function)
+
+            Dim minExpryInstrmts As List(Of IInstrument) = myOptionContracts.FindAll(Function(x)
+                                                                                         Return x.Expiry.Value.Date = minExpiry.Date
+                                                                                     End Function)
+            If ret Is Nothing Then ret = New List(Of IInstrument)
+            ret.AddRange(minExpryInstrmts)
+
+            If minExpiry.Date.AddDays(-2) = Now.Date Then
+                Dim nextMinExpiry As Date = myOptionContracts.Min(Function(x)
+                                                                      If x.Expiry.Value.Date > minExpiry.Date Then
+                                                                          Return x.Expiry.Value.Date
+                                                                      Else
+                                                                          Return Date.MaxValue
+                                                                      End If
+                                                                  End Function)
+                Dim nxtMinExpryInstrmt As List(Of IInstrument) = myOptionContracts.FindAll(Function(x)
+                                                                                               Return x.Expiry.Value.Date = nextMinExpiry.Date
+                                                                                           End Function)
+                ret.AddRange(nxtMinExpryInstrmt)
+            End If
+        End If
+        Return ret
+    End Function
+
+    Public Async Function CreateDependentTradableStrategyInstrumentsAsync(ByVal instrumentToBeSubscrided As IInstrument) As Task(Of NFOStrategyInstrument)
+        Dim ret As NFOStrategyInstrument = Nothing
+        Dim retTradableStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
+        _cts.Token.ThrowIfCancellationRequested()
+        If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
+        Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(instrumentToBeSubscrided, Me, False, _cts)
+        AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
+        AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
+        AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+        AddHandler runningTradableStrategyInstrument.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+
+        retTradableStrategyInstruments.Add(runningTradableStrategyInstrument)
+        ret = runningTradableStrategyInstrument
+        TradableStrategyInstruments = TradableStrategyInstruments.Concat(retTradableStrategyInstruments)
+        Await Me.ParentController.ProcessDependentStrategyInstrumentSubscriptionAsync(Me).ConfigureAwait(False)
+        Return ret
+    End Function
+
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 
         Try
-            EligibleInstruments = New Concurrent.ConcurrentBag(Of NFOStrategyInstrument)
             _cts.Token.ThrowIfCancellationRequested()
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            tasks.Add(Task.Run(AddressOf CheckEligibilityAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -137,109 +241,20 @@ Public Class NFOStrategy
     End Function
 
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
-        Dim ret As Tuple(Of Boolean, String) = Nothing
-        Return ret
+        Throw New NotImplementedException()
     End Function
 
-    Private Async Function GetNSEEquityHolidaysAsync() As Task(Of List(Of Date))
-        Dim ret As List(Of Date) = Nothing
-        Dim holidayURL As String = "https://www1.nseindia.com/global/content/market_timings_holidays/market_timings_holidays.jsp?pageName=0&dateRange=&fromDate={0}&toDate={1}&tabActive=trading&load=false"
-        Dim futureHolidayURL As String = String.Format(holidayURL, Now.ToString("dd-MM-yyyy"), Now.AddDays(15).ToString("dd-MM-yyyy"))
-        Dim outputResponse As HtmlDocument = Nothing
-        HttpBrowser.KillCookies()
-        Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-
-            browser.KeepAlive = True
-            Dim headersToBeSent As New Dictionary(Of String, String)
-            headersToBeSent.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-            headersToBeSent.Add("Accept-Encoding", "gzip, deflate, br")
-            headersToBeSent.Add("Accept-Language", "en-US,en;q=0.9")
-            headersToBeSent.Add("Host", "www1.nseindia.com")
-            headersToBeSent.Add("Sec-Fetch-Dest", "document")
-            headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
-            headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
-            headersToBeSent.Add("Sec-Fetch-Site", "none")
-            headersToBeSent.Add("Sec-Fetch-User", "?1")
-
-            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(futureHolidayURL, HttpMethod.Get, Nothing, False, headersToBeSent, True, "text/html").ConfigureAwait(False)
-            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                outputResponse = l.Item2
-            End If
-            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-        End Using
-        If outputResponse IsNot Nothing AndAlso outputResponse.DocumentNode IsNot Nothing Then
-            If outputResponse.DocumentNode.SelectNodes("//table") IsNot Nothing AndAlso outputResponse.DocumentNode.SelectNodes("//table").Count = 1 Then
-                Dim table As HtmlNode = outputResponse.DocumentNode.SelectNodes("//table")(0)
-                If table IsNot Nothing And table.SelectNodes("tr") IsNot Nothing AndAlso table.SelectNodes("tr").Count > 1 Then
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If table.SelectNodes("//td[@class='number']") IsNot Nothing AndAlso table.SelectNodes("//td[@class='number']").Count Then
-                        For Each runningData As HtmlNode In table.SelectNodes("//td[@class='number']")
-                            Dim holiday As Date = Date.ParseExact(runningData.InnerText, "dd-MMM-yyyy", Nothing)
-                            If ret Is Nothing Then ret = New List(Of Date)
-                            ret.Add(holiday)
-                        Next
-                    End If
+    Private Function GetRunningInstrumentList() As List(Of String)
+        Dim ret As List(Of String) = Nothing
+        If Directory.Exists(Path.Combine(My.Application.Info.DirectoryPath, "Signals")) Then
+            For Each runningFile In Directory.GetFiles(Path.Combine(My.Application.Info.DirectoryPath, "Signals"), "*.SignalDetails.a2t")
+                Dim runningSignal As SignalDetails = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(runningFile)
+                If runningSignal IsNot Nothing AndAlso runningSignal.IsActiveSignal Then
+                    If ret Is Nothing Then ret = New List(Of String)
+                    ret.Add(runningSignal.InstrumentName)
                 End If
-            End If
+            Next
         End If
         Return ret
-    End Function
-
-    Private Async Function CheckEligibilityAsync() As Task
-        Try
-            Dim userInput As NFOUserInputs = Me.UserSettings
-            While True
-                If Me.ParentController.OrphanException IsNot Nothing Then
-                    Throw Me.ParentController.OrphanException
-                End If
-
-                If Now >= userInput.TradeEntryTime Then
-                    If Me.EligibleInstruments IsNot Nothing AndAlso Me.EligibleInstruments.Count > 0 Then
-                        Await Task.Delay(1000).ConfigureAwait(False)
-                        For Each runningStock In userInput.InstrumentsData
-                            Dim instrument As NFOStrategyInstrument = Me.EligibleInstruments.Where(Function(x)
-                                                                                                       Return x.TradableInstrument.TradingSymbol = runningStock.Key.ToUpper.Trim
-                                                                                                   End Function).FirstOrDefault
-                            If instrument IsNot Nothing Then
-                                instrument.TakeTradeToday = True
-                                Me.TotalActiveInstrumentCount += 1
-                                runningStock.Value.TradingDay = Now.DayOfWeek.ToString
-                                Exit For
-                            End If
-                        Next
-
-                        If File.Exists(userInput.InstrumentDetailsFilePath) Then
-                            File.Delete(userInput.InstrumentDetailsFilePath)
-                            Dim dt As DataTable = New DataTable
-                            dt.Columns.Add("Trading Symbol")
-                            dt.Columns.Add("Trading Day")
-                            For Each runningStock In userInput.InstrumentsData
-                                Dim row As DataRow = dt.NewRow
-                                row("Trading Symbol") = runningStock.Value.TradingSymbol.Trim
-                                row("Trading Day") = runningStock.Value.TradingDay.Trim
-                                dt.Rows.Add(row)
-                            Next
-
-                            Using csv As New Utilities.DAL.CSVHelper(userInput.InstrumentDetailsFilePath, ",", _cts)
-                                csv.GetCSVFromDataTable(dt)
-                            End Using
-                        End If
-
-                        Exit While
-                    End If
-                End If
-                Await Task.Delay(1000).ConfigureAwait(False)
-            End While
-        Catch ex As Exception
-            logger.Error(ex.ToString)
-            Throw ex
-        End Try
     End Function
 End Class
