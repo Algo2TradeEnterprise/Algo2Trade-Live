@@ -319,7 +319,17 @@ Public Class NFOStrategyInstrument
                         Dim orderID As String = placeOrderResponse("data")("order_id")
                         Me.SignalData.InsertOrder(_executeCommandData, orderID)
                         'TODO: Confirm trade entry and update last trade or cancel trade after 5 seconds
+                        While True
+                            If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                                Dim order As IBusinessOrder = Me.OrderDetails(orderID)
+                                If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
+                                    If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
 
+                                    End If
+                                End If
+                            End If
+                            Await Task.Delay(500).ConfigureAwait(False)
+                        End While
                     End If
                 End If
             ElseIf command = ExecuteCommands.CancelRegularOrder AndAlso data IsNot Nothing Then
