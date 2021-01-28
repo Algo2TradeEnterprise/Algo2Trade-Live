@@ -112,7 +112,7 @@ Public Class frmNFOSettings
 
     Private Sub ValidateInputs()
         ValidateNumbers(1, 60, txtSignalTimeFrame, True)
-        ValidateNumbers(0, 100, txtTargetToLeftMovementPercentage)
+        ValidateNumbers(0, Decimal.MaxValue, txtTargetToLeftMovementPercentage)
         ValidateNumbers(0, Decimal.MaxValue, txtTargetMultiplier)
 
         ValidateNumbers(0, Decimal.MaxValue, txtMinPrice)
