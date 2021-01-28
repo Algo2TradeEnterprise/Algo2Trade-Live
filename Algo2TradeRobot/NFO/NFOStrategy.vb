@@ -14,7 +14,7 @@ Public Class NFOStrategy
     Public Property OptionInstruments As List(Of IInstrument)
 
     Public Property TotalActiveInstrumentCount As Integer
-    Public TradePlacementLock As Integer
+    Public TradePlacementLock As Integer = 0
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
@@ -65,6 +65,7 @@ Public Class NFOStrategy
                             csv.GetCSVFromDataTable(dt)
                         End Using
 
+                        userInputs.InstrumentsData = Nothing
                         userInputs.FillInstrumentDetails(userInputs.InstrumentDetailsFilepath, _cts)
                     End If
                 End If
@@ -84,11 +85,11 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         If runningTradableInstrument IsNot Nothing Then
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
-                            If myOptionContracts IsNot Nothing Then
-                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
-                                Me.OptionInstruments.AddRange(myOptionContracts)
-                            End If
+                            'Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            'If myOptionContracts IsNot Nothing Then
+                            '    If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                            '    Me.OptionInstruments.AddRange(myOptionContracts)
+                            'End If
                             ret = True
                         End If
                     Next
@@ -105,11 +106,11 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         If runningTradableInstrument IsNot Nothing Then
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
-                            If myOptionContracts IsNot Nothing Then
-                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
-                                Me.OptionInstruments.AddRange(myOptionContracts)
-                            End If
+                            'Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            'If myOptionContracts IsNot Nothing Then
+                            '    If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                            '    Me.OptionInstruments.AddRange(myOptionContracts)
+                            'End If
                             ret = True
                         End If
                     End If

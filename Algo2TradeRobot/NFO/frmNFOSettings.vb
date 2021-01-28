@@ -108,7 +108,7 @@ Public Class frmNFOSettings
         ValidateFile()
     End Sub
 
-    Private Sub btnBrowse_Click(sender As Object, e As EventArgs)
+    Private Sub btnBrowse_Click(sender As Object, e As EventArgs) Handles btnBrowse.Click
         opnFileSettings.Filter = "|*.csv"
         opnFileSettings.ShowDialog()
     End Sub

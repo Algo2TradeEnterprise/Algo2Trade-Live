@@ -201,10 +201,19 @@ Public Class NFOStrategyInstrument
                                 .TypeOfEntry = entryType
                             }
 
-                            Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
-                            lastTrade = Me.SignalData.GetLastTrade()
-                            If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
-                                _lastAttempt = -1
+
+                            If CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock = 0 Then
+                                Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 1)
+                                Try
+                                    Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
+                                    lastTrade = Me.SignalData.GetLastTrade()
+                                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
+                                        _lastAttempt = -1
+                                        CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+                                    End If
+                                Finally
+                                    Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
+                                End Try
                             End If
                         End If
                     End If
@@ -243,6 +252,10 @@ Public Class NFOStrategyInstrument
                                     }
 
                                 Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                End If
                             Else
                                 ''Reverse Check
                                 Dim reverseExit As Boolean = False
@@ -259,6 +272,10 @@ Public Class NFOStrategyInstrument
                                     }
 
                                     Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                        CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                    End If
                                 Else
                                     ''Zero premium
                                     Dim zeroPremiumReached As Boolean = False
@@ -273,6 +290,10 @@ Public Class NFOStrategyInstrument
                                         }
 
                                         Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                            CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                        End If
                                     Else
                                         ''Contract Rollover
                                         Dim expiryDate As Date = optnStrgInstrmnt.TradableInstrument.Expiry.Value.AddDays(-2)
@@ -284,6 +305,10 @@ Public Class NFOStrategyInstrument
                                             }
 
                                             Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                            If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                                CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                            End If
                                         End If
                                     End If
                                 End If
@@ -318,18 +343,62 @@ Public Class NFOStrategyInstrument
                         placeOrderResponse("data").ContainsKey("order_id") Then
                         Dim orderID As String = placeOrderResponse("data")("order_id")
                         Me.SignalData.InsertOrder(_executeCommandData, orderID)
-                        'TODO: Confirm trade entry and update last trade or cancel trade after 5 seconds
+                        Dim placedTime As Date = Now
                         While True
                             If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
                                 Dim order As IBusinessOrder = Me.OrderDetails(orderID)
                                 If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
                                     If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-
+                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        'If lastTrade IsNot Nothing AndAlso lastTrade.EntryOrderID = orderID Then
+                                        lastTrade.CurrentStatus = TradeStatus.InProgress
+                                        lastTrade.EntryPrice = order.ParentOrder.AveragePrice
+                                        Exit While
+                                        'End If
+                                    Else
+                                        If Now >= placedTime.AddSeconds(5) Then
+                                            Exit While
+                                        End If
                                     End If
                                 End If
                             End If
                             Await Task.Delay(500).ConfigureAwait(False)
                         End While
+                        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                            Dim placedOrder As IBusinessOrder = Me.OrderDetails(orderID)
+                            If placedOrder IsNot Nothing AndAlso placedOrder.ParentOrder IsNot Nothing Then
+                                If placedOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    lastTrade.CurrentStatus = TradeStatus.InProgress
+                                    lastTrade.EntryPrice = placedOrder.ParentOrder.AveragePrice
+                                Else
+                                    If placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected Then
+                                        Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
+                                        cancelOrderTriggers = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
+                                            {New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, placedOrder.ParentOrder, "Invalid Order")}
+                                        Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, cancelOrderTriggers).ConfigureAwait(False)
+                                        While True
+                                            If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                                                Dim order As IBusinessOrder = Me.OrderDetails(orderID)
+                                                If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
+                                                    If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                        lastTrade.CurrentStatus = TradeStatus.InProgress
+                                                        lastTrade.EntryPrice = order.ParentOrder.AveragePrice
+                                                        Exit While
+                                                    ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
+                                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                        lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                        Exit While
+                                                    End If
+                                                End If
+                                            End If
+                                            Await Task.Delay(500).ConfigureAwait(False)
+                                        End While
+                                    End If
+                                End If
+                            End If
+                        End If
                     End If
                 End If
             ElseIf command = ExecuteCommands.CancelRegularOrder AndAlso data IsNot Nothing Then
@@ -345,7 +414,19 @@ Public Class NFOStrategyInstrument
                         lastTrade.TypeOfExit = _executeCommandData.TypeOfExit
                         lastTrade.ExitOrderID = orderID
                         lastTrade.ExitTime = Now
-                        'TODO: Confirm trade entry and update last trade
+                        While True
+                            If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                                Dim order As IBusinessOrder = Me.OrderDetails(orderID)
+                                If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
+                                    If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                        lastTrade.CurrentStatus = TradeStatus.Complete
+                                        lastTrade.ExitPrice = order.ParentOrder.AveragePrice
+                                        Exit While
+                                    End If
+                                End If
+                            End If
+                            Await Task.Delay(500).ConfigureAwait(False)
+                        End While
                         'TODO: Handle zero premium exit exceptional
 
                     End If
@@ -471,10 +552,6 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Protected Overrides Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
-        Throw New NotImplementedException
-    End Function
-
 #Region "Private Functions"
     Private Async Function CreateStrategyInstrumentAndPopulate(ByVal instrument As IInstrument) As Task(Of NFOStrategyInstrument)
         Dim ret As NFOStrategyInstrument = Nothing
@@ -569,26 +646,26 @@ Public Class NFOStrategyInstrument
                 If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < userSettings.ActiveInstrumentCount Then
                     Dim targetReached As Boolean = True
                     If ret.Item3 = IOrder.TypeOfTransaction.Buy Then
-                        Dim highestHigh As Decimal = _eodPayload.Max(Function(x)
-                                                                         If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
-                                                                             Return x.Value.HighPrice.Value
-                                                                         Else
-                                                                             Return Decimal.MinValue
-                                                                         End If
-                                                                     End Function)
+                        Dim highestHigh As Double = _eodPayload.Max(Function(x)
+                                                                        If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                            Return x.Value.HighPrice.Value
+                                                                        Else
+                                                                            Return Double.MinValue
+                                                                        End If
+                                                                    End Function)
                         highestHigh = Math.Max(highestHigh, currentTick.High)
                         Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
                         If highestHigh < ret.Item2.ClosePrice.Value + atr Then
                             targetReached = False
                         End If
                     ElseIf ret.Item3 = IOrder.TypeOfTransaction.Sell Then
-                        Dim lowestLow As Decimal = _eodPayload.Min(Function(x)
-                                                                       If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
-                                                                           Return x.Value.LowPrice.Value
-                                                                       Else
-                                                                           Return Decimal.MaxValue
-                                                                       End If
-                                                                   End Function)
+                        Dim lowestLow As Double = _eodPayload.Min(Function(x)
+                                                                      If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                          Return x.Value.LowPrice.Value
+                                                                      Else
+                                                                          Return Double.MaxValue
+                                                                      End If
+                                                                  End Function)
                         lowestLow = Math.Min(lowestLow, currentTick.Low)
                         Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
                         If lowestLow > ret.Item2.ClosePrice.Value - atr Then
@@ -987,6 +1064,10 @@ Public Class NFOStrategyInstrument
     End Function
 
     Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Throw New NotImplementedException
+    End Function
+
+    Protected Overrides Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Throw New NotImplementedException
     End Function
 

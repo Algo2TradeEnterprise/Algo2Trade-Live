@@ -62,7 +62,7 @@
             detailsColumn.Name = "details_column"
             detailsColumn.Text = "Check Signals"
             detailsColumn.UseColumnTextForButtonValue = True
-            Dim detailsColumnIndex As Integer = 9
+            Dim detailsColumnIndex As Integer = 7
             If dgvTradableInstruments.Columns("details_column") Is Nothing Then
                 dgvTradableInstruments.Columns.Insert(detailsColumnIndex, detailsColumn)
             End If
@@ -72,7 +72,7 @@
             addColumn.Name = "add_column"
             addColumn.Text = "Add Signal"
             addColumn.UseColumnTextForButtonValue = True
-            Dim addColumnIndex As Integer = 10
+            Dim addColumnIndex As Integer = 8
             If dgvTradableInstruments.Columns("add_column") Is Nothing Then
                 dgvTradableInstruments.Columns.Insert(addColumnIndex, addColumn)
             End If
