@@ -591,7 +591,7 @@ Public Class NFOStrategyInstrument
                                                                     vwap.VWAP.Value > pivots.Pivot.Value)
 
                                             takeTrade = takeTrade And (vwapEMA.EMA.Value > pivots.Pivot.Value)
-                                            message = String.Format("{0} MVWAP({1})<Central Pivot({2})[{3}].",
+                                            message = String.Format("{0} MVWAP({1})>Central Pivot({2})[{3}].",
                                                                     message, Math.Round(vwapEMA.EMA.Value, 2),
                                                                     Math.Round(pivots.Pivot.Value, 2),
                                                                     vwapEMA.EMA.Value > pivots.Pivot.Value)
@@ -844,7 +844,7 @@ Public Class NFOStrategyInstrument
         Dim vwapData As VWAPConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyVWAPConsumer)
         Dim emaData As EMAConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyEMAConsumer)
         Dim pivotData As PivotsConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummyPivotConsumer)
-        If Me.TradableInstrument.IsHistoricalCompleted Then
+        If Me.TradableInstrument.IsHistoricalCompleted AndAlso signalCandle IsNot Nothing AndAlso signalCandle.PreviousPayload IsNot Nothing Then
             If vwapData.ConsumerPayloads IsNot Nothing AndAlso vwapData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
                 Dim vwap As VWAPConsumer.VWAPPayload = vwapData.ConsumerPayloads(signalCandle.SnapshotDateTime)
                 If emaData.ConsumerPayloads IsNot Nothing AndAlso emaData.ConsumerPayloads.ContainsKey(signalCandle.SnapshotDateTime) Then
@@ -893,9 +893,9 @@ Public Class NFOStrategyInstrument
                                     stoplossRemark = "Resistance1"
                                 End If
 
-                                If signalCandle.LowPrice.Value <= stoplossPrice Then
-                                    stoplossPrice = ConvertFloorCeling(signalCandle.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    stoplossRemark = "Candle Low"
+                                If signalCandle.PreviousPayload.LowPrice.Value <= stoplossPrice Then
+                                    stoplossPrice = ConvertFloorCeling(signalCandle.PreviousPayload.LowPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                    stoplossRemark = "Previous Candle Low"
                                 End If
 
                                 Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
@@ -942,9 +942,9 @@ Public Class NFOStrategyInstrument
                                     stoplossRemark = "Support3"
                                 End If
 
-                                If signalCandle.HighPrice.Value >= stoplossPrice Then
-                                    stoplossPrice = ConvertFloorCeling(signalCandle.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                    stoplossRemark = "Candle High"
+                                If signalCandle.PreviousPayload.HighPrice.Value >= stoplossPrice Then
+                                    stoplossPrice = ConvertFloorCeling(signalCandle.PreviousPayload.HighPrice.Value, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    stoplossRemark = "Previous Candle High"
                                 End If
 
                                 Dim entryBuffer As Decimal = CalculateTriggerBuffer(entryPrice)
