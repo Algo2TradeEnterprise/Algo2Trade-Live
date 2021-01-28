@@ -34,7 +34,8 @@ Public Class NFOStrategyInstrument
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
                    ByVal isPairInstrumnet As Boolean,
-                   ByVal canceller As CancellationTokenSource)
+                   ByVal canceller As CancellationTokenSource,
+                   ByVal myParentStrategyInstrument As NFOStrategyInstrument)
         MyBase.New(associatedInstrument, associatedParentStrategy, isPairInstrumnet, canceller)
         Select Case Me.ParentStrategy.ParentController.BrokerSource
             Case APISource.Zerodha
@@ -61,7 +62,7 @@ Public Class NFOStrategyInstrument
                 Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
             End If
         Else
-            Me.SignalData = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(dummySignal.SignalDetailsFilename)
+            Me.SignalData = myParentStrategyInstrument.SignalData
         End If
 
         If Me.SignalData.IsActiveSignal Then
@@ -353,6 +354,7 @@ Public Class NFOStrategyInstrument
                                         'If lastTrade IsNot Nothing AndAlso lastTrade.EntryOrderID = orderID Then
                                         lastTrade.CurrentStatus = TradeStatus.InProgress
                                         lastTrade.EntryPrice = order.ParentOrder.AveragePrice
+                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                         Exit While
                                         'End If
                                     Else
@@ -371,6 +373,7 @@ Public Class NFOStrategyInstrument
                                     Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                     lastTrade.CurrentStatus = TradeStatus.InProgress
                                     lastTrade.EntryPrice = placedOrder.ParentOrder.AveragePrice
+                                    Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                 Else
                                     If placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected Then
                                         Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
@@ -385,10 +388,12 @@ Public Class NFOStrategyInstrument
                                                         Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                                         lastTrade.CurrentStatus = TradeStatus.InProgress
                                                         lastTrade.EntryPrice = order.ParentOrder.AveragePrice
+                                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                                         Exit While
                                                     ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
                                                         Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                                         lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                                         Exit While
                                                     End If
                                                 End If
@@ -414,6 +419,7 @@ Public Class NFOStrategyInstrument
                         lastTrade.TypeOfExit = _executeCommandData.TypeOfExit
                         lastTrade.ExitOrderID = orderID
                         lastTrade.ExitTime = Now
+                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                         While True
                             If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
                                 Dim order As IBusinessOrder = Me.OrderDetails(orderID)
@@ -421,6 +427,7 @@ Public Class NFOStrategyInstrument
                                     If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                                         lastTrade.CurrentStatus = TradeStatus.Complete
                                         lastTrade.ExitPrice = order.ParentOrder.AveragePrice
+                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                         Exit While
                                     End If
                                 End If
@@ -555,7 +562,7 @@ Public Class NFOStrategyInstrument
 #Region "Private Functions"
     Private Async Function CreateStrategyInstrumentAndPopulate(ByVal instrument As IInstrument) As Task(Of NFOStrategyInstrument)
         Dim ret As NFOStrategyInstrument = Nothing
-        ret = Await CType(Me.ParentStrategy, NFOStrategy).CreateDependentTradableStrategyInstrumentsAsync(instrument).ConfigureAwait(False)
+        ret = Await CType(Me.ParentStrategy, NFOStrategy).CreateDependentTradableStrategyInstrumentsAsync(instrument, Me).ConfigureAwait(False)
         Return ret
     End Function
 

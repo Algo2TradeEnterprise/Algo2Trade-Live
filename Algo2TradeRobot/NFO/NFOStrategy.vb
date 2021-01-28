@@ -85,11 +85,11 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         If runningTradableInstrument IsNot Nothing Then
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                            'Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
-                            'If myOptionContracts IsNot Nothing Then
-                            '    If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
-                            '    Me.OptionInstruments.AddRange(myOptionContracts)
-                            'End If
+                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            If myOptionContracts IsNot Nothing Then
+                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                                Me.OptionInstruments.AddRange(myOptionContracts)
+                            End If
                             ret = True
                         End If
                     Next
@@ -106,11 +106,11 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         If runningTradableInstrument IsNot Nothing Then
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-                            'Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
-                            'If myOptionContracts IsNot Nothing Then
-                            '    If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
-                            '    Me.OptionInstruments.AddRange(myOptionContracts)
-                            'End If
+                            Dim myOptionContracts As List(Of IInstrument) = GetCurrentOptionContracts(dummyAllInstruments, runningTradableInstrument)
+                            If myOptionContracts IsNot Nothing Then
+                                If Me.OptionInstruments Is Nothing Then Me.OptionInstruments = New List(Of IInstrument)
+                                Me.OptionInstruments.AddRange(myOptionContracts)
+                            End If
                             ret = True
                         End If
                     End If
@@ -139,7 +139,7 @@ Public Class NFOStrategy
             For Each runningTradableInstrument In retTradableInstrumentsAsPerStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
-                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, _cts)
+                Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(runningTradableInstrument, Me, False, _cts, Nothing)
                 AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
                 AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
                 AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
@@ -196,12 +196,12 @@ Public Class NFOStrategy
         Return ret
     End Function
 
-    Public Async Function CreateDependentTradableStrategyInstrumentsAsync(ByVal instrumentToBeSubscrided As IInstrument) As Task(Of NFOStrategyInstrument)
+    Public Async Function CreateDependentTradableStrategyInstrumentsAsync(ByVal instrumentToBeSubscrided As IInstrument, ByVal myParentStrategyInstrument As NFOStrategyInstrument) As Task(Of NFOStrategyInstrument)
         Dim ret As NFOStrategyInstrument = Nothing
         Dim retTradableStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
         _cts.Token.ThrowIfCancellationRequested()
         If retTradableStrategyInstruments Is Nothing Then retTradableStrategyInstruments = New List(Of NFOStrategyInstrument)
-        Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(instrumentToBeSubscrided, Me, False, _cts)
+        Dim runningTradableStrategyInstrument As New NFOStrategyInstrument(instrumentToBeSubscrided, Me, False, _cts, myParentStrategyInstrument)
         AddHandler runningTradableStrategyInstrument.HeartbeatEx, AddressOf OnHeartbeatEx
         AddHandler runningTradableStrategyInstrument.WaitingForEx, AddressOf OnWaitingForEx
         AddHandler runningTradableStrategyInstrument.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
