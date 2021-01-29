@@ -627,7 +627,7 @@ Public Class NFOStrategyInstrument
             Dim previousTrend As Color = _pivotTrendPayload(_eodPayload.LastOrDefault.Value.PreviousPayload.SnapshotDateTime)
             Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
             If trend = Color.Green Then
-                If previousTrend = Color.Red Then
+                If previousTrend = Color.Red AndAlso _eodPayload.LastOrDefault.Key.Date = Now.Date Then
                     If Now >= userSettings.TradeEntryTime Then
                         ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Buy)
                     End If
@@ -638,7 +638,7 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
             ElseIf trend = Color.Red Then
-                If previousTrend = Color.Green Then
+                If previousTrend = Color.Green AndAlso _eodPayload.LastOrDefault.Key.Date = Now.Date Then
                     If Now >= userSettings.TradeEntryTime Then
                         ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Sell)
                     End If
