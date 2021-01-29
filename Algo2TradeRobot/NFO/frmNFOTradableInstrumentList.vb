@@ -83,7 +83,7 @@
 
     Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
         If e.ColumnIndex = 9 Then
-            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(0).Value, NFOStrategyInstrument))
+            Dim frm As Form = New frmTradeDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(0).Value, NFOStrategyInstrument))
             frm.ShowDialog()
         ElseIf e.ColumnIndex = 10 Then
             Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(0).Value, NFOStrategyInstrument))

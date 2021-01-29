@@ -211,12 +211,12 @@ Public Class NFOFillInstrumentDetails
                                                                                                                    Dim lastDayCandle As OHLCPayload = eodHistoricalData.LastOrDefault.Value
                                                                                                                    Dim atrPercentage As Decimal = (atrPayload(eodHistoricalData.LastOrDefault.Key) / lastDayCandle.ClosePrice.Value) * 100
                                                                                                                    If atrPercentage >= _userInputs.MinimumATRPercentage Then
-                                                                                                                       If lastDayCandle.Volume.Value > lastDayCandle.PreviousPayload.Volume.Value Then
-                                                                                                                           If lastDayCandle.Volume.Value > _userInputs.MinimumVolume Then
-                                                                                                                               If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
-                                                                                                                               highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, Math.Ceiling(lastDayCandle.Volume.Value / lastDayCandle.ClosePrice.Value)})
-                                                                                                                           End If
+                                                                                                                       'If lastDayCandle.Volume.Value > lastDayCandle.PreviousPayload.Volume.Value Then
+                                                                                                                       If lastDayCandle.Volume.Value > _userInputs.MinimumVolume Then
+                                                                                                                           If highATRStocks Is Nothing Then highATRStocks = New Concurrent.ConcurrentDictionary(Of String, Decimal())
+                                                                                                                           highATRStocks.TryAdd(rawCashInstrument.TradingSymbol, {atrPercentage, Math.Ceiling(lastDayCandle.Volume.Value / lastDayCandle.ClosePrice.Value)})
                                                                                                                        End If
+                                                                                                                       'End If
                                                                                                                    End If
                                                                                                                End If
                                                                                                            End If

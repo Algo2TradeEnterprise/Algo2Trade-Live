@@ -255,6 +255,8 @@ Public Class NFOStrategy
                     ret.Add(runningSignal.InstrumentName)
                 End If
             Next
+        Else
+            Directory.CreateDirectory(Path.Combine(My.Application.Info.DirectoryPath, "Signals"))
         End If
         Return ret
     End Function

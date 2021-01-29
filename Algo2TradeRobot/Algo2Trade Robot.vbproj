@@ -209,10 +209,10 @@
     <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\frmSignalDetails.Designer.vb">
-      <DependentUpon>frmSignalDetails.vb</DependentUpon>
+    <Compile Include="NFO\frmTradeDetails.Designer.vb">
+      <DependentUpon>frmTradeDetails.vb</DependentUpon>
     </Compile>
-    <Compile Include="NFO\frmSignalDetails.vb">
+    <Compile Include="NFO\frmTradeDetails.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="NFO\NFOFillInstrumentDetails.vb" />
@@ -267,8 +267,8 @@
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmSignalDetails.resx">
-      <DependentUpon>frmSignalDetails.vb</DependentUpon>
+    <EmbeddedResource Include="NFO\frmTradeDetails.resx">
+      <DependentUpon>frmTradeDetails.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
