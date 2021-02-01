@@ -379,7 +379,7 @@ Public Class NFOStrategyInstrument
                                         Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
                                         cancelOrderTriggers = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
                                             {New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, placedOrder.ParentOrder, "Invalid Order")}
-                                        Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, cancelOrderTriggers).ConfigureAwait(False)
+                                        Await ExecuteCommandAsync(ExecuteCommands.ForceCancelRegularOrder, cancelOrderTriggers).ConfigureAwait(False)
                                         While True
                                             If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
                                                 Dim order As IBusinessOrder = Me.OrderDetails(orderID)
