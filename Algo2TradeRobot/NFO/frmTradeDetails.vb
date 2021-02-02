@@ -13,6 +13,7 @@
             dt.Columns.Add("Trading Symbol")
             dt.Columns.Add("Direction")
             dt.Columns.Add("Entry Type")
+            dt.Columns.Add("Detailed Entry Type")
             dt.Columns.Add("Exit Type")
             dt.Columns.Add("Entry Time")
             dt.Columns.Add("Exit Time")
@@ -28,6 +29,7 @@
             dt.Columns.Add("Trade Number")
             dt.Columns.Add("Spot Price")
             dt.Columns.Add("Spot ATR")
+            dt.Columns.Add("ATR Consumed")
             dt.Columns.Add("Child Tag")
             dt.Columns.Add("Parent Tag")
 
@@ -39,7 +41,8 @@
                     row("Trading Symbol") = runningTrade.TradingSymbol
                     row("Direction") = runningTrade.Direction.ToString
                     row("Entry Type") = runningTrade.TypeOfEntry.ToString
-                    row("Exit Type") = runningTrade.TypeOfExit.ToString
+                    row("Detailed Entry Type") = runningTrade.TypeOfEntryDetails.ToString
+                    row("Exit Type") = If(runningTrade.TypeOfExit <> 0, runningTrade.TypeOfExit.ToString, "")
                     row("Entry Time") = runningTrade.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss")
                     row("Exit Time") = runningTrade.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss")
                     row("Entry Price") = runningTrade.EntryPrice
@@ -53,7 +56,8 @@
                     row("Contract Remark") = runningTrade.ContractRemark
                     row("Trade Number") = runningTrade.TradeNumber
                     row("Spot Price") = runningTrade.SpotPrice
-                    row("Spot ATR") = runningTrade.SpotATR
+                    row("Spot ATR") = Math.Round(runningTrade.SpotATR, 2)
+                    row("ATR Consumed") = String.Format("{0}%", Math.Round(runningTrade.ATRConsumed, 2))
                     row("Child Tag") = runningTrade.ChildTag
                     row("Parent Tag") = runningTrade.ParentTag
 

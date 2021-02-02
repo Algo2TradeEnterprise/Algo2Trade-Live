@@ -29,7 +29,9 @@ Public Class SignalDetails
                                 .TradingSymbol = dummyTrade.TradingSymbol,
                                 .TypeOfEntry = dummyTrade.TypeOfEntry,
                                 .EntryOrderID = entryOrderID,
-                                .EntryTime = Now
+                                .EntryTime = Now,
+                                .TypeOfEntryDetails = dummyTrade.TypeOfEntryDetails,
+                                .ATRConsumed = dummyTrade.ATRConsumed
                             }
 
             If _AllTrades Is Nothing Then _AllTrades = New List(Of Trade)
@@ -165,12 +167,14 @@ End Enum
 Public Class Trade
     Public Property TradingSymbol As String
     Public Property TypeOfEntry As EntryType
+    Public Property TypeOfEntryDetails As ExitType
     Public Property CurrentStatus As TradeStatus
     Public Property ChildTag As String
     Public Property ParentTag As String
     Public Property TradeNumber As Integer
     Public Property SpotPrice As Decimal
     Public Property SpotATR As Decimal
+    Public Property ATRConsumed As Decimal
     Public Property PotentialTarget As Decimal
     Public Property ContractRemark As String
     Public Property SignalDate As Date

@@ -176,18 +176,21 @@ Public Class NFOStrategyInstrument
                                         .SpotPrice = lastCompleteTrade.SpotPrice,
                                         .TradeNumber = lastCompleteTrade.TradeNumber,
                                         .TradingSymbol = currentATMOption.TradableInstrument.TradingSymbol,
-                                        .TypeOfEntry = lastCompleteTrade.TypeOfEntry
+                                        .TypeOfEntry = lastCompleteTrade.TypeOfEntry,
+                                        .TypeOfEntryDetails = lastCompleteTrade.TypeOfExit,
+                                        .ATRConsumed = lastCompleteTrade.ATRConsumed
                                     }
 
                                 Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
                                 Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                 If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                     _lastAttempt = -1
+                                    SendPlaceOrderNotificationAsync(lastTrade)
                                 End If
                             End If
                         Else
                             'Fresh or reverse signal
-                            Dim signal As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction) = GetEntrySignal(currentTick)
+                            Dim signal As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal) = GetEntrySignal(currentTick)
                             If signal IsNot Nothing AndAlso signal.Item1 Then
                                 Dim currentATMOption As NFOStrategyInstrument = Await GetOptionToTrade(currentTick, signal.Item3).ConfigureAwait(False)
                                 If currentATMOption IsNot Nothing AndAlso currentATMOption.TradableInstrument.LastTick IsNot Nothing Then
@@ -252,7 +255,9 @@ Public Class NFOStrategyInstrument
                                         .SpotPrice = spotPrice,
                                         .TradeNumber = tradeNumber,
                                         .TradingSymbol = currentATMOption.TradableInstrument.TradingSymbol,
-                                        .TypeOfEntry = entryType
+                                        .TypeOfEntry = entryType,
+                                        .TypeOfEntryDetails = ExitType.None,
+                                        .ATRConsumed = signal.Item4
                                     }
 
                                     If entryType = EntryType.Fresh Then
@@ -264,6 +269,7 @@ Public Class NFOStrategyInstrument
                                                 If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                                     _lastAttempt = -1
                                                     CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+                                                    SendPlaceOrderNotificationAsync(lastTrade)
                                                 End If
                                             Finally
                                                 Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
@@ -274,6 +280,7 @@ Public Class NFOStrategyInstrument
                                         lastTrade = Me.SignalData.GetLastTrade()
                                         If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                             _lastAttempt = -1
+                                            SendPlaceOrderNotificationAsync(lastTrade)
                                         End If
                                     End If
                                 End If
@@ -287,6 +294,7 @@ Public Class NFOStrategyInstrument
 #Region "Exit Order Block"
                     Dim lastRunningTrade As Trade = Me.SignalData.GetLastTrade()
                     If lastRunningTrade IsNot Nothing AndAlso lastRunningTrade.CurrentStatus = TradeStatus.InProgress Then
+                        'Await SendPlaceOrderNotificationAsync(lastRunningTrade).ConfigureAwait(False)
                         Dim optionType As String = lastRunningTrade.TradingSymbol.Substring(lastRunningTrade.TradingSymbol.Count - 2)
                         Dim optnStrgInstrmnt As NFOStrategyInstrument = Await GetStrategyInstrumentFromTradingSymbol(lastRunningTrade.TradingSymbol).ConfigureAwait(False)
                         If optnStrgInstrmnt IsNot Nothing Then
@@ -779,8 +787,9 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Signal Check"
-    Private Function GetEntrySignal(ByVal currentTick As ITick) As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)
-        Dim ret As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
+    Private Function GetEntrySignal(ByVal currentTick As ITick) As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal)
+        Dim ret As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal) = Nothing
+        Dim signal As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction) = Nothing
         If currentTick IsNot Nothing AndAlso Not Me.SignalData.IsActiveSignal() Then
             Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
             Dim trend As Color = _pivotTrendPayload.LastOrDefault.Value
@@ -789,20 +798,20 @@ Public Class NFOStrategyInstrument
             If trend = Color.Green Then
                 If previousTrend = Color.Red AndAlso _eodPayload.LastOrDefault.Key.Date = Now.Date Then
                     If Now >= userSettings.TradeEntryTime Then
-                        ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Buy)
+                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Buy)
                     End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         If lastTrade Is Nothing Then
-                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                         Else
                             If rolloverDay.Date <> lastTrade.SignalDate.Date Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             End If
                         End If
                     End If
@@ -810,85 +819,80 @@ Public Class NFOStrategyInstrument
             ElseIf trend = Color.Red Then
                 If previousTrend = Color.Green AndAlso _eodPayload.LastOrDefault.Key.Date = Now.Date Then
                     If Now >= userSettings.TradeEntryTime Then
-                        ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Sell)
+                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload.LastOrDefault.Value, IOrder.TypeOfTransaction.Sell)
                     End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         If lastTrade Is Nothing Then
-                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                         Else
                             If rolloverDay.Date <> lastTrade.SignalDate.Date Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
-                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             End If
                         End If
                     End If
                 End If
             End If
-            If ret IsNot Nothing AndAlso ret.Item1 Then
+            If signal IsNot Nothing AndAlso signal.Item1 Then
                 If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < userSettings.ActiveInstrumentCount OrElse
                     (lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target) Then
                     Dim targetReached As Boolean = True
                     Dim targetLeftPercentage As Decimal = 0
-                    If ret.Item3 = IOrder.TypeOfTransaction.Buy Then
+                    If signal.Item3 = IOrder.TypeOfTransaction.Buy Then
                         Dim highestHigh As Decimal = _eodPayload.Max(Function(x)
-                                                                         If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                         If x.Key > signal.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
                                                                              Return CDec(x.Value.HighPrice.Value)
                                                                          Else
                                                                              Return Decimal.MinValue
                                                                          End If
                                                                      End Function)
-                        If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
+                        If signal.Item2.SnapshotDateTime.Date <> Now.Date Then
                             highestHigh = Math.Max(highestHigh, currentTick.High)
                         End If
-                        Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
-                        If highestHigh < ret.Item2.ClosePrice.Value + atr Then
+                        Dim atr As Decimal = _atrPayload(signal.Item2.SnapshotDateTime)
+                        If highestHigh < signal.Item2.ClosePrice.Value + atr Then
                             targetReached = False
                             If highestHigh <> Decimal.MinValue Then
-                                targetLeftPercentage = ((atr - (highestHigh - ret.Item2.ClosePrice.Value)) / atr) * 100
+                                targetLeftPercentage = ((atr - (highestHigh - signal.Item2.ClosePrice.Value)) / atr) * 100
                             Else
                                 targetLeftPercentage = 100
                             End If
                         End If
-                    ElseIf ret.Item3 = IOrder.TypeOfTransaction.Sell Then
+                    ElseIf signal.Item3 = IOrder.TypeOfTransaction.Sell Then
                         Dim lowestLow As Decimal = _eodPayload.Min(Function(x)
-                                                                       If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                       If x.Key > signal.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
                                                                            Return CDec(x.Value.LowPrice.Value)
                                                                        Else
                                                                            Return Decimal.MaxValue
                                                                        End If
                                                                    End Function)
-                        If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
+                        If signal.Item2.SnapshotDateTime.Date <> Now.Date Then
                             lowestLow = Math.Min(lowestLow, currentTick.Low)
                         End If
-                        Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
-                        If lowestLow > ret.Item2.ClosePrice.Value - atr Then
+                        Dim atr As Decimal = _atrPayload(signal.Item2.SnapshotDateTime)
+                        If lowestLow > signal.Item2.ClosePrice.Value - atr Then
                             targetReached = False
                             If lowestLow <> Decimal.MaxValue Then
-                                targetLeftPercentage = ((atr - (ret.Item2.ClosePrice.Value - lowestLow)) / atr) * 100
+                                targetLeftPercentage = ((atr - (signal.Item2.ClosePrice.Value - lowestLow)) / atr) * 100
                             Else
                                 targetLeftPercentage = 100
                             End If
                         End If
                     End If
                     If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target Then
-                        If targetReached Then ret = Nothing
+                        If Not targetReached Then
+                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal)(True, signal.Item2, signal.Item3, 100 - targetLeftPercentage)
+                        End If
                     Else
-                        If targetReached Then
-                            ret = Nothing
-                        ElseIf targetLeftPercentage < 75 Then
-                            ret = Nothing
+                        If Not targetReached AndAlso targetLeftPercentage >= 75 Then
+                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal)(True, signal.Item2, signal.Item3, 100 - targetLeftPercentage)
                         End If
                     End If
-                    'If ret IsNot Nothing Then
-                    '    Console.WriteLine(String.Format("{0} {1} {2}", Me.TradableInstrument.TradingSymbol, ret.Item2.SnapshotDateTime.ToString("dd-MMM-yyyy"), targetLeftPercentage))
-                    'End If
-                Else
-                    ret = Nothing
                 End If
             End If
         End If
@@ -1255,6 +1259,46 @@ Public Class NFOStrategyInstrument
             ret = True
         End If
         Return ret
+    End Function
+#End Region
+
+#Region "Telegram"
+    Private Async Function SendPlaceOrderNotificationAsync(ByVal order As Trade) As Task
+        Try
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            If order IsNot Nothing Then
+                Dim msg As String = String.Format("{0}: Entry Order.{15}Option Contract:{1},{15}Contract Remark:{2},{15}Signal Direction:{3},{15}Child Tag:{4},{15}Parent Tag:{5},{15}Quantity:{6},{15}Potential Target:{7},{15}Signal Date:{8},{15}Spot Price:{9},{15}Spot ATR:{10},{15}Trade Number:{11},{15}Entry Type:{12},{15}Entry Price:{13},{15}Entry Time:{14}",
+                                                Me.TradableInstrument.RawInstrumentName,
+                                                order.TradingSymbol,
+                                                order.ContractRemark,
+                                                order.Direction.ToString,
+                                                order.ChildTag,
+                                                order.ParentTag,
+                                                order.Quantity,
+                                                order.PotentialTarget,
+                                                order.SignalDate.ToString("dd-MMM-yyyy"),
+                                                order.SpotPrice,
+                                                order.SpotATR,
+                                                order.TradeNumber,
+                                                order.TypeOfEntry.ToString,
+                                                order.EntryPrice,
+                                                order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                vbNewLine)
+
+                If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim <> "" Then
+                    Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(msg)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End Using
+                End If
+            End If
+        Catch ex As Exception
+            logger.Warn("Telegram Error: {0}", ex.ToString)
+        End Try
     End Function
 #End Region
 
