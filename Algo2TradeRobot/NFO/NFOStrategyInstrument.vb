@@ -397,6 +397,7 @@ Public Class NFOStrategyInstrument
         End Try
     End Function
 
+#Region "Option Monitor Async"
     Public Overrides Async Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
         Try
             If command = ExecuteCommands.PlaceRegularMarketCNCOrder AndAlso data IsNot Nothing Then
@@ -548,6 +549,7 @@ Public Class NFOStrategyInstrument
             _executeCommand = ExecuteCommands.ForceCancelRegularOrder
         End Try
     End Function
+#End Region
 
 #Region "Place Order Trigger"
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)))
