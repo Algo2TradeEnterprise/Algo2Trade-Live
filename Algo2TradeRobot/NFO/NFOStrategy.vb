@@ -53,6 +53,7 @@ Public Class NFOStrategy
                         atrInstruments = Await fillInstruments.GetInstrumentDataAsync(allInstruments, bannedInstruments).ConfigureAwait(False)
                     End Using
                     If atrInstruments IsNot Nothing AndAlso atrInstruments.Count > 0 Then
+                        logger.Debug("Number of stock retured:{0}", atrInstruments.Count)
                         Dim dt As DataTable = New DataTable
                         dt.Columns.Add("Trading Symbol")
                         For Each runningStock In atrInstruments
@@ -77,6 +78,7 @@ Public Class NFOStrategy
                 If runningInstruments IsNot Nothing AndAlso runningInstruments.Count > 0 Then
                     For Each runinstrument In runningInstruments
                         _cts.Token.ThrowIfCancellationRequested()
+                        logger.Debug("Active Stock:{0}", runinstrument)
                         Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
                                                                                                     Return x.TradingSymbol.ToUpper = runinstrument.ToUpper
                                                                                                 End Function)
@@ -250,9 +252,17 @@ Public Class NFOStrategy
         If Directory.Exists(Path.Combine(My.Application.Info.DirectoryPath, "Signals")) Then
             For Each runningFile In Directory.GetFiles(Path.Combine(My.Application.Info.DirectoryPath, "Signals"), "*.SignalDetails.a2t")
                 Dim runningSignal As SignalDetails = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(runningFile)
-                If runningSignal IsNot Nothing AndAlso runningSignal.IsActiveSignal Then
-                    If ret Is Nothing Then ret = New List(Of String)
-                    ret.Add(runningSignal.InstrumentName)
+                If runningSignal IsNot Nothing Then
+                    If runningSignal.IsActiveSignal Then
+                        If ret Is Nothing Then ret = New List(Of String)
+                        ret.Add(runningSignal.InstrumentName)
+                    Else
+                        Dim lastCompleteTrade As Trade = runningSignal.GetLastCompleteTrade()
+                        If lastCompleteTrade IsNot Nothing AndAlso lastCompleteTrade.TypeOfExit <> ExitType.Target Then
+                            If ret Is Nothing Then ret = New List(Of String)
+                            ret.Add(runningSignal.InstrumentName)
+                        End If
+                    End If
                 End If
             Next
         Else
