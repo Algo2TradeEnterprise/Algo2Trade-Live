@@ -101,7 +101,7 @@ Public Class NFOStrategyInstrument
 
                     currentTick = Me.TradableInstrument.LastTick
                     If Now >= userSettings.TradeEntryTime AndAlso Not _eodPayload.ContainsKey(Now.Date) Then
-                        Dim currentCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
+                        Dim currentCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
                         currentCandle.TradingSymbol = Me.TradableInstrument.TradingSymbol
                         currentCandle.SnapshotDateTime = currentTick.Timestamp.Value.Date
                         currentCandle.OpenPrice.Value = currentTick.Open
@@ -909,10 +909,10 @@ Public Class NFOStrategyInstrument
                 Dim previousNInputPayload As List(Of KeyValuePair(Of Date, OHLCPayload)) = GetSubPayload(inputPayload, runningPayload, period, True)
                 If previousNInputPayload IsNot Nothing AndAlso previousNInputPayload.Count = period Then
                     Dim highestHigh As Decimal = previousNInputPayload.Max(Function(x)
-                                                                               Return x.Value.HighPrice.Value
+                                                                               Return CDec(x.Value.HighPrice.Value)
                                                                            End Function)
                     Dim lowestLow As Decimal = previousNInputPayload.Min(Function(x)
-                                                                             Return x.Value.LowPrice.Value
+                                                                             Return CDec(x.Value.LowPrice.Value)
                                                                          End Function)
 
                     Dim lastCandleTime As Date = previousNInputPayload.Min(Function(x)
@@ -924,10 +924,10 @@ Public Class NFOStrategyInstrument
                         Dim prePreviousNInputPayload As List(Of KeyValuePair(Of Date, OHLCPayload)) = GetSubPayload(inputPayload, pivotCandle.SnapshotDateTime, period, False)
                         If prePreviousNInputPayload IsNot Nothing AndAlso prePreviousNInputPayload.Count = period Then
                             Dim preHighestHigh As Decimal = prePreviousNInputPayload.Max(Function(x)
-                                                                                             Return x.Value.HighPrice.Value
+                                                                                             Return CDec(x.Value.HighPrice.Value)
                                                                                          End Function)
                             Dim preLowestLow As Decimal = prePreviousNInputPayload.Min(Function(x)
-                                                                                           Return x.Value.LowPrice.Value
+                                                                                           Return CDec(x.Value.LowPrice.Value)
                                                                                        End Function)
 
                             If pivotCandle.HighPrice.Value > highestHigh AndAlso pivotCandle.HighPrice.Value > preHighestHigh Then
@@ -955,21 +955,21 @@ Public Class NFOStrategyInstrument
                         Else
                             If outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime) IsNot Nothing Then
                                 pivotData = New Pivot With {
-                                        .PivotHigh = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHigh,
-                                        .PivotHighTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHighTime,
-                                        .PivotLow = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLow,
-                                        .PivotLowTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLowTime
-                                    }
+                                            .PivotHigh = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHigh,
+                                            .PivotHighTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHighTime,
+                                            .PivotLow = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLow,
+                                            .PivotLowTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLowTime
+                                        }
                             End If
                         End If
                     Else
                         If outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime) IsNot Nothing Then
                             pivotData = New Pivot With {
-                                    .PivotHigh = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHigh,
-                                    .PivotHighTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHighTime,
-                                    .PivotLow = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLow,
-                                    .PivotLowTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLowTime
-                                }
+                                        .PivotHigh = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHigh,
+                                        .PivotHighTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHighTime,
+                                        .PivotLow = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLow,
+                                        .PivotLowTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotLowTime
+                                    }
                         End If
                     End If
                 End If
