@@ -140,8 +140,8 @@ Public Class NFOStrategyInstrument
                     End If
 
                     _cts.Token.ThrowIfCancellationRequested()
-#Region "Place Order Block"
                     'Place Order block start
+#Region "Place Order Block"
                     If Not Me.SignalData.IsActiveSignal() Then
                         Dim lastCompleteTrade As Trade = Me.SignalData.GetLastCompleteTrade()
                         If lastCompleteTrade IsNot Nothing AndAlso (lastCompleteTrade.TypeOfExit = ExitType.ContractRollover OrElse
