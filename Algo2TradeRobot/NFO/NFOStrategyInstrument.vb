@@ -830,13 +830,13 @@ Public Class NFOStrategyInstrument
                     Dim targetReached As Boolean = True
                     Dim targetLeftPercentage As Decimal = 0
                     If ret.Item3 = IOrder.TypeOfTransaction.Buy Then
-                        Dim highestHigh As Double = _eodPayload.Max(Function(x)
-                                                                        If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
-                                                                            Return x.Value.HighPrice.Value
-                                                                        Else
-                                                                            Return Double.MinValue
-                                                                        End If
-                                                                    End Function)
+                        Dim highestHigh As Decimal = _eodPayload.Max(Function(x)
+                                                                         If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                             Return CDec(x.Value.HighPrice.Value)
+                                                                         Else
+                                                                             Return Decimal.MinValue
+                                                                         End If
+                                                                     End Function)
                         If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
                             highestHigh = Math.Max(highestHigh, currentTick.High)
                         End If
@@ -850,13 +850,13 @@ Public Class NFOStrategyInstrument
                             End If
                         End If
                     ElseIf ret.Item3 = IOrder.TypeOfTransaction.Sell Then
-                        Dim lowestLow As Double = _eodPayload.Min(Function(x)
-                                                                      If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
-                                                                          Return x.Value.LowPrice.Value
-                                                                      Else
-                                                                          Return Double.MaxValue
-                                                                      End If
-                                                                  End Function)
+                        Dim lowestLow As Decimal = _eodPayload.Min(Function(x)
+                                                                       If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
+                                                                           Return CDec(x.Value.LowPrice.Value)
+                                                                       Else
+                                                                           Return Decimal.MaxValue
+                                                                       End If
+                                                                   End Function)
                         If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
                             lowestLow = Math.Min(lowestLow, currentTick.Low)
                         End If
