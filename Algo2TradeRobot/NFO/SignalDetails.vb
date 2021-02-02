@@ -45,7 +45,8 @@ Public Class SignalDetails
             For Each runningTrade In AllTrades.OrderByDescending(Function(x)
                                                                      Return x.EntryTime
                                                                  End Function)
-                If runningTrade.CurrentStatus = TradeStatus.InProgress Then
+                If runningTrade.CurrentStatus = TradeStatus.InProgress OrElse
+                    runningTrade.CurrentStatus = TradeStatus.Open Then
                     ret = True
                     Exit For
                 End If
@@ -62,6 +63,21 @@ Public Class SignalDetails
                                                                  End Function)
                 ret = runningTrade
                 Exit For
+            Next
+        End If
+        Return ret
+    End Function
+
+    Public Function GetLastCompleteTrade() As Trade
+        Dim ret As Trade = Nothing
+        If AllTrades IsNot Nothing AndAlso AllTrades.Count > 0 Then
+            For Each runningTrade In AllTrades.OrderByDescending(Function(x)
+                                                                     Return x.EntryTime
+                                                                 End Function)
+                If runningTrade.CurrentStatus = TradeStatus.Complete Then
+                    ret = runningTrade
+                    Exit For
+                End If
             Next
         End If
         Return ret

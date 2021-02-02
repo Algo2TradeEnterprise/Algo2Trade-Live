@@ -255,7 +255,7 @@ Public Class NFOFillInstrumentDetails
                         If ret Is Nothing Then ret = New List(Of String)
                         ret.Add(runningStock.Key)
 
-                        If ret.Count >= _userInputs.ActiveInstrumentCount * 2 Then Exit For
+                        'If ret.Count >= _userInputs.ActiveInstrumentCount * 2 Then Exit For
                     Next
                 End If
             End If

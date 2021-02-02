@@ -61,12 +61,17 @@ Public Class NFOStrategyInstrument
                 Me.SignalData = New SignalDetails(Me.TradableInstrument.RawInstrumentName)
                 Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
             End If
+
+            If Me.SignalData.IsActiveSignal Then
+                CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+            Else
+                Dim lastCompleteTrade As Trade = Me.SignalData.GetLastCompleteTrade()
+                If lastCompleteTrade IsNot Nothing AndAlso lastCompleteTrade.TypeOfExit <> ExitType.Target Then
+                    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+                End If
+            End If
         Else
             Me.SignalData = myParentStrategyInstrument.SignalData
-        End If
-
-        If Me.SignalData.IsActiveSignal Then
-            CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
         End If
     End Sub
 
@@ -116,105 +121,123 @@ Public Class NFOStrategyInstrument
 
                     _cts.Token.ThrowIfCancellationRequested()
                     'Place Order block start
-                    Dim signal As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction) = GetEntrySignal(currentTick)
-                    If signal IsNot Nothing AndAlso signal.Item1 Then
-                        Dim currentMinute As Date = New Date(Now.Year, Now.Month, Now.Day, Now.Hour, Now.Minute, 0)
-                        Dim currentATMOption As NFOStrategyInstrument = Nothing
-                        If signal.Item3 = IOrder.TypeOfTransaction.Buy Then
-                            If _lastAttempt = -1 Then
-                                currentATMOption = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Buy, "CE").ConfigureAwait(False)
-                                _lastAttempt = 1
-                            ElseIf _lastAttempt = 1 Then
-                                currentATMOption = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Sell, "CE").ConfigureAwait(False)
-                                _lastAttempt = -1
-                            End If
-                        ElseIf signal.Item3 = IOrder.TypeOfTransaction.Sell Then
-                            If _lastAttempt = -1 Then
-                                currentATMOption = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Sell, "PE").ConfigureAwait(False)
-                                _lastAttempt = 1
-                            ElseIf _lastAttempt = 1 Then
-                                currentATMOption = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Buy, "PE").ConfigureAwait(False)
-                                _lastAttempt = -1
-                            End If
+                    Dim lastCompleteTrade As Trade = Me.SignalData.GetLastCompleteTrade()
+                    If lastCompleteTrade IsNot Nothing AndAlso (lastCompleteTrade.TypeOfExit = ExitType.ContractRollover OrElse
+                        lastCompleteTrade.TypeOfExit = ExitType.ZeroPremium) Then
+                        'Contract rollover or zero premium
+                        Dim drctn As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
+                        If lastCompleteTrade.Direction = TradeDirection.Buy Then
+                            drctn = IOrder.TypeOfTransaction.Buy
+                        ElseIf lastCompleteTrade.Direction = TradeDirection.Sell Then
+                            drctn = IOrder.TypeOfTransaction.Sell
                         End If
+                        Dim currentATMOption As NFOStrategyInstrument = Await GetOptionToTrade(currentTick, drctn).ConfigureAwait(False)
                         If currentATMOption IsNot Nothing AndAlso currentATMOption.TradableInstrument.LastTick IsNot Nothing Then
-                            Dim childTag As String = System.Guid.NewGuid.ToString()
-                            Dim parentTag As String = childTag
-                            Dim tradeNumber As Integer = 1
-                            Dim entryType As EntryType = EntryType.Fresh
-                            Dim lossToRecover As Decimal = 0
+                            Dim dummyTrade As Trade = New Trade With {
+                                    .ChildTag = lastCompleteTrade.ChildTag,
+                                    .ContractRemark = _lastAttempt,
+                                    .CurrentStatus = TradeStatus.Open,
+                                    .Direction = lastCompleteTrade.Direction,
+                                    .ParentTag = lastCompleteTrade.ParentTag,
+                                    .PotentialTarget = lastCompleteTrade.PotentialTarget,
+                                    .Quantity = lastCompleteTrade.Quantity,
+                                    .SignalDate = lastCompleteTrade.SignalDate,
+                                    .SpotATR = lastCompleteTrade.SpotATR,
+                                    .SpotPrice = lastCompleteTrade.SpotPrice,
+                                    .TradeNumber = lastCompleteTrade.TradeNumber,
+                                    .TradingSymbol = currentATMOption.TradableInstrument.TradingSymbol,
+                                    .TypeOfEntry = lastCompleteTrade.TypeOfEntry
+                                }
 
-                            Dim spotPrice As Decimal = currentTick.LastPrice
-                            Dim spotATR As Decimal = _atrPayload.LastOrDefault.Value
-                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
-                            If lastTrade IsNot Nothing Then
-                                Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByParentTag(lastTrade.ParentTag)
-                                If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
-                                    Dim pl As Decimal = 0
-                                    For Each runningTrade In allTrades
-                                        If runningTrade.CurrentStatus = TradeStatus.Complete Then
-                                            pl += _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+                            Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
+                        End If
+                    Else
+                        'Fresh or reverse signal
+                        Dim signal As Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction) = GetEntrySignal(currentTick)
+                        If signal IsNot Nothing AndAlso signal.Item1 Then
+                            Dim currentATMOption As NFOStrategyInstrument = Await GetOptionToTrade(currentTick, signal.Item3).ConfigureAwait(False)
+                            If currentATMOption IsNot Nothing AndAlso currentATMOption.TradableInstrument.LastTick IsNot Nothing Then
+                                Dim childTag As String = System.Guid.NewGuid.ToString()
+                                Dim parentTag As String = childTag
+                                Dim tradeNumber As Integer = 1
+                                Dim entryType As EntryType = EntryType.Fresh
+                                Dim lossToRecover As Decimal = 0
+
+                                Dim spotPrice As Decimal = currentTick.LastPrice
+                                Dim spotATR As Decimal = _atrPayload.LastOrDefault.Value
+                                Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                If lastTrade IsNot Nothing Then
+                                    Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByParentTag(lastTrade.ParentTag)
+                                    If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
+                                        Dim pl As Decimal = 0
+                                        For Each runningTrade In allTrades
+                                            If runningTrade.CurrentStatus = TradeStatus.Complete Then
+                                                pl += _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+                                            End If
+                                        Next
+                                        If pl < 0 Then
+                                            parentTag = lastTrade.ParentTag
+                                            tradeNumber = lastTrade.TradeNumber + 1
+                                            entryType = EntryType.LossMakeup
+                                            lossToRecover = Math.Abs(pl)
                                         End If
-                                    Next
-                                    If pl < 0 Then
-                                        parentTag = lastTrade.ParentTag
-                                        tradeNumber = lastTrade.TradeNumber + 1
-                                        entryType = EntryType.LossMakeup
-                                        lossToRecover = Math.Abs(pl)
                                     End If
                                 End If
-                            End If
 
-                            Dim quantity As Integer = currentATMOption.TradableInstrument.LotSize
-                            If entryType = EntryType.LossMakeup Then
-                                Dim entryPrice As Decimal = currentATMOption.TradableInstrument.LastTick.LastPrice
-                                Dim targetPrice As Decimal = ConvertFloorCeling(entryPrice + spotATR, currentATMOption.TradableInstrument.TickSize, RoundOfType.Celing)
-                                For ctr As Integer = 1 To Integer.MaxValue
-                                    Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, entryPrice, targetPrice, ctr * currentATMOption.TradableInstrument.LotSize)
-                                    If pl >= lossToRecover Then
-                                        lossToRecover = (pl - 1) * -1
-                                        quantity = ctr * currentATMOption.TradableInstrument.LotSize + currentATMOption.TradableInstrument.LotSize
-                                        Exit For
+                                Dim quantity As Integer = currentATMOption.TradableInstrument.LotSize
+                                If entryType = EntryType.LossMakeup Then
+                                    Dim entryPrice As Decimal = currentATMOption.TradableInstrument.LastTick.LastPrice
+                                    Dim targetPrice As Decimal = ConvertFloorCeling(entryPrice + spotATR, currentATMOption.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    For ctr As Integer = 1 To Integer.MaxValue
+                                        Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, entryPrice, targetPrice, ctr * currentATMOption.TradableInstrument.LotSize)
+                                        If pl >= lossToRecover Then
+                                            lossToRecover = (pl - 1) * -1
+                                            quantity = ctr * currentATMOption.TradableInstrument.LotSize + currentATMOption.TradableInstrument.LotSize
+                                            Exit For
+                                        End If
+                                    Next
+                                End If
+
+                                Dim drctn As TradeDirection = TradeDirection.None
+                                If signal.Item3 = IOrder.TypeOfTransaction.Buy Then
+                                    drctn = TradeDirection.Buy
+                                ElseIf signal.Item3 = IOrder.TypeOfTransaction.Sell Then
+                                    drctn = TradeDirection.Sell
+                                End If
+
+                                Dim dummyTrade As Trade = New Trade With {
+                                    .ChildTag = childTag,
+                                    .ContractRemark = _lastAttempt,
+                                    .CurrentStatus = TradeStatus.Open,
+                                    .Direction = drctn,
+                                    .ParentTag = parentTag,
+                                    .PotentialTarget = lossToRecover,
+                                    .Quantity = quantity,
+                                    .SignalDate = signal.Item2.SnapshotDateTime,
+                                    .SpotATR = spotATR,
+                                    .SpotPrice = spotPrice,
+                                    .TradeNumber = tradeNumber,
+                                    .TradingSymbol = currentATMOption.TradableInstrument.TradingSymbol,
+                                    .TypeOfEntry = entryType
+                                }
+
+                                If entryType = EntryType.Fresh Then
+                                    If CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock = 0 Then
+                                        Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 1)
+                                        Try
+                                            Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
+                                            lastTrade = Me.SignalData.GetLastTrade()
+                                            If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
+                                                _lastAttempt = -1
+                                                CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
+                                            End If
+                                        Finally
+                                            Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
+                                        End Try
                                     End If
-                                Next
-                            End If
-
-                            Dim drctn As TradeDirection = TradeDirection.None
-                            If signal.Item3 = IOrder.TypeOfTransaction.Buy Then
-                                drctn = TradeDirection.Buy
-                            ElseIf signal.Item3 = IOrder.TypeOfTransaction.Sell Then
-                                drctn = TradeDirection.Sell
-                            End If
-
-                            Dim dummyTrade As Trade = New Trade With {
-                                .ChildTag = childTag,
-                                .ContractRemark = _lastAttempt,
-                                .CurrentStatus = TradeStatus.Open,
-                                .Direction = drctn,
-                                .ParentTag = parentTag,
-                                .PotentialTarget = lossToRecover,
-                                .Quantity = quantity,
-                                .SignalDate = signal.Item2.SnapshotDateTime,
-                                .SpotATR = spotATR,
-                                .SpotPrice = spotPrice,
-                                .TradeNumber = tradeNumber,
-                                .TradingSymbol = currentATMOption.TradableInstrument.TradingSymbol,
-                                .TypeOfEntry = entryType
-                            }
-
-
-                            If CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock = 0 Then
-                                Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 1)
-                                Try
+                                Else
                                     Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
-                                    lastTrade = Me.SignalData.GetLastTrade()
-                                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
-                                        _lastAttempt = -1
-                                        CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
-                                    End If
-                                Finally
-                                    Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
-                                End Try
+                                End If
                             End If
                         End If
                     End If
@@ -273,10 +296,10 @@ Public Class NFOStrategyInstrument
                                     }
 
                                     Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
-                                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
-                                        CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
-                                    End If
+                                    'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                    '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                    'End If
                                 Else
                                     ''Zero premium
                                     Dim zeroPremiumReached As Boolean = False
@@ -291,10 +314,10 @@ Public Class NFOStrategyInstrument
                                         }
 
                                         Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
-                                        If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
-                                            CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
-                                        End If
+                                        'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                        '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                        'End If
                                     Else
                                         ''Contract Rollover
                                         Dim expiryDate As Date = optnStrgInstrmnt.TradableInstrument.Expiry.Value.AddDays(-2)
@@ -306,10 +329,10 @@ Public Class NFOStrategyInstrument
                                             }
 
                                             Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
-                                            If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
-                                                CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
-                                            End If
+                                            'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                            'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                            '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                            'End If
                                         End If
                                     End If
                                 End If
@@ -429,13 +452,19 @@ Public Class NFOStrategyInstrument
                                         lastTrade.ExitPrice = order.ParentOrder.AveragePrice
                                         Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                         Exit While
+                                    Else
+                                        If lastTrade.TypeOfExit = ExitType.ZeroPremium Then
+                                            lastTrade.CurrentStatus = TradeStatus.Complete
+                                            lastTrade.ExitPrice = Me.TradableInstrument.TickSize
+                                            Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                            Exit While
+                                        End If
                                     End If
                                 End If
                             End If
                             Await Task.Delay(500).ConfigureAwait(False)
                         End While
                         'TODO: Handle zero premium exit exceptional
-
                     End If
                 End If
             End If
@@ -560,6 +589,28 @@ Public Class NFOStrategyInstrument
     End Function
 
 #Region "Private Functions"
+    Private Async Function GetOptionToTrade(ByVal currentTick As ITick, ByVal direction As IOrder.TypeOfTransaction) As Task(Of NFOStrategyInstrument)
+        Dim ret As NFOStrategyInstrument = Nothing
+        If direction = IOrder.TypeOfTransaction.Buy Then
+            If _lastAttempt = -1 Then
+                ret = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Buy, "CE").ConfigureAwait(False)
+                _lastAttempt = 1
+            ElseIf _lastAttempt = 1 Then
+                ret = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Sell, "CE").ConfigureAwait(False)
+                _lastAttempt = -1
+            End If
+        ElseIf direction = IOrder.TypeOfTransaction.Sell Then
+            If _lastAttempt = -1 Then
+                ret = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Sell, "PE").ConfigureAwait(False)
+                _lastAttempt = 1
+            ElseIf _lastAttempt = 1 Then
+                ret = Await GetCurrentATMOption(currentTick, IOrder.TypeOfTransaction.Buy, "PE").ConfigureAwait(False)
+                _lastAttempt = -1
+            End If
+        End If
+        Return ret
+    End Function
+
     Private Async Function CreateStrategyInstrumentAndPopulate(ByVal instrument As IInstrument) As Task(Of NFOStrategyInstrument)
         Dim ret As NFOStrategyInstrument = Nothing
         ret = Await CType(Me.ParentStrategy, NFOStrategy).CreateDependentTradableStrategyInstrumentsAsync(instrument, Me).ConfigureAwait(False)
@@ -633,8 +684,18 @@ Public Class NFOStrategyInstrument
                     End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
-                    If rolloverDay <> Date.MinValue AndAlso (lastTrade Is Nothing OrElse rolloverDay.Date <> lastTrade.SignalDate.Date OrElse lastTrade.CurrentStatus = TradeStatus.Cancel) Then
-                        ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                    If rolloverDay <> Date.MinValue Then
+                        If lastTrade Is Nothing Then
+                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                        Else
+                            If rolloverDay.Date <> lastTrade.SignalDate.Date Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            End If
+                        End If
                     End If
                 End If
             ElseIf trend = Color.Red Then
@@ -644,14 +705,26 @@ Public Class NFOStrategyInstrument
                     End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
-                    If rolloverDay <> Date.MinValue AndAlso (lastTrade Is Nothing OrElse rolloverDay.Date <> lastTrade.SignalDate.Date OrElse lastTrade.CurrentStatus = TradeStatus.Cancel) Then
-                        ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                    If rolloverDay <> Date.MinValue Then
+                        If lastTrade Is Nothing Then
+                            ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                        Else
+                            If rolloverDay.Date <> lastTrade.SignalDate.Date Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
+                                ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            End If
+                        End If
                     End If
                 End If
             End If
             If ret IsNot Nothing AndAlso ret.Item1 Then
-                If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < userSettings.ActiveInstrumentCount Then
+                If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < userSettings.ActiveInstrumentCount OrElse
+                    (lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target) Then
                     Dim targetReached As Boolean = True
+                    Dim targetLeftPercentage As Decimal = 0
                     If ret.Item3 = IOrder.TypeOfTransaction.Buy Then
                         Dim highestHigh As Double = _eodPayload.Max(Function(x)
                                                                         If x.Key > ret.Item2.SnapshotDateTime AndAlso x.Key <= Now.Date Then
@@ -660,10 +733,17 @@ Public Class NFOStrategyInstrument
                                                                             Return Double.MinValue
                                                                         End If
                                                                     End Function)
-                        highestHigh = Math.Max(highestHigh, currentTick.High)
+                        If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
+                            highestHigh = Math.Max(highestHigh, currentTick.High)
+                        End If
                         Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
                         If highestHigh < ret.Item2.ClosePrice.Value + atr Then
                             targetReached = False
+                            If highestHigh <> Decimal.MinValue Then
+                                targetLeftPercentage = ((atr - (highestHigh - ret.Item2.ClosePrice.Value)) / atr) * 100
+                            Else
+                                targetLeftPercentage = 100
+                            End If
                         End If
                     ElseIf ret.Item3 = IOrder.TypeOfTransaction.Sell Then
                         Dim lowestLow As Double = _eodPayload.Min(Function(x)
@@ -673,13 +753,33 @@ Public Class NFOStrategyInstrument
                                                                           Return Double.MaxValue
                                                                       End If
                                                                   End Function)
-                        lowestLow = Math.Min(lowestLow, currentTick.Low)
+                        If ret.Item2.SnapshotDateTime.Date <> Now.Date Then
+                            lowestLow = Math.Min(lowestLow, currentTick.Low)
+                        End If
                         Dim atr As Decimal = _atrPayload(ret.Item2.SnapshotDateTime)
                         If lowestLow > ret.Item2.ClosePrice.Value - atr Then
                             targetReached = False
+                            If lowestLow <> Decimal.MaxValue Then
+                                targetLeftPercentage = ((atr - (ret.Item2.ClosePrice.Value - lowestLow)) / atr) * 100
+                            Else
+                                targetLeftPercentage = 100
+                            End If
                         End If
                     End If
-                    If targetReached Then ret = Nothing
+                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target Then
+                        If targetReached Then ret = Nothing
+                    Else
+                        If targetReached Then
+                            ret = Nothing
+                        ElseIf targetLeftPercentage < 75 Then
+                            ret = Nothing
+                        End If
+                    End If
+                    'If ret IsNot Nothing Then
+                    '    Console.WriteLine(String.Format("{0} {1} {2}", Me.TradableInstrument.TradingSymbol, ret.Item2.SnapshotDateTime.ToString("dd-MMM-yyyy"), targetLeftPercentage))
+                    'End If
+                Else
+                    ret = Nothing
                 End If
             End If
         End If
@@ -711,7 +811,7 @@ Public Class NFOStrategyInstrument
                 If runningTrade.TypeOfEntry = EntryType.LossMakeup Then
                     If runningTrade.CurrentStatus = TradeStatus.InProgress Then
                         ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
-                    Else
+                    ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
                         ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
                     End If
                 End If
@@ -728,7 +828,7 @@ Public Class NFOStrategyInstrument
                 If runningTrade.TypeOfEntry = EntryType.Fresh Then
                     If runningTrade.CurrentStatus = TradeStatus.InProgress Then
                         ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity)
-                    Else
+                    ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
                         ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
                     End If
                 End If
