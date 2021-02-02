@@ -191,12 +191,6 @@
     <Compile Include="frmZerodhaUserDetails.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\frmInsertSignal.Designer.vb">
-      <DependentUpon>frmInsertSignal.vb</DependentUpon>
-    </Compile>
-    <Compile Include="NFO\frmInsertSignal.vb">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="NFO\frmNFOSettings.Designer.vb">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </Compile>
@@ -251,9 +245,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="frmZerodhaUserDetails.resx">
       <DependentUpon>frmZerodhaUserDetails.vb</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmInsertSignal.resx">
-      <DependentUpon>frmInsertSignal.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NFO\frmNFOSettings.resx">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>

@@ -10,41 +10,59 @@
             Me.Text = String.Format("Trade Details - {0}", _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper)
 
             Dim dt As New DataTable
-            'dt.Columns.Add("Trading Symbol")
-            dt.Columns.Add("Snapshot Date")
-            dt.Columns.Add("Close Price")
+            dt.Columns.Add("Trading Symbol")
+            dt.Columns.Add("Direction")
+            dt.Columns.Add("Entry Type")
+            dt.Columns.Add("Exit Type")
+            dt.Columns.Add("Entry Time")
+            dt.Columns.Add("Exit Time")
             dt.Columns.Add("Entry Price")
-            dt.Columns.Add("Desire Value")
-            dt.Columns.Add("No. Of Shares Owned Before Rebalancing")
-            dt.Columns.Add("Total Value Before Rebalancing")
-            dt.Columns.Add("Amount To Invest")
-            dt.Columns.Add("No. Of Shares To Buy")
-            dt.Columns.Add("Shares Owned After Rebalancing")
-            dt.Columns.Add("Total Invested")
-            dt.Columns.Add("Periodic Investment")
+            dt.Columns.Add("Exit Price")
+            dt.Columns.Add("Quantity")
+            dt.Columns.Add("Entry Order ID")
+            dt.Columns.Add("Exit Order ID")
+            dt.Columns.Add("Status")
+            dt.Columns.Add("Potential Target")
+            dt.Columns.Add("Signal Date")
+            dt.Columns.Add("Contract Remark")
+            dt.Columns.Add("Trade Number")
+            dt.Columns.Add("Spot Price")
+            dt.Columns.Add("Spot ATR")
+            dt.Columns.Add("Child Tag")
+            dt.Columns.Add("Parent Tag")
 
-            'If _strategyInstrument.SignalData.AllTrades IsNot Nothing AndAlso _strategyInstrument.SignalData.AllTrades.Count > 0 Then
-            '    For Each runningTrade In _strategyInstrument.SignalData.AllTrades
-            '        Dim row As DataRow = dt.NewRow
-            '        'row("Trading Symbol") = runningSignal.TradingSymbol
-            '        row("Snapshot Date") = runningSignal.SnapshotDate.ToString("dd-MMM-yyyy")
-            '        row("Close Price") = runningSignal.ClosePrice
-            '        row("Entry Price") = runningSignal.EntryPrice
-            '        row("Desire Value") = runningSignal.DesireValue
-            '        row("No. Of Shares Owned Before Rebalancing") = runningSignal.NoOfSharesOwnedBeforeRebalancing
-            '        row("Total Value Before Rebalancing") = runningSignal.TotalValueBeforeRebalancing
-            '        row("Amount To Invest") = runningSignal.AmountToInvest
-            '        row("No. Of Shares To Buy") = runningSignal.NoOfSharesToBuy
-            '        row("Shares Owned After Rebalancing") = runningSignal.SharesOwnedAfterRebalancing
-            '        row("Total Invested") = runningSignal.TotalInvested
-            '        row("Periodic Investment") = runningSignal.PeriodicInvestment
+            If _strategyInstrument.SignalData.AllTrades IsNot Nothing AndAlso _strategyInstrument.SignalData.AllTrades.Count > 0 Then
+                For Each runningTrade In _strategyInstrument.SignalData.AllTrades.OrderBy(Function(x)
+                                                                                              Return x.EntryTime
+                                                                                          End Function)
+                    Dim row As DataRow = dt.NewRow
+                    row("Trading Symbol") = runningTrade.TradingSymbol
+                    row("Direction") = runningTrade.Direction.ToString
+                    row("Entry Type") = runningTrade.TypeOfEntry.ToString
+                    row("Exit Type") = runningTrade.TypeOfExit.ToString
+                    row("Entry Time") = runningTrade.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss")
+                    row("Exit Time") = runningTrade.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss")
+                    row("Entry Price") = runningTrade.EntryPrice
+                    row("Exit Price") = runningTrade.ExitPrice
+                    row("Quantity") = runningTrade.Quantity
+                    row("Entry Order ID") = runningTrade.EntryOrderID
+                    row("Exit Order ID") = runningTrade.ExitOrderID
+                    row("Status") = runningTrade.CurrentStatus
+                    row("Potential Target") = runningTrade.PotentialTarget
+                    row("Signal Date") = runningTrade.SignalDate.ToString("dd-MMM-yyyy HH:mm:ss")
+                    row("Contract Remark") = runningTrade.ContractRemark
+                    row("Trade Number") = runningTrade.TradeNumber
+                    row("Spot Price") = runningTrade.SpotPrice
+                    row("Spot ATR") = runningTrade.SpotATR
+                    row("Child Tag") = runningTrade.ChildTag
+                    row("Parent Tag") = runningTrade.ParentTag
 
-            '        dt.Rows.Add(row)
-            '    Next
+                    dt.Rows.Add(row)
+                Next
+            End If
 
-            '    dgvSignalDetails.DataSource = dt
-            '    dgvSignalDetails.Refresh()
-            'End If
+            dgvSignalDetails.DataSource = dt
+            dgvSignalDetails.Refresh()
         End If
     End Sub
 End Class
