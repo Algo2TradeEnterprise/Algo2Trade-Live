@@ -185,7 +185,7 @@ Public Class NFOStrategyInstrument
                                 Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                 If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                     _lastAttempt = -1
-                                    SendPlaceOrderNotificationAsync(lastTrade)
+                                    SendEntryOrderNotificationAsync(lastTrade)
                                 End If
                             End If
                         Else
@@ -269,7 +269,7 @@ Public Class NFOStrategyInstrument
                                                 If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                                     _lastAttempt = -1
                                                     CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount += 1
-                                                    SendPlaceOrderNotificationAsync(lastTrade)
+                                                    SendEntryOrderNotificationAsync(lastTrade)
                                                 End If
                                             Finally
                                                 Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
@@ -280,7 +280,7 @@ Public Class NFOStrategyInstrument
                                         lastTrade = Me.SignalData.GetLastTrade()
                                         If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
                                             _lastAttempt = -1
-                                            SendPlaceOrderNotificationAsync(lastTrade)
+                                            SendEntryOrderNotificationAsync(lastTrade)
                                         End If
                                     End If
                                 End If
@@ -294,7 +294,6 @@ Public Class NFOStrategyInstrument
 #Region "Exit Order Block"
                     Dim lastRunningTrade As Trade = Me.SignalData.GetLastTrade()
                     If lastRunningTrade IsNot Nothing AndAlso lastRunningTrade.CurrentStatus = TradeStatus.InProgress Then
-                        'Await SendPlaceOrderNotificationAsync(lastRunningTrade).ConfigureAwait(False)
                         Dim optionType As String = lastRunningTrade.TradingSymbol.Substring(lastRunningTrade.TradingSymbol.Count - 2)
                         Dim optnStrgInstrmnt As NFOStrategyInstrument = Await GetStrategyInstrumentFromTradingSymbol(lastRunningTrade.TradingSymbol).ConfigureAwait(False)
                         If optnStrgInstrmnt IsNot Nothing Then
@@ -1263,28 +1262,26 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Telegram"
-    Private Async Function SendPlaceOrderNotificationAsync(ByVal order As Trade) As Task
+    Private Async Function SendEntryOrderNotificationAsync(ByVal order As Trade) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             If order IsNot Nothing Then
-                Dim msg As String = String.Format("{0}: Entry Order.{15}Option Contract:{1},{15}Contract Remark:{2},{15}Signal Direction:{3},{15}Child Tag:{4},{15}Parent Tag:{5},{15}Quantity:{6},{15}Potential Target:{7},{15}Signal Date:{8},{15}Spot Price:{9},{15}Spot ATR:{10},{15}Trade Number:{11},{15}Entry Type:{12},{15}Entry Price:{13},{15}Entry Time:{14}",
-                                                Me.TradableInstrument.RawInstrumentName,
-                                                order.TradingSymbol,
-                                                order.ContractRemark,
-                                                order.Direction.ToString,
-                                                order.ChildTag,
-                                                order.ParentTag,
-                                                order.Quantity,
-                                                order.PotentialTarget,
-                                                order.SignalDate.ToString("dd-MMM-yyyy"),
-                                                order.SpotPrice,
-                                                order.SpotATR,
-                                                order.TradeNumber,
-                                                order.TypeOfEntry.ToString,
-                                                order.EntryPrice,
-                                                order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
-                                                vbNewLine)
+                Dim msg As String = String.Format("{1}: Entry Order{0}Signal Direction:{2}{0}Entry Type:{3}{0}Logical Trade Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}",
+                                                   vbNewLine,
+                                                   Me.TradableInstrument.RawInstrumentName,
+                                                   order.Direction.ToString,
+                                                   If(order.TypeOfEntryDetails = ExitType.None, order.TypeOfEntry.ToString, String.Format("{0} {1}", order.TypeOfEntryDetails.ToString, order.TypeOfEntry.ToString)),
+                                                   order.TradeNumber,
+                                                   order.Quantity,
+                                                   Math.Round(order.ATRConsumed, 2),
+                                                   order.PotentialTarget,
+                                                   order.SignalDate.ToString("dd-MMM-yyyy"),
+                                                   order.SpotPrice,
+                                                   Math.Round(order.SpotATR, 2),
+                                                   order.TradingSymbol,
+                                                   order.EntryPrice,
+                                                   order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"))
 
                 If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
                 Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
