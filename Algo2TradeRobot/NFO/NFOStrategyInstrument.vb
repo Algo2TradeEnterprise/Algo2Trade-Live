@@ -327,6 +327,7 @@ Public Class NFOStrategyInstrument
                                 Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                 If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
                                     CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                    SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
                                 End If
                             Else
                                 ''Reverse Check
@@ -344,7 +345,8 @@ Public Class NFOStrategyInstrument
                                     }
 
                                     Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                    'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
                                     'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
                                     '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
                                     'End If
@@ -362,7 +364,8 @@ Public Class NFOStrategyInstrument
                                         }
 
                                         Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                        'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
                                         'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
                                         '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
                                         'End If
@@ -377,7 +380,8 @@ Public Class NFOStrategyInstrument
                                             }
 
                                             Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                            'Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                            SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
                                             'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
                                             '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
                                             'End If
@@ -1284,9 +1288,56 @@ Public Class NFOStrategyInstrument
                                                    order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"))
 
                 If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
-                Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
-                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
-                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim <> "" Then
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim <> "" Then
+                    Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+                        Dim encodedString As String = Utilities.Strings.UrlEncodeString(msg)
+                        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                    End Using
+                End If
+            End If
+        Catch ex As Exception
+            logger.Warn("Telegram Error: {0}", ex.ToString)
+        End Try
+    End Function
+
+    Private Async Function SendExitOrderNotificationAsync(ByVal order As Trade, ByVal optionInstrument As NFOStrategyInstrument) As Task
+        Try
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+            If order IsNot Nothing Then
+                Dim pl As Decimal = 0
+                If order.TypeOfEntry = EntryType.Fresh Then
+                    pl = GetFreshTradePL(order, optionInstrument)
+                Else
+                    pl = GetLossMakeupTradePL(order, optionInstrument)
+                End If
+
+                Dim msg As String = String.Format("{1}: Exit Order{0}Signal Direction:{2}{0}Entry Type:{3}{0}Exit Type:{14}{0}Signal PL:{15}{0}Logical Trade Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}{0}Exit Price:{16}{0}Exit Time:{17}",
+                                                   vbNewLine,
+                                                   Me.TradableInstrument.RawInstrumentName,
+                                                   order.Direction.ToString,
+                                                   If(order.TypeOfEntryDetails = ExitType.None, order.TypeOfEntry.ToString, String.Format("{0} {1}", order.TypeOfEntryDetails.ToString, order.TypeOfEntry.ToString)),
+                                                   order.TradeNumber,
+                                                   order.Quantity,
+                                                   Math.Round(order.ATRConsumed, 2),
+                                                   order.PotentialTarget,
+                                                   order.SignalDate.ToString("dd-MMM-yyyy"),
+                                                   order.SpotPrice,
+                                                   Math.Round(order.SpotATR, 2),
+                                                   order.TradingSymbol,
+                                                   order.EntryPrice,
+                                                   order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                   order.TypeOfExit.ToString,
+                                                   pl,
+                                                   order.ExitPrice,
+                                                   order.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss"))
+
+                If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                    Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim <> "" Then
                     Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
                         Dim encodedString As String = Utilities.Strings.UrlEncodeString(msg)
                         Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
