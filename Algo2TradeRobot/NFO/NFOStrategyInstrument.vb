@@ -351,17 +351,14 @@ Public Class NFOStrategyInstrument
                                     '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
                                     'End If
                                 Else
-                                    ''Zero premium
-                                    Dim zeroPremiumReached As Boolean = False
-                                    If optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing AndAlso
-                                        optnStrgInstrmnt.TradableInstrument.LastTick.LastPrice <= optnStrgInstrmnt.TradableInstrument.TickSize Then
-                                        zeroPremiumReached = True
-                                    End If
-                                    If zeroPremiumReached Then
+                                    ''Contract Rollover
+                                    Dim expiryDate As Date = optnStrgInstrmnt.TradableInstrument.Expiry.Value.AddDays(-2)
+                                    expiryDate = New Date(expiryDate.Year, expiryDate.Month, expiryDate.Day, 15, 29, 0)
+                                    If Now >= expiryDate Then
                                         Dim dummyTrade As Trade = New Trade With {
-                                            .Quantity = lastRunningTrade.Quantity,
-                                            .TypeOfExit = ExitType.ZeroPremium
-                                        }
+                                                .Quantity = lastRunningTrade.Quantity,
+                                                .TypeOfExit = ExitType.ContractRollover
+                                            }
 
                                         Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
                                         Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
@@ -369,24 +366,44 @@ Public Class NFOStrategyInstrument
                                         'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
                                         '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
                                         'End If
-                                    Else
-                                        ''Contract Rollover
-                                        Dim expiryDate As Date = optnStrgInstrmnt.TradableInstrument.Expiry.Value.AddDays(-2)
-                                        expiryDate = New Date(expiryDate.Year, expiryDate.Month, expiryDate.Day, 15, 29, 0)
-                                        If Now >= expiryDate Then
-                                            Dim dummyTrade As Trade = New Trade With {
-                                                .Quantity = lastRunningTrade.Quantity,
-                                                .TypeOfExit = ExitType.ContractRollover
-                                            }
-
-                                            Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
-                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
-                                            SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
-                                            'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
-                                            '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
-                                            'End If
-                                        End If
                                     End If
+
+                                    ''''''''Zero premium
+                                    ''''''Dim zeroPremiumReached As Boolean = False
+                                    ''''''If optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing AndAlso
+                                    ''''''    optnStrgInstrmnt.TradableInstrument.LastTick.LastPrice <= optnStrgInstrmnt.TradableInstrument.TickSize Then
+                                    ''''''    zeroPremiumReached = True
+                                    ''''''End If
+                                    ''''''If zeroPremiumReached Then
+                                    ''''''    Dim dummyTrade As Trade = New Trade With {
+                                    ''''''        .Quantity = lastRunningTrade.Quantity,
+                                    ''''''        .TypeOfExit = ExitType.ZeroPremium
+                                    ''''''    }
+
+                                    ''''''    Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                    ''''''    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    ''''''    SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
+                                    ''''''    'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                    ''''''    '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                    ''''''    'End If
+                                    ''''''Else
+                                    ''''''    ''Contract Rollover
+                                    ''''''    Dim expiryDate As Date = optnStrgInstrmnt.TradableInstrument.Expiry.Value.AddDays(-2)
+                                    ''''''    expiryDate = New Date(expiryDate.Year, expiryDate.Month, expiryDate.Day, 15, 29, 0)
+                                    ''''''    If Now >= expiryDate Then
+                                    ''''''        Dim dummyTrade As Trade = New Trade With {
+                                    ''''''            .Quantity = lastRunningTrade.Quantity,
+                                    ''''''            .TypeOfExit = ExitType.ContractRollover
+                                    ''''''        }
+
+                                    ''''''        Await optnStrgInstrmnt.MonitorAsync(ExecuteCommands.CancelRegularOrder, dummyTrade).ConfigureAwait(False)
+                                    ''''''        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    ''''''        SendExitOrderNotificationAsync(lastTrade, optnStrgInstrmnt)
+                                    ''''''        'If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete Then
+                                    ''''''        '    CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount -= 1
+                                    ''''''        'End If
+                                    ''''''    End If
+                                    ''''''End If
                                 End If
                             End If
                         End If
@@ -458,6 +475,11 @@ Public Class NFOStrategyInstrument
                                         Else
                                             If Now >= placedTime.AddSeconds(5) Then
                                                 Exit While
+                                            ElseIf Now >= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+                                                Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                                Exit While
                                             End If
                                         End If
                                     End If
@@ -473,7 +495,8 @@ Public Class NFOStrategyInstrument
                                         lastTrade.EntryPrice = placedOrder.ParentOrder.AveragePrice
                                         Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                     Else
-                                        If placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected Then
+                                        If placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
+                                            placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
                                             Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
                                             cancelOrderTriggers = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
                                                 {New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, placedOrder.ParentOrder, "Invalid Order")}
@@ -494,11 +517,22 @@ Public Class NFOStrategyInstrument
                                                             lastTrade.CurrentStatus = TradeStatus.Cancel
                                                             Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                                             Exit While
+                                                        Else
+                                                            If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+                                                                Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                                lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                                Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                                                Exit While
+                                                            End If
                                                         End If
                                                     End If
                                                 End If
                                                 Await Task.Delay(500).ConfigureAwait(False)
                                             End While
+                                        Else
+                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                            lastTrade.CurrentStatus = TradeStatus.Cancel
+                                            Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                         End If
                                     End If
                                 End If
@@ -546,6 +580,10 @@ Public Class NFOStrategyInstrument
                                                 lastTrade.ExitPrice = Me.TradableInstrument.TickSize
                                                 Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                                 Exit While
+                                            Else
+                                                If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+                                                    Exit While
+                                                End If
                                             End If
                                         End If
                                     End If
@@ -807,7 +845,9 @@ Public Class NFOStrategyInstrument
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         If lastTrade Is Nothing Then
-                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            If Now >= userSettings.TradeEntryTime.AddMinutes(1) Then
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
+                            End If
                         Else
                             If rolloverDay.Date <> lastTrade.SignalDate.Date Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
@@ -828,7 +868,9 @@ Public Class NFOStrategyInstrument
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         If lastTrade Is Nothing Then
-                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            If Now >= userSettings.TradeEntryTime.AddMinutes(1) Then
+                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
+                            End If
                         Else
                             If rolloverDay.Date <> lastTrade.SignalDate.Date Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
@@ -1030,7 +1072,7 @@ Public Class NFOStrategyInstrument
                                                                                            Return CDec(x.Value.LowPrice.Value)
                                                                                        End Function)
 
-                            If pivotCandle.HighPrice.Value > highestHigh AndAlso pivotCandle.HighPrice.Value > preHighestHigh Then
+                            If pivotCandle.HighPrice.Value > highestHigh AndAlso pivotCandle.HighPrice.Value >= preHighestHigh Then
                                 If pivotData Is Nothing Then pivotData = New Pivot
                                 pivotData.PivotHigh = pivotCandle.HighPrice.Value
                                 pivotData.PivotHighTime = pivotCandle.SnapshotDateTime
@@ -1041,7 +1083,7 @@ Public Class NFOStrategyInstrument
                                     pivotData.PivotHighTime = outputPayload(inputPayload(runningPayload).PreviousPayload.SnapshotDateTime).PivotHighTime
                                 End If
                             End If
-                            If pivotCandle.LowPrice.Value < lowestLow AndAlso pivotCandle.LowPrice.Value < preLowestLow Then
+                            If pivotCandle.LowPrice.Value < lowestLow AndAlso pivotCandle.LowPrice.Value <= preLowestLow Then
                                 If pivotData Is Nothing Then pivotData = New Pivot
                                 pivotData.PivotLow = pivotCandle.LowPrice.Value
                                 pivotData.PivotLowTime = pivotCandle.SnapshotDateTime
