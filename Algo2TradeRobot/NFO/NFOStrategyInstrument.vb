@@ -745,9 +745,7 @@ Public Class NFOStrategyInstrument
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             End If
                         Else
-                            If rolloverDay.Date <> lastTrade.SignalDate.Date Then
-                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
-                            ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
+                            If lastTrade.CurrentStatus = TradeStatus.Cancel Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
@@ -768,9 +766,7 @@ Public Class NFOStrategyInstrument
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             End If
                         Else
-                            If rolloverDay.Date <> lastTrade.SignalDate.Date Then
-                                signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
-                            ElseIf lastTrade.CurrentStatus = TradeStatus.Cancel Then
+                            If lastTrade.CurrentStatus = TradeStatus.Cancel Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             ElseIf lastTrade.TypeOfExit <> ExitType.Target Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
