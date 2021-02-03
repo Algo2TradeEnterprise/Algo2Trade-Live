@@ -740,7 +740,7 @@ Public Class NFOStrategyInstrument
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
-                        If lastTrade Is Nothing Then
+                        If lastTrade Is Nothing OrElse lastTrade.TypeOfExit = ExitType.Target Then
                             If Now >= userSettings.TradeEntryTime.AddMinutes(1) Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Buy)
                             End If
@@ -761,7 +761,7 @@ Public Class NFOStrategyInstrument
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
-                        If lastTrade Is Nothing Then
+                        If lastTrade Is Nothing OrElse lastTrade.TypeOfExit = ExitType.Target Then
                             If Now >= userSettings.TradeEntryTime.AddMinutes(1) Then
                                 signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, _eodPayload(rolloverDay), IOrder.TypeOfTransaction.Sell)
                             End If
