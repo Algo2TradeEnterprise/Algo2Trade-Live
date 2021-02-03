@@ -25,7 +25,7 @@
             dt.Columns.Add("Status")
             dt.Columns.Add("Potential Target")
             dt.Columns.Add("Signal Date")
-            dt.Columns.Add("Contract Remark")
+            'dt.Columns.Add("Contract Remark")
             dt.Columns.Add("Trade Number")
             dt.Columns.Add("Spot Price")
             dt.Columns.Add("Spot ATR")
@@ -53,7 +53,7 @@
                     row("Status") = runningTrade.CurrentStatus
                     row("Potential Target") = runningTrade.PotentialTarget
                     row("Signal Date") = runningTrade.SignalDate.ToString("dd-MMM-yyyy HH:mm:ss")
-                    row("Contract Remark") = runningTrade.ContractRemark
+                    'row("Contract Remark") = runningTrade.ContractRemark
                     row("Trade Number") = runningTrade.TradeNumber
                     row("Spot Price") = runningTrade.SpotPrice
                     row("Spot ATR") = Math.Round(runningTrade.SpotATR, 2)
