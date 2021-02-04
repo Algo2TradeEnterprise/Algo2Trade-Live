@@ -114,7 +114,7 @@ Public Class NFOStrategyInstrument
                     _cts.Token.ThrowIfCancellationRequested()
 
                     currentTick = Me.TradableInstrument.LastTick
-                    If Now >= userSettings.TradeEntryTime AndAlso Not _eodPayload.ContainsKey(Now.Date) Then
+                    If Now >= userSettings.TradeEntryTime AndAlso Not _eodPayload.ContainsKey(Now.Date) AndAlso currentTick IsNot Nothing Then
                         Try
                             logger.Debug("{0}: Adding current day candle and calculating indicator.", Me.TradableInstrument.TradingSymbol)
                         Catch ex As Exception
@@ -294,7 +294,7 @@ Public Class NFOStrategyInstrument
                     If lastRunningTrade IsNot Nothing AndAlso lastRunningTrade.CurrentStatus = TradeStatus.InProgress Then
                         Dim optionType As String = lastRunningTrade.TradingSymbol.Substring(lastRunningTrade.TradingSymbol.Count - 2)
                         Dim optnStrgInstrmnt As NFOStrategyInstrument = Await GetStrategyInstrumentFromTradingSymbol(lastRunningTrade.TradingSymbol).ConfigureAwait(False)
-                        If optnStrgInstrmnt IsNot Nothing Then
+                        If optnStrgInstrmnt IsNot Nothing AndAlso optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing Then
                             ''Target Exit
                             Dim targetReached As Boolean = False
                             If lastRunningTrade.TypeOfEntry = EntryType.Fresh Then
@@ -311,7 +311,7 @@ Public Class NFOStrategyInstrument
                                 End If
                             Else
                                 Dim pl As Decimal = GetLossMakeupTradePL(lastRunningTrade, optnStrgInstrmnt)
-                                If pl >= lastRunningTrade.PotentialTarget Then
+                                If pl >= Math.Abs(lastRunningTrade.PotentialTarget) Then
                                     targetReached = True
                                 End If
                             End If
@@ -931,15 +931,17 @@ Public Class NFOStrategyInstrument
         Dim ret As Decimal = 0
         Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByChildTag(currentTrade.ChildTag)
         If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
-            For Each runningTrade In allTrades
-                If runningTrade.TypeOfEntry = EntryType.LossMakeup Then
-                    If runningTrade.CurrentStatus = TradeStatus.InProgress Then
-                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
-                    ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
-                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
+            If currentStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
+                For Each runningTrade In allTrades
+                    If runningTrade.TypeOfEntry = EntryType.LossMakeup Then
+                        If runningTrade.CurrentStatus = TradeStatus.InProgress Then
+                            ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
+                        ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
+                            ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity - currentStrategyInstrument.TradableInstrument.LotSize)
+                        End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
         Return ret
     End Function
@@ -948,15 +950,17 @@ Public Class NFOStrategyInstrument
         Dim ret As Decimal = 0
         Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByChildTag(currentTrade.ChildTag)
         If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
-            For Each runningTrade In allTrades
-                If runningTrade.TypeOfEntry = EntryType.Fresh Then
-                    If runningTrade.CurrentStatus = TradeStatus.InProgress Then
-                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity)
-                    ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
-                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+            If currentStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
+                For Each runningTrade In allTrades
+                    If runningTrade.TypeOfEntry = EntryType.Fresh Then
+                        If runningTrade.CurrentStatus = TradeStatus.InProgress Then
+                            ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity)
+                        ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
+                            ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+                        End If
                     End If
-                End If
-            Next
+                Next
+            End If
         End If
         Return ret
     End Function

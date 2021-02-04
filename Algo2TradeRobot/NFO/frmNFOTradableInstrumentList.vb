@@ -55,7 +55,7 @@
                 Dim lastRunningTrade As Trade = instrument.SignalData.GetLastTrade()
                 If lastRunningTrade IsNot Nothing AndAlso lastRunningTrade.CurrentStatus = TradeStatus.InProgress Then
                     Dim optnStrgInstrmnt As NFOStrategyInstrument = Await instrument.GetStrategyInstrumentFromTradingSymbol(lastRunningTrade.TradingSymbol).ConfigureAwait(False)
-                    If optnStrgInstrmnt IsNot Nothing Then
+                    If optnStrgInstrmnt IsNot Nothing AndAlso optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing Then
                         Dim pl As Decimal = 0
                         If lastRunningTrade.TypeOfEntry = EntryType.Fresh Then
                             pl = instrument.GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
