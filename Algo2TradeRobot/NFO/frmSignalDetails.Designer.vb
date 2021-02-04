@@ -22,14 +22,17 @@ Partial Class frmSignalDetails
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Dim ChartArea1 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
+        Dim Legend1 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
+        Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmSignalDetails))
         Me.dgvSignalDetails = New System.Windows.Forms.DataGridView()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
-        Me.Panel1 = New System.Windows.Forms.Panel()
-        Me.lblXIRR = New System.Windows.Forms.Label()
+        Me.chrtDetails = New System.Windows.Forms.DataVisualization.Charting.Chart()
         CType(Me.dgvSignalDetails, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.TableLayoutPanel1.SuspendLayout()
-        Me.Panel1.SuspendLayout()
+        CType(Me.chrtDetails, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'dgvSignalDetails
@@ -43,7 +46,7 @@ Partial Class frmSignalDetails
         Me.dgvSignalDetails.ReadOnly = True
         Me.dgvSignalDetails.RowHeadersVisible = False
         Me.dgvSignalDetails.RowTemplate.Height = 24
-        Me.dgvSignalDetails.Size = New System.Drawing.Size(1459, 491)
+        Me.dgvSignalDetails.Size = New System.Drawing.Size(1459, 360)
         Me.dgvSignalDetails.TabIndex = 0
         '
         'TableLayoutPanel1
@@ -51,40 +54,46 @@ Partial Class frmSignalDetails
         Me.TableLayoutPanel1.ColumnCount = 1
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.dgvSignalDetails, 0, 0)
-        Me.TableLayoutPanel1.Controls.Add(Me.Panel1, 0, 1)
+        Me.TableLayoutPanel1.Controls.Add(Me.chrtDetails, 0, 1)
         Me.TableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel1.Location = New System.Drawing.Point(0, 0)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 2
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 90.0!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10.0!))
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1465, 553)
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1465, 732)
         Me.TableLayoutPanel1.TabIndex = 1
         '
-        'Panel1
+        'chrtDetails
         '
-        Me.Panel1.Controls.Add(Me.lblXIRR)
-        Me.Panel1.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.Panel1.Location = New System.Drawing.Point(3, 500)
-        Me.Panel1.Name = "Panel1"
-        Me.Panel1.Size = New System.Drawing.Size(1459, 50)
-        Me.Panel1.TabIndex = 1
-        '
-        'lblXIRR
-        '
-        Me.lblXIRR.AutoSize = True
-        Me.lblXIRR.Font = New System.Drawing.Font("Microsoft Sans Serif", 13.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.lblXIRR.Location = New System.Drawing.Point(7, 11)
-        Me.lblXIRR.Name = "lblXIRR"
-        Me.lblXIRR.Size = New System.Drawing.Size(88, 29)
-        Me.lblXIRR.TabIndex = 0
-        Me.lblXIRR.Text = "XIRR: "
+        ChartArea1.Name = "ChartArea1"
+        Me.chrtDetails.ChartAreas.Add(ChartArea1)
+        Me.chrtDetails.Dock = System.Windows.Forms.DockStyle.Fill
+        Legend1.Name = "Legend1"
+        Me.chrtDetails.Legends.Add(Legend1)
+        Me.chrtDetails.Location = New System.Drawing.Point(3, 369)
+        Me.chrtDetails.Name = "chrtDetails"
+        Series1.BorderWidth = 5
+        Series1.ChartArea = "ChartArea1"
+        Series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
+        Series1.Legend = "Legend1"
+        Series1.Name = "Desire Value Line"
+        Series2.BorderWidth = 5
+        Series2.ChartArea = "ChartArea1"
+        Series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
+        Series2.Legend = "Legend1"
+        Series2.Name = "Current Value Line"
+        Me.chrtDetails.Series.Add(Series1)
+        Me.chrtDetails.Series.Add(Series2)
+        Me.chrtDetails.Size = New System.Drawing.Size(1459, 360)
+        Me.chrtDetails.TabIndex = 1
+        Me.chrtDetails.Text = "Chart1"
         '
         'frmSignalDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1465, 553)
+        Me.ClientSize = New System.Drawing.Size(1465, 732)
         Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
@@ -94,14 +103,12 @@ Partial Class frmSignalDetails
         Me.Text = "Signal Details"
         CType(Me.dgvSignalDetails, System.ComponentModel.ISupportInitialize).EndInit()
         Me.TableLayoutPanel1.ResumeLayout(False)
-        Me.Panel1.ResumeLayout(False)
-        Me.Panel1.PerformLayout()
+        CType(Me.chrtDetails, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
 
     Friend WithEvents dgvSignalDetails As DataGridView
     Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
-    Friend WithEvents Panel1 As Panel
-    Friend WithEvents lblXIRR As Label
+    Friend WithEvents chrtDetails As DataVisualization.Charting.Chart
 End Class

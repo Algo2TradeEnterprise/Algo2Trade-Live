@@ -26,6 +26,9 @@
                 End If
             End If
             If allSignalDetails IsNot Nothing AndAlso allSignalDetails.Count > 0 Then
+                Me.chrtDetails.ChartAreas(0).AxisX.IsStartedFromZero = False
+                Me.chrtDetails.ChartAreas(0).AxisY.IsStartedFromZero = False
+
                 Dim dt As New DataTable
                 'dt.Columns.Add("Trading Symbol")
                 dt.Columns.Add("Snapshot Date")
@@ -59,6 +62,13 @@
 
                     dt.Rows.Add(row)
 
+                    Me.chrtDetails.Series("Desire Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                    If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
+                        Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                    Else
+                        Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.TotalValueBeforeRebalancing)
+                    End If
+
                     payments.Add(runningSignal.PeriodicInvestment)
                     days.Add(runningSignal.SnapshotDate.DayOfYear)
                 Next
@@ -68,7 +78,47 @@
                 dgvSignalDetails.DataSource = dt
                 dgvSignalDetails.Refresh()
 
-                lblXIRR.Text = String.Format("XIRR: {0}", (Newtons_method(0.1, total_f_xirr(payments.ToArray, days.ToArray), total_df_xirr(payments.ToArray, days.ToArray))*100).ToString("F"))
+                Dim xirr As Double = (Newtons_method(0.1, total_f_xirr(payments.ToArray, days.ToArray), total_df_xirr(payments.ToArray, days.ToArray)) * 100)
+                Dim totalInvested As Double = allSignalDetails.Values.Sum(Function(x)
+                                                                              If x.PeriodicInvestment < 0 Then
+                                                                                  Return Math.Abs(x.PeriodicInvestment)
+                                                                              Else
+                                                                                  Return 0
+                                                                              End If
+                                                                          End Function)
+                Dim totalReturned As Double = allSignalDetails.Values.Sum(Function(x)
+                                                                              If x.PeriodicInvestment > 0 Then
+                                                                                  Return Math.Abs(x.PeriodicInvestment)
+                                                                              Else
+                                                                                  Return 0
+                                                                              End If
+                                                                          End Function)
+                Dim wealthBuild As Double = allSignalDetails.LastOrDefault.Value.CurrentValue
+                Dim absoluteReturn As Double = allSignalDetails.Last.Value.AbsoluteReturns
+                Dim annualizedAbsoluteReturn As Double = (absoluteReturn / allSignalDetails.FirstOrDefault.Value.SnapshotDate.Subtract(allSignalDetails.LastOrDefault.Value.SnapshotDate).Days) * 365
+                Dim maxOutflowNeeded As Double = allSignalDetails.Values.Max(Function(x)
+                                                                                 Return Math.Abs(x.ContinuousInvestmentNeeded)
+                                                                             End Function)
+                Dim maxAccumulatedCorpus As Double = allSignalDetails.Values.Max(Function(x)
+                                                                                     Return Math.Abs(x.AccumulatedCorpus)
+                                                                                 End Function)
+
+                Dim a As New DataVisualization.Charting.TextAnnotation With {
+                    .Alignment = ContentAlignment.TopLeft,
+                    .X = 81,
+                    .Y = 17.5,
+                    .Text = String.Format("XIRR: {1} %{0}{0}Wealth Build: {2}{0}{0}Total Invested: {3}{0}{0}Total Returned: {4}{0}{0}Absolute Return: {5} %{0}{0}Annualized Absolute Return: {6} %{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
+                                       vbNewLine,
+                                       Math.Abs(xirr).ToString("F"),
+                                       Math.Abs(wealthBuild).ToString("F"),
+                                       Math.Abs(totalInvested).ToString("F"),
+                                       Math.Abs(totalReturned).ToString("F"),
+                                       Math.Abs(absoluteReturn).ToString("F"),
+                                       Math.Abs(annualizedAbsoluteReturn).ToString("F"),
+                                       Math.Abs(maxOutflowNeeded).ToString("F"),
+                                       Math.Abs(maxAccumulatedCorpus).ToString("F"))
+                }
+                Me.chrtDetails.Annotations.Add(a)
             End If
         End If
     End Sub

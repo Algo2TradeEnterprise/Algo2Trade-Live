@@ -554,6 +554,86 @@ Public Class NFOStrategyInstrument
                 End If
             End Get
         End Property
+
+        Public ReadOnly Property AccumulatedCorpus As Double
+            Get
+                If Me.PreviousSignal IsNot Nothing Then
+                    If Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment < 0 Then
+                        Return 0
+                    Else
+                        Return Math.Round(Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment, 2)
+                    End If
+                Else
+                    Return 0
+                End If
+            End Get
+        End Property
+
+        Public ReadOnly Property NetGoing As Double
+            Get
+                If Me.PreviousSignal IsNot Nothing Then
+                    If Me.AccumulatedCorpus > 0 Then
+                        Return 0
+                    Else
+                        If Me.PeriodicInvestment < 0 Then
+                            Return Math.Round(Math.Abs(Me.PeriodicInvestment + Me.PreviousSignal.AccumulatedCorpus), 2)
+                        Else
+                            Return 0
+                        End If
+                    End If
+                Else
+                    Return Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
+                End If
+            End Get
+        End Property
+
+        Public ReadOnly Property TotalNetGoing As Double
+            Get
+                If Me.PreviousSignal IsNot Nothing Then
+                    Return Me.NetGoing + Me.PreviousSignal.TotalNetGoing
+                Else
+                    Return Me.NetGoing
+                End If
+            End Get
+        End Property
+
+        Public ReadOnly Property CurrentValue As Double
+            Get
+                If Me.PreviousSignal IsNot Nothing Then
+                    Dim totalTax As Decimal = 0
+                    If Me.SharesOwnedAfterRebalancing <> 0 Then
+                        totalTax = ParentStrategyInstrument.GetTotalTaxAndCharges(0, Me.ClosePrice, Me.SharesOwnedAfterRebalancing)
+                    End If
+                    Return Math.Round(Me.ClosePrice * Me.SharesOwnedAfterRebalancing - totalTax, 2)
+                Else
+                    Return Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
+                End If
+            End Get
+        End Property
+
+        Public ReadOnly Property AbsoluteReturns As Double
+            Get
+                Return Math.Round((Me.AccumulatedCorpus + Me.CurrentValue) / Me.TotalNetGoing - 1, 2)
+            End Get
+        End Property
+
+        Public ReadOnly Property ContinuousInvestmentNeeded As Double
+            Get
+                If Me.PreviousSignal IsNot Nothing Then
+                    If Me.PeriodicInvestment < 0 Then
+                        If Me.PreviousSignal.ContinuousInvestmentNeeded < 0 Then
+                            Return Math.Round(Me.PeriodicInvestment + Me.PreviousSignal.ContinuousInvestmentNeeded, 2)
+                        Else
+                            Return Me.PeriodicInvestment
+                        End If
+                    Else
+                        Return 0
+                    End If
+                Else
+                    Return 0
+                End If
+            End Get
+        End Property
     End Class
 #End Region
 
