@@ -613,7 +613,7 @@ Public Class NFOStrategyInstrument
 
         Public ReadOnly Property AbsoluteReturns As Double
             Get
-                Return Math.Round((Me.AccumulatedCorpus + Me.CurrentValue) / Me.TotalNetGoing - 1, 2)
+                Return Math.Round(((Me.AccumulatedCorpus + Me.CurrentValue) / Me.TotalNetGoing - 1) * 100, 2)
             End Get
         End Property
 
