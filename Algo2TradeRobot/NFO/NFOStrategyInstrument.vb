@@ -439,12 +439,65 @@ Public Class NFOStrategyInstrument
                                                 lastTrade.CurrentStatus = TradeStatus.Cancel
                                                 Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
                                                 Exit While
+                                            ElseIf Now >= placedTime.AddMinutes(1) Then
+                                                Exit While
                                             End If
                                         End If
                                     End If
                                 End If
                                 Await Task.Delay(500).ConfigureAwait(False)
                             End While
+                            'If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                            Dim placedOrder As IBusinessOrder = Me.OrderDetails(orderID)
+                            If placedOrder IsNot Nothing AndAlso placedOrder.ParentOrder IsNot Nothing Then
+                                If placedOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                    lastTrade.CurrentStatus = TradeStatus.InProgress
+                                    lastTrade.EntryPrice = placedOrder.ParentOrder.AveragePrice
+                                    Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                Else
+                                    If placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
+                                        placedOrder.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
+                                        Dim cancelOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
+                                        cancelOrderTriggers = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) From
+                                            {New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, placedOrder.ParentOrder, "Invalid Order")}
+                                        Await ExecuteCommandAsync(ExecuteCommands.ForceCancelRegularOrder, cancelOrderTriggers).ConfigureAwait(False)
+                                        While True
+                                            _cts.Token.ThrowIfCancellationRequested()
+                                            If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                                                Dim order As IBusinessOrder = Me.OrderDetails(orderID)
+                                                If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
+                                                    If order.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                        lastTrade.CurrentStatus = TradeStatus.InProgress
+                                                        lastTrade.EntryPrice = order.ParentOrder.AveragePrice
+                                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                                        Exit While
+                                                    ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
+                                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                        lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                                        Exit While
+                                                    Else
+                                                        If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+                                                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                            lastTrade.CurrentStatus = TradeStatus.Cancel
+                                                            Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                                            Exit While
+                                                        End If
+                                                    End If
+                                                End If
+                                            End If
+                                            Await Task.Delay(500).ConfigureAwait(False)
+                                        End While
+                                    Else
+                                        Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                        lastTrade.CurrentStatus = TradeStatus.Cancel
+                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(Me.SignalData.SignalDetailsFilename, Me.SignalData)
+                                    End If
+                                End If
+                            End If
+                            'End If
                         End If
                     End If
                 ElseIf command = ExecuteCommands.CancelRegularOrder AndAlso data IsNot Nothing Then
