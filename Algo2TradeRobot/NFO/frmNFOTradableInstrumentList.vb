@@ -1,4 +1,5 @@
-﻿Public Class frmNFOTradableInstrumentList
+﻿Imports System.Threading
+Public Class frmNFOTradableInstrumentList
 
 #Region "Common Delegate"
     Delegate Sub SetObjectEnableDisable_Delegate(ByVal [obj] As Object, ByVal [value] As Boolean)
@@ -26,10 +27,12 @@
     End Sub
 #End Region
 
+    Private _cts As CancellationTokenSource
     Private _TradableStrategyInstruments As IEnumerable(Of NFOStrategyInstrument)
-    Public Sub New(ByVal associatedTradableInstruments As IEnumerable(Of NFOStrategyInstrument))
+    Public Sub New(ByVal associatedTradableInstruments As IEnumerable(Of NFOStrategyInstrument), ByVal canceller As CancellationTokenSource)
         InitializeComponent()
         Me._TradableStrategyInstruments = associatedTradableInstruments
+        _cts = canceller
     End Sub
 
     Private Sub frmNFOTradableInstrumentList_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -45,6 +48,7 @@
             dt.Columns.Add("Running")
             dt.Columns.Add("Instrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
+                _cts.Token.ThrowIfCancellationRequested()
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
@@ -87,8 +91,12 @@
 
     Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
         If e.ColumnIndex = 9 Then
-            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument))
-            frm.ShowDialog()
+            Try
+                Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument), _cts)
+                frm.ShowDialog()
+            Catch ex As Exception
+
+            End Try
         ElseIf e.ColumnIndex = 10 Then
             Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument))
             frm.ShowDialog()

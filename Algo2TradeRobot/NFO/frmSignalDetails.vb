@@ -1,13 +1,46 @@
-﻿Imports System.Windows.Forms.DataVisualization.Charting
+﻿Imports System.IO
+Imports Utilities.DAL
+Imports System.Threading
+Imports System.Windows.Forms.DataVisualization.Charting
 
 Public Class frmSignalDetails
+    Private _cts As CancellationTokenSource
     Private ReadOnly _strategyInstrument As NFOStrategyInstrument
-    Public Sub New(ByVal runningInstrument As NFOStrategyInstrument)
+    Public Sub New(ByVal runningInstrument As NFOStrategyInstrument, ByVal canceller As CancellationTokenSource)
         InitializeComponent()
         _strategyInstrument = runningInstrument
+        _cts = canceller
     End Sub
 
     Private Sub frmSignalDetails_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        LoadData()
+    End Sub
+
+    Private Sub btnExport_Click(sender As Object, e As EventArgs) Handles btnExport.Click
+        If dgvSignalDetails IsNot Nothing AndAlso dgvSignalDetails.Rows.Count > 0 Then
+            saveFile.AddExtension = True
+            saveFile.FileName = String.Format("{0}-Signal Details {1}.csv",
+                                              _strategyInstrument.TradableInstrument.TradingSymbol,
+                                              Now.ToString("HHmmss"))
+            saveFile.Filter = "CSV (*.csv)|*.csv"
+            saveFile.ShowDialog()
+        Else
+            MessageBox.Show("Empty DataGrid. Nothing to export.", "Future Stock CSV File", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        End If
+    End Sub
+
+    Private Sub saveFile_FileOk(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles saveFile.FileOk
+        Using export As New CSVHelper(saveFile.FileName, ",", _cts)
+            export.GetCSVFromDataGrid(dgvSignalDetails)
+        End Using
+        Dim exportFolderName As String = Path.GetDirectoryName(saveFile.FileName)
+        Me.chrtValueLine.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Value Line Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
+        Me.chrtInvestmentReturn.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Investment Return Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
+
+        MessageBox.Show("Export successful .....", "Signal Details", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    Private Sub LoadData()
         If _strategyInstrument IsNot Nothing Then
             Me.Text = String.Format("Signal Details - {0}", _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper)
 
@@ -76,10 +109,14 @@ Public Class frmSignalDetails
                     End If
 
                     payments.Add(runningSignal.PeriodicInvestment)
-                    days.Add(runningSignal.SnapshotDate.DayOfYear)
+                    If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
+                        days.Add(runningSignal.SnapshotDate.DayOfYear)
+                    Else
+                        days.Add(allSignalDetails.FirstOrDefault.Value.SnapshotDate.DayOfYear + runningSignal.SnapshotDate.Subtract(allSignalDetails.FirstOrDefault.Value.SnapshotDate).Days)
+                    End If
                 Next
                 payments.Add(allSignalDetails.LastOrDefault.Value.SharesOwnedAfterRebalancing * price)
-                days.Add(Now.DayOfYear)
+                days.Add(allSignalDetails.FirstOrDefault.Value.SnapshotDate.DayOfYear + Now.Date.Subtract(allSignalDetails.FirstOrDefault.Value.SnapshotDate).Days)
 
                 dgvSignalDetails.DataSource = dt
                 dgvSignalDetails.Refresh()
@@ -115,14 +152,14 @@ Public Class frmSignalDetails
                     .Y = 17.5,
                     .Text = String.Format("XIRR: {1} %{0}Wealth Build: {2}{0}Total Invested: {3}{0}Total Returned: {4}{0}Absolute Return: {5} %{0}Annualized Absolute Return: {6} %{0}Max Outflow Needed: {7}{0}Max Corpus Accumulated: {8}",
                                            vbNewLine,
-                                           Math.Abs(xirr).ToString("F"),
-                                           Math.Abs(wealthBuild).ToString("F"),
-                                           Math.Abs(totalInvested).ToString("F"),
-                                           Math.Abs(totalReturned).ToString("F"),
-                                           Math.Abs(absoluteReturn).ToString("F"),
-                                           Math.Abs(annualizedAbsoluteReturn).ToString("F"),
-                                           Math.Abs(maxOutflowNeeded).ToString("F"),
-                                           Math.Abs(maxAccumulatedCorpus).ToString("F"))
+                                           (xirr).ToString("F"),
+                                           (wealthBuild).ToString("F"),
+                                           (totalInvested).ToString("F"),
+                                           (totalReturned).ToString("F"),
+                                           (absoluteReturn).ToString("F"),
+                                           (annualizedAbsoluteReturn).ToString("F"),
+                                           (maxOutflowNeeded).ToString("F"),
+                                           (maxAccumulatedCorpus).ToString("F"))
                 }
                 Me.chrtValueLine.Annotations.Add(a)
                 'Me.chrtInvestmentReturn.Annotations.Add(a)
@@ -138,6 +175,7 @@ Public Class frmSignalDetails
         End If
     End Sub
 
+#Region "XIRR Calculation"
     Public Const tol As Double = 0.001
     Public Delegate Function fx(ByVal x As Double) As Double
 
@@ -186,4 +224,6 @@ Public Class frmSignalDetails
 
         Return x0
     End Function
+#End Region
+
 End Class

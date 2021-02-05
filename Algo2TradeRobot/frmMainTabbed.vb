@@ -573,7 +573,7 @@ Public Class frmMainTabbed
         newForm.ShowDialog()
     End Sub
     Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstruments.LinkClicked
-        Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
+        Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments, _cts)
         newForm.ShowDialog()
     End Sub
 #End Region
