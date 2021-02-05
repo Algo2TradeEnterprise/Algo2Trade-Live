@@ -21,6 +21,7 @@ Public Class SignalDetails
                                 .Direction = dummyTrade.Direction,
                                 .ParentTag = dummyTrade.ParentTag,
                                 .PotentialTarget = dummyTrade.PotentialTarget,
+                                .LossToRecover = dummyTrade.LossToRecover,
                                 .Quantity = dummyTrade.Quantity,
                                 .SignalDate = dummyTrade.SignalDate,
                                 .SpotATR = dummyTrade.SpotATR,
@@ -176,6 +177,7 @@ Public Class Trade
     Public Property SpotATR As Decimal
     Public Property ATRConsumed As Decimal
     Public Property PotentialTarget As Decimal
+    Public Property LossToRecover As Decimal
     Public Property ContractRemark As String
     Public Property SignalDate As Date
     Public Property EntryTime As Date

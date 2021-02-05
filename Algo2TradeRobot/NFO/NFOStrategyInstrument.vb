@@ -198,6 +198,7 @@ Public Class NFOStrategyInstrument
                                     Dim tradeNumber As Integer = 1
                                     Dim entryType As EntryType = EntryType.Fresh
                                     Dim lossToRecover As Decimal = 0
+                                    Dim potentialTarget As Decimal = 0
 
                                     Dim spotPrice As Decimal = currentTick.LastPrice
                                     Dim spotATR As Decimal = _atrPayload.LastOrDefault.Value
@@ -215,7 +216,7 @@ Public Class NFOStrategyInstrument
                                                 parentTag = lastTrade.ParentTag
                                                 tradeNumber = lastTrade.TradeNumber + 1
                                                 entryType = EntryType.LossMakeup
-                                                lossToRecover = Math.Abs(pl)
+                                                lossToRecover = pl
                                             End If
                                         End If
                                     End If
@@ -226,8 +227,8 @@ Public Class NFOStrategyInstrument
                                         Dim targetPrice As Decimal = ConvertFloorCeling(entryPrice + spotATR, currentATMOption.TradableInstrument.TickSize, RoundOfType.Celing)
                                         For ctr As Integer = 1 To Integer.MaxValue
                                             Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, entryPrice, targetPrice, ctr * currentATMOption.TradableInstrument.LotSize)
-                                            If pl >= lossToRecover Then
-                                                lossToRecover = (pl - 1) * -1
+                                            If pl >= Math.Abs(lossToRecover) Then
+                                                potentialTarget = pl - 1
                                                 quantity = ctr * currentATMOption.TradableInstrument.LotSize + currentATMOption.TradableInstrument.LotSize
                                                 Exit For
                                             End If
@@ -247,7 +248,8 @@ Public Class NFOStrategyInstrument
                                         .CurrentStatus = TradeStatus.Open,
                                         .Direction = drctn,
                                         .ParentTag = parentTag,
-                                        .PotentialTarget = lossToRecover,
+                                        .PotentialTarget = potentialTarget,
+                                        .LossToRecover = lossToRecover,
                                         .Quantity = quantity,
                                         .SignalDate = signal.Item2.SnapshotDateTime,
                                         .SpotATR = spotATR,
@@ -830,8 +832,9 @@ Public Class NFOStrategyInstrument
             End If
             If signal IsNot Nothing AndAlso signal.Item1 Then
                 Dim neglectReason As String = Nothing
+                Dim lastCompleteTrade As Trade = Me.SignalData.GetLastTrade()
                 If CType(Me.ParentStrategy, NFOStrategy).TotalActiveInstrumentCount < userSettings.ActiveInstrumentCount OrElse
-                    (lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target) Then
+                    (lastCompleteTrade IsNot Nothing AndAlso lastCompleteTrade.CurrentStatus = TradeStatus.Complete AndAlso lastCompleteTrade.TypeOfExit <> ExitType.Target) Then
                     Dim targetReached As Boolean = True
                     Dim targetLeftPercentage As Decimal = 0
                     If signal.Item3 = IOrder.TypeOfTransaction.Buy Then
@@ -875,7 +878,7 @@ Public Class NFOStrategyInstrument
                             End If
                         End If
                     End If
-                    If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.Complete AndAlso lastTrade.TypeOfExit <> ExitType.Target Then
+                    If lastCompleteTrade IsNot Nothing AndAlso lastCompleteTrade.CurrentStatus = TradeStatus.Complete AndAlso lastCompleteTrade.TypeOfExit <> ExitType.Target Then
                         If Not targetReached Then
                             ret = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction, Decimal)(True, signal.Item2, signal.Item3, 100 - targetLeftPercentage)
                         Else
@@ -927,7 +930,24 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "PL Calculation"
-    Public Function GetLossMakeupTradePL(ByVal currentTrade As Trade, ByVal currentStrategyInstrument As NFOStrategyInstrument) As Decimal
+    Public Function GetOverallSignalPL(ByVal currentTrade As Trade, ByVal currentStrategyInstrument As NFOStrategyInstrument) As Decimal
+        Dim ret As Decimal = 0
+        Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByParentTag(currentTrade.ParentTag)
+        If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
+            If currentStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
+                For Each runningTrade In allTrades
+                    If runningTrade.CurrentStatus = TradeStatus.InProgress Then
+                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, currentStrategyInstrument.TradableInstrument.LastTick.LastPrice, runningTrade.Quantity)
+                    ElseIf runningTrade.CurrentStatus <> TradeStatus.Cancel Then
+                        ret += _APIAdapter.CalculatePLWithBrokerage(currentStrategyInstrument.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+                    End If
+                Next
+            End If
+        End If
+        Return ret
+    End Function
+
+    Private Function GetLossMakeupTradePL(ByVal currentTrade As Trade, ByVal currentStrategyInstrument As NFOStrategyInstrument) As Decimal
         Dim ret As Decimal = 0
         Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByChildTag(currentTrade.ChildTag)
         If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
@@ -946,7 +966,7 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Public Function GetFreshTradePL(ByVal currentTrade As Trade, ByVal currentStrategyInstrument As NFOStrategyInstrument) As Decimal
+    Private Function GetFreshTradePL(ByVal currentTrade As Trade, ByVal currentStrategyInstrument As NFOStrategyInstrument) As Decimal
         Dim ret As Decimal = 0
         Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByChildTag(currentTrade.ChildTag)
         If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
@@ -1281,7 +1301,7 @@ Public Class NFOStrategyInstrument
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             If order IsNot Nothing Then
-                Dim msg As String = String.Format("{1}: Entry Order{0}Signal Direction:{2}{0}Entry Type:{3}{0}Logical Trade Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}",
+                Dim msg As String = String.Format("{1}: Entry {0}Signal Direction:{2}{0}Entry Type:{3}{0}Logical Iteration Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}{0}Capital:{14}",
                                                    vbNewLine,
                                                    Me.TradableInstrument.RawInstrumentName,
                                                    order.Direction.ToString,
@@ -1289,13 +1309,14 @@ Public Class NFOStrategyInstrument
                                                    order.TradeNumber,
                                                    order.Quantity,
                                                    Math.Round(order.ATRConsumed, 2),
-                                                   order.PotentialTarget,
+                                                   order.LossToRecover,
                                                    order.SignalDate.ToString("dd-MMM-yyyy"),
                                                    order.SpotPrice,
                                                    Math.Round(order.SpotATR, 2),
                                                    order.TradingSymbol,
                                                    order.EntryPrice,
-                                                   order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"))
+                                                   order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                   order.EntryPrice * order.Quantity)
 
                 Await SendNotificationAsync(msg).ConfigureAwait(False)
             End If
@@ -1309,32 +1330,18 @@ Public Class NFOStrategyInstrument
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             If order IsNot Nothing Then
-                Dim pl As Decimal = 0
-                If order.TypeOfEntry = EntryType.Fresh Then
-                    pl = GetFreshTradePL(order, optionInstrument)
-                Else
-                    pl = GetLossMakeupTradePL(order, optionInstrument)
-                End If
-
-                Dim msg As String = String.Format("{1}: Exit Order{0}Signal Direction:{2}{0}Entry Type:{3}{0}Exit Type:{14}{0}Signal PL:{15}{0}Logical Trade Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}{0}Exit Price:{16}{0}Exit Time:{17}",
+                Dim msg As String = String.Format("{1}: Exit {0}Signal Direction:{2}{0}Exit Type:{3}{0}Entry Price:{4}{0}Entry Time:{5}{0}Exit Price:{6}{0}Exit Time:{7}{0}Quantity:{8}{0}Signal PL:{9}",
                                                    vbNewLine,
                                                    Me.TradableInstrument.RawInstrumentName,
                                                    order.Direction.ToString,
-                                                   If(order.TypeOfEntryDetails = ExitType.None, order.TypeOfEntry.ToString, String.Format("{0} {1}", order.TypeOfEntryDetails.ToString, order.TypeOfEntry.ToString)),
-                                                   order.TradeNumber,
-                                                   order.Quantity,
-                                                   Math.Round(order.ATRConsumed, 2),
-                                                   order.PotentialTarget,
-                                                   order.SignalDate.ToString("dd-MMM-yyyy"),
-                                                   order.SpotPrice,
-                                                   Math.Round(order.SpotATR, 2),
-                                                   order.TradingSymbol,
+                                                   order.TypeOfExit.ToString,
                                                    order.EntryPrice,
                                                    order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                    order.TypeOfExit.ToString,
-                                                   pl,
                                                    order.ExitPrice,
-                                                   order.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss"))
+                                                   order.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                   order.Quantity,
+                                                   GetOverallSignalPL(order, optionInstrument))
 
                 Await SendNotificationAsync(msg).ConfigureAwait(False)
             End If
