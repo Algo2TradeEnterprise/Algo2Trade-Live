@@ -52,7 +52,7 @@ Partial Class frmSignalDetails
         Me.dgvSignalDetails.ReadOnly = True
         Me.dgvSignalDetails.RowHeadersVisible = False
         Me.dgvSignalDetails.RowTemplate.Height = 24
-        Me.dgvSignalDetails.Size = New System.Drawing.Size(1459, 301)
+        Me.dgvSignalDetails.Size = New System.Drawing.Size(1459, 308)
         Me.dgvSignalDetails.TabIndex = 0
         '
         'TableLayoutPanel1
@@ -70,7 +70,7 @@ Partial Class frmSignalDetails
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 64.0!))
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.0!))
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1465, 960)
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1465, 983)
         Me.TableLayoutPanel1.TabIndex = 1
         '
         'chrtDetails
@@ -82,7 +82,7 @@ Partial Class frmSignalDetails
         Me.chrtDetails.Dock = System.Windows.Forms.DockStyle.Fill
         Legend1.Name = "Legend1"
         Me.chrtDetails.Legends.Add(Legend1)
-        Me.chrtDetails.Location = New System.Drawing.Point(3, 310)
+        Me.chrtDetails.Location = New System.Drawing.Point(3, 317)
         Me.chrtDetails.Name = "chrtDetails"
         Series1.BorderWidth = 5
         Series1.ChartArea = "ChartArea1"
@@ -95,12 +95,13 @@ Partial Class frmSignalDetails
         Series2.Legend = "Legend1"
         Series2.Name = "Current Value Line"
         Series3.ChartArea = "ChartArea2"
+        Series3.Color = System.Drawing.Color.ForestGreen
         Series3.Legend = "Legend1"
         Series3.Name = "Investment/Return"
         Me.chrtDetails.Series.Add(Series1)
         Me.chrtDetails.Series.Add(Series2)
         Me.chrtDetails.Series.Add(Series3)
-        Me.chrtDetails.Size = New System.Drawing.Size(1459, 608)
+        Me.chrtDetails.Size = New System.Drawing.Size(1459, 623)
         Me.chrtDetails.TabIndex = 1
         Me.chrtDetails.Text = "Details"
         '
@@ -111,11 +112,11 @@ Partial Class frmSignalDetails
         Me.tlpExport.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.tlpExport.Controls.Add(Me.btnExport, 1, 0)
         Me.tlpExport.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpExport.Location = New System.Drawing.Point(3, 924)
+        Me.tlpExport.Location = New System.Drawing.Point(3, 946)
         Me.tlpExport.Name = "tlpExport"
         Me.tlpExport.RowCount = 1
         Me.tlpExport.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.tlpExport.Size = New System.Drawing.Size(1459, 33)
+        Me.tlpExport.Size = New System.Drawing.Size(1459, 34)
         Me.tlpExport.TabIndex = 3
         '
         'btnExport
@@ -123,7 +124,7 @@ Partial Class frmSignalDetails
         Me.btnExport.Dock = System.Windows.Forms.DockStyle.Right
         Me.btnExport.Location = New System.Drawing.Point(1332, 3)
         Me.btnExport.Name = "btnExport"
-        Me.btnExport.Size = New System.Drawing.Size(124, 27)
+        Me.btnExport.Size = New System.Drawing.Size(124, 28)
         Me.btnExport.TabIndex = 0
         Me.btnExport.Text = "Export"
         Me.btnExport.UseVisualStyleBackColor = True
@@ -135,7 +136,7 @@ Partial Class frmSignalDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1465, 960)
+        Me.ClientSize = New System.Drawing.Size(1465, 983)
         Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MinimizeBox = False

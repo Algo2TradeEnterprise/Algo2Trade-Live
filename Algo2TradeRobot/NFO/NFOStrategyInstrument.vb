@@ -18,6 +18,12 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+#Region "Event and Handler"
+    Public Event EndOfTheDay()
+    Protected Overridable Sub OnEndOfTheDay()
+        RaiseEvent EndOfTheDay()
+    End Sub
+#End Region
 
     Private ReadOnly _signalDetailsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.SignalDetails.a2t", Me.TradableInstrument.TradingSymbol))
     Private _allSignalDetails As Dictionary(Of Date, SignalDetails) = Nothing
@@ -36,6 +42,7 @@ Public Class NFOStrategyInstrument
     Private _lastTick As ITick = Nothing
     Private _entryDoneForTheDay As Boolean = False
     Private _tempSignal As SignalDetails = Nothing
+    Private _eodMessageSend As Boolean = False
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -174,6 +181,12 @@ Public Class NFOStrategyInstrument
                         End If
                         'Place Order block end
                         _cts.Token.ThrowIfCancellationRequested()
+
+                        If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.AddMinutes(1) AndAlso Not _eodMessageSend Then
+                            _eodMessageSend = True
+                            Dim frmDtls As New frmSignalDetails(Me, _cts)
+                            OnEndOfTheDay()
+                        End If
 
                         Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     End While
