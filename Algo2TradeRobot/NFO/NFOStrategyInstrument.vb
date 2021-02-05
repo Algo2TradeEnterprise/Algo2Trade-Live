@@ -184,6 +184,35 @@ Public Class NFOStrategyInstrument
 
                         If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.AddMinutes(1) AndAlso Not _eodMessageSend Then
                             _eodMessageSend = True
+
+                            Dim lastSignal As SignalDetails = GetLastSignalDetails(Now.Date)
+                            Dim desireValue As Double = userSettings.InitialInvestment
+                            If lastSignal IsNot Nothing Then
+                                desireValue = lastSignal.DesireValue + userSettings.ExpectedIncreaseEachPeriod
+                            End If
+                            Dim eodSignal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, Now.Date, Me.TradableInstrument.LastTick.LastPrice, Me.TradableInstrument.LastTick.LastPrice, desireValue)
+                            Dim eodMessage As String = Nothing
+                            eodMessage = String.Format("EOD Alert: Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
+                                                        eodSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                                                        eodSignal.DesireValue,
+                                                        eodSignal.NoOfSharesOwnedBeforeRebalancing,
+                                                        eodSignal.ClosePrice,
+                                                        eodSignal.TotalValueBeforeRebalancing,
+                                                        eodSignal.DesireValue,
+                                                        eodSignal.TotalValueBeforeRebalancing,
+                                                        eodSignal.AmountToInvest,
+                                                        eodSignal.NoOfSharesToBuy)
+                            SendTradeAlertMessageAsync(eodMessage)
+                            eodMessage = String.Format("EOD Alert: Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
+                                                        eodSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                                                        If(eodSignal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
+                                                        eodSignal.SharesOwnedAfterRebalancing,
+                                                        If(eodSignal.PreviousSignal IsNot Nothing, eodSignal.PreviousSignal.TotalInvested, 0),
+                                                        eodSignal.EntryPrice,
+                                                        eodSignal.NoOfSharesToBuy,
+                                                        eodSignal.TotalInvested)
+                            SendTradeAlertMessageAsync(eodMessage)
+
                             Dim frmDtls As New frmSignalDetails(Me, _cts)
                             OnEndOfTheDay()
                         End If
