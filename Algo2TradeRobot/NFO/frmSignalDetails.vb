@@ -34,8 +34,8 @@ Public Class frmSignalDetails
             export.GetCSVFromDataGrid(dgvSignalDetails)
         End Using
         Dim exportFolderName As String = Path.GetDirectoryName(saveFile.FileName)
-        Me.chrtValueLine.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Value Line Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
-        Me.chrtInvestmentReturn.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Investment Return Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
+        Me.chrtDetails.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Details Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
+        'Me.chrtInvestmentReturn.SaveImage(Path.Combine(exportFolderName, String.Format("{0}-Investment Return Chart {1}.png", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))), ChartImageFormat.Png)
 
         MessageBox.Show("Export successful .....", "Signal Details", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
@@ -61,8 +61,8 @@ Public Class frmSignalDetails
                 End If
             End If
             If allSignalDetails IsNot Nothing AndAlso allSignalDetails.Count > 0 Then
-                Me.chrtValueLine.ChartAreas(0).AxisX.IsStartedFromZero = False
-                Me.chrtValueLine.ChartAreas(0).AxisY.IsStartedFromZero = False
+                Me.chrtDetails.ChartAreas(0).AxisX.IsStartedFromZero = False
+                Me.chrtDetails.ChartAreas(0).AxisY.IsStartedFromZero = False
 
                 Dim dt As New DataTable
                 dt.Columns.Add("Snapshot Date")
@@ -95,17 +95,17 @@ Public Class frmSignalDetails
 
                     dt.Rows.Add(row)
 
-                    Me.chrtValueLine.Series("Desire Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                    Me.chrtDetails.Series("Desire Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
                     If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
-                        Me.chrtValueLine.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                        Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
                     Else
-                        Me.chrtValueLine.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.TotalValueBeforeRebalancing)
+                        Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.TotalValueBeforeRebalancing)
                     End If
 
                     If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
-                        Me.chrtInvestmentReturn.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), 0)
+                        Me.chrtDetails.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), 0)
                     Else
-                        Me.chrtInvestmentReturn.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.PeriodicInvestment)
+                        Me.chrtDetails.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.PeriodicInvestment)
                     End If
 
                     payments.Add(runningSignal.PeriodicInvestment)
@@ -138,7 +138,7 @@ Public Class frmSignalDetails
                                                                           End Function)
                 Dim wealthBuild As Double = allSignalDetails.LastOrDefault.Value.CurrentValue
                 Dim absoluteReturn As Double = allSignalDetails.Last.Value.AbsoluteReturns
-                Dim annualizedAbsoluteReturn As Double = (absoluteReturn / allSignalDetails.FirstOrDefault.Value.SnapshotDate.Subtract(allSignalDetails.LastOrDefault.Value.SnapshotDate).Days) * 365
+                Dim annualizedAbsoluteReturn As Double = (absoluteReturn / allSignalDetails.LastOrDefault.Value.SnapshotDate.Subtract(allSignalDetails.FirstOrDefault.Value.SnapshotDate).Days) * 365
                 Dim maxOutflowNeeded As Double = allSignalDetails.Values.Max(Function(x)
                                                                                  Return Math.Abs(x.ContinuousInvestmentNeeded)
                                                                              End Function)
@@ -150,7 +150,7 @@ Public Class frmSignalDetails
                     .Alignment = ContentAlignment.TopLeft,
                     .X = 81,
                     .Y = 17.5,
-                    .Text = String.Format("XIRR: {1} %{0}Wealth Build: {2}{0}Total Invested: {3}{0}Total Returned: {4}{0}Absolute Return: {5} %{0}Annualized Absolute Return: {6} %{0}Max Outflow Needed: {7}{0}Max Corpus Accumulated: {8}",
+                    .Text = String.Format("XIRR: {1} %{0}{0}Wealth Build: {2}{0}{0}Total Invested: {3}{0}{0}Total Returned: {4}{0}{0}Absolute Return: {5} %{0}{0}Annualized Absolute Return: {6} %{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
                                            vbNewLine,
                                            (xirr).ToString("F"),
                                            (wealthBuild).ToString("F"),
@@ -161,10 +161,10 @@ Public Class frmSignalDetails
                                            (maxOutflowNeeded).ToString("F"),
                                            (maxAccumulatedCorpus).ToString("F"))
                 }
-                Me.chrtValueLine.Annotations.Add(a)
+                Me.chrtDetails.Annotations.Add(a)
                 'Me.chrtInvestmentReturn.Annotations.Add(a)
 
-                For Each dp As DataPoint In Me.chrtInvestmentReturn.Series("Investment/Return").Points
+                For Each dp As DataPoint In Me.chrtDetails.Series("Investment/Return").Points
                     If dp.YValues(0) > 0 Then
                         dp.Color = Color.Green
                     Else

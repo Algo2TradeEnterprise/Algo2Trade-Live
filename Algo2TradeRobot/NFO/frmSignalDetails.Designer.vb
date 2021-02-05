@@ -22,25 +22,22 @@ Partial Class frmSignalDetails
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim ChartArea3 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
-        Dim Legend3 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
-        Dim Series4 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
-        Dim Series5 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
-        Dim ChartArea4 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
-        Dim Legend4 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
-        Dim Series6 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim ChartArea1 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
+        Dim ChartArea2 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
+        Dim Legend1 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
+        Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim Series3 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmSignalDetails))
         Me.dgvSignalDetails = New System.Windows.Forms.DataGridView()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
-        Me.chrtValueLine = New System.Windows.Forms.DataVisualization.Charting.Chart()
-        Me.chrtInvestmentReturn = New System.Windows.Forms.DataVisualization.Charting.Chart()
+        Me.chrtDetails = New System.Windows.Forms.DataVisualization.Charting.Chart()
         Me.tlpExport = New System.Windows.Forms.TableLayoutPanel()
         Me.btnExport = New System.Windows.Forms.Button()
         Me.saveFile = New System.Windows.Forms.SaveFileDialog()
         CType(Me.dgvSignalDetails, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.TableLayoutPanel1.SuspendLayout()
-        CType(Me.chrtValueLine, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.chrtInvestmentReturn, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.chrtDetails, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.tlpExport.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -63,61 +60,49 @@ Partial Class frmSignalDetails
         Me.TableLayoutPanel1.ColumnCount = 1
         Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.dgvSignalDetails, 0, 0)
-        Me.TableLayoutPanel1.Controls.Add(Me.chrtValueLine, 0, 1)
-        Me.TableLayoutPanel1.Controls.Add(Me.chrtInvestmentReturn, 0, 2)
-        Me.TableLayoutPanel1.Controls.Add(Me.tlpExport, 0, 3)
+        Me.TableLayoutPanel1.Controls.Add(Me.chrtDetails, 0, 1)
+        Me.TableLayoutPanel1.Controls.Add(Me.tlpExport, 0, 2)
         Me.TableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill
         Me.TableLayoutPanel1.Location = New System.Drawing.Point(0, 0)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
-        Me.TableLayoutPanel1.RowCount = 4
+        Me.TableLayoutPanel1.RowCount = 3
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 32.0!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 32.0!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 32.0!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 64.0!))
         Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.0!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20.0!))
         Me.TableLayoutPanel1.Size = New System.Drawing.Size(1465, 960)
         Me.TableLayoutPanel1.TabIndex = 1
         '
-        'chrtValueLine
+        'chrtDetails
         '
-        ChartArea3.Name = "ChartArea1"
-        Me.chrtValueLine.ChartAreas.Add(ChartArea3)
-        Me.chrtValueLine.Dock = System.Windows.Forms.DockStyle.Fill
-        Legend3.Name = "Legend1"
-        Me.chrtValueLine.Legends.Add(Legend3)
-        Me.chrtValueLine.Location = New System.Drawing.Point(3, 310)
-        Me.chrtValueLine.Name = "chrtValueLine"
-        Series4.BorderWidth = 5
-        Series4.ChartArea = "ChartArea1"
-        Series4.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
-        Series4.Legend = "Legend1"
-        Series4.Name = "Desire Value Line"
-        Series5.BorderWidth = 5
-        Series5.ChartArea = "ChartArea1"
-        Series5.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
-        Series5.Legend = "Legend1"
-        Series5.Name = "Current Value Line"
-        Me.chrtValueLine.Series.Add(Series4)
-        Me.chrtValueLine.Series.Add(Series5)
-        Me.chrtValueLine.Size = New System.Drawing.Size(1459, 301)
-        Me.chrtValueLine.TabIndex = 1
-        Me.chrtValueLine.Text = "Value Line"
-        '
-        'chrtInvestmentReturn
-        '
-        ChartArea4.Name = "ChartArea1"
-        Me.chrtInvestmentReturn.ChartAreas.Add(ChartArea4)
-        Me.chrtInvestmentReturn.Dock = System.Windows.Forms.DockStyle.Fill
-        Legend4.Name = "Legend1"
-        Me.chrtInvestmentReturn.Legends.Add(Legend4)
-        Me.chrtInvestmentReturn.Location = New System.Drawing.Point(3, 617)
-        Me.chrtInvestmentReturn.Name = "chrtInvestmentReturn"
-        Series6.ChartArea = "ChartArea1"
-        Series6.Legend = "Legend1"
-        Series6.Name = "Investment/Return"
-        Me.chrtInvestmentReturn.Series.Add(Series6)
-        Me.chrtInvestmentReturn.Size = New System.Drawing.Size(1459, 301)
-        Me.chrtInvestmentReturn.TabIndex = 2
-        Me.chrtInvestmentReturn.Text = "Chart1"
+        ChartArea1.Name = "ChartArea1"
+        ChartArea2.Name = "ChartArea2"
+        Me.chrtDetails.ChartAreas.Add(ChartArea1)
+        Me.chrtDetails.ChartAreas.Add(ChartArea2)
+        Me.chrtDetails.Dock = System.Windows.Forms.DockStyle.Fill
+        Legend1.Name = "Legend1"
+        Me.chrtDetails.Legends.Add(Legend1)
+        Me.chrtDetails.Location = New System.Drawing.Point(3, 310)
+        Me.chrtDetails.Name = "chrtDetails"
+        Series1.BorderWidth = 5
+        Series1.ChartArea = "ChartArea1"
+        Series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
+        Series1.Legend = "Legend1"
+        Series1.Name = "Desire Value Line"
+        Series2.BorderWidth = 5
+        Series2.ChartArea = "ChartArea1"
+        Series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line
+        Series2.Legend = "Legend1"
+        Series2.Name = "Current Value Line"
+        Series3.ChartArea = "ChartArea2"
+        Series3.Legend = "Legend1"
+        Series3.Name = "Investment/Return"
+        Me.chrtDetails.Series.Add(Series1)
+        Me.chrtDetails.Series.Add(Series2)
+        Me.chrtDetails.Series.Add(Series3)
+        Me.chrtDetails.Size = New System.Drawing.Size(1459, 608)
+        Me.chrtDetails.TabIndex = 1
+        Me.chrtDetails.Text = "Details"
         '
         'tlpExport
         '
@@ -159,8 +144,7 @@ Partial Class frmSignalDetails
         Me.Text = "Signal Details"
         CType(Me.dgvSignalDetails, System.ComponentModel.ISupportInitialize).EndInit()
         Me.TableLayoutPanel1.ResumeLayout(False)
-        CType(Me.chrtValueLine, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.chrtInvestmentReturn, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.chrtDetails, System.ComponentModel.ISupportInitialize).EndInit()
         Me.tlpExport.ResumeLayout(False)
         Me.ResumeLayout(False)
 
@@ -168,8 +152,7 @@ Partial Class frmSignalDetails
 
     Friend WithEvents dgvSignalDetails As DataGridView
     Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
-    Friend WithEvents chrtValueLine As DataVisualization.Charting.Chart
-    Friend WithEvents chrtInvestmentReturn As DataVisualization.Charting.Chart
+    Friend WithEvents chrtDetails As DataVisualization.Charting.Chart
     Friend WithEvents tlpExport As TableLayoutPanel
     Friend WithEvents btnExport As Button
     Friend WithEvents saveFile As SaveFileDialog
