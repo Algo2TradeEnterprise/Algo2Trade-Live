@@ -217,6 +217,14 @@ Public Class NFOStrategyInstrument
                                                 tradeNumber = lastTrade.TradeNumber + 1
                                                 entryType = EntryType.LossMakeup
                                                 lossToRecover = pl
+                                            Else
+                                                Dim lastClosedTrade As Trade = Me.SignalData.GetLastCompleteTrade()
+                                                If lastClosedTrade IsNot Nothing AndAlso lastClosedTrade.TypeOfExit <> ExitType.Target Then
+                                                    parentTag = lastTrade.ParentTag
+                                                    tradeNumber = lastTrade.TradeNumber + 1
+                                                    entryType = EntryType.LossMakeup
+                                                    lossToRecover = 0
+                                                End If
                                             End If
                                         End If
                                     End If
@@ -233,6 +241,11 @@ Public Class NFOStrategyInstrument
                                                 Exit For
                                             End If
                                         Next
+                                    Else
+                                        Dim entryPrice As Decimal = currentATMOption.TradableInstrument.LastTick.LastPrice
+                                        Dim targetPrice As Decimal = ConvertFloorCeling(entryPrice + spotATR, currentATMOption.TradableInstrument.TickSize, RoundOfType.Celing)
+                                        Dim pl As Decimal = _APIAdapter.CalculatePLWithBrokerage(currentATMOption.TradableInstrument, entryPrice, targetPrice, quantity)
+                                        potentialTarget = pl - 1
                                     End If
 
                                     Dim drctn As TradeDirection = TradeDirection.None
@@ -300,16 +313,20 @@ Public Class NFOStrategyInstrument
                             ''Target Exit
                             Dim targetReached As Boolean = False
                             If lastRunningTrade.TypeOfEntry = EntryType.Fresh Then
-                                If optionType = "CE" AndAlso currentTick.LastPrice >= lastRunningTrade.SpotPrice + lastRunningTrade.SpotATR Then
-                                    Dim pl As Decimal = GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
-                                    If pl > 0 Then
-                                        targetReached = True
-                                    End If
-                                ElseIf optionType = "PE" AndAlso currentTick.LastPrice <= lastRunningTrade.SpotPrice - lastRunningTrade.SpotATR Then
-                                    Dim pl As Decimal = GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
-                                    If pl > 0 Then
-                                        targetReached = True
-                                    End If
+                                'If optionType = "CE" AndAlso currentTick.LastPrice >= lastRunningTrade.SpotPrice + lastRunningTrade.SpotATR Then
+                                '    Dim pl As Decimal = GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
+                                '    If pl > 0 Then
+                                '        targetReached = True
+                                '    End If
+                                'ElseIf optionType = "PE" AndAlso currentTick.LastPrice <= lastRunningTrade.SpotPrice - lastRunningTrade.SpotATR Then
+                                '    Dim pl As Decimal = GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
+                                '    If pl > 0 Then
+                                '        targetReached = True
+                                '    End If
+                                'End If
+                                Dim pl As Decimal = GetFreshTradePL(lastRunningTrade, optnStrgInstrmnt)
+                                If pl >= Math.Abs(lastRunningTrade.PotentialTarget) Then
+                                    targetReached = True
                                 End If
                             Else
                                 Dim pl As Decimal = GetLossMakeupTradePL(lastRunningTrade, optnStrgInstrmnt)
