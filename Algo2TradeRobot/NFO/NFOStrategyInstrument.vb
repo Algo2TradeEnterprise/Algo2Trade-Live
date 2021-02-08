@@ -1337,7 +1337,6 @@ Public Class NFOStrategyInstrument
                                                    order.TypeOfExit.ToString,
                                                    order.EntryPrice,
                                                    order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
-                                                   order.TypeOfExit.ToString,
                                                    order.ExitPrice,
                                                    order.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                    order.Quantity,
