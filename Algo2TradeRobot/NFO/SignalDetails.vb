@@ -32,7 +32,8 @@ Public Class SignalDetails
                                 .EntryOrderID = entryOrderID,
                                 .EntryTime = Now,
                                 .TypeOfEntryDetails = dummyTrade.TypeOfEntryDetails,
-                                .ATRConsumed = dummyTrade.ATRConsumed
+                                .ATRConsumed = dummyTrade.ATRConsumed,
+                                .AttemptedEntryPrice = dummyTrade.AttemptedEntryPrice
                             }
 
             If _AllTrades Is Nothing Then _AllTrades = New List(Of Trade)
@@ -182,11 +183,13 @@ Public Class Trade
     Public Property SignalDate As Date
     Public Property EntryTime As Date
     Public Property EntryOrderID As String
+    Public Property AttemptedEntryPrice As Decimal
     Public Property EntryPrice As Decimal
     Public Property Quantity As Integer
     Public Property Direction As TradeDirection
     Public Property ExitTime As Date
     Public Property ExitOrderID As String
     Public Property ExitPrice As Decimal
+    Public Property AttemptedExitPrice As Decimal
     Public Property TypeOfExit As ExitType
 End Class

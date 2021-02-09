@@ -32,6 +32,8 @@
             dt.Columns.Add("ATR Consumed")
             dt.Columns.Add("Child Tag")
             dt.Columns.Add("Parent Tag")
+            dt.Columns.Add("Attempted Entry Price")
+            dt.Columns.Add("Attempted Exit Price")
 
             If _strategyInstrument.SignalData.AllTrades IsNot Nothing AndAlso _strategyInstrument.SignalData.AllTrades.Count > 0 Then
                 For Each runningTrade In _strategyInstrument.SignalData.AllTrades.OrderBy(Function(x)
@@ -60,6 +62,8 @@
                     row("ATR Consumed") = String.Format("{0}%", Math.Round(runningTrade.ATRConsumed, 2))
                     row("Child Tag") = runningTrade.ChildTag
                     row("Parent Tag") = runningTrade.ParentTag
+                    row("Attempted Entry Price") = runningTrade.AttemptedEntryPrice
+                    row("Attempted Exit Price") = runningTrade.AttemptedExitPrice
 
                     dt.Rows.Add(row)
                 Next

@@ -55,11 +55,11 @@
                 Dim lastRunningTrade As Trade = instrument.SignalData.GetLastTrade()
                 If lastRunningTrade IsNot Nothing AndAlso lastRunningTrade.CurrentStatus = TradeStatus.InProgress Then
                     Dim optnStrgInstrmnt As NFOStrategyInstrument = Await instrument.GetStrategyInstrumentFromTradingSymbol(lastRunningTrade.TradingSymbol).ConfigureAwait(False)
+                    row("Active Signal") = True
                     If optnStrgInstrmnt IsNot Nothing AndAlso optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing Then
-                        row("Active Signal") = True
-                        row("Current PL") = instrument.GetOverallSignalPL(lastRunningTrade, optnStrgInstrmnt)
-                        row("Trade Number") = lastRunningTrade.TradeNumber
+                        row("Current PL") = instrument.GetOverallSignalPL(lastRunningTrade, optnStrgInstrmnt, optnStrgInstrmnt.TradableInstrument.LastTick.LastPrice)
                     End If
+                    row("Trade Number") = lastRunningTrade.TradeNumber
                 Else
                     row("Active Signal") = False
                     row("Current PL") = 0
