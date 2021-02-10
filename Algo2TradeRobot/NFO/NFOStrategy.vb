@@ -224,7 +224,9 @@ Public Class NFOStrategy
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
-                tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
+                If tradableStrategyInstrument.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Cash Then
+                    tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
+                End If
             Next
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
