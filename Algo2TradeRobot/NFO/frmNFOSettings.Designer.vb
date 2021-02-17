@@ -28,39 +28,38 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.grpTradeDetails = New System.Windows.Forms.GroupBox()
+        Me.nmrcActiveInstrumentCount = New System.Windows.Forms.NumericUpDown()
         Me.lblActiveInstrumentCount = New System.Windows.Forms.Label()
         Me.dtpckrTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.lblTradeEntryTime = New System.Windows.Forms.Label()
         Me.grpStockSelectionDetails = New System.Windows.Forms.GroupBox()
+        Me.pnlStockSelectionDetails = New System.Windows.Forms.Panel()
+        Me.txtMinimumATR = New System.Windows.Forms.TextBox()
+        Me.lblMinimumATR = New System.Windows.Forms.Label()
+        Me.txtMinimumVolume = New System.Windows.Forms.TextBox()
+        Me.lblMinimumVolume = New System.Windows.Forms.Label()
+        Me.txtMaximumStockPrice = New System.Windows.Forms.TextBox()
+        Me.lblMaximumStockPrice = New System.Windows.Forms.Label()
+        Me.txtMinimumStockPrice = New System.Windows.Forms.TextBox()
+        Me.lblMinimumStockPrice = New System.Windows.Forms.Label()
+        Me.chkbAutoSelectStock = New System.Windows.Forms.CheckBox()
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
-        Me.nmrcActiveInstrumentCount = New System.Windows.Forms.NumericUpDown()
         Me.grpIndicatorDetails = New System.Windows.Forms.GroupBox()
+        Me.nmrcSMAPeriod = New System.Windows.Forms.NumericUpDown()
+        Me.lblSMAPeriod = New System.Windows.Forms.Label()
         Me.nmrcATRPeriod = New System.Windows.Forms.NumericUpDown()
         Me.lblATRPeriod = New System.Windows.Forms.Label()
-        Me.nmrcPivotPeriod = New System.Windows.Forms.NumericUpDown()
-        Me.lblPivot = New System.Windows.Forms.Label()
-        Me.nmrcPivotTrendPeriod = New System.Windows.Forms.NumericUpDown()
-        Me.lblPivotTrendPeriod = New System.Windows.Forms.Label()
-        Me.chkbAutoSelectStock = New System.Windows.Forms.CheckBox()
-        Me.pnlStockSelectionDetails = New System.Windows.Forms.Panel()
-        Me.lblMinimumStockPrice = New System.Windows.Forms.Label()
-        Me.txtMinimumStockPrice = New System.Windows.Forms.TextBox()
-        Me.txtMaximumStockPrice = New System.Windows.Forms.TextBox()
-        Me.lblMaximumStockPrice = New System.Windows.Forms.Label()
-        Me.txtMinimumVolume = New System.Windows.Forms.TextBox()
-        Me.lblMinimumVolume = New System.Windows.Forms.Label()
-        Me.txtMinimumATR = New System.Windows.Forms.TextBox()
-        Me.lblMinimumATR = New System.Windows.Forms.Label()
+        Me.txtTargetPer = New System.Windows.Forms.TextBox()
+        Me.lblTargetPer = New System.Windows.Forms.Label()
         Me.grpTradeDetails.SuspendLayout()
-        Me.grpStockSelectionDetails.SuspendLayout()
         CType(Me.nmrcActiveInstrumentCount, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.grpIndicatorDetails.SuspendLayout()
-        CType(Me.nmrcATRPeriod, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.nmrcPivotPeriod, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.nmrcPivotTrendPeriod, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.grpStockSelectionDetails.SuspendLayout()
         Me.pnlStockSelectionDetails.SuspendLayout()
+        Me.grpIndicatorDetails.SuspendLayout()
+        CType(Me.nmrcSMAPeriod, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.nmrcATRPeriod, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'btnSave
@@ -88,6 +87,8 @@ Partial Class frmNFOSettings
         '
         'grpTradeDetails
         '
+        Me.grpTradeDetails.Controls.Add(Me.txtTargetPer)
+        Me.grpTradeDetails.Controls.Add(Me.lblTargetPer)
         Me.grpTradeDetails.Controls.Add(Me.nmrcActiveInstrumentCount)
         Me.grpTradeDetails.Controls.Add(Me.lblActiveInstrumentCount)
         Me.grpTradeDetails.Controls.Add(Me.dtpckrTradeEntryTime)
@@ -96,15 +97,25 @@ Partial Class frmNFOSettings
         Me.grpTradeDetails.Margin = New System.Windows.Forms.Padding(4)
         Me.grpTradeDetails.Name = "grpTradeDetails"
         Me.grpTradeDetails.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpTradeDetails.Size = New System.Drawing.Size(304, 85)
+        Me.grpTradeDetails.Size = New System.Drawing.Size(304, 115)
         Me.grpTradeDetails.TabIndex = 53
         Me.grpTradeDetails.TabStop = False
         Me.grpTradeDetails.Text = "Trade Details"
         '
+        'nmrcActiveInstrumentCount
+        '
+        Me.nmrcActiveInstrumentCount.Location = New System.Drawing.Point(183, 52)
+        Me.nmrcActiveInstrumentCount.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.nmrcActiveInstrumentCount.Name = "nmrcActiveInstrumentCount"
+        Me.nmrcActiveInstrumentCount.Size = New System.Drawing.Size(107, 22)
+        Me.nmrcActiveInstrumentCount.TabIndex = 56
+        Me.nmrcActiveInstrumentCount.Tag = "Active Instrument Count"
+        Me.nmrcActiveInstrumentCount.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        '
         'lblActiveInstrumentCount
         '
         Me.lblActiveInstrumentCount.AutoSize = True
-        Me.lblActiveInstrumentCount.Location = New System.Drawing.Point(8, 55)
+        Me.lblActiveInstrumentCount.Location = New System.Drawing.Point(8, 54)
         Me.lblActiveInstrumentCount.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblActiveInstrumentCount.Name = "lblActiveInstrumentCount"
         Me.lblActiveInstrumentCount.Size = New System.Drawing.Size(157, 17)
@@ -145,6 +156,103 @@ Partial Class frmNFOSettings
         Me.grpStockSelectionDetails.TabStop = False
         Me.grpStockSelectionDetails.Text = "Stock Selection Details"
         '
+        'pnlStockSelectionDetails
+        '
+        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumATR)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumATR)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumVolume)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumVolume)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMaximumStockPrice)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMaximumStockPrice)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumStockPrice)
+        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumStockPrice)
+        Me.pnlStockSelectionDetails.Location = New System.Drawing.Point(0, 95)
+        Me.pnlStockSelectionDetails.Name = "pnlStockSelectionDetails"
+        Me.pnlStockSelectionDetails.Size = New System.Drawing.Size(543, 92)
+        Me.pnlStockSelectionDetails.TabIndex = 13
+        '
+        'txtMinimumATR
+        '
+        Me.txtMinimumATR.Location = New System.Drawing.Point(419, 55)
+        Me.txtMinimumATR.Name = "txtMinimumATR"
+        Me.txtMinimumATR.Size = New System.Drawing.Size(100, 22)
+        Me.txtMinimumATR.TabIndex = 65
+        Me.txtMinimumATR.Tag = "Minimum ATR %"
+        '
+        'lblMinimumATR
+        '
+        Me.lblMinimumATR.AutoSize = True
+        Me.lblMinimumATR.Location = New System.Drawing.Point(270, 56)
+        Me.lblMinimumATR.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinimumATR.Name = "lblMinimumATR"
+        Me.lblMinimumATR.Size = New System.Drawing.Size(111, 17)
+        Me.lblMinimumATR.TabIndex = 64
+        Me.lblMinimumATR.Text = "Minimum ATR %"
+        '
+        'txtMinimumVolume
+        '
+        Me.txtMinimumVolume.Location = New System.Drawing.Point(156, 57)
+        Me.txtMinimumVolume.Name = "txtMinimumVolume"
+        Me.txtMinimumVolume.Size = New System.Drawing.Size(100, 22)
+        Me.txtMinimumVolume.TabIndex = 63
+        Me.txtMinimumVolume.Tag = "Minimum Volume"
+        '
+        'lblMinimumVolume
+        '
+        Me.lblMinimumVolume.AutoSize = True
+        Me.lblMinimumVolume.Location = New System.Drawing.Point(7, 58)
+        Me.lblMinimumVolume.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinimumVolume.Name = "lblMinimumVolume"
+        Me.lblMinimumVolume.Size = New System.Drawing.Size(114, 17)
+        Me.lblMinimumVolume.TabIndex = 62
+        Me.lblMinimumVolume.Text = "Minimum Volume"
+        '
+        'txtMaximumStockPrice
+        '
+        Me.txtMaximumStockPrice.Location = New System.Drawing.Point(419, 17)
+        Me.txtMaximumStockPrice.Name = "txtMaximumStockPrice"
+        Me.txtMaximumStockPrice.Size = New System.Drawing.Size(100, 22)
+        Me.txtMaximumStockPrice.TabIndex = 61
+        Me.txtMaximumStockPrice.Tag = "Maximum Stock Price"
+        '
+        'lblMaximumStockPrice
+        '
+        Me.lblMaximumStockPrice.AutoSize = True
+        Me.lblMaximumStockPrice.Location = New System.Drawing.Point(270, 18)
+        Me.lblMaximumStockPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaximumStockPrice.Name = "lblMaximumStockPrice"
+        Me.lblMaximumStockPrice.Size = New System.Drawing.Size(141, 17)
+        Me.lblMaximumStockPrice.TabIndex = 60
+        Me.lblMaximumStockPrice.Text = "Maximum Stock Price"
+        '
+        'txtMinimumStockPrice
+        '
+        Me.txtMinimumStockPrice.Location = New System.Drawing.Point(156, 19)
+        Me.txtMinimumStockPrice.Name = "txtMinimumStockPrice"
+        Me.txtMinimumStockPrice.Size = New System.Drawing.Size(100, 22)
+        Me.txtMinimumStockPrice.TabIndex = 59
+        Me.txtMinimumStockPrice.Tag = "Minimum Stock Price"
+        '
+        'lblMinimumStockPrice
+        '
+        Me.lblMinimumStockPrice.AutoSize = True
+        Me.lblMinimumStockPrice.Location = New System.Drawing.Point(7, 20)
+        Me.lblMinimumStockPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMinimumStockPrice.Name = "lblMinimumStockPrice"
+        Me.lblMinimumStockPrice.Size = New System.Drawing.Size(138, 17)
+        Me.lblMinimumStockPrice.TabIndex = 58
+        Me.lblMinimumStockPrice.Text = "Minimum Stock Price"
+        '
+        'chkbAutoSelectStock
+        '
+        Me.chkbAutoSelectStock.AutoSize = True
+        Me.chkbAutoSelectStock.Location = New System.Drawing.Point(11, 64)
+        Me.chkbAutoSelectStock.Name = "chkbAutoSelectStock"
+        Me.chkbAutoSelectStock.Size = New System.Drawing.Size(141, 21)
+        Me.chkbAutoSelectStock.TabIndex = 12
+        Me.chkbAutoSelectStock.Text = "Auto Select Stock"
+        Me.chkbAutoSelectStock.UseVisualStyleBackColor = True
+        '
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
@@ -175,30 +283,38 @@ Partial Class frmNFOSettings
         Me.lblInstrumentDetails.TabIndex = 11
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
-        'nmrcActiveInstrumentCount
-        '
-        Me.nmrcActiveInstrumentCount.Location = New System.Drawing.Point(183, 53)
-        Me.nmrcActiveInstrumentCount.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
-        Me.nmrcActiveInstrumentCount.Name = "nmrcActiveInstrumentCount"
-        Me.nmrcActiveInstrumentCount.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcActiveInstrumentCount.TabIndex = 56
-        Me.nmrcActiveInstrumentCount.Tag = "Active Instrument Count"
-        Me.nmrcActiveInstrumentCount.Value = New Decimal(New Integer() {1, 0, 0, 0})
-        '
         'grpIndicatorDetails
         '
-        Me.grpIndicatorDetails.Controls.Add(Me.nmrcPivotTrendPeriod)
-        Me.grpIndicatorDetails.Controls.Add(Me.lblPivotTrendPeriod)
-        Me.grpIndicatorDetails.Controls.Add(Me.nmrcPivotPeriod)
-        Me.grpIndicatorDetails.Controls.Add(Me.lblPivot)
+        Me.grpIndicatorDetails.Controls.Add(Me.nmrcSMAPeriod)
+        Me.grpIndicatorDetails.Controls.Add(Me.lblSMAPeriod)
         Me.grpIndicatorDetails.Controls.Add(Me.nmrcATRPeriod)
         Me.grpIndicatorDetails.Controls.Add(Me.lblATRPeriod)
-        Me.grpIndicatorDetails.Location = New System.Drawing.Point(4, 86)
+        Me.grpIndicatorDetails.Location = New System.Drawing.Point(4, 114)
         Me.grpIndicatorDetails.Name = "grpIndicatorDetails"
-        Me.grpIndicatorDetails.Size = New System.Drawing.Size(304, 113)
+        Me.grpIndicatorDetails.Size = New System.Drawing.Size(304, 84)
         Me.grpIndicatorDetails.TabIndex = 55
         Me.grpIndicatorDetails.TabStop = False
         Me.grpIndicatorDetails.Text = "Indicator Details"
+        '
+        'nmrcSMAPeriod
+        '
+        Me.nmrcSMAPeriod.Location = New System.Drawing.Point(183, 53)
+        Me.nmrcSMAPeriod.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.nmrcSMAPeriod.Name = "nmrcSMAPeriod"
+        Me.nmrcSMAPeriod.Size = New System.Drawing.Size(107, 22)
+        Me.nmrcSMAPeriod.TabIndex = 60
+        Me.nmrcSMAPeriod.Tag = "Pivot Period"
+        Me.nmrcSMAPeriod.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        '
+        'lblSMAPeriod
+        '
+        Me.lblSMAPeriod.AutoSize = True
+        Me.lblSMAPeriod.Location = New System.Drawing.Point(8, 55)
+        Me.lblSMAPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSMAPeriod.Name = "lblSMAPeriod"
+        Me.lblSMAPeriod.Size = New System.Drawing.Size(82, 17)
+        Me.lblSMAPeriod.TabIndex = 59
+        Me.lblSMAPeriod.Text = "SMA Period"
         '
         'nmrcATRPeriod
         '
@@ -220,142 +336,23 @@ Partial Class frmNFOSettings
         Me.lblATRPeriod.TabIndex = 57
         Me.lblATRPeriod.Text = "ATR Period"
         '
-        'nmrcPivotPeriod
+        'txtTargetPer
         '
-        Me.nmrcPivotPeriod.Location = New System.Drawing.Point(183, 53)
-        Me.nmrcPivotPeriod.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
-        Me.nmrcPivotPeriod.Name = "nmrcPivotPeriod"
-        Me.nmrcPivotPeriod.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcPivotPeriod.TabIndex = 60
-        Me.nmrcPivotPeriod.Tag = "Pivot Period"
-        Me.nmrcPivotPeriod.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.txtTargetPer.Location = New System.Drawing.Point(183, 82)
+        Me.txtTargetPer.Name = "txtTargetPer"
+        Me.txtTargetPer.Size = New System.Drawing.Size(107, 22)
+        Me.txtTargetPer.TabIndex = 67
+        Me.txtTargetPer.Tag = "Target %"
         '
-        'lblPivot
+        'lblTargetPer
         '
-        Me.lblPivot.AutoSize = True
-        Me.lblPivot.Location = New System.Drawing.Point(8, 55)
-        Me.lblPivot.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblPivot.Name = "lblPivot"
-        Me.lblPivot.Size = New System.Drawing.Size(84, 17)
-        Me.lblPivot.TabIndex = 59
-        Me.lblPivot.Text = "Pivot Period"
-        '
-        'nmrcPivotTrendPeriod
-        '
-        Me.nmrcPivotTrendPeriod.Location = New System.Drawing.Point(183, 82)
-        Me.nmrcPivotTrendPeriod.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
-        Me.nmrcPivotTrendPeriod.Name = "nmrcPivotTrendPeriod"
-        Me.nmrcPivotTrendPeriod.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcPivotTrendPeriod.TabIndex = 62
-        Me.nmrcPivotTrendPeriod.Tag = "Pivot Trend Period"
-        Me.nmrcPivotTrendPeriod.Value = New Decimal(New Integer() {1, 0, 0, 0})
-        '
-        'lblPivotTrendPeriod
-        '
-        Me.lblPivotTrendPeriod.AutoSize = True
-        Me.lblPivotTrendPeriod.Location = New System.Drawing.Point(8, 84)
-        Me.lblPivotTrendPeriod.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblPivotTrendPeriod.Name = "lblPivotTrendPeriod"
-        Me.lblPivotTrendPeriod.Size = New System.Drawing.Size(126, 17)
-        Me.lblPivotTrendPeriod.TabIndex = 61
-        Me.lblPivotTrendPeriod.Text = "Pivot Trend Period"
-        '
-        'chkbAutoSelectStock
-        '
-        Me.chkbAutoSelectStock.AutoSize = True
-        Me.chkbAutoSelectStock.Location = New System.Drawing.Point(11, 64)
-        Me.chkbAutoSelectStock.Name = "chkbAutoSelectStock"
-        Me.chkbAutoSelectStock.Size = New System.Drawing.Size(141, 21)
-        Me.chkbAutoSelectStock.TabIndex = 12
-        Me.chkbAutoSelectStock.Text = "Auto Select Stock"
-        Me.chkbAutoSelectStock.UseVisualStyleBackColor = True
-        '
-        'pnlStockSelectionDetails
-        '
-        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumATR)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumATR)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumVolume)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumVolume)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMaximumStockPrice)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMaximumStockPrice)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.txtMinimumStockPrice)
-        Me.pnlStockSelectionDetails.Controls.Add(Me.lblMinimumStockPrice)
-        Me.pnlStockSelectionDetails.Location = New System.Drawing.Point(0, 95)
-        Me.pnlStockSelectionDetails.Name = "pnlStockSelectionDetails"
-        Me.pnlStockSelectionDetails.Size = New System.Drawing.Size(543, 92)
-        Me.pnlStockSelectionDetails.TabIndex = 13
-        '
-        'lblMinimumStockPrice
-        '
-        Me.lblMinimumStockPrice.AutoSize = True
-        Me.lblMinimumStockPrice.Location = New System.Drawing.Point(7, 20)
-        Me.lblMinimumStockPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinimumStockPrice.Name = "lblMinimumStockPrice"
-        Me.lblMinimumStockPrice.Size = New System.Drawing.Size(138, 17)
-        Me.lblMinimumStockPrice.TabIndex = 58
-        Me.lblMinimumStockPrice.Text = "Minimum Stock Price"
-        '
-        'txtMinimumStockPrice
-        '
-        Me.txtMinimumStockPrice.Location = New System.Drawing.Point(156, 19)
-        Me.txtMinimumStockPrice.Name = "txtMinimumStockPrice"
-        Me.txtMinimumStockPrice.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumStockPrice.TabIndex = 59
-        Me.txtMinimumStockPrice.Tag = "Minimum Stock Price"
-        '
-        'txtMaximumStockPrice
-        '
-        Me.txtMaximumStockPrice.Location = New System.Drawing.Point(419, 17)
-        Me.txtMaximumStockPrice.Name = "txtMaximumStockPrice"
-        Me.txtMaximumStockPrice.Size = New System.Drawing.Size(100, 22)
-        Me.txtMaximumStockPrice.TabIndex = 61
-        Me.txtMaximumStockPrice.Tag = "Maximum Stock Price"
-        '
-        'lblMaximumStockPrice
-        '
-        Me.lblMaximumStockPrice.AutoSize = True
-        Me.lblMaximumStockPrice.Location = New System.Drawing.Point(270, 18)
-        Me.lblMaximumStockPrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMaximumStockPrice.Name = "lblMaximumStockPrice"
-        Me.lblMaximumStockPrice.Size = New System.Drawing.Size(141, 17)
-        Me.lblMaximumStockPrice.TabIndex = 60
-        Me.lblMaximumStockPrice.Text = "Maximum Stock Price"
-        '
-        'txtMinimumVolume
-        '
-        Me.txtMinimumVolume.Location = New System.Drawing.Point(156, 57)
-        Me.txtMinimumVolume.Name = "txtMinimumVolume"
-        Me.txtMinimumVolume.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumVolume.TabIndex = 63
-        Me.txtMinimumVolume.Tag = "Minimum Volume"
-        '
-        'lblMinimumVolume
-        '
-        Me.lblMinimumVolume.AutoSize = True
-        Me.lblMinimumVolume.Location = New System.Drawing.Point(7, 58)
-        Me.lblMinimumVolume.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinimumVolume.Name = "lblMinimumVolume"
-        Me.lblMinimumVolume.Size = New System.Drawing.Size(114, 17)
-        Me.lblMinimumVolume.TabIndex = 62
-        Me.lblMinimumVolume.Text = "Minimum Volume"
-        '
-        'txtMinimumATR
-        '
-        Me.txtMinimumATR.Location = New System.Drawing.Point(419, 55)
-        Me.txtMinimumATR.Name = "txtMinimumATR"
-        Me.txtMinimumATR.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumATR.TabIndex = 65
-        Me.txtMinimumATR.Tag = "Minimum ATR %"
-        '
-        'lblMinimumATR
-        '
-        Me.lblMinimumATR.AutoSize = True
-        Me.lblMinimumATR.Location = New System.Drawing.Point(270, 56)
-        Me.lblMinimumATR.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMinimumATR.Name = "lblMinimumATR"
-        Me.lblMinimumATR.Size = New System.Drawing.Size(111, 17)
-        Me.lblMinimumATR.TabIndex = 64
-        Me.lblMinimumATR.Text = "Minimum ATR %"
+        Me.lblTargetPer.AutoSize = True
+        Me.lblTargetPer.Location = New System.Drawing.Point(9, 83)
+        Me.lblTargetPer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTargetPer.Name = "lblTargetPer"
+        Me.lblTargetPer.Size = New System.Drawing.Size(66, 17)
+        Me.lblTargetPer.TabIndex = 66
+        Me.lblTargetPer.Text = "Target %"
         '
         'frmNFOSettings
         '
@@ -375,16 +372,15 @@ Partial Class frmNFOSettings
         Me.Text = "Settings"
         Me.grpTradeDetails.ResumeLayout(False)
         Me.grpTradeDetails.PerformLayout()
+        CType(Me.nmrcActiveInstrumentCount, System.ComponentModel.ISupportInitialize).EndInit()
         Me.grpStockSelectionDetails.ResumeLayout(False)
         Me.grpStockSelectionDetails.PerformLayout()
-        CType(Me.nmrcActiveInstrumentCount, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.grpIndicatorDetails.ResumeLayout(False)
-        Me.grpIndicatorDetails.PerformLayout()
-        CType(Me.nmrcATRPeriod, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.nmrcPivotPeriod, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.nmrcPivotTrendPeriod, System.ComponentModel.ISupportInitialize).EndInit()
         Me.pnlStockSelectionDetails.ResumeLayout(False)
         Me.pnlStockSelectionDetails.PerformLayout()
+        Me.grpIndicatorDetails.ResumeLayout(False)
+        Me.grpIndicatorDetails.PerformLayout()
+        CType(Me.nmrcSMAPeriod, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.nmrcATRPeriod, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
@@ -402,10 +398,8 @@ Partial Class frmNFOSettings
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
     Friend WithEvents grpIndicatorDetails As GroupBox
-    Friend WithEvents nmrcPivotTrendPeriod As NumericUpDown
-    Friend WithEvents lblPivotTrendPeriod As Label
-    Friend WithEvents nmrcPivotPeriod As NumericUpDown
-    Friend WithEvents lblPivot As Label
+    Friend WithEvents nmrcSMAPeriod As NumericUpDown
+    Friend WithEvents lblSMAPeriod As Label
     Friend WithEvents nmrcATRPeriod As NumericUpDown
     Friend WithEvents lblATRPeriod As Label
     Friend WithEvents pnlStockSelectionDetails As Panel
@@ -418,4 +412,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMinimumVolume As Label
     Friend WithEvents txtMinimumATR As TextBox
     Friend WithEvents lblMinimumATR As Label
+    Friend WithEvents txtTargetPer As TextBox
+    Friend WithEvents lblTargetPer As Label
 End Class

@@ -54,9 +54,9 @@
                     row("Exit Order ID") = runningTrade.ExitOrderID
                     row("Status") = runningTrade.CurrentStatus
                     row("Potential Target") = runningTrade.PotentialTarget
-                    row("Signal Date") = runningTrade.SignalDate.ToString("dd-MMM-yyyy HH:mm:ss")
+                    row("Signal Date") = runningTrade.EntrySignalDate.ToString("dd-MMM-yyyy HH:mm:ss")
                     'row("Contract Remark") = runningTrade.ContractRemark
-                    row("Trade Number") = runningTrade.TradeNumber
+                    row("Trade Number") = runningTrade.IterationNumber
                     row("Spot Price") = runningTrade.SpotPrice
                     row("Spot ATR") = Math.Round(runningTrade.SpotATR, 2)
                     row("ATR Consumed") = String.Format("{0}%", Math.Round(runningTrade.ATRConsumed, 2))

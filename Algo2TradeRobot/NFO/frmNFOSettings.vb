@@ -40,10 +40,10 @@ Public Class frmNFOSettings
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
             nmrcActiveInstrumentCount.Value = _settings.ActiveInstrumentCount
+            txtTargetPer.Text = _settings.TargetPercentage
 
             nmrcATRPeriod.Value = _settings.ATRPeriod
-            nmrcPivotPeriod.Value = _settings.PivotPeriod
-            nmrcPivotTrendPeriod.Value = _settings.PivotTrendPeriod
+            nmrcSMAPeriod.Value = _settings.SMAPeriod
 
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilepath
             chkbAutoSelectStock.Checked = _settings.AutoSelectStock
@@ -58,10 +58,10 @@ Public Class frmNFOSettings
         _settings.SignalTimeFrame = 1
         _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
         _settings.ActiveInstrumentCount = nmrcActiveInstrumentCount.Value
+        _settings.TargetPercentage = txtTargetPer.Text
 
         _settings.ATRPeriod = nmrcATRPeriod.Value
-        _settings.PivotPeriod = nmrcPivotPeriod.Value
-        _settings.PivotTrendPeriod = nmrcPivotTrendPeriod.Value
+        _settings.SMAPeriod = nmrcSMAPeriod.Value
 
         _settings.InstrumentDetailsFilepath = txtInstrumentDetalis.Text
         _settings.AutoSelectStock = chkbAutoSelectStock.Checked
@@ -100,6 +100,8 @@ Public Class frmNFOSettings
     End Sub
 
     Private Sub ValidateInputs()
+        ValidateNumbers(0, Decimal.MaxValue, txtTargetPer)
+
         ValidateNumbers(1, Decimal.MaxValue, txtMinimumStockPrice)
         ValidateNumbers(1, Decimal.MaxValue, txtMaximumStockPrice)
         ValidateNumbers(1, Decimal.MaxValue, txtMinimumATR)

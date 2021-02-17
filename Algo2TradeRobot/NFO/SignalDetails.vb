@@ -16,17 +16,16 @@ Public Class SignalDetails
         If dummyTrade IsNot Nothing Then
             Dim tradeToInsert As Trade = New Trade With {
                                 .ChildTag = dummyTrade.ChildTag,
-                                .ContractRemark = dummyTrade.ContractRemark,
                                 .CurrentStatus = TradeStatus.Open,
                                 .Direction = dummyTrade.Direction,
                                 .ParentTag = dummyTrade.ParentTag,
                                 .PotentialTarget = dummyTrade.PotentialTarget,
                                 .LossToRecover = dummyTrade.LossToRecover,
                                 .Quantity = dummyTrade.Quantity,
-                                .SignalDate = dummyTrade.SignalDate,
+                                .EntrySignalDate = dummyTrade.EntrySignalDate,
                                 .SpotATR = dummyTrade.SpotATR,
                                 .SpotPrice = dummyTrade.SpotPrice,
-                                .TradeNumber = dummyTrade.TradeNumber,
+                                .IterationNumber = dummyTrade.IterationNumber,
                                 .TradingSymbol = dummyTrade.TradingSymbol,
                                 .TypeOfEntry = dummyTrade.TypeOfEntry,
                                 .EntryOrderID = entryOrderID,
@@ -146,7 +145,6 @@ End Enum
 Public Enum ExitType
     Target = 1
     ContractRollover
-    ZeroPremium
     Reverse
     None
 End Enum
@@ -173,20 +171,20 @@ Public Class Trade
     Public Property CurrentStatus As TradeStatus
     Public Property ChildTag As String
     Public Property ParentTag As String
-    Public Property TradeNumber As Integer
+    Public Property IterationNumber As Integer
     Public Property SpotPrice As Decimal
     Public Property SpotATR As Decimal
     Public Property ATRConsumed As Decimal
     Public Property PotentialTarget As Decimal
     Public Property LossToRecover As Decimal
-    Public Property ContractRemark As String
-    Public Property SignalDate As Date
+    Public Property EntrySignalDate As Date
     Public Property EntryTime As Date
     Public Property EntryOrderID As String
     Public Property AttemptedEntryPrice As Decimal
     Public Property EntryPrice As Decimal
     Public Property Quantity As Integer
     Public Property Direction As TradeDirection
+    Public Property ExitSignalDate As Date
     Public Property ExitTime As Date
     Public Property ExitOrderID As String
     Public Property ExitPrice As Decimal

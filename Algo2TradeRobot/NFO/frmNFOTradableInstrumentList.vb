@@ -60,7 +60,7 @@
                         If optnStrgInstrmnt IsNot Nothing AndAlso optnStrgInstrmnt.TradableInstrument.LastTick IsNot Nothing Then
                             row("Current PL") = instrument.GetOverallSignalPL(lastRunningTrade, optnStrgInstrmnt, optnStrgInstrmnt.TradableInstrument.LastTick.LastPrice)
                         End If
-                        row("Trade Number") = lastRunningTrade.TradeNumber
+                        row("Trade Number") = lastRunningTrade.IterationNumber
                     Else
                         row("Active Signal") = False
                         row("Current PL") = 0

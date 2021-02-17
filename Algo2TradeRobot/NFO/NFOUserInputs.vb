@@ -8,7 +8,7 @@ Imports Algo2TradeCore.Entities
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Pivot Trend Options.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "HK MA Trend Options.Strategy.a2t")
 
 
     Private _TradeEntryTime As Date
@@ -21,11 +21,11 @@ Public Class NFOUserInputs
         End Set
     End Property
     Public Property ActiveInstrumentCount As Integer
+    Public Property TargetPercentage As Decimal
 
     'Indicator
     Public Property ATRPeriod As Integer
-    Public Property PivotPeriod As Integer
-    Public Property PivotTrendPeriod As Integer
+    Public Property SMAPeriod As Integer
 
     'Stock Selection
     Public Property MinimumStockPrice As Decimal
