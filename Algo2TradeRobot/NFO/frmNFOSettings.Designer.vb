@@ -28,6 +28,8 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.grpTradeDetails = New System.Windows.Forms.GroupBox()
+        Me.txtTargetPer = New System.Windows.Forms.TextBox()
+        Me.lblTargetPer = New System.Windows.Forms.Label()
         Me.nmrcActiveInstrumentCount = New System.Windows.Forms.NumericUpDown()
         Me.lblActiveInstrumentCount = New System.Windows.Forms.Label()
         Me.dtpckrTradeEntryTime = New System.Windows.Forms.DateTimePicker()
@@ -51,8 +53,8 @@ Partial Class frmNFOSettings
         Me.lblSMAPeriod = New System.Windows.Forms.Label()
         Me.nmrcATRPeriod = New System.Windows.Forms.NumericUpDown()
         Me.lblATRPeriod = New System.Windows.Forms.Label()
-        Me.txtTargetPer = New System.Windows.Forms.TextBox()
-        Me.lblTargetPer = New System.Windows.Forms.Label()
+        Me.txtDistance = New System.Windows.Forms.TextBox()
+        Me.lblDistance = New System.Windows.Forms.Label()
         Me.grpTradeDetails.SuspendLayout()
         CType(Me.nmrcActiveInstrumentCount, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.grpStockSelectionDetails.SuspendLayout()
@@ -67,7 +69,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(746, 206)
+        Me.btnSave.Location = New System.Drawing.Point(767, 206)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -87,6 +89,8 @@ Partial Class frmNFOSettings
         '
         'grpTradeDetails
         '
+        Me.grpTradeDetails.Controls.Add(Me.txtDistance)
+        Me.grpTradeDetails.Controls.Add(Me.lblDistance)
         Me.grpTradeDetails.Controls.Add(Me.txtTargetPer)
         Me.grpTradeDetails.Controls.Add(Me.lblTargetPer)
         Me.grpTradeDetails.Controls.Add(Me.nmrcActiveInstrumentCount)
@@ -97,14 +101,32 @@ Partial Class frmNFOSettings
         Me.grpTradeDetails.Margin = New System.Windows.Forms.Padding(4)
         Me.grpTradeDetails.Name = "grpTradeDetails"
         Me.grpTradeDetails.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpTradeDetails.Size = New System.Drawing.Size(304, 115)
+        Me.grpTradeDetails.Size = New System.Drawing.Size(325, 177)
         Me.grpTradeDetails.TabIndex = 53
         Me.grpTradeDetails.TabStop = False
         Me.grpTradeDetails.Text = "Trade Details"
         '
+        'txtTargetPer
+        '
+        Me.txtTargetPer.Location = New System.Drawing.Point(210, 83)
+        Me.txtTargetPer.Name = "txtTargetPer"
+        Me.txtTargetPer.Size = New System.Drawing.Size(107, 22)
+        Me.txtTargetPer.TabIndex = 67
+        Me.txtTargetPer.Tag = "Target %"
+        '
+        'lblTargetPer
+        '
+        Me.lblTargetPer.AutoSize = True
+        Me.lblTargetPer.Location = New System.Drawing.Point(9, 84)
+        Me.lblTargetPer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTargetPer.Name = "lblTargetPer"
+        Me.lblTargetPer.Size = New System.Drawing.Size(66, 17)
+        Me.lblTargetPer.TabIndex = 66
+        Me.lblTargetPer.Text = "Target %"
+        '
         'nmrcActiveInstrumentCount
         '
-        Me.nmrcActiveInstrumentCount.Location = New System.Drawing.Point(183, 52)
+        Me.nmrcActiveInstrumentCount.Location = New System.Drawing.Point(210, 52)
         Me.nmrcActiveInstrumentCount.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
         Me.nmrcActiveInstrumentCount.Name = "nmrcActiveInstrumentCount"
         Me.nmrcActiveInstrumentCount.Size = New System.Drawing.Size(107, 22)
@@ -125,7 +147,7 @@ Partial Class frmNFOSettings
         'dtpckrTradeEntryTime
         '
         Me.dtpckrTradeEntryTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrTradeEntryTime.Location = New System.Drawing.Point(183, 21)
+        Me.dtpckrTradeEntryTime.Location = New System.Drawing.Point(210, 21)
         Me.dtpckrTradeEntryTime.Name = "dtpckrTradeEntryTime"
         Me.dtpckrTradeEntryTime.ShowUpDown = True
         Me.dtpckrTradeEntryTime.Size = New System.Drawing.Size(107, 22)
@@ -149,7 +171,7 @@ Partial Class frmNFOSettings
         Me.grpStockSelectionDetails.Controls.Add(Me.btnBrowse)
         Me.grpStockSelectionDetails.Controls.Add(Me.txtInstrumentDetalis)
         Me.grpStockSelectionDetails.Controls.Add(Me.lblInstrumentDetails)
-        Me.grpStockSelectionDetails.Location = New System.Drawing.Point(315, 0)
+        Me.grpStockSelectionDetails.Location = New System.Drawing.Point(336, 0)
         Me.grpStockSelectionDetails.Name = "grpStockSelectionDetails"
         Me.grpStockSelectionDetails.Size = New System.Drawing.Size(543, 199)
         Me.grpStockSelectionDetails.TabIndex = 54
@@ -289,9 +311,9 @@ Partial Class frmNFOSettings
         Me.grpIndicatorDetails.Controls.Add(Me.lblSMAPeriod)
         Me.grpIndicatorDetails.Controls.Add(Me.nmrcATRPeriod)
         Me.grpIndicatorDetails.Controls.Add(Me.lblATRPeriod)
-        Me.grpIndicatorDetails.Location = New System.Drawing.Point(4, 114)
+        Me.grpIndicatorDetails.Location = New System.Drawing.Point(4, 184)
         Me.grpIndicatorDetails.Name = "grpIndicatorDetails"
-        Me.grpIndicatorDetails.Size = New System.Drawing.Size(304, 84)
+        Me.grpIndicatorDetails.Size = New System.Drawing.Size(325, 84)
         Me.grpIndicatorDetails.TabIndex = 55
         Me.grpIndicatorDetails.TabStop = False
         Me.grpIndicatorDetails.Text = "Indicator Details"
@@ -336,29 +358,29 @@ Partial Class frmNFOSettings
         Me.lblATRPeriod.TabIndex = 57
         Me.lblATRPeriod.Text = "ATR Period"
         '
-        'txtTargetPer
+        'txtDistance
         '
-        Me.txtTargetPer.Location = New System.Drawing.Point(183, 82)
-        Me.txtTargetPer.Name = "txtTargetPer"
-        Me.txtTargetPer.Size = New System.Drawing.Size(107, 22)
-        Me.txtTargetPer.TabIndex = 67
-        Me.txtTargetPer.Tag = "Target %"
+        Me.txtDistance.Location = New System.Drawing.Point(210, 114)
+        Me.txtDistance.Name = "txtDistance"
+        Me.txtDistance.Size = New System.Drawing.Size(107, 22)
+        Me.txtDistance.TabIndex = 69
+        Me.txtDistance.Tag = "Distance from MA (ATR Mul)"
         '
-        'lblTargetPer
+        'lblDistance
         '
-        Me.lblTargetPer.AutoSize = True
-        Me.lblTargetPer.Location = New System.Drawing.Point(9, 83)
-        Me.lblTargetPer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblTargetPer.Name = "lblTargetPer"
-        Me.lblTargetPer.Size = New System.Drawing.Size(66, 17)
-        Me.lblTargetPer.TabIndex = 66
-        Me.lblTargetPer.Text = "Target %"
+        Me.lblDistance.AutoSize = True
+        Me.lblDistance.Location = New System.Drawing.Point(9, 115)
+        Me.lblDistance.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDistance.Name = "lblDistance"
+        Me.lblDistance.Size = New System.Drawing.Size(187, 17)
+        Me.lblDistance.TabIndex = 68
+        Me.lblDistance.Text = "Distance from MA (ATR Mul)"
         '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(865, 272)
+        Me.ClientSize = New System.Drawing.Size(883, 272)
         Me.Controls.Add(Me.grpIndicatorDetails)
         Me.Controls.Add(Me.grpStockSelectionDetails)
         Me.Controls.Add(Me.grpTradeDetails)
@@ -414,4 +436,6 @@ Partial Class frmNFOSettings
     Friend WithEvents lblMinimumATR As Label
     Friend WithEvents txtTargetPer As TextBox
     Friend WithEvents lblTargetPer As Label
+    Friend WithEvents txtDistance As TextBox
+    Friend WithEvents lblDistance As Label
 End Class

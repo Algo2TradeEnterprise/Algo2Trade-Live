@@ -41,6 +41,7 @@ Public Class frmNFOSettings
             dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
             nmrcActiveInstrumentCount.Value = _settings.ActiveInstrumentCount
             txtTargetPer.Text = _settings.TargetPercentage
+            txtDistance.Text = _settings.DistanceFromMA
 
             nmrcATRPeriod.Value = _settings.ATRPeriod
             nmrcSMAPeriod.Value = _settings.SMAPeriod
@@ -59,6 +60,7 @@ Public Class frmNFOSettings
         _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
         _settings.ActiveInstrumentCount = nmrcActiveInstrumentCount.Value
         _settings.TargetPercentage = txtTargetPer.Text
+        _settings.DistanceFromMA = txtDistance.Text
 
         _settings.ATRPeriod = nmrcATRPeriod.Value
         _settings.SMAPeriod = nmrcSMAPeriod.Value
@@ -101,6 +103,7 @@ Public Class frmNFOSettings
 
     Private Sub ValidateInputs()
         ValidateNumbers(0, Decimal.MaxValue, txtTargetPer)
+        ValidateNumbers(0, Decimal.MaxValue, txtDistance)
 
         ValidateNumbers(1, Decimal.MaxValue, txtMinimumStockPrice)
         ValidateNumbers(1, Decimal.MaxValue, txtMaximumStockPrice)

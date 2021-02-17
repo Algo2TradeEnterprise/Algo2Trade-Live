@@ -32,6 +32,7 @@ Public Class NFOStrategyInstrument
     Private _eodPayload As Dictionary(Of Date, OHLCPayload) = Nothing
     Private _trendPayload As Dictionary(Of Date, Color) = Nothing
     Private _atrPayload As Dictionary(Of Date, Decimal) = Nothing
+    Private _smaPayload As Dictionary(Of Date, Decimal) = Nothing
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -162,6 +163,8 @@ Public Class NFOStrategyInstrument
                         CalculateATR(userSettings.ATRPeriod, _eodPayload, _atrPayload)
                         _trendPayload = Nothing
                         CalculateHKMATrend(userSettings.SMAPeriod, _eodPayload, _trendPayload)
+                        _smaPayload = Nothing
+                        CalculateSMA(userSettings.SMAPeriod, _eodPayload, _smaPayload)
                     End If
 
                     _cts.Token.ThrowIfCancellationRequested()
@@ -936,22 +939,34 @@ Public Class NFOStrategyInstrument
             Dim previousTrend As Color = _trendPayload(potentialSignalCandle.PreviousPayload.SnapshotDateTime)
             If trend = Color.Green Then
                 If previousTrend = Color.Red Then
-                    signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Buy)
+                    Dim sma As Decimal = _smaPayload(potentialSignalCandle.SnapshotDateTime)
+                    If potentialSignalCandle.ClosePrice.Value - sma < _atrPayload(potentialSignalCandle.SnapshotDateTime.Date) * userSettings.DistanceFromMA Then
+                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Buy)
+                    End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         potentialSignalCandle = _eodPayload(rolloverDay)
-                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Buy)
+                        Dim sma As Decimal = _smaPayload(potentialSignalCandle.SnapshotDateTime)
+                        If potentialSignalCandle.ClosePrice.Value - sma < _atrPayload(potentialSignalCandle.SnapshotDateTime.Date) * userSettings.DistanceFromMA Then
+                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Buy)
+                        End If
                     End If
                 End If
             ElseIf trend = Color.Red Then
                 If previousTrend = Color.Green Then
-                    signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Sell)
+                    Dim sma As Decimal = _smaPayload(potentialSignalCandle.SnapshotDateTime)
+                    If sma - potentialSignalCandle.ClosePrice.Value < _atrPayload(potentialSignalCandle.SnapshotDateTime.Date) * userSettings.DistanceFromMA Then
+                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Sell)
+                    End If
                 Else
                     Dim rolloverDay As Date = GetChangeoverDay(trend)
                     If rolloverDay <> Date.MinValue Then
                         potentialSignalCandle = _eodPayload(rolloverDay)
-                        signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Sell)
+                        Dim sma As Decimal = _smaPayload(potentialSignalCandle.SnapshotDateTime)
+                        If sma - potentialSignalCandle.ClosePrice.Value < _atrPayload(potentialSignalCandle.SnapshotDateTime.Date) * userSettings.DistanceFromMA Then
+                            signal = New Tuple(Of Boolean, OHLCPayload, IOrder.TypeOfTransaction)(True, potentialSignalCandle, IOrder.TypeOfTransaction.Sell)
+                        End If
                     End If
                 End If
             End If
@@ -1321,6 +1336,7 @@ Public Class NFOStrategyInstrument
         If _eodPayload IsNot Nothing AndAlso _eodPayload.Count > 0 Then
             CalculateHKMATrend(userSettings.SMAPeriod, _eodPayload, _trendPayload)
             CalculateATR(userSettings.ATRPeriod, _eodPayload, _atrPayload)
+            CalculateSMA(userSettings.SMAPeriod, _eodPayload, _smaPayload)
 
             If Me.SignalData.AllTrades IsNot Nothing AndAlso Me.SignalData.AllTrades.Count > 0 Then
                 For Each runningTrade In Me.SignalData.AllTrades
