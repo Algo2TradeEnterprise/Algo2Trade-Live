@@ -450,7 +450,9 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, 5, _cts)
+            Dim numberOfCandle As Integer = Math.Ceiling(375 / _nfoUserInputs.SignalTimeFrame)
+            Dim numberOfDaysToBack As Integer = Math.Ceiling((_nfoUserInputs.VWAP_EMAPeriod * 12) / numberOfCandle) + 5
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, numberOfDaysToBack, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
