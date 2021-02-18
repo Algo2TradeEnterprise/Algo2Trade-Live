@@ -230,7 +230,7 @@ Public Class NFOStrategyInstrument
                                 .TypeOfEntryDetails = lastCompleteTrade.TypeOfExit,
                                 .ATRConsumed = lastCompleteTrade.ATRConsumed,
                                 .AttemptedEntryPrice = entryPrice,
-                                .PotentialTarget = potentialTarget
+                                .PotentialTarget = Math.Max(potentialTarget, 1000)
                             }
 
             Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
@@ -296,7 +296,7 @@ Public Class NFOStrategyInstrument
                                 .CurrentStatus = TradeStatus.Open,
                                 .Direction = directionToCheck,
                                 .ParentTag = parentTag,
-                                .PotentialTarget = potentialTarget,
+                                .PotentialTarget = Math.Max(potentialTarget, 1000),
                                 .LossToRecover = lossToRecover,
                                 .Quantity = quantity,
                                 .EntrySignalDate = lastCompleteTrade.ExitSignalDate,
@@ -371,7 +371,7 @@ Public Class NFOStrategyInstrument
                     .CurrentStatus = TradeStatus.Open,
                     .Direction = drctn,
                     .ParentTag = parentTag,
-                    .PotentialTarget = potentialTarget,
+                    .PotentialTarget = Math.Max(potentialTarget, 1000),
                     .LossToRecover = lossToRecover,
                     .Quantity = quantity,
                     .EntrySignalDate = signal.Item2.SnapshotDateTime,
