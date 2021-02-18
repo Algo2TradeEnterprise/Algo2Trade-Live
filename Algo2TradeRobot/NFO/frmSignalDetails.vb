@@ -155,13 +155,13 @@ Public Class frmSignalDetails
                         .Text = String.Format("XIRR: {1} %{0}{0}Wealth Build: {2}{0}{0}Total Invested: {3}{0}{0}Total Returned: {4}{0}{0}Absolute Return: {5} %{0}{0}Annualized Absolute Return: {6} %{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
                                                vbNewLine,
                                                (xirr).ToString("F"),
-                                               (wealthBuild).ToString("F"),
-                                               (totalInvested).ToString("F"),
-                                               (totalReturned).ToString("F"),
+                                               Math.Round(wealthBuild, 0),
+                                               Math.Round(totalInvested, 0),
+                                               Math.Round(totalReturned, 0),
                                                (absoluteReturn).ToString("F"),
                                                (annualizedAbsoluteReturn).ToString("F"),
-                                               (maxOutflowNeeded).ToString("F"),
-                                               (maxAccumulatedCorpus).ToString("F"))
+                                               Math.Round(maxOutflowNeeded, 0),
+                                               Math.Round(maxAccumulatedCorpus, 0))
                     }
                     Me.chrtDetails.Annotations.Add(a)
                     'Me.chrtInvestmentReturn.Annotations.Add(a)
