@@ -238,7 +238,7 @@ Public Class frmSignalDetails
 
     Private Async Function SendTelegramInfoMessageAsync() As Task
         Try
-            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
+            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             Dim userInputs As NFOUserInputs = _strategyInstrument.ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso

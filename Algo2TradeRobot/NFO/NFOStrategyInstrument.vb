@@ -156,12 +156,18 @@ Public Class NFOStrategyInstrument
                                 SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue)
                                 _tempSignal = Nothing
                                 _entryDoneForTheDay = True
+
+                                Dim frmDtls As New frmSignalDetails(Me, _cts)
+                                OnEndOfTheDay()
                             Else
                                 Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
                                 If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                                     SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue)
                                     _tempSignal = Nothing
                                     _entryDoneForTheDay = True
+
+                                    Dim frmDtls As New frmSignalDetails(Me, _cts)
+                                    OnEndOfTheDay()
                                 End If
                             End If
                         End If
@@ -182,7 +188,7 @@ Public Class NFOStrategyInstrument
                         'Place Order block end
                         _cts.Token.ThrowIfCancellationRequested()
 
-                        If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.AddMinutes(1) AndAlso Not _eodMessageSend Then
+                        If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.AddMinutes(1) AndAlso Not _eodMessageSend AndAlso Not TakeTradeToday Then
                             _eodMessageSend = True
 
                             Dim lastSignal As SignalDetails = GetLastSignalDetails(Now.Date)
