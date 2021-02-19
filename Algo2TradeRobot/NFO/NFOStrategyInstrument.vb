@@ -436,7 +436,7 @@ Public Class NFOStrategyInstrument
                         Next
 
                         Dim plToAchieveFromThisTrade As Decimal = lastRunningTrade.PotentialTarget - totalRealisedPL
-                        Dim targetPrice As Decimal = CalculateTargetFromPL(lastRunningTrade.EntryPrice, lastRunningTrade.Quantity, plToAchieveFromThisTrade)
+                        Dim targetPrice As Decimal = optnStrgInstrmnt.CalculateTargetFromPL(lastRunningTrade.EntryPrice, lastRunningTrade.Quantity, plToAchieveFromThisTrade)
 
                         If currentOptionTick.LastPrice >= targetPrice Then
                             Dim dummyTrade As Trade = New Trade(Nothing)
