@@ -506,7 +506,7 @@ Public Class NFOStrategyInstrument
             Dim brokerageAttributes As IBrokerageAttributes = calculator.GetDeliveryEquityBrokerage(buy, sell, Math.Abs(quantity))
             ret = CType(brokerageAttributes, AliceBrokerageAttributes).TotalTax
         Else
-            quantity = 0
+            ret = 0
         End If
         Return ret
     End Function

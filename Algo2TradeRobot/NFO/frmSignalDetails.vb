@@ -164,15 +164,14 @@ Public Class frmSignalDetails
                                                Math.Round(maxAccumulatedCorpus, 0))
                     }
                     Me.chrtDetails.Annotations.Add(a)
-                    'Me.chrtInvestmentReturn.Annotations.Add(a)
 
-                    'For Each dp As DataPoint In Me.chrtDetails.Series("Investment/Return").Points
-                    '    If dp.YValues(0) > 0 Then
-                    '        dp.Color = Color.Green
-                    '    Else
-                    '        dp.Color = Color.Red
-                    '    End If
-                    'Next
+                    For Each dp As DataPoint In Me.chrtDetails.Series("Investment/Return").Points
+                        If dp.YValues(0) > 0 Then
+                            dp.Color = Color.Green
+                        Else
+                            dp.Color = Color.Red
+                        End If
+                    Next
                 End If
             End If
         Catch ex As Exception
