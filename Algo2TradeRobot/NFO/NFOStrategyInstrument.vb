@@ -588,11 +588,11 @@ Public Class NFOStrategyInstrument
                             Dim placedTime As Date = Now
                             While True
                                 _cts.Token.ThrowIfCancellationRequested()
-                                If Me._RMSException IsNot Nothing AndAlso
-                                    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                                    Throw Me._RMSException
-                                End If
+                                'If Me._RMSException IsNot Nothing AndAlso
+                                '    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                                '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                                '    Throw Me._RMSException
+                                'End If
                                 If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
                                     Dim order As IBusinessOrder = Me.OrderDetails(orderID)
                                     If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
@@ -631,6 +631,10 @@ Public Class NFOStrategyInstrument
                                                     lastTrade.UpdateTrade(CurrentStatus:=TradeStatus.InProgress, EntryPrice:=placedOrder.ParentOrder.AveragePrice)
                                                     Exit While
                                                 ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
+                                                    Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                                                    lastTrade.UpdateTrade(CurrentStatus:=TradeStatus.Cancel)
+                                                    Exit While
+                                                ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Rejected Then
                                                     Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
                                                     lastTrade.UpdateTrade(CurrentStatus:=TradeStatus.Cancel)
                                                     Exit While
