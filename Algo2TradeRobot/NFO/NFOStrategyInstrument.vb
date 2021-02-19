@@ -584,8 +584,9 @@ Public Class NFOStrategyInstrument
                         If placeOrderResponse.ContainsKey("data") AndAlso
                             placeOrderResponse("data").ContainsKey("order_id") Then
                             Dim orderID As String = placeOrderResponse("data")("order_id")
-                            Me.SignalData.InsertOrder(_executeCommandData, orderID)
                             Dim placedTime As Date = Now
+                            _executeCommandData.UpdateTrade(EntryTime:=placedTime)
+                            Me.SignalData.InsertOrder(_executeCommandData, orderID)
                             While True
                                 _cts.Token.ThrowIfCancellationRequested()
                                 'If Me._RMSException IsNot Nothing AndAlso
