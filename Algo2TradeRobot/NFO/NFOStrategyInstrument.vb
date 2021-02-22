@@ -209,7 +209,7 @@ Public Class NFOStrategyInstrument
                                     SpotPrice:=lastCompleteTrade.SpotPrice,
                                     IterationNumber:=lastCompleteTrade.IterationNumber,
                                     TypeOfEntry:=lastCompleteTrade.TypeOfEntry,
-                                    TypeOfEntryDetails:=ExitType.ContractRollover,
+                                    TypeOfEntryDetails:=lastCompleteTrade.TypeOfEntryDetails,
                                     ATRConsumed:=lastCompleteTrade.ATRConsumed,
                                     AttemptedEntryPrice:=entryPrice)
 

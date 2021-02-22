@@ -168,7 +168,7 @@ Public Class NFOStrategy
                                                                                    End Function)
 
             Dim minExpiry As Date = myOptionContracts.Min(Function(x)
-                                                              If Now.Date <= x.Expiry.Value.AddDays(-2).Date Then
+                                                              If Now.Date <= x.Expiry.Value.AddDays(-3).Date Then
                                                                   Return x.Expiry.Value.Date
                                                               Else
                                                                   Return Date.MaxValue
@@ -181,7 +181,7 @@ Public Class NFOStrategy
             If ret Is Nothing Then ret = New List(Of IInstrument)
             ret.AddRange(minExpryInstrmts)
 
-            If minExpiry.Date.AddDays(-2) = Now.Date Then
+            If minExpiry.Date.AddDays(-3) = Now.Date Then
                 Dim nextMinExpiry As Date = myOptionContracts.Min(Function(x)
                                                                       If x.Expiry.Value.Date > minExpiry.Date Then
                                                                           Return x.Expiry.Value.Date

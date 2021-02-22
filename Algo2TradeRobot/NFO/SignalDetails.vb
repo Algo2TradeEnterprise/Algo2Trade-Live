@@ -236,7 +236,7 @@ Public Class Trade
                             Optional ByVal TargetOrderTime As Date = Nothing)
         If TradingSymbol IsNot Nothing Then _TradingSymbol = TradingSymbol
         If TypeOfEntry <> EntryType.None Then _TypeOfEntry = TypeOfEntry
-        If TypeOfEntryDetails <> ExitType.None Then _TypeOfEntryDetails = TypeOfEntryDetails
+        If TypeOfEntryDetails <> 0 Then _TypeOfEntryDetails = TypeOfEntryDetails
         If CurrentStatus <> TradeStatus.None Then _CurrentStatus = CurrentStatus
         If ChildTag IsNot Nothing Then _ChildTag = ChildTag
         If ParentTag IsNot Nothing Then _ParentTag = ParentTag
