@@ -585,7 +585,7 @@ Public Class NFOStrategyInstrument
                             placeOrderResponse("data").ContainsKey("order_id") Then
                             Dim orderID As String = placeOrderResponse("data")("order_id")
                             Dim placedTime As Date = Now
-                            _executeCommandData.UpdateTrade(EntryTime:=placedTime)
+                            _executeCommandData.UpdateTrade(EntryTime:=placedTime, EntryOrderID:=orderID)
                             Me.SignalData.InsertOrder(_executeCommandData, orderID)
                             While True
                                 _cts.Token.ThrowIfCancellationRequested()
