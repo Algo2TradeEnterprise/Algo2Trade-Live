@@ -216,7 +216,7 @@ Public Class NFOStrategyInstrument
             Await currentATMOption.MonitorAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, dummyTrade).ConfigureAwait(False)
             Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
             If lastTrade IsNot Nothing AndAlso lastTrade.CurrentStatus = TradeStatus.InProgress Then
-                SendEntryOrderNotificationAsync(lastTrade)
+                SendEntryOrderNotificationAsync(lastTrade, currentATMOption)
             End If
         End If
     End Function
@@ -303,7 +303,7 @@ Public Class NFOStrategyInstrument
                     logger.Warn(ex.ToString)
                 End Try
 
-                SendEntryOrderNotificationAsync(lastTrade)
+                SendEntryOrderNotificationAsync(lastTrade, currentATMOption)
             End If
         End If
     End Function
@@ -373,7 +373,7 @@ Public Class NFOStrategyInstrument
                                 logger.Warn(ex.ToString)
                             End Try
 
-                            SendEntryOrderNotificationAsync(lastTrade)
+                            SendEntryOrderNotificationAsync(lastTrade, currentATMOption)
                         End If
                     Finally
                         Interlocked.Exchange(CType(Me.ParentStrategy, NFOStrategy).TradePlacementLock, 0)
@@ -1439,12 +1439,26 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Telegram"
-    Private Async Function SendEntryOrderNotificationAsync(ByVal order As Trade) As Task
+    Private Async Function SendEntryOrderNotificationAsync(ByVal order As Trade, ByVal optnStrgInstrmnt As NFOStrategyInstrument) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             If order IsNot Nothing Then
-                Dim msg As String = String.Format("{1}: Entry {0}Signal Direction:{2}{0}Entry Type:{3}{0}Logical Iteration Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}{0}Capital:{14}{0}Attempted Entry Price:{15}{0}Potential Target:{16}",
+                Dim targetPrice As Decimal = Decimal.MinValue
+                Dim allTrades As List(Of Trade) = Me.SignalData.GetAllTradesByParentTag(order.ParentTag)
+                If allTrades IsNot Nothing AndAlso allTrades.Count > 0 Then
+                    Dim totalRealisedPL As Decimal = 0
+                    For Each runningTrade In allTrades
+                        If runningTrade.CurrentStatus = TradeStatus.Complete Then
+                            totalRealisedPL += _APIAdapter.CalculatePLWithBrokerage(optnStrgInstrmnt.TradableInstrument, runningTrade.EntryPrice, runningTrade.ExitPrice, runningTrade.Quantity)
+                        End If
+                    Next
+
+                    Dim plToAchieveFromThisTrade As Decimal = order.PotentialTarget - totalRealisedPL
+                    targetPrice = optnStrgInstrmnt.CalculateTargetFromPL(order.EntryPrice, order.Quantity, plToAchieveFromThisTrade)
+                End If
+
+                Dim msg As String = String.Format("{1}: Entry {0}Signal Direction:{2}{0}Entry Type:{3}{0}Logical Iteration Number:{4}{0}Quantity:{5}{0}ATR Consumed:{6}%{0}Loss To Recover:{7}{0}Signal Date:{8}{0}Spot Price:{9}{0}Spot ATR:{10}{0}Option Contract:{11}{0}Entry Price:{12}{0}Entry Time:{13}{0}Capital:{14}{0}Attempted Entry Price:{15}{0}Potential Target:{16}{0}Potential Target PL:{17}",
                                                    vbNewLine,
                                                    Me.TradableInstrument.RawInstrumentName,
                                                    order.Direction.ToString,
@@ -1461,6 +1475,7 @@ Public Class NFOStrategyInstrument
                                                    order.EntryTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                    order.EntryPrice * order.Quantity,
                                                    order.AttemptedEntryPrice,
+                                                   targetPrice,
                                                    order.PotentialTarget)
 
                 Await SendNotificationAsync(msg).ConfigureAwait(False)
