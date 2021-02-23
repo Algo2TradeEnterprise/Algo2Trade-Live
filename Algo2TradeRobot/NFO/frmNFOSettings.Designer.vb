@@ -28,6 +28,8 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.grpTradeDetails = New System.Windows.Forms.GroupBox()
+        Me.txtDistance = New System.Windows.Forms.TextBox()
+        Me.lblDistance = New System.Windows.Forms.Label()
         Me.txtTargetPer = New System.Windows.Forms.TextBox()
         Me.lblTargetPer = New System.Windows.Forms.Label()
         Me.nmrcActiveInstrumentCount = New System.Windows.Forms.NumericUpDown()
@@ -53,8 +55,9 @@ Partial Class frmNFOSettings
         Me.lblSMAPeriod = New System.Windows.Forms.Label()
         Me.nmrcATRPeriod = New System.Windows.Forms.NumericUpDown()
         Me.lblATRPeriod = New System.Windows.Forms.Label()
-        Me.txtDistance = New System.Windows.Forms.TextBox()
-        Me.lblDistance = New System.Windows.Forms.Label()
+        Me.lblSameSignalEntry = New System.Windows.Forms.Label()
+        Me.rdbSameSignalEntryTrue = New System.Windows.Forms.RadioButton()
+        Me.rdbSameSignalEntryFalse = New System.Windows.Forms.RadioButton()
         Me.grpTradeDetails.SuspendLayout()
         CType(Me.nmrcActiveInstrumentCount, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.grpStockSelectionDetails.SuspendLayout()
@@ -89,6 +92,9 @@ Partial Class frmNFOSettings
         '
         'grpTradeDetails
         '
+        Me.grpTradeDetails.Controls.Add(Me.rdbSameSignalEntryFalse)
+        Me.grpTradeDetails.Controls.Add(Me.rdbSameSignalEntryTrue)
+        Me.grpTradeDetails.Controls.Add(Me.lblSameSignalEntry)
         Me.grpTradeDetails.Controls.Add(Me.txtDistance)
         Me.grpTradeDetails.Controls.Add(Me.lblDistance)
         Me.grpTradeDetails.Controls.Add(Me.txtTargetPer)
@@ -102,17 +108,37 @@ Partial Class frmNFOSettings
         Me.grpTradeDetails.Name = "grpTradeDetails"
         Me.grpTradeDetails.Padding = New System.Windows.Forms.Padding(4)
         Me.grpTradeDetails.Size = New System.Drawing.Size(325, 177)
-        Me.grpTradeDetails.TabIndex = 53
+        Me.grpTradeDetails.TabIndex = 1
         Me.grpTradeDetails.TabStop = False
         Me.grpTradeDetails.Text = "Trade Details"
+        '
+        'txtDistance
+        '
+        Me.txtDistance.Location = New System.Drawing.Point(210, 114)
+        Me.txtDistance.Name = "txtDistance"
+        Me.txtDistance.Size = New System.Drawing.Size(107, 22)
+        Me.txtDistance.TabIndex = 3
+        Me.txtDistance.Tag = "Distance from MA (ATR Mul)"
+        Me.txtDistance.Text = "100"
+        '
+        'lblDistance
+        '
+        Me.lblDistance.AutoSize = True
+        Me.lblDistance.Location = New System.Drawing.Point(9, 115)
+        Me.lblDistance.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblDistance.Name = "lblDistance"
+        Me.lblDistance.Size = New System.Drawing.Size(187, 17)
+        Me.lblDistance.TabIndex = 68
+        Me.lblDistance.Text = "Distance from MA (ATR Mul)"
         '
         'txtTargetPer
         '
         Me.txtTargetPer.Location = New System.Drawing.Point(210, 83)
         Me.txtTargetPer.Name = "txtTargetPer"
         Me.txtTargetPer.Size = New System.Drawing.Size(107, 22)
-        Me.txtTargetPer.TabIndex = 67
+        Me.txtTargetPer.TabIndex = 2
         Me.txtTargetPer.Tag = "Target %"
+        Me.txtTargetPer.Text = "5"
         '
         'lblTargetPer
         '
@@ -130,7 +156,7 @@ Partial Class frmNFOSettings
         Me.nmrcActiveInstrumentCount.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
         Me.nmrcActiveInstrumentCount.Name = "nmrcActiveInstrumentCount"
         Me.nmrcActiveInstrumentCount.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcActiveInstrumentCount.TabIndex = 56
+        Me.nmrcActiveInstrumentCount.TabIndex = 1
         Me.nmrcActiveInstrumentCount.Tag = "Active Instrument Count"
         Me.nmrcActiveInstrumentCount.Value = New Decimal(New Integer() {1, 0, 0, 0})
         '
@@ -174,7 +200,7 @@ Partial Class frmNFOSettings
         Me.grpStockSelectionDetails.Location = New System.Drawing.Point(336, 0)
         Me.grpStockSelectionDetails.Name = "grpStockSelectionDetails"
         Me.grpStockSelectionDetails.Size = New System.Drawing.Size(543, 199)
-        Me.grpStockSelectionDetails.TabIndex = 54
+        Me.grpStockSelectionDetails.TabIndex = 3
         Me.grpStockSelectionDetails.TabStop = False
         Me.grpStockSelectionDetails.Text = "Stock Selection Details"
         '
@@ -198,8 +224,9 @@ Partial Class frmNFOSettings
         Me.txtMinimumATR.Location = New System.Drawing.Point(419, 55)
         Me.txtMinimumATR.Name = "txtMinimumATR"
         Me.txtMinimumATR.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumATR.TabIndex = 65
+        Me.txtMinimumATR.TabIndex = 5
         Me.txtMinimumATR.Tag = "Minimum ATR %"
+        Me.txtMinimumATR.Text = "2.5"
         '
         'lblMinimumATR
         '
@@ -216,8 +243,9 @@ Partial Class frmNFOSettings
         Me.txtMinimumVolume.Location = New System.Drawing.Point(156, 57)
         Me.txtMinimumVolume.Name = "txtMinimumVolume"
         Me.txtMinimumVolume.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumVolume.TabIndex = 63
+        Me.txtMinimumVolume.TabIndex = 4
         Me.txtMinimumVolume.Tag = "Minimum Volume"
+        Me.txtMinimumVolume.Text = "1000000"
         '
         'lblMinimumVolume
         '
@@ -234,8 +262,9 @@ Partial Class frmNFOSettings
         Me.txtMaximumStockPrice.Location = New System.Drawing.Point(419, 17)
         Me.txtMaximumStockPrice.Name = "txtMaximumStockPrice"
         Me.txtMaximumStockPrice.Size = New System.Drawing.Size(100, 22)
-        Me.txtMaximumStockPrice.TabIndex = 61
+        Me.txtMaximumStockPrice.TabIndex = 3
         Me.txtMaximumStockPrice.Tag = "Maximum Stock Price"
+        Me.txtMaximumStockPrice.Text = "3000"
         '
         'lblMaximumStockPrice
         '
@@ -252,8 +281,9 @@ Partial Class frmNFOSettings
         Me.txtMinimumStockPrice.Location = New System.Drawing.Point(156, 19)
         Me.txtMinimumStockPrice.Name = "txtMinimumStockPrice"
         Me.txtMinimumStockPrice.Size = New System.Drawing.Size(100, 22)
-        Me.txtMinimumStockPrice.TabIndex = 59
+        Me.txtMinimumStockPrice.TabIndex = 2
         Me.txtMinimumStockPrice.Tag = "Minimum Stock Price"
+        Me.txtMinimumStockPrice.Text = "100"
         '
         'lblMinimumStockPrice
         '
@@ -268,10 +298,12 @@ Partial Class frmNFOSettings
         'chkbAutoSelectStock
         '
         Me.chkbAutoSelectStock.AutoSize = True
+        Me.chkbAutoSelectStock.Checked = True
+        Me.chkbAutoSelectStock.CheckState = System.Windows.Forms.CheckState.Checked
         Me.chkbAutoSelectStock.Location = New System.Drawing.Point(11, 64)
         Me.chkbAutoSelectStock.Name = "chkbAutoSelectStock"
         Me.chkbAutoSelectStock.Size = New System.Drawing.Size(141, 21)
-        Me.chkbAutoSelectStock.TabIndex = 12
+        Me.chkbAutoSelectStock.TabIndex = 1
         Me.chkbAutoSelectStock.Text = "Auto Select Stock"
         Me.chkbAutoSelectStock.UseVisualStyleBackColor = True
         '
@@ -282,7 +314,7 @@ Partial Class frmNFOSettings
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(42, 23)
-        Me.btnBrowse.TabIndex = 9
+        Me.btnBrowse.TabIndex = 0
         Me.btnBrowse.Text = "..."
         Me.btnBrowse.UseVisualStyleBackColor = True
         '
@@ -314,7 +346,7 @@ Partial Class frmNFOSettings
         Me.grpIndicatorDetails.Location = New System.Drawing.Point(4, 184)
         Me.grpIndicatorDetails.Name = "grpIndicatorDetails"
         Me.grpIndicatorDetails.Size = New System.Drawing.Size(325, 84)
-        Me.grpIndicatorDetails.TabIndex = 55
+        Me.grpIndicatorDetails.TabIndex = 2
         Me.grpIndicatorDetails.TabStop = False
         Me.grpIndicatorDetails.Text = "Indicator Details"
         '
@@ -324,9 +356,9 @@ Partial Class frmNFOSettings
         Me.nmrcSMAPeriod.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
         Me.nmrcSMAPeriod.Name = "nmrcSMAPeriod"
         Me.nmrcSMAPeriod.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcSMAPeriod.TabIndex = 60
+        Me.nmrcSMAPeriod.TabIndex = 1
         Me.nmrcSMAPeriod.Tag = "Pivot Period"
-        Me.nmrcSMAPeriod.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.nmrcSMAPeriod.Value = New Decimal(New Integer() {50, 0, 0, 0})
         '
         'lblSMAPeriod
         '
@@ -344,9 +376,9 @@ Partial Class frmNFOSettings
         Me.nmrcATRPeriod.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
         Me.nmrcATRPeriod.Name = "nmrcATRPeriod"
         Me.nmrcATRPeriod.Size = New System.Drawing.Size(107, 22)
-        Me.nmrcATRPeriod.TabIndex = 58
+        Me.nmrcATRPeriod.TabIndex = 0
         Me.nmrcATRPeriod.Tag = "ATR Period"
-        Me.nmrcATRPeriod.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.nmrcATRPeriod.Value = New Decimal(New Integer() {14, 0, 0, 0})
         '
         'lblATRPeriod
         '
@@ -358,23 +390,38 @@ Partial Class frmNFOSettings
         Me.lblATRPeriod.TabIndex = 57
         Me.lblATRPeriod.Text = "ATR Period"
         '
-        'txtDistance
+        'lblSameSignalEntry
         '
-        Me.txtDistance.Location = New System.Drawing.Point(210, 114)
-        Me.txtDistance.Name = "txtDistance"
-        Me.txtDistance.Size = New System.Drawing.Size(107, 22)
-        Me.txtDistance.TabIndex = 69
-        Me.txtDistance.Tag = "Distance from MA (ATR Mul)"
+        Me.lblSameSignalEntry.AutoSize = True
+        Me.lblSameSignalEntry.Location = New System.Drawing.Point(9, 147)
+        Me.lblSameSignalEntry.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblSameSignalEntry.Name = "lblSameSignalEntry"
+        Me.lblSameSignalEntry.Size = New System.Drawing.Size(124, 17)
+        Me.lblSameSignalEntry.TabIndex = 69
+        Me.lblSameSignalEntry.Text = "Same Signal Entry"
         '
-        'lblDistance
+        'rdbSameSignalEntryTrue
         '
-        Me.lblDistance.AutoSize = True
-        Me.lblDistance.Location = New System.Drawing.Point(9, 115)
-        Me.lblDistance.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblDistance.Name = "lblDistance"
-        Me.lblDistance.Size = New System.Drawing.Size(187, 17)
-        Me.lblDistance.TabIndex = 68
-        Me.lblDistance.Text = "Distance from MA (ATR Mul)"
+        Me.rdbSameSignalEntryTrue.AutoSize = True
+        Me.rdbSameSignalEntryTrue.Checked = True
+        Me.rdbSameSignalEntryTrue.Location = New System.Drawing.Point(194, 146)
+        Me.rdbSameSignalEntryTrue.Name = "rdbSameSignalEntryTrue"
+        Me.rdbSameSignalEntryTrue.Size = New System.Drawing.Size(59, 21)
+        Me.rdbSameSignalEntryTrue.TabIndex = 4
+        Me.rdbSameSignalEntryTrue.TabStop = True
+        Me.rdbSameSignalEntryTrue.Text = "True"
+        Me.rdbSameSignalEntryTrue.UseVisualStyleBackColor = True
+        '
+        'rdbSameSignalEntryFalse
+        '
+        Me.rdbSameSignalEntryFalse.AutoSize = True
+        Me.rdbSameSignalEntryFalse.Location = New System.Drawing.Point(258, 146)
+        Me.rdbSameSignalEntryFalse.Name = "rdbSameSignalEntryFalse"
+        Me.rdbSameSignalEntryFalse.Size = New System.Drawing.Size(63, 21)
+        Me.rdbSameSignalEntryFalse.TabIndex = 5
+        Me.rdbSameSignalEntryFalse.TabStop = True
+        Me.rdbSameSignalEntryFalse.Text = "False"
+        Me.rdbSameSignalEntryFalse.UseVisualStyleBackColor = True
         '
         'frmNFOSettings
         '
@@ -438,4 +485,7 @@ Partial Class frmNFOSettings
     Friend WithEvents lblTargetPer As Label
     Friend WithEvents txtDistance As TextBox
     Friend WithEvents lblDistance As Label
+    Friend WithEvents lblSameSignalEntry As Label
+    Friend WithEvents rdbSameSignalEntryFalse As RadioButton
+    Friend WithEvents rdbSameSignalEntryTrue As RadioButton
 End Class

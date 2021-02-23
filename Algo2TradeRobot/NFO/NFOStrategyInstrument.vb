@@ -400,12 +400,18 @@ Public Class NFOStrategyInstrument
                 If Now >= userSettings.TradeEntryTime Then
                     signal = GetFreshEntrySignal(currentSpotTick)
                     If signal IsNot Nothing AndAlso signal.Item1 Then
-                        If lastTrade IsNot Nothing AndAlso lastTrade.TypeOfExit = ExitType.Target AndAlso
-                            lastTrade.EntrySignalDate = signal.Item2.SnapshotDateTime Then
-                            signal = Nothing
-                        Else
+                        If userSettings.SameSignalEntry Then
                             If signal.Item2.SnapshotDateTime.Date <> Now.Date AndAlso Now < userSettings.TradeEntryTime.AddMinutes(1) Then
                                 signal = Nothing
+                            End If
+                        Else
+                            If lastTrade IsNot Nothing AndAlso lastTrade.TypeOfExit = ExitType.Target AndAlso
+                                lastTrade.EntrySignalDate = signal.Item2.SnapshotDateTime Then
+                                signal = Nothing
+                            Else
+                                If signal.Item2.SnapshotDateTime.Date <> Now.Date AndAlso Now < userSettings.TradeEntryTime.AddMinutes(1) Then
+                                    signal = Nothing
+                                End If
                             End If
                         End If
                     End If

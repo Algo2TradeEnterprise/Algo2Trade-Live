@@ -42,6 +42,13 @@ Public Class frmNFOSettings
             nmrcActiveInstrumentCount.Value = _settings.ActiveInstrumentCount
             txtTargetPer.Text = _settings.TargetPercentage
             txtDistance.Text = _settings.DistanceFromMA
+            If _settings.SameSignalEntry Then
+                rdbSameSignalEntryTrue.Checked = True
+                rdbSameSignalEntryFalse.Checked = False
+            Else
+                rdbSameSignalEntryTrue.Checked = False
+                rdbSameSignalEntryFalse.Checked = True
+            End If
 
             nmrcATRPeriod.Value = _settings.ATRPeriod
             nmrcSMAPeriod.Value = _settings.SMAPeriod
@@ -61,6 +68,11 @@ Public Class frmNFOSettings
         _settings.ActiveInstrumentCount = nmrcActiveInstrumentCount.Value
         _settings.TargetPercentage = txtTargetPer.Text
         _settings.DistanceFromMA = txtDistance.Text
+        If rdbSameSignalEntryTrue.Checked Then
+            _settings.SameSignalEntry = True
+        Else
+            _settings.SameSignalEntry = False
+        End If
 
         _settings.ATRPeriod = nmrcATRPeriod.Value
         _settings.SMAPeriod = nmrcSMAPeriod.Value

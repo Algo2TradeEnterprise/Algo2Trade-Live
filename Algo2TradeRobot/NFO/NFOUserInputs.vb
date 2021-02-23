@@ -23,6 +23,7 @@ Public Class NFOUserInputs
     Public Property ActiveInstrumentCount As Integer
     Public Property TargetPercentage As Decimal
     Public Property DistanceFromMA As Decimal
+    Public Property SameSignalEntry As Boolean
 
     'Indicator
     Public Property ATRPeriod As Integer
