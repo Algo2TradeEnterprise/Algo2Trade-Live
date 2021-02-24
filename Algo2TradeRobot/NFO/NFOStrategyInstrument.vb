@@ -159,6 +159,7 @@ Public Class NFOStrategyInstrument
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
             'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
+            OnHeartbeat(String.Format("Strategy Instrument:{0} stopped, error:{1}", Me.ToString, ex.Message))
             logger.Error(String.Format("Strategy Instrument:{0} stopped, error:{1}", Me.ToString, ex.ToString))
             Throw ex
         Finally
@@ -499,9 +500,12 @@ Public Class NFOStrategyInstrument
     Private Function IsTradeTargetOrderPlaced(ByVal runningTrade As Trade) As Boolean
         Dim ret As Boolean = True
         If runningTrade IsNot Nothing AndAlso runningTrade.CurrentStatus = TradeStatus.InProgress Then
-            If runningTrade.TargetOrderID Is Nothing OrElse runningTrade.TargetOrderID = "" OrElse
-                runningTrade.TargetOrderTime = Date.MinValue OrElse runningTrade.TargetOrderTime = Date.MaxValue OrElse
+            If runningTrade.TargetOrderID Is Nothing Then
+                ret = False
+            ElseIf runningTrade.TargetOrderTime = Date.MinValue OrElse runningTrade.TargetOrderTime = Date.MaxValue OrElse
                 runningTrade.TargetOrderTime.Date <> Now.Date Then
+                ret = False
+            ElseIf runningTrade.TargetOrderTime.Date = Now.Date AndAlso Now >= runningTrade.TargetOrderTime.AddMinutes(1) AndAlso runningTrade.TargetOrderID = "" Then
                 ret = False
             End If
         End If
@@ -550,6 +554,9 @@ Public Class NFOStrategyInstrument
                                                     ExitTime:=Now)
 
                             ret = True
+                        ElseIf order.ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
+                            Dim lastTrade As Trade = Me.SignalData.GetLastTrade()
+                            lastTrade.UpdateTrade(TargetOrderID:="", TargetOrderTime:=Date.MaxValue)
                         End If
                     End If
                 End If
@@ -689,7 +696,7 @@ Public Class NFOStrategyInstrument
                                     Dim order As IBusinessOrder = Me.OrderDetails(orderID)
                                     If order IsNot Nothing AndAlso order.ParentOrder IsNot Nothing Then
                                         If order.ParentOrder.Status = IOrder.TypeOfStatus.Rejected Then
-                                            lastTrade.UpdateTrade(TargetOrderID:="", TargetOrderTime:=Date.MaxValue)
+                                            lastTrade.UpdateTrade(TargetOrderID:="", TargetOrderTime:=Now)
                                             Exit While
                                         Else
                                             Exit While

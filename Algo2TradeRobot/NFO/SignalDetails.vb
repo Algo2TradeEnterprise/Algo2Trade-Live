@@ -4,11 +4,17 @@
 Public Class SignalDetails
     Public Sub New(ByVal rawInstrumentName As String)
         Me.InstrumentName = rawInstrumentName
-        Me.SignalDetailsFilename = Path.Combine(My.Application.Info.DirectoryPath, "Signals", String.Format("{0}.SignalDetails.a2t", Me.InstrumentName))
+        'Me.SignalDetailsFilename = Path.Combine(My.Application.Info.DirectoryPath, "Signals", String.Format("{0}.SignalDetails.a2t", Me.InstrumentName))
     End Sub
 
     Public ReadOnly Property InstrumentName As String
+
+
     Public ReadOnly Property SignalDetailsFilename As String
+        Get
+            Return Path.Combine(My.Application.Info.DirectoryPath, "Signals", String.Format("{0}.SignalDetails.a2t", Me.InstrumentName))
+        End Get
+    End Property
 
     Public ReadOnly Property AllTrades As List(Of Trade)
 
