@@ -1503,7 +1503,7 @@ Public Class NFOStrategyInstrument
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             If order IsNot Nothing Then
-                Dim msg As String = String.Format("{1}: Exit {0}Signal Direction:{2}{0}Exit Type:{3}{0}Entry Price:{4}{0}Entry Time:{5}{0}Exit Price:{6}{0}Exit Time:{7}{0}Quantity:{8}{0}Signal PL:{9}{0}Attempted Exit Price:{10}",
+                Dim msg As String = String.Format("{1}: Exit {0}Signal Direction:{2}{0}Exit Type:{3}{0}Entry Price:{4}{0}Entry Time:{5}{0}Exit Price:{6}{0}Exit Time:{7}{0}Quantity:{8}{0}Signal PL:{9}{0}Attempted Exit Price:{10}{0}Expected Exit PL:{11}",
                                                    vbNewLine,
                                                    Me.TradableInstrument.RawInstrumentName,
                                                    order.Direction.ToString,
@@ -1514,7 +1514,8 @@ Public Class NFOStrategyInstrument
                                                    order.ExitTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                    order.Quantity,
                                                    GetOverallSignalPL(order, optionInstrument, order.AttemptedExitPrice),
-                                                   order.AttemptedExitPrice)
+                                                   order.AttemptedExitPrice,
+                                                   order.PotentialTarget)
 
                 Await SendNotificationAsync(msg).ConfigureAwait(False)
             End If
