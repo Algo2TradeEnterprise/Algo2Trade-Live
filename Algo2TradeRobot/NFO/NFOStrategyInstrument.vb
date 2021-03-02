@@ -30,6 +30,7 @@ Public Class NFOStrategyInstrument
     Private _trendPayload As Dictionary(Of Date, Color) = Nothing
     Private _atrPayload As Dictionary(Of Date, Decimal) = Nothing
     Private _smaPayload As Dictionary(Of Date, Decimal) = Nothing
+    Private _hkPayload As Dictionary(Of Date, OHLCPayload) = Nothing
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -141,6 +142,8 @@ Public Class NFOStrategyInstrument
                         CalculateHKMATrend(userSettings.SMAPeriod, _eodPayload, _trendPayload)
                         _smaPayload = Nothing
                         CalculateSMA(userSettings.SMAPeriod, _eodPayload, _smaPayload)
+                        _hkPayload = Nothing
+                        ConvertToHeikenAshi(_eodPayload, _hkPayload)
                     End If
 
                     _cts.Token.ThrowIfCancellationRequested()
@@ -515,11 +518,23 @@ Public Class NFOStrategyInstrument
     Private Function IsTradeReverseSignalReceived(ByVal runningTrade As Trade) As Boolean
         Dim ret As Boolean = False
         If runningTrade IsNot Nothing AndAlso runningTrade.CurrentStatus = TradeStatus.InProgress Then
-            Dim trend As Color = _trendPayload.LastOrDefault.Value
-            If runningTrade.Direction = TradeDirection.Buy AndAlso trend = Color.Red Then
-                ret = True
-            ElseIf runningTrade.Direction = TradeDirection.Sell AndAlso trend = Color.Green Then
-                ret = True
+            'Dim trend As Color = _trendPayload.LastOrDefault.Value
+            'If runningTrade.Direction = TradeDirection.Buy AndAlso trend = Color.Red Then
+            '    ret = True
+            'ElseIf runningTrade.Direction = TradeDirection.Sell AndAlso trend = Color.Green Then
+            '    ret = True
+            'End If
+
+            Dim candle As OHLCPayload = _hkPayload.LastOrDefault.Value
+            Dim sma As Decimal = _smaPayload.LastOrDefault.Value
+            If runningTrade.Direction = TradeDirection.Buy Then
+                If candle.CandleColor = Color.Red AndAlso candle.ClosePrice.Value < sma Then
+                    ret = True
+                End If
+            ElseIf runningTrade.Direction = TradeDirection.Sell Then
+                If candle.CandleColor = Color.Green AndAlso candle.ClosePrice.Value > sma Then
+                    ret = True
+                End If
             End If
         End If
         Return ret
@@ -1436,6 +1451,7 @@ Public Class NFOStrategyInstrument
             CalculateHKMATrend(userSettings.SMAPeriod, _eodPayload, _trendPayload)
             CalculateATR(userSettings.ATRPeriod, _eodPayload, _atrPayload)
             CalculateSMA(userSettings.SMAPeriod, _eodPayload, _smaPayload)
+            ConvertToHeikenAshi(_eodPayload, _hkPayload)
 
             If Me.SignalData.AllTrades IsNot Nothing AndAlso Me.SignalData.AllTrades.Count > 0 Then
                 For Each runningTrade In Me.SignalData.AllTrades
