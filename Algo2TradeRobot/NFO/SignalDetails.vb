@@ -195,6 +195,7 @@ Public Class Trade
     Public ReadOnly Property EntryTime As Date
     Public ReadOnly Property EntryOrderID As String
     Public ReadOnly Property AttemptedEntryPrice As Decimal
+    Public ReadOnly Property PotentialEntryPrice As Decimal
     Public ReadOnly Property EntryPrice As Decimal
     Public ReadOnly Property Quantity As Integer
     Public ReadOnly Property Direction As TradeDirection
@@ -229,6 +230,7 @@ Public Class Trade
                             Optional ByVal EntryTime As Date = Nothing,
                             Optional ByVal EntryOrderID As String = Nothing,
                             Optional ByVal AttemptedEntryPrice As Decimal = Decimal.MinValue,
+                            Optional ByVal PotentialEntryPrice As Decimal = Decimal.MinValue,
                             Optional ByVal EntryPrice As Decimal = Decimal.MinValue,
                             Optional ByVal Quantity As Integer = Integer.MinValue,
                             Optional ByVal Direction As TradeDirection = TradeDirection.None,
@@ -256,6 +258,7 @@ Public Class Trade
         If EntryTime <> Nothing AndAlso EntryTime <> Date.MinValue Then _EntryTime = EntryTime
         If EntryOrderID IsNot Nothing Then _EntryOrderID = EntryOrderID
         If AttemptedEntryPrice <> Decimal.MinValue Then _AttemptedEntryPrice = AttemptedEntryPrice
+        If PotentialEntryPrice <> Decimal.MinValue Then _PotentialEntryPrice = PotentialEntryPrice
         If EntryPrice <> Decimal.MinValue Then _EntryPrice = EntryPrice
         If Quantity <> Integer.MinValue Then _Quantity = Quantity
         If Direction <> TradeDirection.None Then _Direction = Direction
