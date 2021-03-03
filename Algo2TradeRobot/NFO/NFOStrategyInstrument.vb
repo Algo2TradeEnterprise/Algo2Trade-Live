@@ -209,15 +209,6 @@ Public Class NFOStrategyInstrument
                                                         eodSignal.AmountToInvest,
                                                         eodSignal.NoOfSharesToBuy)
                             SendTradeAlertMessageAsync(eodMessage)
-                            eodMessage = String.Format("EOD Alert: Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
-                                                        eodSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
-                                                        If(eodSignal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
-                                                        eodSignal.SharesOwnedAfterRebalancing,
-                                                        If(eodSignal.PreviousSignal IsNot Nothing, eodSignal.PreviousSignal.TotalInvested, 0),
-                                                        eodSignal.EntryPrice,
-                                                        eodSignal.NoOfSharesToBuy,
-                                                        eodSignal.TotalInvested)
-                            SendTradeAlertMessageAsync(eodMessage)
 
                             Dim frmDtls As New frmSignalDetails(Me, _cts)
                             OnEndOfTheDay()
@@ -482,7 +473,7 @@ Public Class NFOStrategyInstrument
             Dim signal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue)
             _allSignalDetails.Add(signal.SnapshotDate, signal)
 
-            Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
+            Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Profit Adjusted Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
                                                   signal.SnapshotDate.ToString("dd-MMM-yyyy"),
                                                   If(signal.NoOfSharesToBuy = 0, "Trades not taken", "Trades taken"),
                                                   signal.SharesOwnedAfterRebalancing,
