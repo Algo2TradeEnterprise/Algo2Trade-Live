@@ -25,6 +25,7 @@ Partial Class frmSignalDetails
         Dim ChartArea1 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
         Dim ChartArea2 As System.Windows.Forms.DataVisualization.Charting.ChartArea = New System.Windows.Forms.DataVisualization.Charting.ChartArea()
         Dim Legend1 As System.Windows.Forms.DataVisualization.Charting.Legend = New System.Windows.Forms.DataVisualization.Charting.Legend()
+        Dim LegendItem1 As System.Windows.Forms.DataVisualization.Charting.LegendItem = New System.Windows.Forms.DataVisualization.Charting.LegendItem()
         Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim Series3 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
@@ -80,6 +81,10 @@ Partial Class frmSignalDetails
         Me.chrtDetails.ChartAreas.Add(ChartArea1)
         Me.chrtDetails.ChartAreas.Add(ChartArea2)
         Me.chrtDetails.Dock = System.Windows.Forms.DockStyle.Fill
+        LegendItem1.Color = System.Drawing.Color.Red
+        LegendItem1.Name = "Investment"
+        Legend1.CustomItems.Add(LegendItem1)
+        Legend1.IsDockedInsideChartArea = False
         Legend1.Name = "Legend1"
         Me.chrtDetails.Legends.Add(Legend1)
         Me.chrtDetails.Location = New System.Drawing.Point(3, 317)
@@ -97,6 +102,7 @@ Partial Class frmSignalDetails
         Series3.ChartArea = "ChartArea2"
         Series3.Color = System.Drawing.Color.ForestGreen
         Series3.Legend = "Legend1"
+        Series3.LegendText = "Return"
         Series3.Name = "Investment/Return"
         Me.chrtDetails.Series.Add(Series1)
         Me.chrtDetails.Series.Add(Series2)
