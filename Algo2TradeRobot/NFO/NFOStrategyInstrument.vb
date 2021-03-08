@@ -165,9 +165,6 @@ Public Class NFOStrategyInstrument
                                     SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue)
                                     _tempSignal = Nothing
                                     _entryDoneForTheDay = True
-
-                                    Dim frmDtls As New frmSignalDetails(Me, _cts)
-                                    OnEndOfTheDay()
                                 End If
                             End If
                         End If
@@ -455,6 +452,7 @@ Public Class NFOStrategyInstrument
         If AllSignalDetails IsNot Nothing AndAlso AllSignalDetails.Count > 0 Then
             For Each runningSignal In AllSignalDetails.Values
                 runningSignal.ParentStrategyInstrument = Me
+                runningSignal.SetDefaultValues()
             Next
             ret = AllSignalDetails.Where(Function(y)
                                              Return y.Key < snapshotDate
@@ -486,6 +484,9 @@ Public Class NFOStrategyInstrument
 
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
             ret = True
+
+            Dim frmDtls As New frmSignalDetails(Me, _cts)
+            OnEndOfTheDay()
         End If
         Return ret
     End Function
@@ -518,6 +519,10 @@ Public Class NFOStrategyInstrument
             Me.ClosePrice = closePrice
             Me.EntryPrice = Math.Round(entryPrice, 2)
             Me.DesireValue = Math.Round(desireValue, 2)
+
+            _NoOfSharesOwnedBeforeRebalancing = Long.MinValue
+            _TotalInvested = Double.MinValue
+            _PeriodicInvestment = Double.MinValue
         End Sub
 
         <NonSerialized>
@@ -535,17 +540,23 @@ Public Class NFOStrategyInstrument
 
         Public ReadOnly Property DesireValue As Double
 
+        <NonSerialized>
+        Private _NoOfSharesOwnedBeforeRebalancing As Long = Long.MinValue
         Public ReadOnly Property NoOfSharesOwnedBeforeRebalancing As Long
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    Return Me.PreviousSignal.SharesOwnedAfterRebalancing
-                Else
-                    Return 0
+                If _NoOfSharesOwnedBeforeRebalancing = Long.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        _NoOfSharesOwnedBeforeRebalancing = Me.PreviousSignal.SharesOwnedAfterRebalancing
+                    Else
+                        _NoOfSharesOwnedBeforeRebalancing = 0
+                    End If
                 End If
+
+                Return _NoOfSharesOwnedBeforeRebalancing
             End Get
         End Property
 
-        Public ReadOnly Property TotalValueBeforeRebalancing As Double  'Brokerage to add
+        Public ReadOnly Property TotalValueBeforeRebalancing As Double
             Get
                 Dim totalTax As Decimal = 0
                 If Me.NoOfSharesOwnedBeforeRebalancing <> 0 Then
@@ -573,80 +584,116 @@ Public Class NFOStrategyInstrument
             End Get
         End Property
 
-        Public ReadOnly Property TotalInvested As Double    'Brokerage to add
+        <NonSerialized>
+        Private _TotalInvested As Double = Double.MinValue
+        Public ReadOnly Property TotalInvested As Double
             Get
-                Dim totalTax As Decimal = ParentStrategyInstrument.GetTotalTaxAndCharges(Me.EntryPrice, 0, Me.NoOfSharesToBuy)
-                If Me.PreviousSignal IsNot Nothing Then
-                    Return Math.Round(Me.PreviousSignal.TotalInvested + Me.NoOfSharesToBuy * Me.EntryPrice + totalTax, 2)
-                Else
-                    Return Math.Round(Me.NoOfSharesToBuy * Me.EntryPrice + totalTax, 2)
+                If _TotalInvested = Double.MinValue Then
+                    Dim totalTax As Decimal = ParentStrategyInstrument.GetTotalTaxAndCharges(Me.EntryPrice, 0, Me.NoOfSharesToBuy)
+                    If Me.PreviousSignal IsNot Nothing Then
+                        _TotalInvested = Math.Round(Me.PreviousSignal.TotalInvested + Me.NoOfSharesToBuy * Me.EntryPrice + totalTax, 2)
+                    Else
+                        _TotalInvested = Math.Round(Me.NoOfSharesToBuy * Me.EntryPrice + totalTax, 2)
+                    End If
                 End If
+
+                Return _TotalInvested
             End Get
         End Property
 
+        <NonSerialized>
+        Private _PeriodicInvestment As Double = Double.MinValue
         Public ReadOnly Property PeriodicInvestment As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    Return Math.Round(Me.PreviousSignal.TotalInvested - Me.TotalInvested, 2)
-                Else
-                    Return Math.Round(0 - Me.TotalInvested, 2)
+                If _PeriodicInvestment = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        _PeriodicInvestment = Math.Round(Me.PreviousSignal.TotalInvested - Me.TotalInvested, 2)
+                    Else
+                        _PeriodicInvestment = Math.Round(0 - Me.TotalInvested, 2)
+                    End If
                 End If
+
+                Return _PeriodicInvestment
             End Get
         End Property
 
+        <NonSerialized>
+        Private _AccumulatedCorpus As Double = Double.MinValue
         Public ReadOnly Property AccumulatedCorpus As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    If Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment < 0 Then
-                        Return 0
+                If _AccumulatedCorpus = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        If Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment < 0 Then
+                            _AccumulatedCorpus = 0
+                        Else
+                            _AccumulatedCorpus = Math.Round(Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment, 2)
+                        End If
                     Else
-                        Return Math.Round(Me.PreviousSignal.AccumulatedCorpus + Me.PeriodicInvestment, 2)
+                        _AccumulatedCorpus = 0
                     End If
-                Else
-                    Return 0
                 End If
+
+                Return _AccumulatedCorpus
             End Get
         End Property
 
+        <NonSerialized>
+        Private _NetGoing As Double = Double.MinValue
         Public ReadOnly Property NetGoing As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    If Me.AccumulatedCorpus > 0 Then
-                        Return 0
-                    Else
-                        If Me.PeriodicInvestment < 0 Then
-                            Return Math.Round(Math.Abs(Me.PeriodicInvestment + Me.PreviousSignal.AccumulatedCorpus), 2)
+                If _NetGoing = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        If Me.AccumulatedCorpus > 0 Then
+                            _NetGoing = 0
                         Else
-                            Return 0
+                            If Me.PeriodicInvestment < 0 Then
+                                _NetGoing = Math.Round(Math.Abs(Me.PeriodicInvestment + Me.PreviousSignal.AccumulatedCorpus), 2)
+                            Else
+                                _NetGoing = 0
+                            End If
                         End If
+                    Else
+                        _NetGoing = Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
                     End If
-                Else
-                    Return Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
                 End If
+
+                Return _NetGoing
             End Get
         End Property
 
+        <NonSerialized>
+        Private _TotalNetGoing As Double = Double.MinValue
         Public ReadOnly Property TotalNetGoing As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    Return Me.NetGoing + Me.PreviousSignal.TotalNetGoing
-                Else
-                    Return Me.NetGoing
+                If _TotalNetGoing = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        _TotalNetGoing = Me.NetGoing + Me.PreviousSignal.TotalNetGoing
+                    Else
+                        _TotalNetGoing = Me.NetGoing
+                    End If
                 End If
+
+                Return _TotalNetGoing
             End Get
         End Property
 
+        <NonSerialized>
+        Private _CurrentValue As Double = Double.MinValue
         Public ReadOnly Property CurrentValue As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    Dim totalTax As Decimal = 0
-                    If Me.SharesOwnedAfterRebalancing <> 0 Then
-                        totalTax = ParentStrategyInstrument.GetTotalTaxAndCharges(0, Me.ClosePrice, Me.SharesOwnedAfterRebalancing)
+                If _CurrentValue = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        Dim totalTax As Decimal = 0
+                        If Me.SharesOwnedAfterRebalancing <> 0 Then
+                            totalTax = ParentStrategyInstrument.GetTotalTaxAndCharges(0, Me.ClosePrice, Me.SharesOwnedAfterRebalancing)
+                        End If
+                        _CurrentValue = Math.Round(Me.ClosePrice * Me.SharesOwnedAfterRebalancing - totalTax, 2)
+                    Else
+                        _CurrentValue = Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
                     End If
-                    Return Math.Round(Me.ClosePrice * Me.SharesOwnedAfterRebalancing - totalTax, 2)
-                Else
-                    Return Math.Round(Math.Abs(Me.PeriodicInvestment), 2)
                 End If
+
+                Return _CurrentValue
             End Get
         End Property
 
@@ -656,23 +703,40 @@ Public Class NFOStrategyInstrument
             End Get
         End Property
 
+        <NonSerialized>
+        Private _ContinuousInvestmentNeeded As Double = Double.MinValue
         Public ReadOnly Property ContinuousInvestmentNeeded As Double
             Get
-                If Me.PreviousSignal IsNot Nothing Then
-                    If Me.PeriodicInvestment < 0 Then
-                        If Me.PreviousSignal.ContinuousInvestmentNeeded < 0 Then
-                            Return Math.Round(Me.PeriodicInvestment + Me.PreviousSignal.ContinuousInvestmentNeeded, 2)
+                If _ContinuousInvestmentNeeded = Double.MinValue Then
+                    If Me.PreviousSignal IsNot Nothing Then
+                        If Me.PeriodicInvestment < 0 Then
+                            If Me.PreviousSignal.ContinuousInvestmentNeeded < 0 Then
+                                _ContinuousInvestmentNeeded = Math.Round(Me.PeriodicInvestment + Me.PreviousSignal.ContinuousInvestmentNeeded, 2)
+                            Else
+                                _ContinuousInvestmentNeeded = Me.PeriodicInvestment
+                            End If
                         Else
-                            Return Me.PeriodicInvestment
+                            _ContinuousInvestmentNeeded = 0
                         End If
                     Else
-                        Return 0
+                        _ContinuousInvestmentNeeded = 0
                     End If
-                Else
-                    Return 0
                 End If
+
+                Return _ContinuousInvestmentNeeded
             End Get
         End Property
+
+        Public Sub SetDefaultValues()
+            _NoOfSharesOwnedBeforeRebalancing = Long.MinValue
+            _TotalInvested = Double.MinValue
+            _PeriodicInvestment = Double.MinValue
+            _AccumulatedCorpus = Double.MinValue
+            _NetGoing = Double.MinValue
+            _TotalNetGoing = Double.MinValue
+            _CurrentValue = Double.MinValue
+            _ContinuousInvestmentNeeded = Double.MinValue
+        End Sub
     End Class
 #End Region
 
