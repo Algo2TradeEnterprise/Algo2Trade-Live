@@ -81,6 +81,7 @@ Partial Class frmSignalDetails
         Me.chrtDetails.ChartAreas.Add(ChartArea1)
         Me.chrtDetails.ChartAreas.Add(ChartArea2)
         Me.chrtDetails.Dock = System.Windows.Forms.DockStyle.Fill
+        LegendItem1.BorderColor = System.Drawing.Color.Transparent
         LegendItem1.Color = System.Drawing.Color.Red
         LegendItem1.Name = "Investment"
         Legend1.CustomItems.Add(LegendItem1)
@@ -101,6 +102,7 @@ Partial Class frmSignalDetails
         Series2.Name = "Current Value Line"
         Series3.ChartArea = "ChartArea2"
         Series3.Color = System.Drawing.Color.ForestGreen
+        Series3.IsValueShownAsLabel = True
         Series3.Legend = "Legend1"
         Series3.LegendText = "Return"
         Series3.Name = "Investment/Return"
