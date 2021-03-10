@@ -143,8 +143,7 @@ Public Class NFOStrategy
 
     Private Async Function GetNSEEquityHolidaysAsync() As Task(Of List(Of Date))
         Dim ret As List(Of Date) = Nothing
-        Dim holidayURL As String = "https://www1.nseindia.com/global/content/market_timings_holidays/market_timings_holidays.jsp?pageName=0&dateRange=&fromDate={0}&toDate={1}&tabActive=trading&load=false"
-        Dim futureHolidayURL As String = String.Format(holidayURL, Now.ToString("dd-MM-yyyy"), Now.AddDays(15).ToString("dd-MM-yyyy"))
+        Dim holidayURL As String = "https://www.nseindia.com/products-services/equity-market-timings-holidays"
         Dim outputResponse As HtmlDocument = Nothing
         HttpBrowser.KillCookies()
         Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
@@ -155,17 +154,11 @@ Public Class NFOStrategy
 
             browser.KeepAlive = True
             Dim headersToBeSent As New Dictionary(Of String, String)
-            headersToBeSent.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+            headersToBeSent.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
             headersToBeSent.Add("Accept-Encoding", "gzip, deflate, br")
             headersToBeSent.Add("Accept-Language", "en-US,en;q=0.9")
-            headersToBeSent.Add("Host", "www1.nseindia.com")
-            headersToBeSent.Add("Sec-Fetch-Dest", "document")
-            headersToBeSent.Add("Upgrade-Insecure-Requests", "1")
-            headersToBeSent.Add("Sec-Fetch-Mode", "navigate")
-            headersToBeSent.Add("Sec-Fetch-Site", "none")
-            headersToBeSent.Add("Sec-Fetch-User", "?1")
 
-            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(futureHolidayURL, HttpMethod.Get, Nothing, False, headersToBeSent, True, "text/html").ConfigureAwait(False)
+            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(holidayURL, HttpMethod.Get, Nothing, False, headersToBeSent, True, "text/html").ConfigureAwait(False)
             If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
                 outputResponse = l.Item2
             End If
@@ -175,18 +168,23 @@ Public Class NFOStrategy
             RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         End Using
         If outputResponse IsNot Nothing AndAlso outputResponse.DocumentNode IsNot Nothing Then
-            If outputResponse.DocumentNode.SelectNodes("//table") IsNot Nothing AndAlso outputResponse.DocumentNode.SelectNodes("//table").Count = 1 Then
-                Dim table As HtmlNode = outputResponse.DocumentNode.SelectNodes("//table")(0)
-                If table IsNot Nothing And table.SelectNodes("tr") IsNot Nothing AndAlso table.SelectNodes("tr").Count > 1 Then
-                    _cts.Token.ThrowIfCancellationRequested()
-                    If table.SelectNodes("//td[@class='number']") IsNot Nothing AndAlso table.SelectNodes("//td[@class='number']").Count Then
-                        For Each runningData As HtmlNode In table.SelectNodes("//td[@class='number']")
-                            Dim holiday As Date = Date.ParseExact(runningData.InnerText, "dd-MMM-yyyy", Nothing)
-                            If ret Is Nothing Then ret = New List(Of Date)
-                            ret.Add(holiday)
-                        Next
+            If outputResponse.DocumentNode.SelectNodes("//table") IsNot Nothing AndAlso outputResponse.DocumentNode.SelectNodes("//table").Count > 0 Then
+                For Each runningTable As HtmlNode In outputResponse.DocumentNode.SelectNodes("//table")
+                    If runningTable.Id = "holidayTable" Then
+                        If runningTable.SelectNodes(".//tbody") IsNot Nothing AndAlso runningTable.SelectNodes(".//tbody").Count = 1 Then
+                            Dim tbody As HtmlNode = runningTable.SelectNodes(".//tbody")(0)
+                            If tbody.SelectNodes("tr") IsNot Nothing AndAlso tbody.SelectNodes("tr").Count > 0 Then
+                                For Each rows As HtmlNode In tbody.SelectNodes("tr")
+                                    If rows.SelectNodes("td") IsNot Nothing AndAlso rows.SelectNodes("td").Count > 1 Then
+                                        Dim holiday As Date = Date.ParseExact(rows.SelectNodes("td")(1).InnerText, "dd-MMM-yyyy", Nothing)
+                                        If ret Is Nothing Then ret = New List(Of Date)
+                                        ret.Add(holiday)
+                                    End If
+                                Next
+                            End If
+                        End If
                     End If
-                End If
+                Next
             End If
         End If
         Return ret
