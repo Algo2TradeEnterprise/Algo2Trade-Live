@@ -107,7 +107,7 @@ Public Class frmSignalDetails
                         If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
                             Me.chrtDetails.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), 0)
                         Else
-                            Me.chrtDetails.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.PeriodicInvestment)
+                            Me.chrtDetails.Series("Investment/Return").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), Math.Round(runningSignal.PeriodicInvestment, 0))
                         End If
 
                         payments.Add(runningSignal.PeriodicInvestment)
@@ -147,21 +147,16 @@ Public Class frmSignalDetails
                     Dim maxAccumulatedCorpus As Double = allSignalDetails.Values.Max(Function(x)
                                                                                          Return Math.Abs(x.AccumulatedCorpus)
                                                                                      End Function)
+                    Dim initialInvestment As Double = Math.Abs(allSignalDetails.FirstOrDefault.Value.PeriodicInvestment)
 
                     Dim a As New DataVisualization.Charting.TextAnnotation With {
                         .Alignment = ContentAlignment.TopLeft,
                         .X = 81,
                         .Y = 17.5,
-                        .Text = String.Format("XIRR: {1} %{0}{0}Wealth Build: {2}{0}{0}Total Invested: {3}{0}{0}Total Returned: {4}{0}{0}Absolute Return: {5} %{0}{0}Annualized Absolute Return: {6} %{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
-                                               vbNewLine,
-                                               (xirr).ToString("F"),
-                                               Math.Round(wealthBuild, 0),
-                                               Math.Round(totalInvested, 0),
-                                               Math.Round(totalReturned, 0),
-                                               (absoluteReturn).ToString("F"),
-                                               (annualizedAbsoluteReturn).ToString("F"),
-                                               Math.Round(maxOutflowNeeded, 0),
-                                               Math.Round(maxAccumulatedCorpus, 0))
+                        .Text = String.Format("Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}{0}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}",
+                                              vbNewLine, Math.Round(totalInvested, 0), Math.Round(wealthBuild + totalReturned, 0), absoluteReturn.ToString("F"), annualizedAbsoluteReturn.ToString("F"), xirr.ToString("F"),
+                                              "------------------------------------------",
+                                              Math.Round(maxOutflowNeeded, 0), Math.Round(maxAccumulatedCorpus, 0), Math.Round(totalInvested - initialInvestment, 0), Math.Round(totalReturned, 0), Math.Round(totalReturned - (totalInvested - initialInvestment), 0))
                     }
                     Me.chrtDetails.Annotations.Add(a)
 
