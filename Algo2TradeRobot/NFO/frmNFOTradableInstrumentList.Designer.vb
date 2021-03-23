@@ -47,7 +47,7 @@ Partial Class frmNFOTradableInstrumentList
         Me.pnlMainEMACrossoverTradableInstrumentList.Name = "pnlMainEMACrossoverTradableInstrumentList"
         Me.pnlMainEMACrossoverTradableInstrumentList.RowCount = 1
         Me.pnlMainEMACrossoverTradableInstrumentList.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.pnlMainEMACrossoverTradableInstrumentList.Size = New System.Drawing.Size(927, 470)
+        Me.pnlMainEMACrossoverTradableInstrumentList.Size = New System.Drawing.Size(1096, 470)
         Me.pnlMainEMACrossoverTradableInstrumentList.TabIndex = 5
         '
         'dgvTradableInstruments
@@ -89,17 +89,17 @@ Partial Class frmNFOTradableInstrumentList
         Me.dgvTradableInstruments.RowsDefaultCellStyle = DataGridViewCellStyle4
         Me.dgvTradableInstruments.RowTemplate.Height = 24
         Me.dgvTradableInstruments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect
-        Me.dgvTradableInstruments.Size = New System.Drawing.Size(779, 466)
+        Me.dgvTradableInstruments.Size = New System.Drawing.Size(922, 466)
         Me.dgvTradableInstruments.TabIndex = 2
         '
         'btnExit
         '
         Me.btnExit.AutoSize = True
         Me.btnExit.Dock = System.Windows.Forms.DockStyle.Top
-        Me.btnExit.Location = New System.Drawing.Point(789, 4)
+        Me.btnExit.Location = New System.Drawing.Point(932, 4)
         Me.btnExit.Margin = New System.Windows.Forms.Padding(4)
         Me.btnExit.Name = "btnExit"
-        Me.btnExit.Size = New System.Drawing.Size(134, 38)
+        Me.btnExit.Size = New System.Drawing.Size(160, 38)
         Me.btnExit.TabIndex = 3
         Me.btnExit.Text = "E&xit"
         Me.btnExit.UseVisualStyleBackColor = True
@@ -108,7 +108,7 @@ Partial Class frmNFOTradableInstrumentList
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(927, 470)
+        Me.ClientSize = New System.Drawing.Size(1096, 470)
         Me.Controls.Add(Me.pnlMainEMACrossoverTradableInstrumentList)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False

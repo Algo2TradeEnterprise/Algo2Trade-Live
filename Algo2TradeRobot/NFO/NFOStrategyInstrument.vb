@@ -228,9 +228,9 @@ Public Class NFOStrategyInstrument
                                         Dim minExpiry As Date = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Min(Function(x)
                                                                                                                                    If x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
                                                                                                                                        Dim expiry As Date = x.Expiry.Value
-                                                                                                                                       If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
-                                                                                                                                           expiry = x.Expiry.Value.AddDays(-2)
-                                                                                                                                       End If
+                                                                                                                                       'If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
+                                                                                                                                       '    expiry = x.Expiry.Value.AddDays(-2)
+                                                                                                                                       'End If
                                                                                                                                        If Now.Date < expiry.Date Then
                                                                                                                                            Return x.Expiry.Value
                                                                                                                                        ElseIf Now.Date = expiry.Date Then
@@ -422,6 +422,7 @@ Public Class NFOStrategyInstrument
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         Finally
+            If _ParentInstrument Then OnHeartbeat(String.Format("Strategy Instrument Stopped: {0}", Me.ToString))
             _strategyInstrumentRunning = False
         End Try
     End Function
@@ -473,7 +474,7 @@ Public Class NFOStrategyInstrument
                         _lastPrevPayloadPlaceOrder = ltRunningCandlePayload.PreviousPayload.ToString
                         logger.Debug("PlaceOrder-> LT Potential Signal Candle is:{0}. Will check rest parameters.", ltRunningCandlePayload.PreviousPayload.ToString)
                         logger.Debug("PlaceOrder-> HT Potential Signal Candle is:{0}. Will check rest parameters.", htRunningCandlePayload.PreviousPayload.ToString)
-                        logger.Debug("PlaceOrder-> Rest all parameters: LTRunningCandleTime:{0}, LTPayloadGeneratedBy:{1}, HTRunningCandleTime:{2}, HTPayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, IsFirstTimeInformationCollected:{5}, LT EMA({6}):{7}, LT EMA({8}):{9}, HT EMA({10}):{11}, HT EMA({12}):{13}, Exchange Start Time:{14}, Exchange End Time:{15}, Current Time:{16}, Is My Another Contract Available:{17}, Contract Rollover Time:{18}, TradingSymbol:{19}",
+                        logger.Debug("PlaceOrder-> Rest all parameters: LTRunningCandleTime:{0}, LTPayloadGeneratedBy:{1}, HTRunningCandleTime:{2}, HTPayloadGeneratedBy:{3}, IsHistoricalCompleted:{4}, IsFirstTimeInformationCollected:{5}, LT EMA({6}):{7}, LT EMA({8}):{9}, HT EMA({10}):{11}, HT EMA({12}):{13}, Exchange Start Time:{14}, Exchange End Time:{15}, Current Time:{16}, Is My Another Contract Available:{17}, Traded Quantity:{18}, Contract Rollover Time:{19}, TradingSymbol:{20}",
                                     ltRunningCandlePayload.SnapshotDateTime.ToString,
                                     ltRunningCandlePayload.PayloadGeneratedBy.ToString,
                                     htRunningCandlePayload.SnapshotDateTime.ToString,
@@ -492,6 +493,7 @@ Public Class NFOStrategyInstrument
                                     Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
                                     currentTime.ToString,
                                     IsMyAnotherContractAvailable(),
+                                    GetQuantityToTrade(),
                                     Me.TradableInstrument.ExchangeDetails.ContractRolloverTime.ToString,
                                     Me.TradableInstrument.TradingSymbol)
                     End If
@@ -555,9 +557,21 @@ Public Class NFOStrategyInstrument
             ElseIf currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso
                 ltRunningCandlePayload IsNot Nothing AndAlso ltRunningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso ltRunningCandlePayload.PreviousPayload IsNot Nothing AndAlso
                 htRunningCandlePayload IsNot Nothing AndAlso htRunningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso htRunningCandlePayload.PreviousPayload IsNot Nothing Then
-                If (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
-                    (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
-                    (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
+                Dim eligibleToCheckTrade As Boolean = False
+                If Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY" Then
+                    If (Me.TradableInstrument.Expiry.Value.Date <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
+                        (Me.TradableInstrument.Expiry.Value.Date <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
+                        (Me.TradableInstrument.Expiry.Value.Date = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
+                        eligibleToCheckTrade = True
+                    End If
+                Else
+                    If (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
+                        (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
+                        (Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
+                        eligibleToCheckTrade = True
+                    End If
+                End If
+                If eligibleToCheckTrade Then
                     If ltema1Consumer.ConsumerPayloads.ContainsKey(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                         ltema2Consumer.ConsumerPayloads.ContainsKey(ltRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
                         htema1Consumer.ConsumerPayloads.ContainsKey(htRunningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
@@ -769,7 +783,7 @@ Public Class NFOStrategyInstrument
     End Function
 
     Public Async Function ContractRolloverAsync() As Task
-        If Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date Then
+        If Me.TradableInstrument.Expiry.Value.Date.AddDays(-2) <= Now.Date Then
             Try
                 While True
                     If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
@@ -817,92 +831,95 @@ Public Class NFOStrategyInstrument
                         If Me.DependentOptionStrategyInstruments IsNot Nothing AndAlso
                             Me.DependentOptionStrategyInstruments.Count > 0 Then
                             Dim processOption As Boolean = False
-                            For Each runningInstrument In Me.DependentOptionStrategyInstruments
-                                If runningInstrument.TradableInstrument.Expiry.Value <> Me.TradableInstrument.Expiry.Value Then
-                                    If runningInstrument.TradableInstrument.Expiry.Value.Date = Now.Date Then
-                                        If runningInstrument.GetQuantityToTrade() > 0 Then
-                                            Try
-                                                logger.Debug("PlaceOrder-> ************************************************ {0}", runningInstrument.TradableInstrument.TradingSymbol)
-                                                logger.Debug("PlaceOrder-> Parameters: Force Exit for weekly contract rollover:{0}, TradingSymbol:{1}", True, runningInstrument.TradableInstrument.TradingSymbol)
-                                            Catch ex As Exception
-                                                logger.Error(ex)
-                                            End Try
-                                            Await runningInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularLimitCNCOrder, data:="SELL").ConfigureAwait(False)
-                                            If runningInstrument._Direction = IOrder.TypeOfTransaction.None Then
-                                                processOption = True
-                                            End If
-                                        End If
-                                    End If
-                                End If
-                            Next
-                            If processOption Then
-                                Dim optionInstrument As IInstrument = Nothing
-                                Dim minExpiry As Date = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Min(Function(x)
-                                                                                                                           If x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
-                                                                                                                               Dim expiry As Date = x.Expiry.Value
-                                                                                                                               If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
-                                                                                                                                   expiry = x.Expiry.Value.AddDays(-2)
-                                                                                                                               End If
-                                                                                                                               If Now.Date < expiry.Date Then
+                            Dim optionInstrument As IInstrument = Nothing
+                            Dim minExpiry As Date = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Min(Function(x)
+                                                                                                                       If x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
+                                                                                                                           Dim expiry As Date = x.Expiry.Value
+                                                                                                                           'If x.Expiry.Value = Me.TradableInstrument.Expiry.Value Then
+                                                                                                                           '    expiry = x.Expiry.Value.AddDays(-2)
+                                                                                                                           'End If
+                                                                                                                           If Now.Date < expiry.Date Then
+                                                                                                                               Return x.Expiry.Value
+                                                                                                                           ElseIf Now.Date = expiry.Date Then
+                                                                                                                               If Now < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime Then
                                                                                                                                    Return x.Expiry.Value
-                                                                                                                               ElseIf Now.Date = expiry.Date Then
-                                                                                                                                   If Now < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime Then
-                                                                                                                                       Return x.Expiry.Value
-                                                                                                                                   Else
-                                                                                                                                       Return Date.MaxValue
-                                                                                                                                   End If
                                                                                                                                Else
                                                                                                                                    Return Date.MaxValue
                                                                                                                                End If
                                                                                                                            Else
                                                                                                                                Return Date.MaxValue
                                                                                                                            End If
-                                                                                                                       End Function)
+                                                                                                                       Else
+                                                                                                                           Return Date.MaxValue
+                                                                                                                       End If
+                                                                                                                   End Function)
 
-                                If Me.GetQuantityToTrade() > 0 Then
-                                    Dim stockPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
-                                    Dim otmPutStrike As Decimal = stockPrice - (stockPrice * userInputs.StrikePriceRangePercentage / 100)
+                            If Me.GetQuantityToTrade() > 0 Then
+                                Dim stockPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
+                                Dim otmPutStrike As Decimal = stockPrice - (stockPrice * userInputs.StrikePriceRangePercentage / 100)
 
-                                    optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
-                                                                                                                            Return x.Strike <= otmPutStrike AndAlso x.RawInstrumentType = "PE" AndAlso
+                                optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
+                                                                                                                        Return x.Strike <= otmPutStrike AndAlso x.RawInstrumentType = "PE" AndAlso
                                                                                                                                   x.Expiry.Value.Date = minExpiry.Date AndAlso x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
-                                                                                                                        End Function).OrderBy(Function(y)
-                                                                                                                                                  Return y.Strike
-                                                                                                                                              End Function).LastOrDefault
-                                ElseIf Me.GetQuantityToTrade < 0 Then
-                                    Dim stockPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
-                                    Dim otmCallStrike As Decimal = stockPrice + (stockPrice * userInputs.StrikePriceRangePercentage / 100)
+                                                                                                                    End Function).OrderBy(Function(y)
+                                                                                                                                              Return y.Strike
+                                                                                                                                          End Function).LastOrDefault
+                            ElseIf Me.GetQuantityToTrade < 0 Then
+                                Dim stockPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
+                                Dim otmCallStrike As Decimal = stockPrice + (stockPrice * userInputs.StrikePriceRangePercentage / 100)
 
-                                    optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
-                                                                                                                            Return x.Strike >= otmCallStrike AndAlso x.RawInstrumentType = "CE" AndAlso
+                                optionInstrument = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments.Where(Function(x)
+                                                                                                                        Return x.Strike >= otmCallStrike AndAlso x.RawInstrumentType = "CE" AndAlso
                                                                                                                                   x.Expiry.Value.Date = minExpiry.Date AndAlso x.RawInstrumentName = Me.TradableInstrument.RawInstrumentName
-                                                                                                                        End Function).OrderBy(Function(y)
-                                                                                                                                                  Return y.Strike
-                                                                                                                                              End Function).FirstOrDefault
+                                                                                                                    End Function).OrderBy(Function(y)
+                                                                                                                                              Return y.Strike
+                                                                                                                                          End Function).FirstOrDefault
+                            End If
+                            If optionInstrument IsNot Nothing Then
+                                Dim otmStrategyInstrument As NFOStrategyInstrument = Nothing
+                                If Me.DependentOptionStrategyInstruments IsNot Nothing AndAlso Me.DependentOptionStrategyInstruments.Count > 0 Then
+                                    otmStrategyInstrument = DependentOptionStrategyInstruments.ToList.Find(Function(x)
+                                                                                                               Return x.TradableInstrument.TradingSymbol = optionInstrument.TradingSymbol
+                                                                                                           End Function)
                                 End If
-                                If optionInstrument IsNot Nothing Then
-                                    Dim otmStrategyInstrument As NFOStrategyInstrument = Nothing
-                                    If Me.DependentOptionStrategyInstruments IsNot Nothing AndAlso Me.DependentOptionStrategyInstruments.Count > 0 Then
-                                        otmStrategyInstrument = DependentOptionStrategyInstruments.ToList.Find(Function(x)
-                                                                                                                   Return x.TradableInstrument.TradingSymbol = optionInstrument.TradingSymbol
-                                                                                                               End Function)
-                                    End If
-                                    If otmStrategyInstrument Is Nothing Then
-                                        Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {optionInstrument}).ConfigureAwait(False)
-                                        otmStrategyInstrument = DependentOptionStrategyInstruments.ToList.Find(Function(x)
-                                                                                                                   Return x.TradableInstrument.TradingSymbol = optionInstrument.TradingSymbol
-                                                                                                               End Function)
-                                    End If
-                                    If otmStrategyInstrument IsNot Nothing Then
-                                        Try
-                                            logger.Debug("PlaceOrder-> ************************************************ {0}", otmStrategyInstrument.TradableInstrument.TradingSymbol)
-                                            logger.Debug("PlaceOrder-> Parameters: Force Entry for weekly contract rollover:{0}, TradingSymbol:{1}", True, otmStrategyInstrument.TradableInstrument.TradingSymbol)
-                                        Catch ex As Exception
-                                            logger.Error(ex)
-                                        End Try
-                                        Await otmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularLimitCNCOrder, data:="BUY").ConfigureAwait(False)
+                                If otmStrategyInstrument Is Nothing Then
+                                    Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {optionInstrument}).ConfigureAwait(False)
+                                    otmStrategyInstrument = DependentOptionStrategyInstruments.ToList.Find(Function(x)
+                                                                                                               Return x.TradableInstrument.TradingSymbol = optionInstrument.TradingSymbol
+                                                                                                           End Function)
+                                End If
+                                If otmStrategyInstrument IsNot Nothing Then
+                                    Try
+                                        logger.Debug("PlaceOrder-> ************************************************ {0}", otmStrategyInstrument.TradableInstrument.TradingSymbol)
+                                        logger.Debug("PlaceOrder-> Parameters: Force Entry for weekly contract rollover:{0}, TradingSymbol:{1}", True, otmStrategyInstrument.TradableInstrument.TradingSymbol)
+                                    Catch ex As Exception
+                                        logger.Error(ex)
+                                    End Try
+                                    Await otmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularLimitCNCOrder, data:="BUY").ConfigureAwait(False)
+                                    If otmStrategyInstrument._Direction = IOrder.TypeOfTransaction.None Then
+                                        processOption = True
                                     End If
                                 End If
+                            End If
+                            If processOption Then
+                                For Each runningInstrument In Me.DependentOptionStrategyInstruments
+                                    If runningInstrument.TradableInstrument.Expiry.Value <> Me.TradableInstrument.Expiry.Value Then
+                                        If runningInstrument.TradableInstrument.Expiry.Value.Date = Now.Date Then
+                                            If runningInstrument.GetQuantityToTrade() > 0 Then
+                                                Try
+                                                    logger.Debug("PlaceOrder-> ************************************************ {0}", runningInstrument.TradableInstrument.TradingSymbol)
+                                                    logger.Debug("PlaceOrder-> Parameters: Force Exit for weekly contract rollover:{0}, TradingSymbol:{1}", True, runningInstrument.TradableInstrument.TradingSymbol)
+                                                Catch ex As Exception
+                                                    logger.Error(ex)
+                                                End Try
+                                                Await runningInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularLimitCNCOrder, data:="SELL").ConfigureAwait(False)
+                                                If runningInstrument._Direction = IOrder.TypeOfTransaction.None Then
+                                                    processOption = True
+                                                End If
+                                            End If
+                                        End If
+                                    End If
+                                Next
                             End If
                         End If
                         Exit While

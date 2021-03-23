@@ -54,6 +54,7 @@ Public Class NFOStrategy
                                                                                                      End Function)
 
                     If allTradableInstruments IsNot Nothing AndAlso allTradableInstruments.Count > 0 Then
+                        'NIFTY & BANKNIFTY expired on the expiry day but others expired on 2 days before expiry
                         Dim minExpiry As Date = allTradableInstruments.Min(Function(x)
                                                                                If x.Expiry.Value.Date.AddDays(-2) >= Now.Date Then
                                                                                    Return x.Expiry.Value
@@ -61,6 +62,15 @@ Public Class NFOStrategy
                                                                                    Return Date.MaxValue
                                                                                End If
                                                                            End Function)
+                        If instrument.Key.ToUpper = "BANKNIFTY" OrElse instrument.Key.ToUpper = "NIFTY" Then
+                            minExpiry = allTradableInstruments.Min(Function(x)
+                                                                       If x.Expiry.Value.Date >= Now.Date Then
+                                                                           Return x.Expiry.Value
+                                                                       Else
+                                                                           Return Date.MaxValue
+                                                                       End If
+                                                                   End Function)
+                        End If
 
                         runningTradableInstrument = allTradableInstruments.Find(Function(x)
                                                                                     Return x.Expiry = minExpiry
@@ -84,7 +94,17 @@ Public Class NFOStrategy
                                 End If
                             End If
 
-                            If runningTradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date Then
+                            Dim takeNextMonthContract As Boolean = False
+                            If instrument.Key.ToUpper = "BANKNIFTY" OrElse instrument.Key.ToUpper = "NIFTY" Then
+                                If runningTradableInstrument.Expiry.Value.Date = Now.Date Then
+                                    takeNextMonthContract = True
+                                End If
+                            Else
+                                If runningTradableInstrument.Expiry.Value.Date.AddDays(-2) = Now.Date Then
+                                    takeNextMonthContract = True
+                                End If
+                            End If
+                            If takeNextMonthContract Then
                                 Dim nextMinExpiry As Date = allTradableInstruments.Min(Function(x)
                                                                                            If x.Expiry.Value.Date.AddDays(-2) > Now.Date Then
                                                                                                Return x.Expiry.Value

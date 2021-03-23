@@ -43,7 +43,7 @@
             dt.Columns.Add("Instrument Type")
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
-            dt.Columns.Add("Tick Size")
+            dt.Columns.Add("Running")
             dt.Columns.Add("StrategyInstrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
@@ -53,7 +53,7 @@
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
-                row("Tick Size") = instrument.TradableInstrument.TickSize
+                row("Running") = instrument.StrategyInstrumentRunning
                 row("StrategyInstrument") = instrument
                 dt.Rows.Add(row)
             Next
