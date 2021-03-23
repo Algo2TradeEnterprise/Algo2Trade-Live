@@ -4,6 +4,7 @@ Imports System.Threading
 Imports System.Windows.Forms.DataVisualization.Charting
 
 Public Class frmSignalDetails
+    Private _telegramCtr As Long = 0
     Private _cts As CancellationTokenSource
     Private ReadOnly _strategyInstrument As NFOStrategyInstrument
     Public Sub New(ByVal runningInstrument As NFOStrategyInstrument, ByVal canceller As CancellationTokenSource)
@@ -152,11 +153,13 @@ Public Class frmSignalDetails
                     Dim a As New DataVisualization.Charting.TextAnnotation With {
                         .Alignment = ContentAlignment.TopLeft,
                         .X = 81,
-                        .Y = 17.5,
-                        .Text = String.Format("Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}{0}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}",
+                        .Y = 20,
+                        .Text = String.Format("Current Investment/Return: {13}{0}{12}{0}Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
                                               vbNewLine, Math.Round(totalInvested, 0), Math.Round(wealthBuild + totalReturned, 0), absoluteReturn.ToString("F"), annualizedAbsoluteReturn.ToString("F"), xirr.ToString("F"),
                                               "------------------------------------------",
-                                              Math.Round(maxOutflowNeeded, 0), Math.Round(maxAccumulatedCorpus, 0), Math.Round(totalInvested - initialInvestment, 0), Math.Round(totalReturned, 0), Math.Round(totalReturned - (totalInvested - initialInvestment), 0))
+                                              Math.Round(maxOutflowNeeded, 0), Math.Round(maxAccumulatedCorpus, 0), Math.Round(totalInvested - initialInvestment, 0), Math.Round(totalReturned, 0), Math.Round(totalReturned - (totalInvested - initialInvestment), 0),
+                                              "------------------------------------------",
+                                              Math.Round(allSignalDetails.LastOrDefault.Value.PeriodicInvestment, 0))
                     }
                     Me.chrtDetails.Annotations.Add(a)
 
@@ -237,12 +240,13 @@ Public Class frmSignalDetails
             Dim userInputs As NFOUserInputs = _strategyInstrument.ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso
                 userInputs.TelegramTradeChatID IsNot Nothing AndAlso Not userInputs.TelegramTradeChatID.Trim = "" Then
+                _telegramCtr += 1
                 Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramTradeChatID.Trim, _cts)
                     Using stream As New System.IO.MemoryStream()
                         Me.chrtDetails.SaveImage(stream, ChartImageFormat.Jpeg)
                         stream.Position = 0
 
-                        Await tSender.SendDocumentGetAsync(stream, String.Format("{0}-Details Chart {1}.jpeg", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))).ConfigureAwait(False)
+                        Await tSender.SendDocumentGetAsync(stream, String.Format("{0}-Details Chart({1}) {2}.jpeg", _strategyInstrument.TradableInstrument.TradingSymbol, _telegramCtr, Now.ToString("HHmmss"))).ConfigureAwait(False)
                     End Using
                 End Using
             End If
