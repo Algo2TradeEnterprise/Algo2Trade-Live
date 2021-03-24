@@ -1,3 +1,4 @@
-Trading Symbol,Trading Day
-RELIANCE,Thursday
-HINDUNILVR,Friday
+Trading Symbol,Trading Day,Daily/Weekly
+RELIANCE,Thursday,D
+HINDUNILVR,Friday,D
+ITC,Monday,D

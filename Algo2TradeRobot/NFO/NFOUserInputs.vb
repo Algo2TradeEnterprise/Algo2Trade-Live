@@ -35,6 +35,7 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
         Public Property TradingDay As String
+        Public Property RunDaily As Boolean
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -47,9 +48,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "TRADING DAY"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "TRADING DAY", "DAILY/WEEKLY"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 2
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -61,6 +62,7 @@ Public Class NFOUserInputs
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
                             Dim tradingDay As String = Nothing
+                            Dim dailyRun As Boolean = False
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -80,6 +82,20 @@ Public Class NFOUserInputs
                                             Throw New ApplicationException(String.Format("Trading Day Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        Dim tradindType As String = instrumentDetails(rowCtr, columnCtr)
+                                        If tradindType.Trim.ToUpper = "D" Then
+                                            dailyRun = True
+                                        Else
+                                            dailyRun = False
+                                        End If
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Daily/Weekly Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
@@ -87,6 +103,7 @@ Public Class NFOUserInputs
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
                                     .TradingDay = tradingDay.ToUpper
+                                    .RunDaily = dailyRun
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then

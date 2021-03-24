@@ -29,6 +29,7 @@ Partial Class frmSignalDetails
         Dim Series1 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim Series2 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
         Dim Series3 As System.Windows.Forms.DataVisualization.Charting.Series = New System.Windows.Forms.DataVisualization.Charting.Series()
+        Dim Title1 As System.Windows.Forms.DataVisualization.Charting.Title = New System.Windows.Forms.DataVisualization.Charting.Title()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmSignalDetails))
         Me.dgvSignalDetails = New System.Windows.Forms.DataGridView()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
@@ -102,7 +103,6 @@ Partial Class frmSignalDetails
         Series2.Name = "Current Value Line"
         Series3.ChartArea = "ChartArea2"
         Series3.Color = System.Drawing.Color.ForestGreen
-        Series3.IsValueShownAsLabel = True
         Series3.Legend = "Legend1"
         Series3.LegendText = "Return"
         Series3.Name = "Investment/Return"
@@ -112,6 +112,10 @@ Partial Class frmSignalDetails
         Me.chrtDetails.Size = New System.Drawing.Size(1459, 623)
         Me.chrtDetails.TabIndex = 1
         Me.chrtDetails.Text = "Details"
+        Title1.Font = New System.Drawing.Font("Microsoft Sans Serif", 10.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Title1.Name = "Title1"
+        Title1.Text = "Instrument Name"
+        Me.chrtDetails.Titles.Add(Title1)
         '
         'tlpExport
         '

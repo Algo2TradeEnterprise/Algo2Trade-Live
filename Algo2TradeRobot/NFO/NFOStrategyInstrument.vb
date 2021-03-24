@@ -19,9 +19,9 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Event and Handler"
-    Public Event EndOfTheDay()
-    Protected Overridable Sub OnEndOfTheDay()
-        RaiseEvent EndOfTheDay()
+    Public Event GenerateGraph()
+    Protected Overridable Sub OnGenerateGraph()
+        RaiseEvent GenerateGraph()
     End Sub
 #End Region
 
@@ -140,6 +140,68 @@ Public Class NFOStrategyInstrument
 
                 If eligibleToTakeTrade Then
                     GetLastSignalDetails(Now.Date)
+#Region "Manual Entry"
+                    'If Me.TradableInstrument.TradingSymbol = "RELIANCE" Then
+                    '    Dim closeDict As Dictionary(Of Date, Decimal) = New Dictionary(Of Date, Decimal) From {
+                    '        {New Date(2020, 12, 24), 1993.45},
+                    '        {New Date(2020, 12, 31), 1980.3},
+                    '        {New Date(2021, 1, 7), 1911},
+                    '        {New Date(2021, 1, 14), 1959.1},
+                    '        {New Date(2021, 1, 21), 2105.15},
+                    '        {New Date(2021, 1, 28), 1876.75},
+                    '        {New Date(2021, 2, 4), 1923},
+                    '        {New Date(2021, 2, 11), 2060.2},
+                    '        {New Date(2021, 2, 18), 2064.9},
+                    '        {New Date(2021, 2, 25), 2147.75},
+                    '        {New Date(2021, 3, 4), 2174},
+                    '        {New Date(2021, 3, 12), 2135.85},
+                    '        {New Date(2021, 3, 18), 2010.9}
+                    '    }
+                    '    Dim entryDict As Dictionary(Of Date, Decimal) = New Dictionary(Of Date, Decimal) From {
+                    '        {New Date(2020, 12, 24), 1993.45},
+                    '        {New Date(2020, 12, 31), 1980.65},
+                    '        {New Date(2021, 1, 7), 1911.5},
+                    '        {New Date(2021, 1, 14), 1958.3},
+                    '        {New Date(2021, 1, 21), 2105.05},
+                    '        {New Date(2021, 1, 28), 1876.3},
+                    '        {New Date(2021, 2, 4), 1922.01},
+                    '        {New Date(2021, 2, 11), 2060.35},
+                    '        {New Date(2021, 2, 18), 2064.9},
+                    '        {New Date(2021, 2, 25), 2148},
+                    '        {New Date(2021, 3, 4), 2174},
+                    '        {New Date(2021, 3, 12), 2135.85},
+                    '        {New Date(2021, 3, 18), 2011}
+                    '    }
+
+                    '    Dim holidays As List(Of Date) = New List(Of Date) From {
+                    '        New Date(2021, 3, 11), New Date(2021, 1, 26), New Date(2020, 12, 25)
+                    '    }
+
+                    '    Dim startDate As Date = New Date(2020, 12, 24)
+                    '    While startDate.Date <= Now.Date
+                    '        If Not startDate.DayOfWeek = DayOfWeek.Saturday AndAlso
+                    '            Not startDate.DayOfWeek = DayOfWeek.Sunday AndAlso
+                    '            Not holidays.Contains(startDate.Date) Then
+                    '            Dim lastSignal As NFOStrategyInstrument.SignalDetails = Me.GetLastSignalDetails(Now.Date)
+                    '            Dim desireValue As Double = CType(Me.ParentStrategy.UserSettings, NFOUserInputs).InitialInvestment
+                    '            If lastSignal IsNot Nothing Then
+                    '                If lastSignal.MainTradingDay Then
+                    '                    desireValue = lastSignal.DesireValue + CType(Me.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
+                    '                Else
+                    '                    desireValue = lastSignal.DesireValue
+                    '                End If
+                    '            End If
+                    '            If closeDict.ContainsKey(startDate.Date) Then
+                    '                SetSignalDetails(startDate.Date, closeDict(startDate.Date), entryDict(startDate.Date), desireValue, True, True)
+                    '            Else
+                    '                SetSignalDetails(startDate.Date, 0, 0, desireValue, False, True)
+                    '            End If
+                    '        End If
+                    '        startDate = startDate.AddDays(1)
+                    '    End While
+                    '    MsgBox("Done")
+                    'End If
+#End Region
                     While True
                         If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw Me.ParentStrategy.ParentController.OrphanException
@@ -153,16 +215,13 @@ Public Class NFOStrategyInstrument
 
                         If _tempSignal IsNot Nothing Then
                             If _tempSignal.NoOfSharesToBuy = 0 Then
-                                SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue)
+                                SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                 _tempSignal = Nothing
                                 _entryDoneForTheDay = True
-
-                                Dim frmDtls As New frmSignalDetails(Me, _cts)
-                                OnEndOfTheDay()
                             Else
                                 Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
                                 If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                                    SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue)
+                                    SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                     _tempSignal = Nothing
                                     _entryDoneForTheDay = True
                                 End If
@@ -184,32 +243,6 @@ Public Class NFOStrategyInstrument
                         End If
                         'Place Order block end
                         _cts.Token.ThrowIfCancellationRequested()
-
-                        If Now > Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.AddMinutes(1) AndAlso Not _eodMessageSend AndAlso Not TakeTradeToday Then
-                            _eodMessageSend = True
-
-                            Dim lastSignal As SignalDetails = GetLastSignalDetails(Now.Date)
-                            Dim desireValue As Double = userSettings.InitialInvestment
-                            If lastSignal IsNot Nothing Then
-                                desireValue = lastSignal.DesireValue + userSettings.ExpectedIncreaseEachPeriod
-                            End If
-                            Dim eodSignal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, Now.Date, Me.TradableInstrument.LastTick.LastPrice, Me.TradableInstrument.LastTick.LastPrice, desireValue)
-                            Dim eodMessage As String = Nothing
-                            eodMessage = String.Format("EOD Alert: Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
-                                                        eodSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
-                                                        eodSignal.DesireValue,
-                                                        eodSignal.NoOfSharesOwnedBeforeRebalancing,
-                                                        eodSignal.ClosePrice,
-                                                        eodSignal.TotalValueBeforeRebalancing,
-                                                        eodSignal.DesireValue,
-                                                        eodSignal.TotalValueBeforeRebalancing,
-                                                        eodSignal.AmountToInvest,
-                                                        eodSignal.NoOfSharesToBuy)
-                            SendTradeAlertMessageAsync(eodMessage)
-
-                            Dim frmDtls As New frmSignalDetails(Me, _cts)
-                            OnEndOfTheDay()
-                        End If
 
                         Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     End While
@@ -292,57 +325,61 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
             End If
-            If Me.TakeTradeToday Then
-                If currentTime >= userSettings.TradeEntryTime AndAlso _lastTick IsNot Nothing AndAlso Not _entryDoneForTheDay Then
-                    log = True
-                    Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
-                    signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date
-                    signalCandle.OpenPrice.Value = _lastTick.LastPrice
-                    signalCandle.LowPrice.Value = _lastTick.LastPrice
-                    signalCandle.HighPrice.Value = _lastTick.LastPrice
-                    signalCandle.ClosePrice.Value = _lastTick.LastPrice
-                    signalCandle.Volume.Value = _lastTick.Volume
-                    If signalCandle IsNot Nothing Then
-                        Dim lastSignal As SignalDetails = GetLastSignalDetails(signalCandle.SnapshotDateTime)
-                        Dim desireValue As Double = userSettings.InitialInvestment
-                        If lastSignal IsNot Nothing Then
+            'If Me.TakeTradeToday Then
+            If currentTime >= userSettings.TradeEntryTime AndAlso _lastTick IsNot Nothing AndAlso Not _entryDoneForTheDay Then
+                log = True
+                Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
+                signalCandle.SnapshotDateTime = _lastTick.Timestamp.Value.Date
+                signalCandle.OpenPrice.Value = _lastTick.LastPrice
+                signalCandle.LowPrice.Value = _lastTick.LastPrice
+                signalCandle.HighPrice.Value = _lastTick.LastPrice
+                signalCandle.ClosePrice.Value = _lastTick.LastPrice
+                signalCandle.Volume.Value = _lastTick.Volume
+                If signalCandle IsNot Nothing Then
+                    Dim lastSignal As SignalDetails = GetLastSignalDetails(signalCandle.SnapshotDateTime)
+                    Dim desireValue As Double = userSettings.InitialInvestment
+                    If lastSignal IsNot Nothing Then
+                        If lastSignal.MainTradingDay Then
                             desireValue = lastSignal.DesireValue + userSettings.ExpectedIncreaseEachPeriod
+                        Else
+                            desireValue = lastSignal.DesireValue
                         End If
-                        _tempSignal = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, signalCandle.SnapshotDateTime, signalCandle.ClosePrice.Value, 0, desireValue)
-                        Dim quantity As Decimal = _tempSignal.NoOfSharesToBuy
-                        If quantity > 0 Then
-                            parameters = New PlaceOrderParameters(signalCandle) With
-                                         {
-                                            .EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                            .OrderType = IOrder.TypeOfOrder.Market,
-                                            .Quantity = quantity
-                                         }
-                        ElseIf quantity < 0 Then
-                            parameters = New PlaceOrderParameters(signalCandle) With
-                                         {
-                                            .EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                            .OrderType = IOrder.TypeOfOrder.Market,
-                                            .Quantity = Math.Abs(quantity)
-                                         }
-                        End If
-                        If log AndAlso Not forcePrint Then
-                            Dim remarks As String = String.Format("Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
-                                                                  _tempSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
-                                                                  _tempSignal.DesireValue,
-                                                                  _tempSignal.NoOfSharesOwnedBeforeRebalancing,
-                                                                  _tempSignal.ClosePrice,
-                                                                  _tempSignal.TotalValueBeforeRebalancing,
-                                                                  _tempSignal.DesireValue,
-                                                                  _tempSignal.TotalValueBeforeRebalancing,
-                                                                  _tempSignal.AmountToInvest,
-                                                                  _tempSignal.NoOfSharesToBuy)
+                    End If
+                    _tempSignal = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, signalCandle.SnapshotDateTime, signalCandle.ClosePrice.Value, 0, desireValue, Me.TakeTradeToday, userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).RunDaily)
+                    Dim quantity As Decimal = _tempSignal.NoOfSharesToBuy
+                    If quantity > 0 Then
+                        parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                        .OrderType = IOrder.TypeOfOrder.Market,
+                                        .Quantity = quantity
+                                     }
+                    ElseIf quantity < 0 Then
+                        parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                        .OrderType = IOrder.TypeOfOrder.Market,
+                                        .Quantity = Math.Abs(quantity)
+                                     }
+                    End If
+                    If log AndAlso Not forcePrint Then
+                        Dim remarks As String = String.Format("Date={0}, Desire Value={1}, Total Value Before Rebalancing=(No. of Shares Owned Before Rebalancing[{2}]*Close Price[{3}])={4}, So Amount to Invest=(Desire Value[{5}]-Total Value Before Rebalancing[{6}])={7}, So No. of Shares To Buy/Sell={8}",
+                                                              _tempSignal.SnapshotDate.ToString("dd-MMM-yyyy"),
+                                                              _tempSignal.DesireValue,
+                                                              _tempSignal.NoOfSharesOwnedBeforeRebalancing,
+                                                              _tempSignal.ClosePrice,
+                                                              _tempSignal.TotalValueBeforeRebalancing,
+                                                              _tempSignal.DesireValue,
+                                                              _tempSignal.TotalValueBeforeRebalancing,
+                                                              _tempSignal.AmountToInvest,
+                                                              _tempSignal.NoOfSharesToBuy)
 
-                            logger.Fatal(remarks)
-                            SendTradeAlertMessageAsync(remarks)
-                        End If
+                        logger.Fatal(remarks)
+                        SendTradeAlertMessageAsync(remarks)
                     End If
                 End If
             End If
+            'End If
         End If
 
         'Below portion have to be done in every place order trigger
@@ -463,12 +500,12 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Public Function SetSignalDetails(ByVal snapshotDate As Date, ByVal closePrice As Decimal, ByVal entryPrice As Decimal, ByVal desireValue As Double) As Boolean
+    Public Function SetSignalDetails(ByVal snapshotDate As Date, ByVal closePrice As Decimal, ByVal entryPrice As Decimal, ByVal desireValue As Double, ByVal mainTradingDay As Boolean, ByVal runDaily As Boolean) As Boolean
         Dim ret As Boolean = False
         If _allSignalDetails Is Nothing Then _allSignalDetails = New Dictionary(Of Date, SignalDetails)
         If Not _allSignalDetails.ContainsKey(snapshotDate) Then
             Dim lastSignal As SignalDetails = GetLastSignalDetails(snapshotDate)
-            Dim signal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue)
+            Dim signal As SignalDetails = New SignalDetails(Me, lastSignal, Me.TradableInstrument.TradingSymbol, snapshotDate, closePrice, entryPrice, desireValue, mainTradingDay, runDaily)
             _allSignalDetails.Add(signal.SnapshotDate, signal)
 
             Dim remarks As String = String.Format("Date={0}, {1}, No. of Shares Owned After Rebalancing={2}, Total Invested=(Previous Profit Adjusted Investment[{3}]+Entry Price[{4}]*No. of Shares To Buy[{5}]={6})",
@@ -486,7 +523,7 @@ Public Class NFOStrategyInstrument
             ret = True
 
             Dim frmDtls As New frmSignalDetails(Me, _cts)
-            OnEndOfTheDay()
+            OnGenerateGraph()
         End If
         Return ret
     End Function
@@ -511,7 +548,9 @@ Public Class NFOStrategyInstrument
                        ByVal snapshotDate As Date,
                        ByVal closePrice As Decimal,
                        ByVal entryPrice As Decimal,
-                       ByVal desireValue As Double)
+                       ByVal desireValue As Double,
+                       ByVal mainTradingDay As Boolean,
+                       ByVal runDaily As Boolean)
             Me.ParentStrategyInstrument = parentStrategyInstrument
             Me.PreviousSignal = previousSignal
             Me.TradingSymbol = tradingSymbol
@@ -519,6 +558,8 @@ Public Class NFOStrategyInstrument
             Me.ClosePrice = closePrice
             Me.EntryPrice = Math.Round(entryPrice, 2)
             Me.DesireValue = Math.Round(desireValue, 2)
+            Me.MainTradingDay = mainTradingDay
+            Me.RunDaily = runDaily
 
             _NoOfSharesOwnedBeforeRebalancing = Long.MinValue
             _TotalInvested = Double.MinValue
@@ -537,6 +578,10 @@ Public Class NFOStrategyInstrument
         Public ReadOnly Property ClosePrice As Decimal
 
         Public ReadOnly Property EntryPrice As Decimal
+
+        Public ReadOnly Property MainTradingDay As Boolean
+
+        Public ReadOnly Property RunDaily As Boolean
 
         Public ReadOnly Property DesireValue As Double
 
@@ -574,7 +619,15 @@ Public Class NFOStrategyInstrument
 
         Public ReadOnly Property NoOfSharesToBuy As Long
             Get
-                Return Math.Ceiling(Me.AmountToInvest / Me.ClosePrice)
+                If Me.MainTradingDay Then
+                    Return Math.Ceiling(Me.AmountToInvest / Me.ClosePrice)
+                Else
+                    If Me.RunDaily Then
+                        Return Math.Min(0, Math.Ceiling(Me.AmountToInvest / Me.ClosePrice))
+                    Else
+                        Return 0
+                    End If
+                End If
             End Get
         End Property
 

@@ -27,12 +27,14 @@ Partial Class frmInsertSignal
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.btnInsert = New System.Windows.Forms.Button()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtClosePrice = New System.Windows.Forms.TextBox()
+        Me.lblClosePrice = New System.Windows.Forms.Label()
         Me.txtEntryPrice = New System.Windows.Forms.TextBox()
         Me.lblEntryPrice = New System.Windows.Forms.Label()
         Me.dtpckrTradingDate = New System.Windows.Forms.DateTimePicker()
         Me.lblTradingDate = New System.Windows.Forms.Label()
-        Me.txtClosePrice = New System.Windows.Forms.TextBox()
-        Me.lblClosePrice = New System.Windows.Forms.Label()
+        Me.lblMainTradingDay = New System.Windows.Forms.Label()
+        Me.chkMainTradingDay = New System.Windows.Forms.CheckBox()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -58,6 +60,8 @@ Partial Class frmInsertSignal
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.chkMainTradingDay)
+        Me.GroupBox1.Controls.Add(Me.lblMainTradingDay)
         Me.GroupBox1.Controls.Add(Me.txtClosePrice)
         Me.GroupBox1.Controls.Add(Me.lblClosePrice)
         Me.GroupBox1.Controls.Add(Me.txtEntryPrice)
@@ -68,16 +72,35 @@ Partial Class frmInsertSignal
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(388, 109)
+        Me.GroupBox1.Size = New System.Drawing.Size(388, 141)
         Me.GroupBox1.TabIndex = 53
         Me.GroupBox1.TabStop = False
         '
+        'txtClosePrice
+        '
+        Me.txtClosePrice.Location = New System.Drawing.Point(149, 48)
+        Me.txtClosePrice.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtClosePrice.Name = "txtClosePrice"
+        Me.txtClosePrice.Size = New System.Drawing.Size(226, 22)
+        Me.txtClosePrice.TabIndex = 2
+        Me.txtClosePrice.Tag = "Entry Price"
+        '
+        'lblClosePrice
+        '
+        Me.lblClosePrice.AutoSize = True
+        Me.lblClosePrice.Location = New System.Drawing.Point(9, 50)
+        Me.lblClosePrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblClosePrice.Name = "lblClosePrice"
+        Me.lblClosePrice.Size = New System.Drawing.Size(79, 17)
+        Me.lblClosePrice.TabIndex = 55
+        Me.lblClosePrice.Text = "Close Price"
+        '
         'txtEntryPrice
         '
-        Me.txtEntryPrice.Location = New System.Drawing.Point(132, 78)
+        Me.txtEntryPrice.Location = New System.Drawing.Point(149, 78)
         Me.txtEntryPrice.Margin = New System.Windows.Forms.Padding(4)
         Me.txtEntryPrice.Name = "txtEntryPrice"
-        Me.txtEntryPrice.Size = New System.Drawing.Size(243, 22)
+        Me.txtEntryPrice.Size = New System.Drawing.Size(226, 22)
         Me.txtEntryPrice.TabIndex = 3
         Me.txtEntryPrice.Tag = "Entry Price"
         '
@@ -94,9 +117,9 @@ Partial Class frmInsertSignal
         'dtpckrTradingDate
         '
         Me.dtpckrTradingDate.Format = System.Windows.Forms.DateTimePickerFormat.[Short]
-        Me.dtpckrTradingDate.Location = New System.Drawing.Point(132, 17)
+        Me.dtpckrTradingDate.Location = New System.Drawing.Point(149, 17)
         Me.dtpckrTradingDate.Name = "dtpckrTradingDate"
-        Me.dtpckrTradingDate.Size = New System.Drawing.Size(243, 22)
+        Me.dtpckrTradingDate.Size = New System.Drawing.Size(226, 22)
         Me.dtpckrTradingDate.TabIndex = 1
         Me.dtpckrTradingDate.Value = New Date(2020, 11, 10, 0, 0, 0, 0)
         '
@@ -110,30 +133,30 @@ Partial Class frmInsertSignal
         Me.lblTradingDate.TabIndex = 19
         Me.lblTradingDate.Text = "Trading Date"
         '
-        'txtClosePrice
+        'lblMainTradingDay
         '
-        Me.txtClosePrice.Location = New System.Drawing.Point(132, 48)
-        Me.txtClosePrice.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtClosePrice.Name = "txtClosePrice"
-        Me.txtClosePrice.Size = New System.Drawing.Size(243, 22)
-        Me.txtClosePrice.TabIndex = 2
-        Me.txtClosePrice.Tag = "Entry Price"
+        Me.lblMainTradingDay.AutoSize = True
+        Me.lblMainTradingDay.Location = New System.Drawing.Point(9, 111)
+        Me.lblMainTradingDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMainTradingDay.Name = "lblMainTradingDay"
+        Me.lblMainTradingDay.Size = New System.Drawing.Size(120, 17)
+        Me.lblMainTradingDay.TabIndex = 56
+        Me.lblMainTradingDay.Text = "Main Trading Day"
         '
-        'lblClosePrice
+        'chkMainTradingDay
         '
-        Me.lblClosePrice.AutoSize = True
-        Me.lblClosePrice.Location = New System.Drawing.Point(9, 50)
-        Me.lblClosePrice.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblClosePrice.Name = "lblClosePrice"
-        Me.lblClosePrice.Size = New System.Drawing.Size(79, 17)
-        Me.lblClosePrice.TabIndex = 55
-        Me.lblClosePrice.Text = "Close Price"
+        Me.chkMainTradingDay.AutoSize = True
+        Me.chkMainTradingDay.Location = New System.Drawing.Point(149, 111)
+        Me.chkMainTradingDay.Name = "chkMainTradingDay"
+        Me.chkMainTradingDay.Size = New System.Drawing.Size(18, 17)
+        Me.chkMainTradingDay.TabIndex = 4
+        Me.chkMainTradingDay.UseVisualStyleBackColor = True
         '
         'frmInsertSignal
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(504, 114)
+        Me.ClientSize = New System.Drawing.Size(504, 145)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnInsert)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -157,4 +180,6 @@ Partial Class frmInsertSignal
     Friend WithEvents lblTradingDate As Label
     Friend WithEvents txtClosePrice As TextBox
     Friend WithEvents lblClosePrice As Label
+    Friend WithEvents lblMainTradingDay As Label
+    Friend WithEvents chkMainTradingDay As CheckBox
 End Class

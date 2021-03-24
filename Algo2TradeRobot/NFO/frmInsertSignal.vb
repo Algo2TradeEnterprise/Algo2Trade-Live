@@ -11,6 +11,7 @@
         dtpckrTradingDate.Value = Now.Date
         txtClosePrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
         txtEntryPrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
+        chkMainTradingDay.Checked = _strategyInstrument.TakeTradeToday
     End Sub
 
     Private Sub btnInsert_Click(sender As Object, e As EventArgs) Handles btnInsert.Click
@@ -29,9 +30,13 @@
                     Else
                         Dim desireValue As Double = CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InitialInvestment
                         If lastSignal IsNot Nothing Then
-                            desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
+                            If lastSignal.MainTradingDay Then
+                                desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
+                            Else
+                                desireValue = lastSignal.DesireValue
+                            End If
                         End If
-                        If _strategyInstrument.SetSignalDetails(tradingDate, closePrice, entryPrice, desireValue) Then
+                        If _strategyInstrument.SetSignalDetails(tradingDate, closePrice, entryPrice, desireValue, chkMainTradingDay.Checked, CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(_strategyInstrument.TradableInstrument.TradingSymbol).RunDaily) Then
                             MsgBox(String.Format("Signal Insertion Successful"), MsgBoxStyle.Information)
                             Me.Close()
                         Else
@@ -39,7 +44,7 @@
                         End If
                     End If
                 Else
-                    Throw New ApplicationException(String.Format("Invalid Entry Price"))
+                    Throw New ApplicationException(String.Format("Invalid Entry/Close Price"))
                 End If
             End If
         Catch ex As Exception

@@ -10,7 +10,7 @@ Public Class frmSignalDetails
     Public Sub New(ByVal runningInstrument As NFOStrategyInstrument, ByVal canceller As CancellationTokenSource)
         InitializeComponent()
         _strategyInstrument = runningInstrument
-        AddHandler _strategyInstrument.EndOfTheDay, AddressOf OnEndOfDay
+        AddHandler _strategyInstrument.GenerateGraph, AddressOf OnGenerateGraph
         _cts = canceller
     End Sub
 
@@ -46,20 +46,30 @@ Public Class frmSignalDetails
         Try
             If _strategyInstrument IsNot Nothing Then
                 Me.Text = String.Format("Signal Details - {0}", _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper)
+                Me.chrtDetails.Titles(0).Text = _strategyInstrument.TradableInstrument.TradingSymbol.ToUpper
 
                 Dim allSignalDetails As Dictionary(Of Date, NFOStrategyInstrument.SignalDetails) = _strategyInstrument.AllSignalDetails
                 Dim lastSignal As NFOStrategyInstrument.SignalDetails = _strategyInstrument.GetLastSignalDetails(Now.Date)
                 Dim desireValue As Double = CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InitialInvestment
                 If lastSignal IsNot Nothing Then
-                    desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
+                    If lastSignal.MainTradingDay Then
+                        desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
+                    Else
+                        desireValue = lastSignal.DesireValue
+                    End If
                 End If
                 Dim price As Decimal = _strategyInstrument.TradableInstrument.LastTick.LastPrice
-                Dim signal As NFOStrategyInstrument.SignalDetails = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue)
+                Dim signal As NFOStrategyInstrument.SignalDetails = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue, _strategyInstrument.TakeTradeToday, CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(_strategyInstrument.TradableInstrument.TradingSymbol).RunDaily)
                 If allSignalDetails Is Nothing Then
                     allSignalDetails = New Dictionary(Of Date, NFOStrategyInstrument.SignalDetails)
                     allSignalDetails.Add(signal.SnapshotDate, signal)
                 Else
                     If Not allSignalDetails.ContainsKey(signal.SnapshotDate) Then
+                        signal = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue, True, False)
+                        allSignalDetails.Add(signal.SnapshotDate, signal)
+                    ElseIf allSignalDetails(signal.SnapshotDate).NoOfSharesToBuy = 0 Then
+                        allSignalDetails.Remove(signal.SnapshotDate)
+                        signal = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue, True, False)
                         allSignalDetails.Add(signal.SnapshotDate, signal)
                     End If
                 End If
@@ -153,7 +163,7 @@ Public Class frmSignalDetails
                     Dim a As New DataVisualization.Charting.TextAnnotation With {
                         .Alignment = ContentAlignment.TopLeft,
                         .X = 81,
-                        .Y = 20,
+                        .Y = 25,
                         .Text = String.Format("Current Investment/Return: {13}{0}{12}{0}Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
                                               vbNewLine, Math.Round(totalInvested, 0), Math.Round(wealthBuild + totalReturned, 0), absoluteReturn.ToString("F"), annualizedAbsoluteReturn.ToString("F"), xirr.ToString("F"),
                                               "------------------------------------------",
@@ -170,6 +180,10 @@ Public Class frmSignalDetails
                             dp.Color = Color.Red
                         End If
                     Next
+                    If Not _strategyInstrument.AllSignalDetails.ContainsKey(Now.Date) OrElse
+                        _strategyInstrument.AllSignalDetails(Now.Date).NoOfSharesToBuy = 0 Then
+                        Me.chrtDetails.Series("Investment/Return").Points.LastOrDefault.Color = Color.Yellow
+                    End If
                 End If
             End If
         Catch ex As Exception
@@ -228,14 +242,14 @@ Public Class frmSignalDetails
     End Function
 #End Region
 
-    Public Sub OnEndOfDay()
+    Public Sub OnGenerateGraph()
         LoadData()
         SendTelegramInfoMessageAsync()
     End Sub
 
     Private Async Function SendTelegramInfoMessageAsync() As Task
         Try
-            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
+            Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             Dim userInputs As NFOUserInputs = _strategyInstrument.ParentStrategy.UserSettings
             If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso
@@ -245,6 +259,7 @@ Public Class frmSignalDetails
                     Using stream As New System.IO.MemoryStream()
                         Me.chrtDetails.SaveImage(stream, ChartImageFormat.Jpeg)
                         stream.Position = 0
+                        Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
 
                         Await tSender.SendDocumentGetAsync(stream, String.Format("{0}-Details Chart({1}) {2}.jpeg", _strategyInstrument.TradableInstrument.TradingSymbol, _telegramCtr, Now.ToString("HHmmss"))).ConfigureAwait(False)
                     End Using
