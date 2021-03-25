@@ -257,9 +257,10 @@ Public Class frmSignalDetails
                 _telegramCtr += 1
                 Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramTradeChatID.Trim, _cts)
                     Using stream As New System.IO.MemoryStream()
+                        Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                         Me.chrtDetails.SaveImage(stream, ChartImageFormat.Jpeg)
+                        Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                         stream.Position = 0
-                        Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
 
                         Await tSender.SendDocumentGetAsync(stream, String.Format("{0}-Details Chart({1}) {2}.jpeg", _strategyInstrument.TradableInstrument.TradingSymbol, _telegramCtr, Now.ToString("HHmmss"))).ConfigureAwait(False)
                     End Using
