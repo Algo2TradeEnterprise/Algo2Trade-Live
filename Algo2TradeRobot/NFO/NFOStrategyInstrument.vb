@@ -191,6 +191,12 @@ Public Class NFOStrategyInstrument
                                 If Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY" Then
                                     If placeOrderTrigger.Item2.Supporting IsNot Nothing AndAlso placeOrderTrigger.Item2.Supporting.Count > 0 Then
                                         'Find strategy instrument and exit
+                                        Try
+                                            logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
+                                            logger.Debug("PlaceOrder-> Parameters: Force Exit by user:{0}, Force Entry for contract rollover:{1}, TradingSymbol:{2}", Me.ForceExitByUser, Me.ForceEntryForContractRollover, Me.TradableInstrument.TradingSymbol)
+                                        Catch ex As Exception
+                                            logger.Error(ex)
+                                        End Try
                                         Dim processOption As Boolean = False
                                         Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
                                         If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
@@ -583,20 +589,18 @@ Public Class NFOStrategyInstrument
                         Dim htema2 As Decimal = CType(htema2Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
 
                         'If ema1 > ema2 AndAlso ema2 > ltEma3 AndAlso runningCandlePayload.PreviousPayload.ClosePrice.Value > ltEma3 Then
-                        If ltema1 > ltema2 AndAlso htema1 > htema2 Then
-                            Dim quantity As Integer = GetQuantityToTrade()
-                            If quantity = 0 Then
+                        Dim quantity As Integer = GetQuantityToTrade()
+                        If quantity = 0 Then    'Check for entry
+                            If ltema1 > ltema2 AndAlso htema1 > htema2 Then
+                                'Buy Entry
                                 quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).InitialQuantity
                                 Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                                 parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
                                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                                 .Price = price,
                                                 .Quantity = Math.Abs(quantity)}
-                            End If
-                            'ElseIf ema1 < ema2 AndAlso ema2 < ltEma3 AndAlso runningCandlePayload.PreviousPayload.ClosePrice.Value < ltEma3 Then
-                        ElseIf ltema1 < ltema2 AndAlso htema1 < htema2 Then
-                            Dim quantity As Integer = GetQuantityToTrade()
-                            If quantity = 0 Then
+                            ElseIf ltema1 < ltema2 AndAlso htema1 < htema2 Then
+                                'Sell Entry
                                 quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).InitialQuantity
                                 Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
                                 parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
@@ -604,45 +608,27 @@ Public Class NFOStrategyInstrument
                                             .Price = price,
                                             .Quantity = Math.Abs(quantity)}
                             End If
-                        End If
-
-                        ''Check condition for exit
-                        'Dim preltEma1 As Decimal = CType(ltema1Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-                        'Dim preltEma2 As Decimal = CType(ltema2Consumer.ConsumerPayloads(ltRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-                        'Dim prehtEma1 As Decimal = CType(htema1Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-                        'Dim prehtEma2 As Decimal = CType(htema2Consumer.ConsumerPayloads(htRunningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), EMAConsumer.EMAPayload).EMA.Value
-
-                        'If (preEma1 > preEma2 AndAlso ema1 < ema2) AndAlso
-                        '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Sell) Then
-                        'If preltEma1 > preltEma2 AndAlso ltema1 < ltema2 Then
-                        If ltema1 < ltema2 OrElse htema1 < htema2 Then
-                            Dim quantity As Integer = GetQuantityToTrade()
-                            'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
-                            '    quantity = 1
-                            'End If
+                        Else                    'Check for exit
                             If quantity > 0 Then
-                                Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
-                                       {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                        .Price = price,
-                                        .Quantity = Math.Abs(quantity),
-                                        .Supporting = New List(Of Object) From {"Exit"}}
-                            End If
-                            'ElseIf (preEma1 < preEma2 AndAlso ema1 > ema2) AndAlso
-                            '    (parameters Is Nothing OrElse parameters.EntryDirection <> IOrder.TypeOfTransaction.Buy) Then
-                            'ElseIf preltEma1 < preltEma2 AndAlso ltema1 > ltema2 Then
-                        ElseIf ltema1 > ltema2 OrElse htema1 > htema2 Then
-                            Dim quantity As Integer = GetQuantityToTrade()
-                            'If quantity = 0 AndAlso (Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" OrElse Me.TradableInstrument.RawInstrumentName = "NIFTY") Then
-                            '    quantity = -1
-                            'End If
-                            If quantity < 0 Then
-                                Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
-                                parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
-                                       {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                        .Price = price,
-                                        .Quantity = Math.Abs(quantity),
-                                        .Supporting = New List(Of Object) From {"Exit"}}
+                                'Buy Exit
+                                If ltema1 < ltema2 OrElse htema1 < htema2 Then
+                                    Dim price As Decimal = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
+                                           {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                            .Price = price,
+                                            .Quantity = Math.Abs(quantity),
+                                            .Supporting = New List(Of Object) From {"Exit"}}
+                                End If
+                            ElseIf quantity < 0 Then
+                                'Sell Exit
+                                If ltema1 > ltema2 OrElse htema1 > htema2 Then
+                                    Dim price As Decimal = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, Me.TradableInstrument.TickSize, RoundOfType.Celing)
+                                    parameters = New PlaceOrderParameters(ltRunningCandlePayload) With
+                                           {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                            .Price = price,
+                                            .Quantity = Math.Abs(quantity),
+                                            .Supporting = New List(Of Object) From {"Exit"}}
+                                End If
                             End If
                         End If
                     End If
