@@ -47,22 +47,21 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            _NSEHolidays = Await GetNSEEquityHolidaysAsync().ConfigureAwait(False)
-
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
-                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                                Return x.TradingSymbol = instrument.Value.TradingSymbol
-                                                                                            End Function)
+                    Dim runningTradableInstrument As IInstrument = allInstruments.ToList.Find(Function(x)
+                                                                                                  Return x.TradingSymbol = instrument.Value.TradingSymbol
+                                                                                              End Function)
 
                     _cts.Token.ThrowIfCancellationRequested()
-                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                     If runningTradableInstrument IsNot Nothing Then
+                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
                         ret = True
+                    Else
+                        OnHeartbeat(String.Format("Unable to map with any instrument: {0}", instrument.Key))
                     End If
                 Next
                 TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -118,7 +117,7 @@ Public Class NFOStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            tasks.Add(Task.Run(AddressOf CheckEligibilityAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf GetBidAskRatioAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -141,56 +140,7 @@ Public Class NFOStrategy
         Return ret
     End Function
 
-    Private Async Function GetNSEEquityHolidaysAsync() As Task(Of List(Of Date))
-        Dim ret As List(Of Date) = Nothing
-        Dim holidayURL As String = "https://www.nseindia.com/products-services/equity-market-timings-holidays"
-        Dim outputResponse As HtmlDocument = Nothing
-        HttpBrowser.KillCookies()
-        Using browser As New HttpBrowser(Nothing, Net.DecompressionMethods.GZip, New TimeSpan(0, 1, 0), _cts)
-            AddHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            AddHandler browser.Heartbeat, AddressOf OnHeartbeat
-            AddHandler browser.WaitingFor, AddressOf OnWaitingFor
-            AddHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-
-            browser.KeepAlive = True
-            Dim headersToBeSent As New Dictionary(Of String, String)
-            headersToBeSent.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-            headersToBeSent.Add("Accept-Encoding", "gzip, deflate, br")
-            headersToBeSent.Add("Accept-Language", "en-US,en;q=0.9")
-
-            Dim l As Tuple(Of Uri, Object) = Await browser.NonPOSTRequestAsync(holidayURL, HttpMethod.Get, Nothing, False, headersToBeSent, True, "text/html").ConfigureAwait(False)
-            If l IsNot Nothing AndAlso l.Item2 IsNot Nothing Then
-                outputResponse = l.Item2
-            End If
-            RemoveHandler browser.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
-            RemoveHandler browser.Heartbeat, AddressOf OnHeartbeat
-            RemoveHandler browser.WaitingFor, AddressOf OnWaitingFor
-            RemoveHandler browser.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
-        End Using
-        If outputResponse IsNot Nothing AndAlso outputResponse.DocumentNode IsNot Nothing Then
-            If outputResponse.DocumentNode.SelectNodes("//table") IsNot Nothing AndAlso outputResponse.DocumentNode.SelectNodes("//table").Count > 0 Then
-                For Each runningTable As HtmlNode In outputResponse.DocumentNode.SelectNodes("//table")
-                    If runningTable.Id = "holidayTable" Then
-                        If runningTable.SelectNodes(".//tbody") IsNot Nothing AndAlso runningTable.SelectNodes(".//tbody").Count = 1 Then
-                            Dim tbody As HtmlNode = runningTable.SelectNodes(".//tbody")(0)
-                            If tbody.SelectNodes("tr") IsNot Nothing AndAlso tbody.SelectNodes("tr").Count > 0 Then
-                                For Each rows As HtmlNode In tbody.SelectNodes("tr")
-                                    If rows.SelectNodes("td") IsNot Nothing AndAlso rows.SelectNodes("td").Count > 1 Then
-                                        Dim holiday As Date = Date.ParseExact(rows.SelectNodes("td")(1).InnerText, "dd-MMM-yyyy", Nothing)
-                                        If ret Is Nothing Then ret = New List(Of Date)
-                                        ret.Add(holiday)
-                                    End If
-                                Next
-                            End If
-                        End If
-                    End If
-                Next
-            End If
-        End If
-        Return ret
-    End Function
-
-    Private Async Function CheckEligibilityAsync() As Task
+    Private Async Function GetBidAskRatioAsync() As Task
         Try
             Dim userInput As NFOUserInputs = Me.UserSettings
             While True
@@ -198,41 +148,51 @@ Public Class NFOStrategy
                     Throw Me.ParentController.OrphanException
                 End If
 
-                If Now >= userInput.TradeEntryTime Then
-                    If Me.EligibleInstruments IsNot Nothing AndAlso Me.EligibleInstruments.Count > 0 Then
-                        Await Task.Delay(1000).ConfigureAwait(False)
-                        For Each runningStock In userInput.InstrumentsData
-                            Dim instrument As NFOStrategyInstrument = Me.EligibleInstruments.Where(Function(x)
-                                                                                                       Return x.TradableInstrument.TradingSymbol = runningStock.Key.ToUpper.Trim
-                                                                                                   End Function).FirstOrDefault
-                            If instrument IsNot Nothing Then
-                                instrument.TakeTradeToday = True
-                                Me.TotalActiveInstrumentCount += 1
-                                runningStock.Value.TradingDay = Now.DayOfWeek.ToString
-                                Exit For
-                            End If
+                If Now >= userInput.CheckTime Then
+                    Dim bidAskCollection As List(Of BidAskData) = New List(Of BidAskData)
+
+                    For Each runningStrategyInstrument In Me.TradableStrategyInstruments
+                        If runningStrategyInstrument.TradableInstrument IsNot Nothing AndAlso
+                            runningStrategyInstrument.TradableInstrument.LastTick IsNot Nothing Then
+                            Dim runningBidAsk As BidAskData = New BidAskData
+                            runningBidAsk.TradingSymbol = runningStrategyInstrument.TradableInstrument.TradingSymbol
+                            runningBidAsk.TotalBidQuantity = runningStrategyInstrument.TradableInstrument.LastTick.BuyQuantity
+                            runningBidAsk.TotalAskQuantity = runningStrategyInstrument.TradableInstrument.LastTick.SellQuantity
+
+                            bidAskCollection.Add(runningBidAsk)
+                        End If
+                    Next
+
+                    If bidAskCollection IsNot Nothing AndAlso bidAskCollection.Count > 0 Then
+                        Dim dt As DataTable = New DataTable
+                        dt.Columns.Add("Trading Symbol")
+                        dt.Columns.Add("Total Bid Quantity")
+                        dt.Columns.Add("Total Ask Quantity")
+                        dt.Columns.Add("Bid Ask Ratio")
+                        For Each runningBidAsk In bidAskCollection.OrderByDescending(Function(x)
+                                                                                         Return x.BidAskRatio
+                                                                                     End Function)
+                            Dim row As DataRow = dt.NewRow
+                            row("Trading Symbol") = runningBidAsk.TradingSymbol
+                            row("Total Bid Quantity") = runningBidAsk.TotalBidQuantity
+                            row("Total Ask Quantity") = runningBidAsk.TotalAskQuantity
+                            row("Bid Ask Ratio") = runningBidAsk.BidAskRatio
+                            dt.Rows.Add(row)
                         Next
 
-                        If File.Exists(userInput.InstrumentDetailsFilePath) Then
-                            File.Delete(userInput.InstrumentDetailsFilePath)
-                            Dim dt As DataTable = New DataTable
-                            dt.Columns.Add("Trading Symbol")
-                            dt.Columns.Add("Trading Day")
-                            For Each runningStock In userInput.InstrumentsData
-                                Dim row As DataRow = dt.NewRow
-                                row("Trading Symbol") = runningStock.Value.TradingSymbol.Trim
-                                row("Trading Day") = runningStock.Value.TradingDay.Trim
-                                dt.Rows.Add(row)
-                            Next
-
-                            Using csv As New Utilities.DAL.CSVHelper(userInput.InstrumentDetailsFilePath, ",", _cts)
-                                csv.GetCSVFromDataTable(dt)
-                            End Using
+                        Dim folderPath As String = Path.Combine(My.Application.Info.DirectoryPath, "Bid Ask Output")
+                        If Not Directory.Exists(folderPath) Then
+                            Directory.CreateDirectory(folderPath)
                         End If
-
-                        Exit While
+                        Dim filename As String = Path.Combine(folderPath, String.Format("Bid Ask Data {0}.csv", Now.ToString("dd_MM_yyyy")))
+                        Using csv As New Utilities.DAL.CSVHelper(filename, ",", _cts)
+                            csv.GetCSVFromDataTable(dt)
+                        End Using
                     End If
+
+                    Exit While
                 End If
+
                 Await Task.Delay(1000).ConfigureAwait(False)
             End While
         Catch ex As Exception
@@ -240,4 +200,19 @@ Public Class NFOStrategy
             Throw ex
         End Try
     End Function
+
+    Private Class BidAskData
+        Public Property TradingSymbol As String
+        Public Property TotalBidQuantity As Long
+        Public Property TotalAskQuantity As Long
+        Public ReadOnly Property BidAskRatio As Decimal
+            Get
+                If Me.TotalBidQuantity <> Long.MinValue AndAlso Me.TotalAskQuantity <> Long.MinValue AndAlso Me.TotalAskQuantity <> 0 Then
+                    Return Math.Round(Me.TotalBidQuantity / Me.TotalAskQuantity, 4)
+                Else
+                    Return Decimal.MinValue
+                End If
+            End Get
+        End Property
+    End Class
 End Class

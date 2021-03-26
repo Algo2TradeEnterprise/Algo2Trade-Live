@@ -37,27 +37,15 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            dtpckrTradeEntryTime.Value = _settings.TradeEntryTime
-            txtInitialInvestment.Text = _settings.InitialInvestment
-            txtExpectedIncreaseEachPeriod.Text = _settings.ExpectedIncreaseEachPeriod
-            txtActiveInstrumentCount.Text = _settings.ActiveInstrumentCount
+            dtpckrCheckTime.Value = _settings.CheckTime
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
-            txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = 1
-        _settings.TradeEntryTime = dtpckrTradeEntryTime.Value
-        _settings.InitialInvestment = txtInitialInvestment.Text
-        _settings.ExpectedIncreaseEachPeriod = txtExpectedIncreaseEachPeriod.Text
-        _settings.ActiveInstrumentCount = txtActiveInstrumentCount.Text
+        _settings.CheckTime = dtpckrCheckTime.Value
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
-        _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -88,9 +76,6 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, Decimal.MaxValue, txtInitialInvestment)
-        ValidateNumbers(1, Decimal.MaxValue, txtExpectedIncreaseEachPeriod)
-
         ValidateFile()
     End Sub
 

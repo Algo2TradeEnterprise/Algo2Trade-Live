@@ -8,25 +8,17 @@ Imports Algo2TradeCore.Entities
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Value Investing.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Bid Ask Ratio.Strategy.a2t")
 
-    Public Property TelegramBotAPIKey As String
-    Public Property TelegramTradeChatID As String
-
-    Private _TradeEntryTime As Date
-    Public Property TradeEntryTime As Date
+    Private _CheckTime As Date
+    Public Property CheckTime As Date
         Get
-            Return New Date(Now.Year, Now.Month, Now.Day, _TradeEntryTime.Hour, _TradeEntryTime.Minute, _TradeEntryTime.Second)
+            Return New Date(Now.Year, Now.Month, Now.Day, _CheckTime.Hour, _CheckTime.Minute, _CheckTime.Second)
         End Get
         Set(value As Date)
-            _TradeEntryTime = value
+            _CheckTime = value
         End Set
     End Property
-
-    Public Property InitialInvestment As Decimal
-    Public Property ExpectedIncreaseEachPeriod As Decimal
-    Public Property ActiveInstrumentCount As Integer
-
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
@@ -34,7 +26,6 @@ Public Class NFOUserInputs
     <Serializable>
     Public Class InstrumentDetails
         Public Property TradingSymbol As String
-        Public Property TradingDay As String
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -47,9 +38,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL", "TRADING DAY"}
+                        Dim excelColumnList As New List(Of String) From {"TRADING SYMBOL"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 0
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -60,24 +51,14 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
-                            Dim tradingDay As String = Nothing
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        instrumentName = instrumentDetails(rowCtr, columnCtr)
+                                        instrumentName = Trim(instrumentDetails(rowCtr, columnCtr))
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
                                             Throw New ApplicationException(String.Format("Trading Symbol Missing or Blank Row. RowNumber: {0}", rowCtr))
-                                        End If
-                                    End If
-                                ElseIf columnCtr = 1 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        tradingDay = instrumentDetails(rowCtr, columnCtr)
-                                    Else
-                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Trading Day Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
                                 End If
@@ -86,7 +67,6 @@ Public Class NFOUserInputs
                                 Dim instrumentData As New InstrumentDetails
                                 With instrumentData
                                     .TradingSymbol = instrumentName.ToUpper
-                                    .TradingDay = tradingDay.ToUpper
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.TradingSymbol) Then

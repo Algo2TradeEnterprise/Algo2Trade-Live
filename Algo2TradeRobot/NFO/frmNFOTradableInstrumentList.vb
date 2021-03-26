@@ -42,11 +42,7 @@ Public Class frmNFOTradableInstrumentList
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
             dt.Columns.Add("Tick Size")
-            dt.Columns.Add("Trading Day")
-            dt.Columns.Add("Take Trade Today")
-            dt.Columns.Add("Pre Process")
             dt.Columns.Add("Running")
-            dt.Columns.Add("Instrument", GetType(NFOStrategyInstrument))
             For Each instrument In _TradableStrategyInstruments
                 _cts.Token.ThrowIfCancellationRequested()
                 Dim row As DataRow = dt.NewRow
@@ -54,48 +50,12 @@ Public Class frmNFOTradableInstrumentList
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
                 row("Tick Size") = instrument.TradableInstrument.TickSize
-                row("Trading Day") = instrument.TradingDay.ToString
-                row("Take Trade Today") = instrument.TakeTradeToday
-                row("Pre Process") = instrument.PreProcessingDone
                 row("Running") = instrument.StrategyInstrumentRunning
-                row("Instrument") = instrument
 
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
-            dgvTradableInstruments.Columns.Item("Instrument").Visible = False
-
-            Dim detailsColumn As DataGridViewButtonColumn = New DataGridViewButtonColumn
-            detailsColumn.HeaderText = ""
-            detailsColumn.Name = "details_column"
-            detailsColumn.Text = "Check Signals"
-            detailsColumn.UseColumnTextForButtonValue = True
-            Dim detailsColumnIndex As Integer = 9
-            If dgvTradableInstruments.Columns("details_column") Is Nothing Then
-                dgvTradableInstruments.Columns.Insert(detailsColumnIndex, detailsColumn)
-            End If
-
-            Dim addColumn As DataGridViewButtonColumn = New DataGridViewButtonColumn
-            addColumn.HeaderText = ""
-            addColumn.Name = "add_column"
-            addColumn.Text = "Add Signal"
-            addColumn.UseColumnTextForButtonValue = True
-            Dim addColumnIndex As Integer = 10
-            If dgvTradableInstruments.Columns("add_column") Is Nothing Then
-                dgvTradableInstruments.Columns.Insert(addColumnIndex, addColumn)
-            End If
-
             dgvTradableInstruments.Refresh()
-        End If
-    End Sub
-
-    Private Sub dgvTradableInstruments_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvTradableInstruments.CellContentClick
-        If e.ColumnIndex = 9 Then
-            Dim frm As Form = New frmSignalDetails(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument), _cts)
-            frm.ShowDialog()
-        ElseIf e.ColumnIndex = 10 Then
-            Dim frm As Form = New frmInsertSignal(CType(dgvTradableInstruments.Rows(e.RowIndex).Cells(8).Value, NFOStrategyInstrument))
-            frm.ShowDialog()
         End If
     End Sub
 End Class

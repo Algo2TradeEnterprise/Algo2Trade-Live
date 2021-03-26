@@ -192,12 +192,6 @@
     <Compile Include="frmZerodhaUserDetails.vb">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NFO\frmInsertSignal.Designer.vb">
-      <DependentUpon>frmInsertSignal.vb</DependentUpon>
-    </Compile>
-    <Compile Include="NFO\frmInsertSignal.vb">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="NFO\frmNFOSettings.Designer.vb">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </Compile>
@@ -208,12 +202,6 @@
       <DependentUpon>frmNFOTradableInstrumentList.vb</DependentUpon>
     </Compile>
     <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NFO\frmSignalDetails.Designer.vb">
-      <DependentUpon>frmSignalDetails.vb</DependentUpon>
-    </Compile>
-    <Compile Include="NFO\frmSignalDetails.vb">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="NFO\NFOStrategy.vb" />
@@ -251,9 +239,6 @@
     <EmbeddedResource Include="frmZerodhaUserDetails.resx">
       <DependentUpon>frmZerodhaUserDetails.vb</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmInsertSignal.resx">
-      <DependentUpon>frmInsertSignal.vb</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="NFO\frmNFOSettings.resx">
       <DependentUpon>frmNFOSettings.vb</DependentUpon>
     </EmbeddedResource>
@@ -265,9 +250,6 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NFO\frmSignalDetails.resx">
-      <DependentUpon>frmSignalDetails.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
