@@ -21,6 +21,7 @@ Public Class NFOStrategyInstrument
 #Region "Event and Handler"
     Public Event GenerateGraph()
     Protected Overridable Sub OnGenerateGraph()
+        Dim frmDtls As New frmSignalDetails(Me, _cts)
         RaiseEvent GenerateGraph()
     End Sub
 #End Region
@@ -287,12 +288,14 @@ Public Class NFOStrategyInstrument
                                 SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                 _tempSignal = Nothing
                                 _entryDoneForTheDay = True
+                                OnGenerateGraph()
                             Else
                                 Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
                                 If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                                     SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                     _tempSignal = Nothing
                                     _entryDoneForTheDay = True
+                                    OnGenerateGraph()
                                 End If
                             End If
                         End If
@@ -586,13 +589,10 @@ Public Class NFOStrategyInstrument
                                                   signal.NoOfSharesToBuy,
                                                   signal.TotalInvested)
             logger.Fatal(remarks)
-            'SendTradeAlertMessageAsync(remarks)
+            SendTradeAlertMessageAsync(remarks)
 
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
             ret = True
-
-            Dim frmDtls As New frmSignalDetails(Me, _cts)
-            OnGenerateGraph()
         End If
         Return ret
     End Function
