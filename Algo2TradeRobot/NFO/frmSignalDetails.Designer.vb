@@ -37,6 +37,7 @@ Partial Class frmSignalDetails
         Me.tlpExport = New System.Windows.Forms.TableLayoutPanel()
         Me.btnExport = New System.Windows.Forms.Button()
         Me.saveFile = New System.Windows.Forms.SaveFileDialog()
+        Me.btnSendChart = New System.Windows.Forms.Button()
         CType(Me.dgvSignalDetails, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.TableLayoutPanel1.SuspendLayout()
         CType(Me.chrtDetails, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -126,6 +127,7 @@ Partial Class frmSignalDetails
         Me.tlpExport.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.tlpExport.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
         Me.tlpExport.Controls.Add(Me.btnExport, 1, 0)
+        Me.tlpExport.Controls.Add(Me.btnSendChart, 0, 0)
         Me.tlpExport.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tlpExport.Location = New System.Drawing.Point(3, 946)
         Me.tlpExport.Name = "tlpExport"
@@ -146,6 +148,16 @@ Partial Class frmSignalDetails
         '
         'saveFile
         '
+        '
+        'btnSendChart
+        '
+        Me.btnSendChart.Dock = System.Windows.Forms.DockStyle.Left
+        Me.btnSendChart.Location = New System.Drawing.Point(3, 3)
+        Me.btnSendChart.Name = "btnSendChart"
+        Me.btnSendChart.Size = New System.Drawing.Size(129, 28)
+        Me.btnSendChart.TabIndex = 1
+        Me.btnSendChart.Text = "Send Charts"
+        Me.btnSendChart.UseVisualStyleBackColor = True
         '
         'frmSignalDetails
         '
@@ -172,4 +184,5 @@ Partial Class frmSignalDetails
     Friend WithEvents tlpExport As TableLayoutPanel
     Friend WithEvents btnExport As Button
     Friend WithEvents saveFile As SaveFileDialog
+    Friend WithEvents btnSendChart As Button
 End Class

@@ -4,6 +4,33 @@ Imports System.Threading
 Imports System.Windows.Forms.DataVisualization.Charting
 
 Public Class frmSignalDetails
+
+#Region "Common Delegates"
+    Delegate Sub SetObjectEnableDisable_Delegate(ByVal [obj] As Object, ByVal [value] As Boolean)
+    Public Sub SetObjectEnableDisable_ThreadSafe(ByVal [obj] As Object, ByVal [value] As Boolean)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [obj].InvokeRequired Then
+            Dim MyDelegate As New SetObjectEnableDisable_Delegate(AddressOf SetObjectEnableDisable_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[obj], [value]})
+        Else
+            [obj].Enabled = [value]
+        End If
+    End Sub
+
+    Delegate Sub SetChartImageToStream_Delegate(ByVal [chart] As Chart, ByRef [stream] As IO.Stream)
+    Public Sub SetChartImageToStream_ThreadSafe(ByVal [chart] As Chart, ByRef [stream] As IO.Stream)
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [chart].InvokeRequired Then
+            Dim MyDelegate As New SetChartImageToStream_Delegate(AddressOf SetChartImageToStream_ThreadSafe)
+            Me.Invoke(MyDelegate, New Object() {[chart], [stream]})
+        Else
+            [chart].SaveImage([stream], ChartImageFormat.Jpeg)
+        End If
+    End Sub
+#End Region
+
     Private _cts As CancellationTokenSource
     Private ReadOnly _strategyInstrument As NFOStrategyInstrument
     Public Sub New(ByVal runningInstrument As NFOStrategyInstrument, ByVal canceller As CancellationTokenSource)
@@ -149,14 +176,8 @@ Public Class frmSignalDetails
                 For Each dp As DataPoint In Me.chrtDetails.Series("Current Value Line").Points
                     Dim runningDate As Date = Date.ParseExact(dp.AxisLabel, "dd-MMM-yyyy", Nothing)
                     If (runningDate.Date <> Now.Date AndAlso allSignalDetails(runningDate).MainTradingDay) OrElse
-                            _strategyInstrument.TakeTradeToday Then
-                        If allSignalDetails(runningDate).MainTradingDay Then
-                            If allSignalDetails(runningDate).NoOfSharesToBuy < 0 Then
-                                dp.Color = Color.Green
-                            Else
-                                dp.Color = Color.Red
-                            End If
-                        End If
+                       (runningDate.Date = Now.Date AndAlso _strategyInstrument.TakeTradeToday) Then
+                        dp.Color = Color.Gray
                     End If
                 Next
                 For Each dp As DataPoint In Me.chrtDetails.Series("Investment/Return").Points
@@ -263,9 +284,10 @@ Public Class frmSignalDetails
                 userInputs.TelegramTradeChatID IsNot Nothing AndAlso Not userInputs.TelegramTradeChatID.Trim = "" Then
                 Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramTradeChatID.Trim, _cts)
                     Using stream As New System.IO.MemoryStream()
-                        Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
-                        Me.chrtDetails.SaveImage(stream, ChartImageFormat.Jpeg)
-                        Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
+                        'Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
+                        'Me.chrtDetails.SaveImage(stream, ChartImageFormat.Jpeg)
+                        SetChartImageToStream_ThreadSafe(chrtDetails, stream)
+                        'Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
                         stream.Position = 0
 
                         Await tSender.SendDocumentGetAsync(stream, String.Format("{0}-Details Chart {1}.jpeg", _strategyInstrument.TradableInstrument.TradingSymbol, Now.ToString("HHmmss"))).ConfigureAwait(False)
@@ -276,4 +298,10 @@ Public Class frmSignalDetails
             'logger.Warn(ex.ToString)
         End Try
     End Function
+
+    Private Async Sub btnSendChart_Click(sender As Object, e As EventArgs) Handles btnSendChart.Click
+        SetObjectEnableDisable_ThreadSafe(btnSendChart, False)
+        Await SendTelegramInfoMessageAsync().ConfigureAwait(False)
+        SetObjectEnableDisable_ThreadSafe(btnSendChart, True)
+    End Sub
 End Class

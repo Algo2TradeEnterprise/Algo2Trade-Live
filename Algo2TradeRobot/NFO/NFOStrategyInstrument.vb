@@ -19,8 +19,11 @@ Public Class NFOStrategyInstrument
 #End Region
 
 #Region "Event and Handler"
+    Private _checkingCtr As Long = 0
     Public Event GenerateGraph()
     Protected Overridable Sub OnGenerateGraph()
+        _checkingCtr += 1
+        logger.Fatal("{0} - Telegram Counter: {1}", Me.TradableInstrument.TradingSymbol, _checkingCtr)
         Dim frmDtls As New frmSignalDetails(Me, _cts)
         RaiseEvent GenerateGraph()
     End Sub
