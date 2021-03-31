@@ -155,7 +155,8 @@ Public Class NFOStrategyInstrument
                     '        {New Date(2021, 2, 25), 2147.75},
                     '        {New Date(2021, 3, 4), 2174},
                     '        {New Date(2021, 3, 12), 2135.85},
-                    '        {New Date(2021, 3, 18), 2010.9}
+                    '        {New Date(2021, 3, 18), 2010.9},
+                    '        {New Date(2021, 3, 25), 1991.9}
                     '    }
                     '    Dim entryDict As Dictionary(Of Date, Decimal) = New Dictionary(Of Date, Decimal) From {
                     '        {New Date(2020, 12, 24), 1993.45},
@@ -170,7 +171,75 @@ Public Class NFOStrategyInstrument
                     '        {New Date(2021, 2, 25), 2148},
                     '        {New Date(2021, 3, 4), 2174},
                     '        {New Date(2021, 3, 12), 2135.85},
-                    '        {New Date(2021, 3, 18), 2011}
+                    '        {New Date(2021, 3, 18), 2011},
+                    '        {New Date(2021, 3, 25), 1992}
+                    '    }
+                    '    Dim dailyDict As Dictionary(Of Date, Decimal) = New Dictionary(Of Date, Decimal) From {
+                    '        {New Date(2020, 12, 24), 1994.15},
+                    '        {New Date(2020, 12, 28), 2003.3},
+                    '        {New Date(2020, 12, 29), 1990.05},
+                    '        {New Date(2020, 12, 30), 1995.5},
+                    '        {New Date(2020, 12, 31), 1985.3},
+                    '        {New Date(2021, 1, 1), 1987.5},
+                    '        {New Date(2021, 1, 4), 1990.85},
+                    '        {New Date(2021, 1, 5), 1966.1},
+                    '        {New Date(2021, 1, 6), 1914.25},
+                    '        {New Date(2021, 1, 7), 1911.15},
+                    '        {New Date(2021, 1, 8), 1933.7},
+                    '        {New Date(2021, 1, 11), 1897.25},
+                    '        {New Date(2021, 1, 12), 1957.05},
+                    '        {New Date(2021, 1, 13), 1938.8},
+                    '        {New Date(2021, 1, 14), 1960.6},
+                    '        {New Date(2021, 1, 15), 1937.45},
+                    '        {New Date(2021, 1, 18), 1983.95},
+                    '        {New Date(2021, 1, 19), 2016.4},
+                    '        {New Date(2021, 1, 20), 2054.7},
+                    '        {New Date(2021, 1, 21), 2099.4},
+                    '        {New Date(2021, 1, 22), 2049.6},
+                    '        {New Date(2021, 1, 25), 1941},
+                    '        {New Date(2021, 1, 27), 1895},
+                    '        {New Date(2021, 1, 28), 1876.55},
+                    '        {New Date(2021, 1, 29), 1841.95},
+                    '        {New Date(2021, 2, 1), 1895.3},
+                    '        {New Date(2021, 2, 2), 1925.8},
+                    '        {New Date(2021, 2, 3), 1930.65},
+                    '        {New Date(2021, 2, 4), 1924.3},
+                    '        {New Date(2021, 2, 5), 1923.75},
+                    '        {New Date(2021, 2, 8), 1951.45},
+                    '        {New Date(2021, 2, 9), 1956.15},
+                    '        {New Date(2021, 2, 10), 1974.3},
+                    '        {New Date(2021, 2, 11), 2055.7},
+                    '        {New Date(2021, 2, 12), 2041.6},
+                    '        {New Date(2021, 2, 15), 2032.6},
+                    '        {New Date(2021, 2, 16), 2059.5},
+                    '        {New Date(2021, 2, 17), 2083.25},
+                    '        {New Date(2021, 2, 18), 2067.7},
+                    '        {New Date(2021, 2, 19), 2080.3},
+                    '        {New Date(2021, 2, 22), 2008.1},
+                    '        {New Date(2021, 2, 23), 2023.45},
+                    '        {New Date(2021, 2, 24), 2061},
+                    '        {New Date(2021, 2, 25), 2144.35},
+                    '        {New Date(2021, 2, 26), 2085.8},
+                    '        {New Date(2021, 3, 1), 2101.7},
+                    '        {New Date(2021, 3, 2), 2106},
+                    '        {New Date(2021, 3, 3), 2202.1},
+                    '        {New Date(2021, 3, 4), 2175.85},
+                    '        {New Date(2021, 3, 5), 2178.7},
+                    '        {New Date(2021, 3, 8), 2191.1},
+                    '        {New Date(2021, 3, 9), 2191.05},
+                    '        {New Date(2021, 3, 10), 2181.95},
+                    '        {New Date(2021, 3, 12), 2137.6},
+                    '        {New Date(2021, 3, 15), 2108.9},
+                    '        {New Date(2021, 3, 16), 2100.6},
+                    '        {New Date(2021, 3, 17), 2055.35},
+                    '        {New Date(2021, 3, 18), 2009.1},
+                    '        {New Date(2021, 3, 19), 2082},
+                    '        {New Date(2021, 3, 22), 2062.4},
+                    '        {New Date(2021, 3, 23), 2087.5},
+                    '        {New Date(2021, 3, 24), 2047.3},
+                    '        {New Date(2021, 3, 25), 1991.45},
+                    '        {New Date(2021, 3, 26), 1994.65},
+                    '        {New Date(2021, 3, 30), 2030.1}
                     '    }
 
                     '    Dim holidays As List(Of Date) = New List(Of Date) From {
@@ -178,7 +247,7 @@ Public Class NFOStrategyInstrument
                     '    }
 
                     '    Dim startDate As Date = New Date(2020, 12, 24)
-                    '    While startDate.Date <= Now.Date
+                    '    While startDate.Date <= New Date(2021, 3, 25)
                     '        If Not startDate.DayOfWeek = DayOfWeek.Saturday AndAlso
                     '            Not startDate.DayOfWeek = DayOfWeek.Sunday AndAlso
                     '            Not holidays.Contains(startDate.Date) Then
@@ -192,9 +261,9 @@ Public Class NFOStrategyInstrument
                     '                End If
                     '            End If
                     '            If closeDict.ContainsKey(startDate.Date) Then
-                    '                SetSignalDetails(startDate.Date, closeDict(startDate.Date), entryDict(startDate.Date), desireValue, True, True)
+                    '                SetSignalDetails(startDate.Date, closeDict(startDate.Date), entryDict(startDate.Date), desireValue, True, False)
                     '            Else
-                    '                SetSignalDetails(startDate.Date, 0, 0, desireValue, False, True)
+                    '                SetSignalDetails(startDate.Date, dailyDict(startDate.Date), dailyDict(startDate.Date), desireValue, False, False)
                     '            End If
                     '        End If
                     '        startDate = startDate.AddDays(1)
@@ -375,7 +444,7 @@ Public Class NFOStrategyInstrument
                                                               _tempSignal.NoOfSharesToBuy)
 
                         logger.Fatal(remarks)
-                        SendTradeAlertMessageAsync(remarks)
+                        'SendTradeAlertMessageAsync(remarks)
                     End If
                 End If
             End If
@@ -517,7 +586,7 @@ Public Class NFOStrategyInstrument
                                                   signal.NoOfSharesToBuy,
                                                   signal.TotalInvested)
             logger.Fatal(remarks)
-            SendTradeAlertMessageAsync(remarks)
+            'SendTradeAlertMessageAsync(remarks)
 
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
             ret = True

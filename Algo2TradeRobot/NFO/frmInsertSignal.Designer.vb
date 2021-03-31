@@ -27,14 +27,17 @@ Partial Class frmInsertSignal
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.btnInsert = New System.Windows.Forms.Button()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.chkMainTradingDay = New System.Windows.Forms.CheckBox()
+        Me.lblMainTradingDay = New System.Windows.Forms.Label()
         Me.txtClosePrice = New System.Windows.Forms.TextBox()
         Me.lblClosePrice = New System.Windows.Forms.Label()
         Me.txtEntryPrice = New System.Windows.Forms.TextBox()
         Me.lblEntryPrice = New System.Windows.Forms.Label()
         Me.dtpckrTradingDate = New System.Windows.Forms.DateTimePicker()
         Me.lblTradingDate = New System.Windows.Forms.Label()
-        Me.lblMainTradingDay = New System.Windows.Forms.Label()
-        Me.chkMainTradingDay = New System.Windows.Forms.CheckBox()
+        Me.Label1 = New System.Windows.Forms.Label()
+        Me.rdbDaily = New System.Windows.Forms.RadioButton()
+        Me.rdbWeekly = New System.Windows.Forms.RadioButton()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -60,6 +63,9 @@ Partial Class frmInsertSignal
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.rdbWeekly)
+        Me.GroupBox1.Controls.Add(Me.rdbDaily)
+        Me.GroupBox1.Controls.Add(Me.Label1)
         Me.GroupBox1.Controls.Add(Me.chkMainTradingDay)
         Me.GroupBox1.Controls.Add(Me.lblMainTradingDay)
         Me.GroupBox1.Controls.Add(Me.txtClosePrice)
@@ -72,9 +78,28 @@ Partial Class frmInsertSignal
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(388, 141)
+        Me.GroupBox1.Size = New System.Drawing.Size(388, 175)
         Me.GroupBox1.TabIndex = 53
         Me.GroupBox1.TabStop = False
+        '
+        'chkMainTradingDay
+        '
+        Me.chkMainTradingDay.AutoSize = True
+        Me.chkMainTradingDay.Location = New System.Drawing.Point(149, 111)
+        Me.chkMainTradingDay.Name = "chkMainTradingDay"
+        Me.chkMainTradingDay.Size = New System.Drawing.Size(18, 17)
+        Me.chkMainTradingDay.TabIndex = 4
+        Me.chkMainTradingDay.UseVisualStyleBackColor = True
+        '
+        'lblMainTradingDay
+        '
+        Me.lblMainTradingDay.AutoSize = True
+        Me.lblMainTradingDay.Location = New System.Drawing.Point(9, 111)
+        Me.lblMainTradingDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMainTradingDay.Name = "lblMainTradingDay"
+        Me.lblMainTradingDay.Size = New System.Drawing.Size(120, 17)
+        Me.lblMainTradingDay.TabIndex = 56
+        Me.lblMainTradingDay.Text = "Main Trading Day"
         '
         'txtClosePrice
         '
@@ -133,30 +158,44 @@ Partial Class frmInsertSignal
         Me.lblTradingDate.TabIndex = 19
         Me.lblTradingDate.Text = "Trading Date"
         '
-        'lblMainTradingDay
+        'Label1
         '
-        Me.lblMainTradingDay.AutoSize = True
-        Me.lblMainTradingDay.Location = New System.Drawing.Point(9, 111)
-        Me.lblMainTradingDay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblMainTradingDay.Name = "lblMainTradingDay"
-        Me.lblMainTradingDay.Size = New System.Drawing.Size(120, 17)
-        Me.lblMainTradingDay.TabIndex = 56
-        Me.lblMainTradingDay.Text = "Main Trading Day"
+        Me.Label1.AutoSize = True
+        Me.Label1.Location = New System.Drawing.Point(9, 142)
+        Me.Label1.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.Label1.Name = "Label1"
+        Me.Label1.Size = New System.Drawing.Size(43, 17)
+        Me.Label1.TabIndex = 57
+        Me.Label1.Text = "Mode"
         '
-        'chkMainTradingDay
+        'rdbDaily
         '
-        Me.chkMainTradingDay.AutoSize = True
-        Me.chkMainTradingDay.Location = New System.Drawing.Point(149, 111)
-        Me.chkMainTradingDay.Name = "chkMainTradingDay"
-        Me.chkMainTradingDay.Size = New System.Drawing.Size(18, 17)
-        Me.chkMainTradingDay.TabIndex = 4
-        Me.chkMainTradingDay.UseVisualStyleBackColor = True
+        Me.rdbDaily.AutoSize = True
+        Me.rdbDaily.Location = New System.Drawing.Point(149, 141)
+        Me.rdbDaily.Name = "rdbDaily"
+        Me.rdbDaily.Size = New System.Drawing.Size(60, 21)
+        Me.rdbDaily.TabIndex = 58
+        Me.rdbDaily.TabStop = True
+        Me.rdbDaily.Text = "Daily"
+        Me.rdbDaily.UseVisualStyleBackColor = True
+        '
+        'rdbWeekly
+        '
+        Me.rdbWeekly.AutoSize = True
+        Me.rdbWeekly.Checked = True
+        Me.rdbWeekly.Location = New System.Drawing.Point(215, 141)
+        Me.rdbWeekly.Name = "rdbWeekly"
+        Me.rdbWeekly.Size = New System.Drawing.Size(75, 21)
+        Me.rdbWeekly.TabIndex = 59
+        Me.rdbWeekly.TabStop = True
+        Me.rdbWeekly.Text = "Weekly"
+        Me.rdbWeekly.UseVisualStyleBackColor = True
         '
         'frmInsertSignal
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(504, 145)
+        Me.ClientSize = New System.Drawing.Size(504, 178)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnInsert)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -182,4 +221,7 @@ Partial Class frmInsertSignal
     Friend WithEvents lblClosePrice As Label
     Friend WithEvents lblMainTradingDay As Label
     Friend WithEvents chkMainTradingDay As CheckBox
+    Friend WithEvents Label1 As Label
+    Friend WithEvents rdbWeekly As RadioButton
+    Friend WithEvents rdbDaily As RadioButton
 End Class

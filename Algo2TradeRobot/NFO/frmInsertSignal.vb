@@ -12,6 +12,13 @@
         txtClosePrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
         txtEntryPrice.Text = _strategyInstrument.TradableInstrument.LastTick.LastPrice
         chkMainTradingDay.Checked = _strategyInstrument.TakeTradeToday
+        If CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(_strategyInstrument.TradableInstrument.TradingSymbol).RunDaily Then
+            rdbDaily.Checked = True
+            rdbWeekly.Checked = False
+        Else
+            rdbDaily.Checked = False
+            rdbWeekly.Checked = True
+        End If
     End Sub
 
     Private Sub btnInsert_Click(sender As Object, e As EventArgs) Handles btnInsert.Click
@@ -36,7 +43,7 @@
                                 desireValue = lastSignal.DesireValue
                             End If
                         End If
-                        If _strategyInstrument.SetSignalDetails(tradingDate, closePrice, entryPrice, desireValue, chkMainTradingDay.Checked, CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(_strategyInstrument.TradableInstrument.TradingSymbol).RunDaily) Then
+                        If _strategyInstrument.SetSignalDetails(tradingDate, closePrice, entryPrice, desireValue, chkMainTradingDay.Checked, rdbDaily.Checked) Then
                             MsgBox(String.Format("Signal Insertion Successful"), MsgBoxStyle.Information)
                             Me.Close()
                         Else
