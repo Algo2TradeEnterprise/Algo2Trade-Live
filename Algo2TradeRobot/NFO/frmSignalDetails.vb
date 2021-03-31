@@ -36,7 +36,6 @@ Public Class frmSignalDetails
     Public Sub New(ByVal runningInstrument As NFOStrategyInstrument, ByVal canceller As CancellationTokenSource)
         InitializeComponent()
         _strategyInstrument = runningInstrument
-        AddHandler _strategyInstrument.GenerateGraph, AddressOf OnGenerateGraph
         _cts = canceller
     End Sub
 
@@ -63,11 +62,6 @@ Public Class frmSignalDetails
                 allSignalDetails.Add(signal.SnapshotDate, signal)
             Else
                 If Not allSignalDetails.ContainsKey(signal.SnapshotDate) Then
-                    signal = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue, True, False)
-                    allSignalDetails.Add(signal.SnapshotDate, signal)
-                ElseIf allSignalDetails(signal.SnapshotDate).NoOfSharesToBuy = 0 Then
-                    allSignalDetails.Remove(signal.SnapshotDate)
-                    signal = New NFOStrategyInstrument.SignalDetails(_strategyInstrument, lastSignal, _strategyInstrument.TradableInstrument.TradingSymbol, Now.Date, price, price, desireValue, True, False)
                     allSignalDetails.Add(signal.SnapshotDate, signal)
                 End If
             End If
@@ -187,10 +181,6 @@ Public Class frmSignalDetails
                         dp.Color = Color.Red
                     End If
                 Next
-                If Not _strategyInstrument.AllSignalDetails.ContainsKey(Now.Date) OrElse
-                        _strategyInstrument.AllSignalDetails(Now.Date).NoOfSharesToBuy = 0 Then
-                    Me.chrtDetails.Series("Investment/Return").Points.LastOrDefault.Color = Color.Yellow
-                End If
             End If
         End If
     End Sub
@@ -270,10 +260,10 @@ Public Class frmSignalDetails
     End Function
 #End Region
 
-    Public Async Sub OnGenerateGraph()
+    Public Async Function SendGraphAsync() As Task
         frmSignalDetails_Load(Nothing, Nothing)
         Await SendTelegramInfoMessageAsync().ConfigureAwait(False)
-    End Sub
+    End Function
 
     Private Async Function SendTelegramInfoMessageAsync() As Task
         Try

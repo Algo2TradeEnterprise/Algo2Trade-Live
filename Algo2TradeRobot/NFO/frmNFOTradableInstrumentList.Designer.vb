@@ -28,7 +28,10 @@ Partial Class frmNFOTradableInstrumentList
         Dim DataGridViewCellStyle4 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmNFOTradableInstrumentList))
         Me.dgvTradableInstruments = New System.Windows.Forms.DataGridView()
+        Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnPortfolio = New System.Windows.Forms.Button()
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.TableLayoutPanel1.SuspendLayout()
         Me.SuspendLayout()
         '
         'dgvTradableInstruments
@@ -54,7 +57,7 @@ Partial Class frmNFOTradableInstrumentList
         DataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.[False]
         Me.dgvTradableInstruments.DefaultCellStyle = DataGridViewCellStyle2
         Me.dgvTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.dgvTradableInstruments.Location = New System.Drawing.Point(0, 0)
+        Me.dgvTradableInstruments.Location = New System.Drawing.Point(3, 3)
         Me.dgvTradableInstruments.Name = "dgvTradableInstruments"
         Me.dgvTradableInstruments.ReadOnly = True
         DataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter
@@ -70,15 +73,41 @@ Partial Class frmNFOTradableInstrumentList
         Me.dgvTradableInstruments.RowsDefaultCellStyle = DataGridViewCellStyle4
         Me.dgvTradableInstruments.RowTemplate.Height = 24
         Me.dgvTradableInstruments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect
-        Me.dgvTradableInstruments.Size = New System.Drawing.Size(1335, 312)
+        Me.dgvTradableInstruments.Size = New System.Drawing.Size(1329, 277)
         Me.dgvTradableInstruments.TabIndex = 1
+        '
+        'TableLayoutPanel1
+        '
+        Me.TableLayoutPanel1.ColumnCount = 1
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel1.Controls.Add(Me.dgvTradableInstruments, 0, 0)
+        Me.TableLayoutPanel1.Controls.Add(Me.btnPortfolio, 0, 1)
+        Me.TableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel1.Location = New System.Drawing.Point(0, 0)
+        Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
+        Me.TableLayoutPanel1.RowCount = 2
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 85.0!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 15.0!))
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1335, 333)
+        Me.TableLayoutPanel1.TabIndex = 2
+        '
+        'btnPortfolio
+        '
+        Me.btnPortfolio.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnPortfolio.Font = New System.Drawing.Font("Microsoft Sans Serif", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnPortfolio.Location = New System.Drawing.Point(3, 286)
+        Me.btnPortfolio.Name = "btnPortfolio"
+        Me.btnPortfolio.Size = New System.Drawing.Size(1329, 44)
+        Me.btnPortfolio.TabIndex = 2
+        Me.btnPortfolio.Text = "Check Portfolio"
+        Me.btnPortfolio.UseVisualStyleBackColor = True
         '
         'frmNFOTradableInstrumentList
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1335, 312)
-        Me.Controls.Add(Me.dgvTradableInstruments)
+        Me.ClientSize = New System.Drawing.Size(1335, 333)
+        Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
@@ -86,9 +115,12 @@ Partial Class frmNFOTradableInstrumentList
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.TableLayoutPanel1.ResumeLayout(False)
         Me.ResumeLayout(False)
 
     End Sub
 
     Friend WithEvents dgvTradableInstruments As DataGridView
+    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
+    Friend WithEvents btnPortfolio As Button
 End Class

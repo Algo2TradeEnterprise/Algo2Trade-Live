@@ -231,7 +231,24 @@ Public Class NFOStrategy
                         End If
 
                         Exit While
+                    Else
+                        If Now >= userInput.TradeEntryTime.AddMinutes(1) Then Exit While
                     End If
+                End If
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+
+            While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
+
+                If Now >= userInput.TradeEntryTime.AddMinutes(2) Then
+                    Await Task.Delay(15000).ConfigureAwait(False)
+                    Dim frmDtls As New frmPortfolio(Me.TradableStrategyInstruments, _cts)
+                    Await frmDtls.SendGraphAsync().ConfigureAwait(False)
+
+                    Exit While
                 End If
                 Await Task.Delay(1000).ConfigureAwait(False)
             End While

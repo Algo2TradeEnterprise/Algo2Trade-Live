@@ -210,6 +210,12 @@
     <Compile Include="NFO\frmNFOTradableInstrumentList.vb">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="NFO\frmPortfolio.Designer.vb">
+      <DependentUpon>frmPortfolio.vb</DependentUpon>
+    </Compile>
+    <Compile Include="NFO\frmPortfolio.vb">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="NFO\frmSignalDetails.Designer.vb">
       <DependentUpon>frmSignalDetails.vb</DependentUpon>
     </Compile>
@@ -265,6 +271,9 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NFO\frmPortfolio.resx">
+      <DependentUpon>frmPortfolio.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NFO\frmSignalDetails.resx">
       <DependentUpon>frmSignalDetails.vb</DependentUpon>

@@ -18,17 +18,6 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-#Region "Event and Handler"
-    Private _checkingCtr As Long = 0
-    Public Event GenerateGraph()
-    Protected Overridable Sub OnGenerateGraph()
-        _checkingCtr += 1
-        logger.Fatal("{0} - Telegram Counter: {1}", Me.TradableInstrument.TradingSymbol, _checkingCtr)
-        Dim frmDtls As New frmSignalDetails(Me, _cts)
-        RaiseEvent GenerateGraph()
-    End Sub
-#End Region
-
     Private ReadOnly _signalDetailsFilename As String = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0}.SignalDetails.a2t", Me.TradableInstrument.TradingSymbol))
     Private _allSignalDetails As Dictionary(Of Date, SignalDetails) = Nothing
     Public ReadOnly Property AllSignalDetails As Dictionary(Of Date, SignalDetails)
@@ -291,14 +280,12 @@ Public Class NFOStrategyInstrument
                                 SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, _tempSignal.ClosePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                 _tempSignal = Nothing
                                 _entryDoneForTheDay = True
-                                OnGenerateGraph()
                             Else
                                 Dim lastExecutedTrade As IBusinessOrder = GetLastExecutedOrder()
                                 If lastExecutedTrade IsNot Nothing AndAlso lastExecutedTrade.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
                                     SetSignalDetails(_tempSignal.SnapshotDate, _tempSignal.ClosePrice, lastExecutedTrade.ParentOrder.AveragePrice, _tempSignal.DesireValue, _tempSignal.MainTradingDay, _tempSignal.RunDaily)
                                     _tempSignal = Nothing
                                     _entryDoneForTheDay = True
-                                    OnGenerateGraph()
                                 End If
                             End If
                         End If
@@ -450,7 +437,7 @@ Public Class NFOStrategyInstrument
                                                               _tempSignal.NoOfSharesToBuy)
 
                         logger.Fatal(remarks)
-                        'SendTradeAlertMessageAsync(remarks)
+                        SendTradeAlertMessageAsync(remarks)
                     End If
                 End If
             End If
@@ -592,10 +579,13 @@ Public Class NFOStrategyInstrument
                                                   signal.NoOfSharesToBuy,
                                                   signal.TotalInvested)
             logger.Fatal(remarks)
-            SendTradeAlertMessageAsync(remarks)
 
             Utilities.Strings.SerializeFromCollection(Of Dictionary(Of Date, SignalDetails))(_signalDetailsFilename, AllSignalDetails)
             ret = True
+
+            SendTradeAlertMessageAsync(remarks)
+            Dim frmDtls As New frmSignalDetails(Me, _cts)
+            frmDtls.SendGraphAsync()
         End If
         Return ret
     End Function

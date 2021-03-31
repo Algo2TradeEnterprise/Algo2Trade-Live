@@ -98,4 +98,9 @@ Public Class frmNFOTradableInstrumentList
             frm.ShowDialog()
         End If
     End Sub
+
+    Private Sub btnPortfolio_Click(sender As Object, e As EventArgs) Handles btnPortfolio.Click
+        Dim frm As Form = New frmPortfolio(_TradableStrategyInstruments, _cts)
+        frm.ShowDialog()
+    End Sub
 End Class
