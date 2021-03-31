@@ -50,7 +50,8 @@ Public Class frmSignalDetails
 
                 Dim allSignalDetails As Dictionary(Of Date, NFOStrategyInstrument.SignalDetails) = _strategyInstrument.AllSignalDetails
                 Dim lastSignal As NFOStrategyInstrument.SignalDetails = _strategyInstrument.GetLastSignalDetails(Now.Date)
-                Dim desireValue As Double = CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InitialInvestment
+                Dim initialInvestment As Double = CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).InitialInvestment
+                Dim desireValue As Double = initialInvestment
                 If lastSignal IsNot Nothing Then
                     If lastSignal.MainTradingDay Then
                         desireValue = lastSignal.DesireValue + CType(_strategyInstrument.ParentStrategy.UserSettings, NFOUserInputs).ExpectedIncreaseEachPeriod
@@ -89,6 +90,7 @@ Public Class frmSignalDetails
                     dt.Columns.Add("Shares Owned After Rebalancing")
                     dt.Columns.Add("Total Invested")
                     dt.Columns.Add("Periodic Investment")
+                    dt.Columns.Add("Main Trading Day")
 
                     Dim payments As List(Of Double) = New List(Of Double)
                     Dim days As List(Of Double) = New List(Of Double)
@@ -105,14 +107,15 @@ Public Class frmSignalDetails
                         row("Shares Owned After Rebalancing") = runningSignal.SharesOwnedAfterRebalancing
                         row("Total Invested") = runningSignal.TotalInvested
                         row("Periodic Investment") = runningSignal.PeriodicInvestment
+                        row("Main Trading Day") = If(runningSignal.SnapshotDate.Date <> Now.Date, runningSignal.MainTradingDay, _strategyInstrument.TakeTradeToday)
 
                         dt.Rows.Add(row)
 
-                        Me.chrtDetails.Series("Desire Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                        Me.chrtDetails.Series("Desire Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue - initialInvestment)
                         If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
-                            Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue)
+                            Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.DesireValue - initialInvestment)
                         Else
-                            Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.TotalValueBeforeRebalancing)
+                            Me.chrtDetails.Series("Current Value Line").Points.AddXY(runningSignal.SnapshotDate.ToString("dd-MMM-yyyy"), runningSignal.TotalValueBeforeRebalancing - initialInvestment)
                         End If
 
                         If runningSignal.SnapshotDate = allSignalDetails.FirstOrDefault.Value.SnapshotDate Then
@@ -158,21 +161,34 @@ Public Class frmSignalDetails
                     Dim maxAccumulatedCorpus As Double = allSignalDetails.Values.Max(Function(x)
                                                                                          Return Math.Abs(x.AccumulatedCorpus)
                                                                                      End Function)
-                    Dim initialInvestment As Double = Math.Abs(allSignalDetails.FirstOrDefault.Value.PeriodicInvestment)
+                    Dim firstInvestment As Double = Math.Abs(allSignalDetails.FirstOrDefault.Value.PeriodicInvestment)
 
                     Dim a As New DataVisualization.Charting.TextAnnotation With {
                         .Alignment = ContentAlignment.TopLeft,
-                        .X = 81,
+                        .X = 82,
                         .Y = 25,
-                        .Text = String.Format("Current Investment/Return: {13}{0}{12}{0}Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
+                        .Text = String.Format("Current Return/Investment: {13} ( {14} ){0}{12}{0}Total Invested: {1}{0}{0}Total Returned: {2}{0}{0}Absolute Return: {3} %{0}{0}Annualized Absolute Return: {4} %{0}{0}XIRR: {5} %{0}{6}{0}Total Outflow: {9}{0}{0}Total Corpus: {10}{0}{0}Leftover Corpus: {11}{0}{0}Max Outflow Needed: {7}{0}{0}Max Corpus Accumulated: {8}",
                                               vbNewLine, Math.Round(totalInvested, 0), Math.Round(wealthBuild + totalReturned, 0), absoluteReturn.ToString("F"), annualizedAbsoluteReturn.ToString("F"), xirr.ToString("F"),
                                               "------------------------------------------",
-                                              Math.Round(maxOutflowNeeded, 0), Math.Round(maxAccumulatedCorpus, 0), Math.Round(totalInvested - initialInvestment, 0), Math.Round(totalReturned, 0), Math.Round(totalReturned - (totalInvested - initialInvestment), 0),
+                                              Math.Round(maxOutflowNeeded, 0), Math.Round(maxAccumulatedCorpus, 0), Math.Round(totalInvested - firstInvestment, 0), Math.Round(totalReturned, 0), Math.Round(totalReturned - (totalInvested - firstInvestment), 0),
                                               "------------------------------------------",
-                                              Math.Round(allSignalDetails.LastOrDefault.Value.PeriodicInvestment, 0))
+                                              Math.Round(allSignalDetails.LastOrDefault.Value.PeriodicInvestment, 0), Math.Round(allSignalDetails.LastOrDefault.Value.NoOfSharesToBuy, 0))
                     }
                     Me.chrtDetails.Annotations.Add(a)
 
+                    For Each dp As DataPoint In Me.chrtDetails.Series("Current Value Line").Points
+                        Dim runningDate As Date = Date.ParseExact(dp.AxisLabel, "dd-MMM-yyyy", Nothing)
+                        If (runningDate.Date <> Now.Date AndAlso allSignalDetails(runningDate).MainTradingDay) OrElse
+                            _strategyInstrument.TakeTradeToday Then
+                            If allSignalDetails(runningDate).MainTradingDay Then
+                                If allSignalDetails(runningDate).NoOfSharesToBuy < 0 Then
+                                    dp.Color = Color.Green
+                                Else
+                                    dp.Color = Color.Red
+                                End If
+                            End If
+                        End If
+                    Next
                     For Each dp As DataPoint In Me.chrtDetails.Series("Investment/Return").Points
                         If dp.YValues(0) > 0 Then
                             dp.Color = Color.Green
