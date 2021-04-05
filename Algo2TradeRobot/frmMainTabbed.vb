@@ -452,7 +452,12 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 5, _nfoUserInputs, 8, _cts)
+            Dim numberOfDayForHistorical As Integer = 8
+            Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / _nfoUserInputs.SignalTimeFrame)
+            Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
+            numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
+
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()

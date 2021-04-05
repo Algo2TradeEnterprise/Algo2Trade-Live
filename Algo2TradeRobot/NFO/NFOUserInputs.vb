@@ -7,17 +7,12 @@ Imports Algo2TradeCore.Entities.UserSettings
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "EMACrossoverSettings.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "SpotOptionSettings.Strategy.a2t")
 
-    Public Property StrikePriceRangePercentage As Decimal
+    Public Property StrikePriceSelectionRangePercentage As Decimal
 
-    Public Property LTEMA1Period As Integer
-    Public Property LTEMA2Period As Integer
-
-    Public Property HigherTimeframe As Integer
-    Public Property HTEMA1Period As Integer
-    Public Property HTEMA2Period As Integer
-
+    Public Property SupertrendPeriod As Integer
+    Public Property SupertrendMultiplier As Decimal
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
@@ -25,8 +20,7 @@ Public Class NFOUserInputs
     <Serializable>
     Public Class InstrumentDetails
         Public Property InstrumentName As String
-        Public Property InitialQuantity As Integer
-        Public Property ModifiedQuantity As Integer
+        Public Property NumberOfLots As Integer
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -39,7 +33,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "INITIAL NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -66,10 +60,10 @@ Public Class NFOUserInputs
                                     End If
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                    Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                        Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            quantity = instrumentDetails(rowCtr, columnCtr)
+                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
+                                            quantity = Val(instrumentDetails(rowCtr, columnCtr))
                                         Else
                                             Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
@@ -80,9 +74,8 @@ Public Class NFOUserInputs
                             Next
                             If instrumentName IsNot Nothing AndAlso quantity > 0 Then
                                 Dim instrumentData As New InstrumentDetails With {
-                                    .InstrumentName = instrumentName.ToUpper,
-                                    .InitialQuantity = quantity,
-                                    .ModifiedQuantity = quantity
+                                    .InstrumentName = instrumentName.ToUpper.Trim,
+                                    .NumberOfLots = quantity
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)

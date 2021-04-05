@@ -27,28 +27,9 @@ Partial Class frmNFOTradableInstrumentList
         Dim DataGridViewCellStyle3 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Dim DataGridViewCellStyle4 As System.Windows.Forms.DataGridViewCellStyle = New System.Windows.Forms.DataGridViewCellStyle()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmNFOTradableInstrumentList))
-        Me.pnlMainEMACrossoverTradableInstrumentList = New System.Windows.Forms.TableLayoutPanel()
         Me.dgvTradableInstruments = New System.Windows.Forms.DataGridView()
-        Me.btnExit = New System.Windows.Forms.Button()
-        Me.pnlMainEMACrossoverTradableInstrumentList.SuspendLayout()
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
-        '
-        'pnlMainEMACrossoverTradableInstrumentList
-        '
-        Me.pnlMainEMACrossoverTradableInstrumentList.ColumnCount = 2
-        Me.pnlMainEMACrossoverTradableInstrumentList.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 84.7482!))
-        Me.pnlMainEMACrossoverTradableInstrumentList.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 15.2518!))
-        Me.pnlMainEMACrossoverTradableInstrumentList.Controls.Add(Me.dgvTradableInstruments, 0, 0)
-        Me.pnlMainEMACrossoverTradableInstrumentList.Controls.Add(Me.btnExit, 1, 0)
-        Me.pnlMainEMACrossoverTradableInstrumentList.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlMainEMACrossoverTradableInstrumentList.Location = New System.Drawing.Point(0, 0)
-        Me.pnlMainEMACrossoverTradableInstrumentList.Margin = New System.Windows.Forms.Padding(4)
-        Me.pnlMainEMACrossoverTradableInstrumentList.Name = "pnlMainEMACrossoverTradableInstrumentList"
-        Me.pnlMainEMACrossoverTradableInstrumentList.RowCount = 1
-        Me.pnlMainEMACrossoverTradableInstrumentList.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.pnlMainEMACrossoverTradableInstrumentList.Size = New System.Drawing.Size(1096, 470)
-        Me.pnlMainEMACrossoverTradableInstrumentList.TabIndex = 5
         '
         'dgvTradableInstruments
         '
@@ -73,7 +54,7 @@ Partial Class frmNFOTradableInstrumentList
         DataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.[False]
         Me.dgvTradableInstruments.DefaultCellStyle = DataGridViewCellStyle2
         Me.dgvTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.dgvTradableInstruments.Location = New System.Drawing.Point(3, 2)
+        Me.dgvTradableInstruments.Location = New System.Drawing.Point(0, 0)
         Me.dgvTradableInstruments.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.dgvTradableInstruments.Name = "dgvTradableInstruments"
         DataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter
@@ -89,41 +70,24 @@ Partial Class frmNFOTradableInstrumentList
         Me.dgvTradableInstruments.RowsDefaultCellStyle = DataGridViewCellStyle4
         Me.dgvTradableInstruments.RowTemplate.Height = 24
         Me.dgvTradableInstruments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect
-        Me.dgvTradableInstruments.Size = New System.Drawing.Size(922, 466)
+        Me.dgvTradableInstruments.Size = New System.Drawing.Size(912, 318)
         Me.dgvTradableInstruments.TabIndex = 2
-        '
-        'btnExit
-        '
-        Me.btnExit.AutoSize = True
-        Me.btnExit.Dock = System.Windows.Forms.DockStyle.Top
-        Me.btnExit.Location = New System.Drawing.Point(932, 4)
-        Me.btnExit.Margin = New System.Windows.Forms.Padding(4)
-        Me.btnExit.Name = "btnExit"
-        Me.btnExit.Size = New System.Drawing.Size(160, 38)
-        Me.btnExit.TabIndex = 3
-        Me.btnExit.Text = "E&xit"
-        Me.btnExit.UseVisualStyleBackColor = True
         '
         'frmNFOTradableInstrumentList
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1096, 470)
-        Me.Controls.Add(Me.pnlMainEMACrossoverTradableInstrumentList)
+        Me.ClientSize = New System.Drawing.Size(912, 318)
+        Me.Controls.Add(Me.dgvTradableInstruments)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmNFOTradableInstrumentList"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "EMA Crossover Strategy Tradable Instruments"
-        Me.pnlMainEMACrossoverTradableInstrumentList.ResumeLayout(False)
-        Me.pnlMainEMACrossoverTradableInstrumentList.PerformLayout()
+        Me.Text = "Strategy Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
-
-    Friend WithEvents pnlMainEMACrossoverTradableInstrumentList As TableLayoutPanel
     Friend WithEvents dgvTradableInstruments As DataGridView
-    Friend WithEvents btnExit As Button
 End Class

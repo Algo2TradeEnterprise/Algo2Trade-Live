@@ -1,0 +1,18 @@
+1. Spot chart to be monitored for entry signal and trade to be placed in options
+2. Instrument selection will need to be done in a CSV file by the customer and addition and deletion of instruments will have no limitation
+3. Once instrument is given to the tool and started, any changes can only be maade after stopping and restarting the tool.
+4. Supertrend(x,y) will be the only indicator in the spot charge, and both the options and spot chart will have same timeframe
+5. At 9:20AM, based on the suportrend color on candle close of 9:20AM, the corresponding option strike ATM as per 9:20AM spot LTP will be selected for selling
+6. If ST is green, then Put will be sold, else Call will be sold having strike ATM to the ltp of 9:20AM close.
+7. Once trade is taken, spot chart monitoring will be stopped.
+8. The trade will be now monitored by ST(x,y) on the option chart
+9. When the ST color changes, the position will be exited in the current option chart and a 2nd position will be entered in the complimenting options chart
+10. e.g if Put is taken as the first trade and the ST changes color at 11AM, then put trade will be closed and call sell will be initiated immediately at the same strike price obtained at 9:20AM
+11. This 2nd trade will also exit on change of ST color. Only 2 trades per day
+12. Last trade at 3:00PM. Force square off at 3:15PM
+
+All trades (entry, exit) will be done via market entry.
+
+
+ATM Selection:
+If spot is 14340, then 14350 is strike, if it is 14389, the 14400 eill be the strike, if it is 14367, then 14350 will be the strike.
