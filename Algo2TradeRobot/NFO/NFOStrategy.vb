@@ -38,26 +38,32 @@ Public Class NFOStrategy
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         logger.Debug("Starting to fill strategy specific instruments, strategy:{0}", Me.ToString)
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
-            Dim userInputs As NFOUserInputs = Me.UserSettings
-            If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
-                Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
-                For Each instrument In userInputs.InstrumentsData
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim runningTradableInstrument As IInstrument = Nothing
-                    runningTradableInstrument = dummyAllInstruments.Find(Function(x)
-                                                                             Return x.TradingSymbol.ToUpper = instrument.Value.InstrumentName.ToUpper
-                                                                         End Function)
+            Dim availableHoldings As Concurrent.ConcurrentBag(Of IHolding) = Await Me.ParentController.GetHoldingDetailsAsync().ConfigureAwait(False)
+            If availableHoldings IsNot Nothing AndAlso availableHoldings.Count > 0 Then
+                Dim userInputs As NFOUserInputs = Me.UserSettings
+                If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
+                    Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                    For Each instrument In userInputs.InstrumentsData
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim runningTradableInstrument As IInstrument = Nothing
+                        runningTradableInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                 Return x.TradingSymbol.ToUpper = instrument.Value.InstrumentName.ToUpper
+                                                                             End Function)
 
-                    If runningTradableInstrument IsNot Nothing Then
-                        If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                        retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
-
-                        ret = True
-                    Else
-                        OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))
-                    End If
-                Next
-                TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+                        If runningTradableInstrument IsNot Nothing Then
+                            If IsStockHoldingAvailable(availableHoldings, runningTradableInstrument) Then
+                                If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
+                                ret = True
+                            Else
+                                OnHeartbeat(String.Format("No holdings available for: {0}", instrument.Key))
+                            End If
+                        Else
+                            OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))
+                        End If
+                    Next
+                    TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
+                End If
             End If
         End If
 
@@ -99,10 +105,25 @@ Public Class NFOStrategy
         Return ret
     End Function
 
+    Private Function IsStockHoldingAvailable(ByVal allHoldings As Concurrent.ConcurrentBag(Of IHolding), ByVal stock As IInstrument)
+        Dim ret As Boolean = False
+        If stock IsNot Nothing AndAlso allHoldings IsNot Nothing And allHoldings.Count > 0 Then
+            For Each runningHolding In allHoldings
+                If runningHolding.InstrumentIdentifier = stock.InstrumentIdentifier Then
+                    ret = True
+                    Exit For
+                End If
+            Next
+        End If
+        Return ret
+    End Function
+
     Public Overrides Async Function MonitorAsync() As Task
         Dim lastException As Exception = Nothing
 
         Try
+            _cts.Token.ThrowIfCancellationRequested()
+            Await GetHoldingsDataAsync().ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
