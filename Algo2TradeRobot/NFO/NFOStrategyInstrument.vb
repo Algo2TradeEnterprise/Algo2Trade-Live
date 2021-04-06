@@ -86,6 +86,7 @@ Public Class NFOStrategyInstrument
                 '    Throw Me._RMSException
                 'End If
                 _cts.Token.ThrowIfCancellationRequested()
+
                 Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
@@ -148,7 +149,7 @@ Public Class NFOStrategyInstrument
                                 If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                                     Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                                     If placeOrderResponse.ContainsKey("data") AndAlso
-                                    placeOrderResponse("data").ContainsKey("order_id") Then
+                                        placeOrderResponse("data").ContainsKey("order_id") Then
                                         _entryDirection = IOrder.TypeOfTransaction.None
                                         _placedOrderID = placeOrderResponse("data")("order_id")
                                         '_SignalData.ResetHighestLowestPoint()
@@ -164,7 +165,7 @@ Public Class NFOStrategyInstrument
                                 If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                                     Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                                     If placeOrderResponse.ContainsKey("data") AndAlso
-                                    placeOrderResponse("data").ContainsKey("order_id") Then
+                                        placeOrderResponse("data").ContainsKey("order_id") Then
                                         _entryDirection = IOrder.TypeOfTransaction.None
                                         _placedOrderID = placeOrderResponse("data")("order_id")
                                         '_SignalData.ResetHighestLowestPoint()
