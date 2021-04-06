@@ -1,2 +1,4 @@
-Instrument Name,Number Of Lots
-NIFTY 50,1
+Instrument Name,Capital,Downward Drop%,Downward Rise%,Upward Drop%,Upward Rise%
+POWERGRID,5000,20%,2%,15%,1.50%
+TCS,3000,17%,1%,15%,1.50%
+IBULHSGFIN,3000,17%,1%,20%,2.00%

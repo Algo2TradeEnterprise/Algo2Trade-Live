@@ -7,12 +7,7 @@ Imports Algo2TradeCore.Entities.UserSettings
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "SpotOptionSettings.Strategy.a2t")
-
-    Public Property StrikePriceSelectionRangePercentage As Decimal
-
-    Public Property SupertrendPeriod As Integer
-    Public Property SupertrendMultiplier As Decimal
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "BuyDipSellHighSettings.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
@@ -20,7 +15,11 @@ Public Class NFOUserInputs
     <Serializable>
     Public Class InstrumentDetails
         Public Property InstrumentName As String
-        Public Property NumberOfLots As Integer
+        Public Property Capital As Decimal
+        Public Property DownwardDropPercentage As Decimal
+        Public Property DownwardRisePercentage As Decimal
+        Public Property UpwardDropPercentage As Decimal
+        Public Property UpwardRisePercentage As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -33,9 +32,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CAPITAL", "DOWNWARD DROP%", "DOWNWARD RISE%", "UPWARD DROP%", "UPWARD RISE%"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 5
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -46,7 +45,11 @@ Public Class NFOUserInputs
                         Next
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
-                            Dim quantity As Integer = Integer.MinValue
+                            Dim capital As Decimal = Decimal.MinValue
+                            Dim downdrop As Decimal = Decimal.MinValue
+                            Dim downrise As Decimal = Decimal.MinValue
+                            Dim updrop As Decimal = Decimal.MinValue
+                            Dim uprise As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -61,21 +64,68 @@ Public Class NFOUserInputs
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
-                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
-                                            quantity = Val(instrumentDetails(rowCtr, columnCtr))
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            capital = Val(instrumentDetails(rowCtr, columnCtr))
                                         Else
-                                            Throw New ApplicationException(String.Format("Number Of Lots cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                            Throw New ApplicationException(String.Format("Capital cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                         End If
                                     Else
-                                        Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        Throw New ApplicationException(String.Format("Capital cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            downdrop = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Downward Drop% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Downward Drop% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 3 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            downrise = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Downward Rise% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Downward Rise% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 4 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            updrop = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Upward Drop% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Upward Drop% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            uprise = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Upward Rise% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Upward Rise% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
                                 End If
                             Next
-                            If instrumentName IsNot Nothing AndAlso quantity > 0 Then
+                            If instrumentName IsNot Nothing Then
                                 Dim instrumentData As New InstrumentDetails With {
                                     .InstrumentName = instrumentName.ToUpper.Trim,
-                                    .NumberOfLots = quantity
+                                    .Capital = capital,
+                                    .DownwardDropPercentage = downdrop,
+                                    .DownwardRisePercentage = downrise,
+                                    .UpwardDropPercentage = updrop,
+                                    .UpwardRisePercentage = uprise
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
