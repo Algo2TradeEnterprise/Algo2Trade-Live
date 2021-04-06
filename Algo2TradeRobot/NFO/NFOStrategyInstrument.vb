@@ -64,6 +64,9 @@ Public Class NFOStrategyInstrument
             _SignalData.HoldingsAveragePrice = Me.HoldingDetails.AveragePrice
             _SignalData.HoldingsQuantity = Me.HoldingDetails.Quantity
             If Me.PositionDetails IsNot Nothing Then
+                If Me.PositionDetails.Quantity < 0 Then
+                    _SignalData.HoldingsQuantity += Me.PositionDetails.Quantity
+                End If
                 _SignalData.PositionsAveragePrice = Me.PositionDetails.AveragePrice
                 _SignalData.PositionsQuantity = Me.PositionDetails.Quantity
             Else
