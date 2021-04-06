@@ -14,12 +14,18 @@ Public Class NFOUserInputs
 
     <Serializable>
     Public Class InstrumentDetails
+        Enum Mode
+            Net = 1
+            Day
+        End Enum
+
         Public Property InstrumentName As String
         Public Property Capital As Decimal
         Public Property DownwardDropPercentage As Decimal
         Public Property DownwardRisePercentage As Decimal
         Public Property UpwardDropPercentage As Decimal
         Public Property UpwardRisePercentage As Decimal
+        Public Property RunningMode As Mode
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -32,9 +38,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "CAPITAL", "DOWNWARD DROP%", "DOWNWARD RISE%", "UPWARD DROP%", "UPWARD RISE%"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "BUY CAPITAL", "DOWNWARD DROP%", "DOWNWARD RISE%", "UPWARD RISE%", "UPWARD DROP%", "MODE", "SKIP"}
 
-                        For colCtr = 0 To 5
+                        For colCtr = 0 To 7
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -48,8 +54,10 @@ Public Class NFOUserInputs
                             Dim capital As Decimal = Decimal.MinValue
                             Dim downdrop As Decimal = Decimal.MinValue
                             Dim downrise As Decimal = Decimal.MinValue
-                            Dim updrop As Decimal = Decimal.MinValue
                             Dim uprise As Decimal = Decimal.MinValue
+                            Dim updrop As Decimal = Decimal.MinValue
+                            Dim mode As String = Nothing
+                            Dim skip As String = Nothing
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -98,17 +106,6 @@ Public Class NFOUserInputs
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
-                                            updrop = Val(instrumentDetails(rowCtr, columnCtr))
-                                        Else
-                                            Throw New ApplicationException(String.Format("Upward Drop% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
-                                        End If
-                                    Else
-                                        Throw New ApplicationException(String.Format("Upward Drop% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
-                                    End If
-                                ElseIf columnCtr = 5 Then
-                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
-                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
                                             uprise = Val(instrumentDetails(rowCtr, columnCtr))
                                         Else
                                             Throw New ApplicationException(String.Format("Upward Rise% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
@@ -116,23 +113,54 @@ Public Class NFOUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Upward Rise% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            updrop = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Upward Drop% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Upward Drop% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 6 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                       Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        mode = instrumentDetails(rowCtr, columnCtr)
+                                        If mode.Trim.ToUpper <> "DAY" AndAlso mode.Trim.ToUpper <> "NET" Then
+                                            Throw New ApplicationException(String.Format("Mode cannot be other than 'Day'/'Net'. RowNumber: {0}", rowCtr))
+                                        End If
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Mode Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 7 Then
+                                    skip = instrumentDetails(rowCtr, columnCtr)
+                                    If skip IsNot Nothing AndAlso skip.Trim <> "" AndAlso skip.Trim.ToUpper <> "Y" AndAlso skip.Trim.ToUpper <> "N" Then
+                                        Throw New ApplicationException(String.Format("Skip cannot be other than 'Y'/'N'/Blank. RowNumber: {0}", rowCtr))
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
-                                Dim instrumentData As New InstrumentDetails With {
-                                    .InstrumentName = instrumentName.ToUpper.Trim,
-                                    .Capital = capital,
-                                    .DownwardDropPercentage = downdrop,
-                                    .DownwardRisePercentage = downrise,
-                                    .UpwardDropPercentage = updrop,
-                                    .UpwardRisePercentage = uprise
-                                }
+                                If Not (skip IsNot Nothing AndAlso skip.Trim.ToUpper = "Y") Then
+                                    Dim instrumentData As New InstrumentDetails With {
+                                            .InstrumentName = instrumentName.ToUpper.Trim,
+                                            .Capital = capital,
+                                            .DownwardDropPercentage = downdrop,
+                                            .DownwardRisePercentage = downrise,
+                                            .UpwardDropPercentage = updrop,
+                                            .UpwardRisePercentage = uprise,
+                                            .RunningMode = If(mode.Trim.ToUpper = "DAY", NFOUserInputs.InstrumentDetails.Mode.Day, NFOUserInputs.InstrumentDetails.Mode.Net)
+                                        }
 
-                                If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
-                                If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
-                                    Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))
+                                    If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
+                                    If Me.InstrumentsData.ContainsKey(instrumentData.InstrumentName) Then
+                                        Throw New ApplicationException(String.Format("Duplicate Instrument Name {0}", instrumentData.InstrumentName))
+                                    End If
+                                    Me.InstrumentsData.Add(instrumentData.InstrumentName, instrumentData)
                                 End If
-                                Me.InstrumentsData.Add(instrumentData.InstrumentName, instrumentData)
                             End If
                         Next
                     Else

@@ -35,28 +35,13 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtSignalTimeframe.Text = _settings.SignalTimeFrame
-            dtpckrTradeStartTime.Value = _settings.TradeStartTime
-            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
-            dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtStrikeRangePer.Text = _settings.StrikePriceSelectionRangePercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtSupertrendPeriod.Text = _settings.SupertrendPeriod
-            txtSupertrendMultiplier.Text = _settings.SupertrendMultiplier
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeframe.Text
-        _settings.TradeStartTime = dtpckrTradeStartTime.Value
-        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
-        _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.StrikePriceSelectionRangePercentage = txtStrikeRangePer.Text
+        _settings.SignalTimeFrame = 1
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.SupertrendPeriod = txtSupertrendPeriod.Text
-        _settings.SupertrendMultiplier = txtSupertrendMultiplier.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -79,12 +64,6 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 180, txtSignalTimeframe, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtStrikeRangePer)
-
-        ValidateNumbers(1, Integer.MaxValue, txtSupertrendPeriod, True)
-        ValidateNumbers(1, Decimal.MaxValue, txtSupertrendMultiplier, False)
-
         ValidateFile()
     End Sub
 

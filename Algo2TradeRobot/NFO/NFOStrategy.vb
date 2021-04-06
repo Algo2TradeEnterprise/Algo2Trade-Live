@@ -15,7 +15,7 @@ Public Class NFOStrategy
                    ByVal userSettings As NFOUserInputs,
                    ByVal maxNumberOfDaysForHistoricalFetch As Integer,
                    ByVal canceller As CancellationTokenSource)
-        MyBase.New(associatedParentController, strategyIdentifier, True, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
+        MyBase.New(associatedParentController, strategyIdentifier, False, userSettings, maxNumberOfDaysForHistoricalFetch, canceller)
         'Though the TradableStrategyInstruments is being populated from inside by newing it,
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
@@ -52,27 +52,6 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
-                        Dim optionRawInstrumentName As String = instrument.Value.InstrumentName
-                        If instrument.Value.InstrumentName.Trim.ToUpper = "NIFTY 50" Then
-                            optionRawInstrumentName = "NIFTY"
-                        ElseIf instrument.Value.InstrumentName.Trim.ToUpper = "NIFTY BANK" Then
-                            optionRawInstrumentName = "BANKNIFTY"
-                        End If
-                        Dim dependentTradableInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                                   Return x.RawInstrumentName.ToUpper = optionRawInstrumentName.ToUpper AndAlso
-                                                                                                                    x.InstrumentType = IInstrument.TypeOfInstrument.Options
-                                                                                                               End Function)
-                        If dependentTradableInstruments IsNot Nothing AndAlso dependentTradableInstruments.Count > 0 Then
-                            Dim minExpiry As Date = dependentTradableInstruments.Min(Function(x)
-                                                                                         Return x.Expiry.Value
-                                                                                     End Function)
-                            Dim optionTradableInstruments As IEnumerable(Of IInstrument) = dependentTradableInstruments.Where(Function(x)
-                                                                                                                                  Return x.Expiry.Value.Date = minExpiry.Date
-                                                                                                                              End Function)
-                            If optionTradableInstruments IsNot Nothing AndAlso optionTradableInstruments.Count > 0 Then
-                                retTradableInstrumentsAsPerStrategy.AddRange(optionTradableInstruments)
-                            End If
-                        End If
                         ret = True
                     Else
                         OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))

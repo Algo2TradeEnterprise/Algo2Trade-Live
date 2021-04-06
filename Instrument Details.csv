@@ -1,4 +1,4 @@
-Instrument Name,Capital,Downward Drop%,Downward Rise%,Upward Drop%,Upward Rise%
-POWERGRID,5000,20%,2%,15%,1.50%
-TCS,3000,17%,1%,15%,1.50%
-IBULHSGFIN,3000,17%,1%,20%,2.00%
+Instrument Name,Buy Capital,Downward Drop%,Downward Rise%,Upward Rise%,Upward Drop%,Mode,Skip
+POWERGRID,5000,20%,2%,15%,1.50%,Net,
+TCS,3000,17%,1%,15%,1.50%,Net,
+IBULHSGFIN,3000,17%,1%,20%,2.00%,Day,Y
