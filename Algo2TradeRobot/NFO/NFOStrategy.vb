@@ -45,21 +45,21 @@ Public Class NFOStrategy
                     Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
                     For Each instrument In userInputs.InstrumentsData
                         _cts.Token.ThrowIfCancellationRequested()
-                        Dim runningTradableInstrument As IInstrument = Nothing
-                        runningTradableInstrument = dummyAllInstruments.Find(Function(x)
-                                                                                 Return x.TradingSymbol.ToUpper = instrument.Value.InstrumentName.ToUpper
-                                                                             End Function)
-
-                        If runningTradableInstrument IsNot Nothing Then
-                            If IsStockHoldingAvailable(availableHoldings, runningTradableInstrument) Then
+                        Dim stockHolding As IHolding = GetStockHolding(availableHoldings, instrument.Value.InstrumentName.Trim)
+                        If stockHolding IsNot Nothing Then
+                            Dim runningTradableInstrument As IInstrument = Nothing
+                            runningTradableInstrument = dummyAllInstruments.Find(Function(x)
+                                                                                     Return x.InstrumentIdentifier = stockHolding.InstrumentIdentifier
+                                                                                 End Function)
+                            If runningTradableInstrument IsNot Nothing Then
                                 If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                                 retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
                                 ret = True
                             Else
-                                OnHeartbeat(String.Format("No holdings available for: {0}", instrument.Key))
+                                OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))
                             End If
                         Else
-                            OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))
+                            OnHeartbeat(String.Format("No holdings available for: {0}", instrument.Key))
                         End If
                     Next
                     TradableInstrumentsAsPerStrategy = retTradableInstrumentsAsPerStrategy
@@ -105,12 +105,12 @@ Public Class NFOStrategy
         Return ret
     End Function
 
-    Private Function IsStockHoldingAvailable(ByVal allHoldings As Concurrent.ConcurrentBag(Of IHolding), ByVal stock As IInstrument)
-        Dim ret As Boolean = False
+    Private Function GetStockHolding(ByVal allHoldings As Concurrent.ConcurrentBag(Of IHolding), ByVal stock As String) As IHolding
+        Dim ret As IHolding = Nothing
         If stock IsNot Nothing AndAlso allHoldings IsNot Nothing And allHoldings.Count > 0 Then
             For Each runningHolding In allHoldings
-                If runningHolding.InstrumentIdentifier = stock.InstrumentIdentifier Then
-                    ret = True
+                If runningHolding.TradingSymbol.ToUpper = stock.ToUpper Then
+                    ret = runningHolding
                     Exit For
                 End If
             Next

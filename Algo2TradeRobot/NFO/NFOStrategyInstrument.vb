@@ -62,7 +62,7 @@ Public Class NFOStrategyInstrument
             End If
             _SignalData.TradingSymbol = Me.TradableInstrument.TradingSymbol
             _SignalData.HoldingsAveragePrice = Me.HoldingDetails.AveragePrice
-            _SignalData.HoldingsQuantity = Me.HoldingDetails.Quantity
+            _SignalData.HoldingsQuantity = Me.HoldingDetails.Quantity + Me.HoldingDetails.T1Quantity
             If Me.PositionDetails IsNot Nothing Then
                 If Me.PositionDetails.Quantity < 0 Then
                     _SignalData.HoldingsQuantity += Me.PositionDetails.Quantity
@@ -117,6 +117,10 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
                 If Me.PositionDetails IsNot Nothing AndAlso Me.PositionDetails.Quantity <> _SignalData.PositionsQuantity Then
+                    If Me.PositionDetails.Quantity < 0 AndAlso _SignalData.HoldingsQuantity = 1 Then
+                        _SignalData.HoldingsQuantity += Me.PositionDetails.Quantity
+                    End If
+
                     _SignalData.PositionsAveragePrice = Me.PositionDetails.AveragePrice
                     _SignalData.PositionsQuantity = Me.PositionDetails.Quantity
 
