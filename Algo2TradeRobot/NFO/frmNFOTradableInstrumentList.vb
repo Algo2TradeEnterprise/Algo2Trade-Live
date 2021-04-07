@@ -29,12 +29,16 @@
                 'row("Expiry") = instrument.TradableInstrument.Expiry
                 'row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Running") = instrument.StrategyInstrumentRunning
-                row("Total Quantity") = instrument.SignalData.TotalQuantity
-                row("Average Price") = Math.Round(instrument.SignalData.AveragePrice, 2)
-                row("Downward Drop %") = Math.Round(instrument.SignalData.DownwardDropPercentage, 2)
-                row("Downward Rise %") = Math.Round(instrument.SignalData.DownwardNetRisePercentage, 2)
-                row("Upward Rise %") = Math.Round(instrument.SignalData.UpwardRisePercentage, 2)
-                row("Upward Drop %") = Math.Round(instrument.SignalData.UpwardNetDropPercentage, 2)
+                Try
+                    row("Total Quantity") = instrument.SignalData.TotalQuantity
+                    row("Average Price") = Math.Round(instrument.SignalData.AveragePrice, 2)
+                    row("Downward Drop %") = Math.Round(instrument.SignalData.DownwardDropPercentage, 2)
+                    row("Downward Rise %") = Math.Round(instrument.SignalData.DownwardNetRisePercentage, 2)
+                    row("Upward Rise %") = Math.Round(instrument.SignalData.UpwardRisePercentage, 2)
+                    row("Upward Drop %") = Math.Round(instrument.SignalData.UpwardNetDropPercentage, 2)
+                Catch ex As Exception
+                    'Ignore
+                End Try
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt

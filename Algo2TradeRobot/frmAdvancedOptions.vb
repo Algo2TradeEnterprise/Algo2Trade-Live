@@ -98,6 +98,8 @@ Public Class frmAdvancedOptions
             {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value, .ContractRolloverTime = dtpckrNSEContractRolloverTime.Value}},
             {"NFO", New Exchange(Enums.TypeOfExchage.NSE) With
             {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value, .ContractRolloverTime = dtpckrNSEContractRolloverTime.Value}},
+            {"BSE", New Exchange(Enums.TypeOfExchage.NSE) With
+            {.ExchangeStartTime = dtpckrNSEExchangeStartTime.Value, .ExchangeEndTime = dtpckrNSEExchangeEndTime.Value, .ContractRolloverTime = dtpckrNSEContractRolloverTime.Value}},
             {"MCX", New Exchange(Enums.TypeOfExchage.MCX) With
             {.ExchangeStartTime = dtpckrMCXExchangeStartTime.Value, .ExchangeEndTime = dtpckrMCXExchangeEndTime.Value, .ContractRolloverTime = dtpckrMCXContractRolloverTime.Value}},
             {"CDS", New Exchange(Enums.TypeOfExchage.CDS) With

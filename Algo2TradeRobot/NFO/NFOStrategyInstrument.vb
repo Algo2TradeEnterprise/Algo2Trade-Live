@@ -6,6 +6,7 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.ChartHandler.ChartStyle
 Imports System.IO
+Imports Algo2TradeCore.Exceptions
 
 Public Class NFOStrategyInstrument
     Inherits StrategyInstrument
@@ -120,7 +121,7 @@ Public Class NFOStrategyInstrument
                                 _placedOrderID = Nothing
                             ElseIf Me.OrderDetails(_placedOrderID).ParentOrder.Status = IOrder.TypeOfStatus.Rejected Then
                                 If Me._RMSException IsNot Nothing AndAlso _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                                    OnHeartbeat(String.Format("***** Will not take no more action in this instrument as RMS Error occured. Error-{0}", _RMSException.Message))
                                     _exception = Me._RMSException
                                 End If
                             End If
@@ -141,7 +142,7 @@ Public Class NFOStrategyInstrument
                             _cts.Token.ThrowIfCancellationRequested()
                             Await SerializeSignalDetailsAsync().ConfigureAwait(False)
 
-                            OnHeartbeat(Me.SignalData.ToString)
+                            OnHeartbeat(GetLogString)
                         ElseIf Me.TradableInstrument.LastTick.Timestamp.Value >= _lastSerializeTime.AddMinutes(1) Then
                             _SignalData.CurrentLTPTime = Me.TradableInstrument.LastTick.Timestamp.Value
                             _SignalData.CurrentLTP = Me.TradableInstrument.LastTick.LastPrice
@@ -149,7 +150,7 @@ Public Class NFOStrategyInstrument
                             _cts.Token.ThrowIfCancellationRequested()
                             Await SerializeSignalDetailsAsync().ConfigureAwait(False)
 
-                            OnHeartbeat(Me.SignalData.ToString)
+                            OnHeartbeat(GetLogString)
                         End If
 
                         _cts.Token.ThrowIfCancellationRequested()
@@ -158,7 +159,7 @@ Public Class NFOStrategyInstrument
                                 If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
                                     If Interlocked.Exchange(_tradeLock, 1) = 0 Then
                                         Try
-                                            logger.Debug("{0}: ********** {1}. Place Order ID:{2}", Me.TradableInstrument.TradingSymbol, Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
+                                            logger.Debug("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
                                             If _placedOrderID Is Nothing Then
                                                 _entryDirection = IOrder.TypeOfTransaction.Buy
                                                 Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
@@ -172,6 +173,11 @@ Public Class NFOStrategyInstrument
                                                     End If
                                                 End If
                                             End If
+                                        Catch aex As AdapterBusinessException
+                                            If aex.ExceptionType = AdapterBusinessException.TypeOfException.UnknownException Then
+                                                OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Unknown Error occured. Error-{0}", aex.Message))
+                                                _exception = aex
+                                            End If
                                         Finally
                                             Interlocked.Exchange(_tradeLock, 0)
                                         End Try
@@ -183,7 +189,7 @@ Public Class NFOStrategyInstrument
                                 If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
                                     If Interlocked.Exchange(_tradeLock, 1) = 0 Then
                                         Try
-                                            logger.Debug("{0}: ********** {1}. Place Order ID:{2}", Me.TradableInstrument.TradingSymbol, Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
+                                            logger.Debug("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
                                             If _placedOrderID Is Nothing Then
                                                 _entryDirection = IOrder.TypeOfTransaction.Sell
                                                 Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
@@ -196,6 +202,11 @@ Public Class NFOStrategyInstrument
                                                         '_SignalData.ResetHighestLowestPoint()
                                                     End If
                                                 End If
+                                            End If
+                                        Catch aex As AdapterBusinessException
+                                            If aex.ExceptionType = AdapterBusinessException.TypeOfException.UnknownException Then
+                                                OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Unknown Error occured. Error-{0}", aex.Message))
+                                                _exception = aex
                                             End If
                                         Finally
                                             Interlocked.Exchange(_tradeLock, 0)
@@ -242,7 +253,7 @@ Public Class NFOStrategyInstrument
                                     .Quantity = Me.SignalData.TotalQuantity - 1
                                  }
                 End If
-                If forcePrint Then OnHeartbeat(String.Format("********** {0}", Me.SignalData.ToString))
+                If forcePrint Then OnHeartbeat(String.Format("********** {0}", GetLogString))
             End If
         End If
 
@@ -319,6 +330,46 @@ Public Class NFOStrategyInstrument
             End If
         End If
         Return ret
+    End Function
+
+    Private Function GetLogString() As String
+        If _SignalData.TotalQuantity > 1 Then
+            If _SignalData.UpwardRisePercentage >= Math.Abs(_instrumentDetails.UpwardRisePercentage) Then
+                If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
+                    Return String.Format("Checking for Sell[Total Quantity({0})]. Upward Rise Complete:{1}[Upward Rise[((Highest Point({2})/Average Price({3}))-1)*100]({4}%)]. Upward Drop Complete:{5}[Upward Drop[((LTP({6})/Highest Point({7}))-1)*100]({8}%)]. Holdings Avg Price={9}, Holdings Quantity={10}, Positions Avg Price={11}, Positions Quantity={12}.",
+                                        _SignalData.TotalQuantity, True, _SignalData.HighestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.UpwardRisePercentage, 2),
+                                        True, _SignalData.CurrentLTP, Math.Round(_SignalData.HighestPoint, 2), Math.Round(_SignalData.UpwardNetDropPercentage, 2),
+                                        Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+                Else
+                    Return String.Format("Checking for Sell[Total Quantity({0})]. Upward Rise Complete:{1}[Upward Rise[((Highest Point({2})/Average Price({3}))-1)*100]({4}%)]. Upward Drop Complete:{5}[Upward Drop[((LTP({6})/Highest Point({7}))-1)*100]({8}%)]. Holdings Avg Price={9}, Holdings Quantity={10}, Positions Avg Price={11}, Positions Quantity={12}.",
+                                        _SignalData.TotalQuantity, True, _SignalData.HighestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.UpwardRisePercentage, 2),
+                                        False, _SignalData.CurrentLTP, Math.Round(_SignalData.HighestPoint, 2), Math.Round(_SignalData.UpwardNetDropPercentage, 2),
+                                        Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+                End If
+            Else
+                Return String.Format("Checking for Sell[Total Quantity({0})]. Upward Rise Complete:{1}[Upward Rise[((Highest Point({2})/Average Price({3}))-1)*100]({4})]. Holdings Avg Price={5}, Holdings Quantity={6}, Positions Avg Price={7}, Positions Quantity={8}.",
+                                    _SignalData.TotalQuantity, False, _SignalData.HighestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.UpwardRisePercentage, 2),
+                                    Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+            End If
+        Else
+            If _SignalData.DownwardDropPercentage <= Math.Abs(_instrumentDetails.DownwardDropPercentage) * -1 Then
+                If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
+                    Return String.Format("Checking for Buy[Total Quantity({0})]. Downward Drop Complete:{1}[Downward Drop[((Lowest Point({2})/Average Price({3}))-1)*100]({4}%)]. Downward Rise Complete:{5}[Downward Rise[((LTP({6})/Lowest Point({7}))-1)*100]({8}%)]. Holdings Avg Price={9}, Holdings Quantity={10}, Positions Avg Price={11}, Positions Quantity={12}.",
+                                        _SignalData.TotalQuantity, True, _SignalData.LowestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.DownwardDropPercentage, 2),
+                                        True, _SignalData.CurrentLTP, Math.Round(_SignalData.LowestPoint, 2), Math.Round(_SignalData.DownwardNetRisePercentage, 2),
+                                        Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+                Else
+                    Return String.Format("Checking for Buy[Total Quantity({0})]. Downward Drop Complete:{1}[Downward Drop[((Lowest Point({2})/Average Price({3}))-1)*100]({4}%)]. Downward Rise Complete:{5}[Downward Rise[((LTP({6})/Lowest Point({7}))-1)*100]({8}%)]. Holdings Avg Price={9}, Holdings Quantity={10}, Positions Avg Price={11}, Positions Quantity={12}.",
+                                        _SignalData.TotalQuantity, True, _SignalData.LowestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.DownwardDropPercentage, 2),
+                                        False, _SignalData.CurrentLTP, Math.Round(_SignalData.LowestPoint, 2), Math.Round(_SignalData.DownwardNetRisePercentage, 2),
+                                        Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+                End If
+            Else
+                Return String.Format("Checking for Buy[Total Quantity({0})]. Downward Drop Complete:{1}[Downward Drop[((Lowest Point({2})/Average Price({3}))-1)*100]({4})]. Holdings Avg Price={5}, Holdings Quantity={6}, Positions Avg Price={7}, Positions Quantity={8}.",
+                                    _SignalData.TotalQuantity, False, _SignalData.LowestPoint, Math.Round(_SignalData.AveragePrice, 2), Math.Round(_SignalData.DownwardDropPercentage, 2),
+                                    Math.Round(_SignalData.HoldingsAveragePrice, 2), Math.Round(_SignalData.HoldingsQuantity, 2), Math.Round(_SignalData.PositionsAveragePrice, 2), Math.Round(_SignalData.PositionsQuantity, 2))
+            End If
+        End If
     End Function
 
 #Region "Signal Details"
@@ -410,15 +461,9 @@ Public Class NFOStrategyInstrument
         End Sub
 
         Public Overrides Function ToString() As String
-            If Me.TotalQuantity > 1 Then
-                Return String.Format("{0}Total Quantity={1}, Average Price={2}, Highest Point={3}, LTP={4}, Upward Rise %={5}%, Upward Drop %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
-                                     "", Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.HighestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.UpwardRisePercentage, 2), Math.Round(Me.UpwardNetDropPercentage, 2),
-                                     Math.Round(Me.HoldingsAveragePrice, 2), Math.Round(Me.HoldingsQuantity, 2), Math.Round(Me.PositionsAveragePrice, 2), Math.Round(Me.PositionsQuantity, 2))
-            Else
-                Return String.Format("{0}Total Quantity={1}, Average Price={2}, Lowest Point={3}, LTP={4}, Downward Drop %={5}%, Downward Rise %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
-                                     "", Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.LowestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.DownwardDropPercentage, 2), Math.Round(Me.DownwardNetRisePercentage, 2),
-                                     Math.Round(Me.HoldingsAveragePrice, 2), Math.Round(Me.HoldingsQuantity, 2), Math.Round(Me.PositionsAveragePrice, 2), Math.Round(Me.PositionsQuantity, 2))
-            End If
+            Return String.Format("{0}:Total Quantity={1}, Average Price={2}, Highest Point={3}, LTP={4}, Upward Rise={5}%, Upward Drop={6}%, Downward Drop={7}%, Downward Rise={8}%. Holdings Avg Price={9}, Holdings Quantity={10}, Positions Avg Price={11}, Positions Quantity={12}",
+                                 Me.TradingSymbol, Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.HighestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.UpwardRisePercentage, 2), Math.Round(Me.UpwardNetDropPercentage, 2), Math.Round(Me.DownwardDropPercentage, 2), Math.Round(Me.DownwardNetRisePercentage, 2),
+                                 Math.Round(Me.HoldingsAveragePrice, 2), Math.Round(Me.HoldingsQuantity, 2), Math.Round(Me.PositionsAveragePrice, 2), Math.Round(Me.PositionsQuantity, 2))
         End Function
     End Class
 #End Region
