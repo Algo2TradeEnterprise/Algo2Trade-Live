@@ -15,6 +15,12 @@
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Running")
+            dt.Columns.Add("Total Quantity")
+            dt.Columns.Add("Average Price")
+            dt.Columns.Add("Downward Drop %")
+            dt.Columns.Add("Downward Rise %")
+            dt.Columns.Add("Upward Rise %")
+            dt.Columns.Add("Upward Drop %")
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
@@ -23,6 +29,12 @@
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Running") = instrument.StrategyInstrumentRunning
+                row("Total Quantity") = instrument.SignalData.TotalQuantity
+                row("Average Price") = instrument.SignalData.AveragePrice
+                row("Downward Drop %") = instrument.SignalData.DownwardDropPercentage
+                row("Downward Rise %") = instrument.SignalData.DownwardNetRisePercentage
+                row("Upward Rise %") = instrument.SignalData.UpwardRisePercentage
+                row("Upward Drop %") = instrument.SignalData.UpwardNetDropPercentage
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt

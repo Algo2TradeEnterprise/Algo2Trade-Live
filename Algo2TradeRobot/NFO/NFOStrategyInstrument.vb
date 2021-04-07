@@ -18,6 +18,9 @@ Public Class NFOStrategyInstrument
     Private _lastSerializeTime As Date = Date.MinValue
     Private _entryDirection As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
     Private _placedOrderID As String = Nothing
+    Private _tradeLock As Integer = 0
+    Private _tickLock As Integer = 0
+    Private _exception As Exception = Nothing
     Private ReadOnly _instrumentDetails As NFOUserInputs.InstrumentDetails
     Private ReadOnly _signalDetailsFilename As String
     Public ReadOnly Property SignalData As SignalDetails
@@ -85,6 +88,10 @@ Public Class NFOStrategyInstrument
                 '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
                 '    Throw Me._RMSException
                 'End If
+                If _exception IsNot Nothing Then
+                    Throw _exception
+                End If
+
                 _cts.Token.ThrowIfCancellationRequested()
 
                 Await Task.Delay(5000, _cts.Token).ConfigureAwait(False)
@@ -101,89 +108,107 @@ Public Class NFOStrategyInstrument
     End Function
 
     Public Overrides Async Function HandleTickTriggerToUIETCAsync() As Task
-        MyBase.HandleTickTriggerToUIETCAsync()
-        If Me.StrategyInstrumentRunning AndAlso Me.SignalData IsNot Nothing AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
-            If Me.TradableInstrument.LastTick.Timestamp.Value >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime Then
-                _cts.Token.ThrowIfCancellationRequested()
-                If _placedOrderID IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(_placedOrderID) Then
-                    If Me.OrderDetails(_placedOrderID).ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
-                        _SignalData.ResetHighestLowestPoint()
-                        _placedOrderID = Nothing
-                    ElseIf Me.OrderDetails(_placedOrderID).ParentOrder.Status = IOrder.TypeOfStatus.Rejected Then
-                        If Me._RMSException IsNot Nothing AndAlso _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                            OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                            Me.ParentStrategy.ParentController.OrphanException = Me._RMSException
+        'Await MyBase.HandleTickTriggerToUIETCAsync().ConfigureAwait(False)
+        If Interlocked.Exchange(_tickLock, 1) = 0 Then
+            Try
+                If Me.StrategyInstrumentRunning AndAlso Me.SignalData IsNot Nothing AndAlso Me.TradableInstrument.LastTick IsNot Nothing Then
+                    If Me.TradableInstrument.LastTick.Timestamp.Value >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime Then
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If _placedOrderID IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(_placedOrderID) Then
+                            If Me.OrderDetails(_placedOrderID).ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                                _SignalData.ResetHighestLowestPoint()
+                                _placedOrderID = Nothing
+                            ElseIf Me.OrderDetails(_placedOrderID).ParentOrder.Status = IOrder.TypeOfStatus.Rejected Then
+                                If Me._RMSException IsNot Nothing AndAlso _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                                    _exception = Me._RMSException
+                                End If
+                            End If
                         End If
-                    End If
-                End If
-                If Me.PositionDetails IsNot Nothing AndAlso Me.PositionDetails.Quantity <> _SignalData.PositionsQuantity Then
-                    If Me.PositionDetails.Quantity < 0 AndAlso _SignalData.HoldingsQuantity = 1 Then
-                        _SignalData.HoldingsQuantity += Me.PositionDetails.Quantity
-                    End If
+                        If Me.PositionDetails IsNot Nothing AndAlso Me.PositionDetails.Quantity <> _SignalData.PositionsQuantity Then
+                            'If Me.PositionDetails.Quantity < 0 AndAlso _SignalData.HoldingsQuantity = 1 Then
+                            '    _SignalData.HoldingsQuantity += Me.PositionDetails.Quantity
+                            'End If
 
-                    _SignalData.PositionsAveragePrice = Me.PositionDetails.AveragePrice
-                    _SignalData.PositionsQuantity = Me.PositionDetails.Quantity
+                            _SignalData.PositionsAveragePrice = Me.PositionDetails.AveragePrice
+                            _SignalData.PositionsQuantity = Me.PositionDetails.Quantity
 
-                    _SignalData.ResetHighestLowestPoint()
+                            _SignalData.ResetHighestLowestPoint()
 
-                    _SignalData.CurrentLTPTime = Me.TradableInstrument.LastTick.Timestamp.Value
-                    _SignalData.CurrentLTP = Me.TradableInstrument.LastTick.LastPrice
+                            _SignalData.CurrentLTPTime = Me.TradableInstrument.LastTick.Timestamp.Value
+                            _SignalData.CurrentLTP = Me.TradableInstrument.LastTick.LastPrice
 
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Await SerializeSignalDetailsAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await SerializeSignalDetailsAsync().ConfigureAwait(False)
 
-                    OnHeartbeat(Me.SignalData.ToString)
-                ElseIf Me.TradableInstrument.LastTick.Timestamp.Value >= _lastSerializeTime.AddMinutes(1) Then
-                    _SignalData.CurrentLTPTime = Me.TradableInstrument.LastTick.Timestamp.Value
-                    _SignalData.CurrentLTP = Me.TradableInstrument.LastTick.LastPrice
+                            OnHeartbeat(Me.SignalData.ToString)
+                        ElseIf Me.TradableInstrument.LastTick.Timestamp.Value >= _lastSerializeTime.AddMinutes(1) Then
+                            _SignalData.CurrentLTPTime = Me.TradableInstrument.LastTick.Timestamp.Value
+                            _SignalData.CurrentLTP = Me.TradableInstrument.LastTick.LastPrice
 
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Await SerializeSignalDetailsAsync().ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await SerializeSignalDetailsAsync().ConfigureAwait(False)
 
-                    OnHeartbeat(Me.SignalData.ToString)
-                End If
+                            OnHeartbeat(Me.SignalData.ToString)
+                        End If
 
-                _cts.Token.ThrowIfCancellationRequested()
-                If _SignalData.TotalQuantity = 1 Then
-                    If _SignalData.DownwardDropPercentage <= Math.Abs(_instrumentDetails.DownwardDropPercentage) * -1 Then
-                        If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
-                            OnHeartbeat(String.Format("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing")))
-                            If _placedOrderID Is Nothing Then
-                                _entryDirection = IOrder.TypeOfTransaction.Buy
-                                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
-                                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                                    If placeOrderResponse.ContainsKey("data") AndAlso
-                                    placeOrderResponse("data").ContainsKey("order_id") Then
-                                        _entryDirection = IOrder.TypeOfTransaction.None
-                                        _placedOrderID = placeOrderResponse("data")("order_id")
-                                        '_SignalData.ResetHighestLowestPoint()
+                        _cts.Token.ThrowIfCancellationRequested()
+                        If _SignalData.TotalQuantity = 1 Then
+                            If _SignalData.DownwardDropPercentage <= Math.Abs(_instrumentDetails.DownwardDropPercentage) * -1 Then
+                                If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
+                                    If Interlocked.Exchange(_tradeLock, 1) = 0 Then
+                                        Try
+                                            logger.Debug("{0}: ********** {1}. Place Order ID:{2}", Me.TradableInstrument.TradingSymbol, Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
+                                            If _placedOrderID Is Nothing Then
+                                                _entryDirection = IOrder.TypeOfTransaction.Buy
+                                                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
+                                                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                                                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                                                    If placeOrderResponse.ContainsKey("data") AndAlso
+                                                        placeOrderResponse("data").ContainsKey("order_id") Then
+                                                        _entryDirection = IOrder.TypeOfTransaction.None
+                                                        _placedOrderID = placeOrderResponse("data")("order_id")
+                                                        '_SignalData.ResetHighestLowestPoint()
+                                                    End If
+                                                End If
+                                            End If
+                                        Finally
+                                            Interlocked.Exchange(_tradeLock, 0)
+                                        End Try
+                                    End If
+                                End If
+                            End If
+                        ElseIf _SignalData.TotalQuantity > 1 Then
+                            If _SignalData.UpwardRisePercentage >= Math.Abs(_instrumentDetails.UpwardRisePercentage) Then
+                                If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
+                                    If Interlocked.Exchange(_tradeLock, 1) = 0 Then
+                                        Try
+                                            logger.Debug("{0}: ********** {1}. Place Order ID:{2}", Me.TradableInstrument.TradingSymbol, Me.SignalData.ToString, If(_placedOrderID, "Nothing"))
+                                            If _placedOrderID Is Nothing Then
+                                                _entryDirection = IOrder.TypeOfTransaction.Sell
+                                                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
+                                                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                                                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                                                    If placeOrderResponse.ContainsKey("data") AndAlso
+                                                        placeOrderResponse("data").ContainsKey("order_id") Then
+                                                        _entryDirection = IOrder.TypeOfTransaction.None
+                                                        _placedOrderID = placeOrderResponse("data")("order_id")
+                                                        '_SignalData.ResetHighestLowestPoint()
+                                                    End If
+                                                End If
+                                            End If
+                                        Finally
+                                            Interlocked.Exchange(_tradeLock, 0)
+                                        End Try
                                     End If
                                 End If
                             End If
                         End If
                     End If
-                ElseIf _SignalData.TotalQuantity > 1 Then
-                    If _SignalData.UpwardRisePercentage >= Math.Abs(_instrumentDetails.UpwardRisePercentage) Then
-                        If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
-                            OnHeartbeat(String.Format("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing")))
-                            If _placedOrderID Is Nothing Then
-                                _entryDirection = IOrder.TypeOfTransaction.Sell
-                                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
-                                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                                    If placeOrderResponse.ContainsKey("data") AndAlso
-                                    placeOrderResponse("data").ContainsKey("order_id") Then
-                                        _entryDirection = IOrder.TypeOfTransaction.None
-                                        _placedOrderID = placeOrderResponse("data")("order_id")
-                                        '_SignalData.ResetHighestLowestPoint()
-                                    End If
-                                End If
-                            End If
-                        End If
-                    End If
                 End If
-            End If
+            Finally
+                Interlocked.Exchange(_tickLock, 0)
+            End Try
         End If
     End Function
 
@@ -217,7 +242,7 @@ Public Class NFOStrategyInstrument
                                     .Quantity = Me.SignalData.TotalQuantity - 1
                                  }
                 End If
-                If forcePrint Then OnHeartbeat(Me.SignalData.ToString)
+                If forcePrint Then OnHeartbeat(String.Format("********** {0}", Me.SignalData.ToString))
             End If
         End If
 
@@ -386,12 +411,12 @@ Public Class NFOStrategyInstrument
 
         Public Overrides Function ToString() As String
             If Me.TotalQuantity > 1 Then
-                Return String.Format("{0}: Total Quantity={1}, Average Price={2}, Highest Point={3}, LTP={4}, Upward Rise %={5}%, Upward Drop %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
-                                     Me.TradingSymbol, Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.HighestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.UpwardRisePercentage, 2), Math.Round(Me.UpwardNetDropPercentage, 2),
+                Return String.Format("{0}Total Quantity={1}, Average Price={2}, Highest Point={3}, LTP={4}, Upward Rise %={5}%, Upward Drop %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
+                                     "", Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.HighestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.UpwardRisePercentage, 2), Math.Round(Me.UpwardNetDropPercentage, 2),
                                      Math.Round(Me.HoldingsAveragePrice, 2), Math.Round(Me.HoldingsQuantity, 2), Math.Round(Me.PositionsAveragePrice, 2), Math.Round(Me.PositionsQuantity, 2))
             Else
-                Return String.Format("{0}: Total Quantity={1}, Average Price={2}, Lowest Point={3}, LTP={4}, Downward Drop %={5}%, Downward Rise %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
-                                     Me.TradingSymbol, Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.LowestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.DownwardDropPercentage, 2), Math.Round(Me.DownwardNetRisePercentage, 2),
+                Return String.Format("{0}Total Quantity={1}, Average Price={2}, Lowest Point={3}, LTP={4}, Downward Drop %={5}%, Downward Rise %={6}%. Holdings Avg Price={7}, Holdings Quantity={8}, Positions Avg Price={9}, Positions Quantity={10}",
+                                     "", Me.TotalQuantity, Math.Round(Me.AveragePrice, 2), Math.Round(Me.LowestPoint, 2), Math.Round(Me.CurrentLTP, 2), Math.Round(Me.DownwardDropPercentage, 2), Math.Round(Me.DownwardNetRisePercentage, 2),
                                      Math.Round(Me.HoldingsAveragePrice, 2), Math.Round(Me.HoldingsQuantity, 2), Math.Round(Me.PositionsAveragePrice, 2), Math.Round(Me.PositionsQuantity, 2))
             End If
         End Function

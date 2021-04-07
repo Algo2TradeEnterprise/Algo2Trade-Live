@@ -124,6 +124,7 @@ Public Class NFOStrategy
         Try
             _cts.Token.ThrowIfCancellationRequested()
             Await GetHoldingsDataAsync().ConfigureAwait(False)
+            Await GetPositionsDataAsync().ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
             Dim tasks As New List(Of Task)()
             For Each tradableStrategyInstrument As NFOStrategyInstrument In TradableStrategyInstruments
