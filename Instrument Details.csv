@@ -1,4 +1,6 @@
 Instrument Name,Buy Capital,Downward Drop%,Downward Rise%,Upward Rise%,Upward Drop%,Skip
-RUCHINFRA,5000,20,2,15,1.5,Y
-MEGH,3000,17,1,15,1.5,
-ADANIENT,3000,17,1,20,2,
+AIRAN,500,1,0.2,1,0.15,
+BANKBARODA,500,1,0.2,1,0.15,
+CANBK,500,1,0.2,1,0.15,
+DISHTV,500,1,0.2,1,0.15,
+GODFRYPHLP,500,1,0.2,1,0.15,

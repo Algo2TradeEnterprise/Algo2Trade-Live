@@ -144,16 +144,17 @@ Public Class NFOStrategyInstrument
                 End If
 
                 _cts.Token.ThrowIfCancellationRequested()
-                If _placedOrderID Is Nothing Then
-                    If _SignalData.TotalQuantity = 1 Then
-                        If _SignalData.DownwardDropPercentage <= Math.Abs(_instrumentDetails.DownwardDropPercentage) * -1 Then
-                            If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
+                If _SignalData.TotalQuantity = 1 Then
+                    If _SignalData.DownwardDropPercentage <= Math.Abs(_instrumentDetails.DownwardDropPercentage) * -1 Then
+                        If _SignalData.DownwardNetRisePercentage >= Math.Abs(_instrumentDetails.DownwardRisePercentage) Then
+                            OnHeartbeat(String.Format("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing")))
+                            If _placedOrderID Is Nothing Then
                                 _entryDirection = IOrder.TypeOfTransaction.Buy
                                 Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
                                 If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                                     Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                                     If placeOrderResponse.ContainsKey("data") AndAlso
-                                        placeOrderResponse("data").ContainsKey("order_id") Then
+                                    placeOrderResponse("data").ContainsKey("order_id") Then
                                         _entryDirection = IOrder.TypeOfTransaction.None
                                         _placedOrderID = placeOrderResponse("data")("order_id")
                                         '_SignalData.ResetHighestLowestPoint()
@@ -161,15 +162,18 @@ Public Class NFOStrategyInstrument
                                 End If
                             End If
                         End If
-                    ElseIf _SignalData.TotalQuantity > 1 Then
-                        If _SignalData.UpwardRisePercentage >= Math.Abs(_instrumentDetails.UpwardRisePercentage) Then
-                            If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
+                    End If
+                ElseIf _SignalData.TotalQuantity > 1 Then
+                    If _SignalData.UpwardRisePercentage >= Math.Abs(_instrumentDetails.UpwardRisePercentage) Then
+                        If _SignalData.UpwardNetDropPercentage <= Math.Abs(_instrumentDetails.UpwardDropPercentage) * -1 Then
+                            OnHeartbeat(String.Format("********** {0}. Place Order ID:{1}", Me.SignalData.ToString, If(_placedOrderID, "Nothing")))
+                            If _placedOrderID Is Nothing Then
                                 _entryDirection = IOrder.TypeOfTransaction.Sell
                                 Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
                                 If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                                     Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                                     If placeOrderResponse.ContainsKey("data") AndAlso
-                                        placeOrderResponse("data").ContainsKey("order_id") Then
+                                    placeOrderResponse("data").ContainsKey("order_id") Then
                                         _entryDirection = IOrder.TypeOfTransaction.None
                                         _placedOrderID = placeOrderResponse("data")("order_id")
                                         '_SignalData.ResetHighestLowestPoint()
