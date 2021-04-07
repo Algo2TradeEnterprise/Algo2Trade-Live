@@ -35,11 +35,15 @@ Partial Class frmAliceUserDetails
         Me.lblAliceUserId = New System.Windows.Forms.Label()
         Me.btnSaveAliceUserDetails = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
+        Me.txtAliceAppID = New System.Windows.Forms.TextBox()
+        Me.lblAliceAppID = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
         'GroupBox1
         '
+        Me.GroupBox1.Controls.Add(Me.txtAliceAppID)
+        Me.GroupBox1.Controls.Add(Me.lblAliceAppID)
         Me.GroupBox1.Controls.Add(Me.txtAlice2FAAnswer)
         Me.GroupBox1.Controls.Add(Me.lblAlice2FAAnswer)
         Me.GroupBox1.Controls.Add(Me.txtAliceAPISecret)
@@ -52,7 +56,7 @@ Partial Class frmAliceUserDetails
         Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(460, 166)
+        Me.GroupBox1.Size = New System.Drawing.Size(460, 203)
         Me.GroupBox1.TabIndex = 2
         Me.GroupBox1.TabStop = False
         '
@@ -77,7 +81,7 @@ Partial Class frmAliceUserDetails
         '
         'txtAliceAPISecret
         '
-        Me.txtAliceAPISecret.Location = New System.Drawing.Point(103, 131)
+        Me.txtAliceAPISecret.Location = New System.Drawing.Point(103, 165)
         Me.txtAliceAPISecret.Margin = New System.Windows.Forms.Padding(4)
         Me.txtAliceAPISecret.Name = "txtAliceAPISecret"
         Me.txtAliceAPISecret.Size = New System.Drawing.Size(348, 22)
@@ -103,7 +107,7 @@ Partial Class frmAliceUserDetails
         'lblAliceAPISecret
         '
         Me.lblAliceAPISecret.AutoSize = True
-        Me.lblAliceAPISecret.Location = New System.Drawing.Point(9, 135)
+        Me.lblAliceAPISecret.Location = New System.Drawing.Point(9, 169)
         Me.lblAliceAPISecret.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblAliceAPISecret.Name = "lblAliceAPISecret"
         Me.lblAliceAPISecret.Size = New System.Drawing.Size(74, 17)
@@ -150,11 +154,29 @@ Partial Class frmAliceUserDetails
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
         '
+        'txtAliceAppID
+        '
+        Me.txtAliceAppID.Location = New System.Drawing.Point(103, 131)
+        Me.txtAliceAppID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtAliceAppID.Name = "txtAliceAppID"
+        Me.txtAliceAppID.Size = New System.Drawing.Size(348, 22)
+        Me.txtAliceAppID.TabIndex = 11
+        '
+        'lblAliceAppID
+        '
+        Me.lblAliceAppID.AutoSize = True
+        Me.lblAliceAppID.Location = New System.Drawing.Point(9, 134)
+        Me.lblAliceAppID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblAliceAppID.Name = "lblAliceAppID"
+        Me.lblAliceAppID.Size = New System.Drawing.Size(50, 17)
+        Me.lblAliceAppID.TabIndex = 10
+        Me.lblAliceAppID.Text = "App ID"
+        '
         'frmAliceUserDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(603, 188)
+        Me.ClientSize = New System.Drawing.Size(603, 226)
         Me.Controls.Add(Me.GroupBox1)
         Me.Controls.Add(Me.btnSaveAliceUserDetails)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -180,4 +202,6 @@ Partial Class frmAliceUserDetails
     Friend WithEvents lblAliceUserId As Label
     Friend WithEvents btnSaveAliceUserDetails As Button
     Friend WithEvents ImageList1 As ImageList
+    Friend WithEvents txtAliceAppID As TextBox
+    Friend WithEvents lblAliceAppID As Label
 End Class
