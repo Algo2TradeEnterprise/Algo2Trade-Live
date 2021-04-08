@@ -6,6 +6,7 @@ Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.Entities.Indicators
 Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports System.IO
 
 Public Class NFOStrategyInstrument
     Inherits StrategyInstrument
@@ -17,11 +18,13 @@ Public Class NFOStrategyInstrument
 
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private _entryOrderPlaced As Boolean = False
-    Private _myOptionStrategyInstruments As IEnumerable(Of NFOStrategyInstrument)
+    Private _myOptionStrategyInstruments As IEnumerable(Of StrategyInstrument)
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
+    Private ReadOnly _strikeFileName As String = Nothing
 
     Public NumberOfLotsToTrade As Integer = 1
     Public StopInstrument As Boolean
+    Public StopInstrumentReason As String = ""
     Public TakeTrade As Boolean
     Public MyOppositeOptionInstrument As NFOStrategyInstrument
 
@@ -61,6 +64,8 @@ Public Class NFOStrategyInstrument
         End If
         Me.TakeTrade = False
         Me.StopInstrument = False
+
+        _strikeFileName = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.StrikeDetails.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -82,7 +87,6 @@ Public Class NFOStrategyInstrument
     End Function
 
     Public Overrides Async Function MonitorAsync() As Task
-        Dim stopReason As String = ""
         Try
             _strategyInstrumentRunning = True
             If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Options Then
@@ -97,6 +101,7 @@ Public Class NFOStrategyInstrument
                                                                                                        Return x.TradableInstrument.RawInstrumentName.ToUpper = optionRawInstrumentName.ToUpper AndAlso
                                                                                                         x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options
                                                                                                    End Function)
+
                 If _myOptionStrategyInstruments IsNot Nothing AndAlso _myOptionStrategyInstruments.Count > 0 Then
                     Dim optionSelectionDone As Boolean = False
                     Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
@@ -113,16 +118,29 @@ Public Class NFOStrategyInstrument
                         If Not optionSelectionDone AndAlso Now >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
                             Me.TradableInstrument.LastTick IsNot Nothing AndAlso
                             Me.TradableInstrument.LastTick.Timestamp.Value >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime Then
-                            Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
-                            OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
-                            For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                If runningStrategyInstrument.TradableInstrument.Strike >= openPrice - openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 AndAlso
+                            If Not File.Exists(_strikeFileName) Then
+                                Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
+                                OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
+                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
+                                    If runningStrategyInstrument.TradableInstrument.Strike >= openPrice - openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 AndAlso
                                     runningStrategyInstrument.TradableInstrument.Strike <= openPrice + openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 Then
-                                    runningStrategyInstrument.TradableInstrument.FetchHistorical = True
-                                Else
-                                    CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
-                                End If
-                            Next
+                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
+                                    Else
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Outside allowable range according to open price"
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
+                                    End If
+                                Next
+                            Else
+                                Dim strikePrice As Decimal = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
+                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
+                                    If runningStrategyInstrument.TradableInstrument.Strike = strikePrice Then
+                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
+                                    Else
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
+                                    End If
+                                Next
+                            End If
                             optionSelectionDone = True
                         End If
                         If optionSelectionDone Then
@@ -153,40 +171,48 @@ Public Class NFOStrategyInstrument
                             If Me.TradableInstrument.IsHistoricalCompleted AndAlso Now >= userSettings.TradeStartTime AndAlso
                                 runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
                                 stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                                Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
-                                Dim upperStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                                Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                    x.TradableInstrument.Strike >= runningCandlePayload.PreviousPayload.ClosePrice.Value
-                                                                                                                            End Function)
-                                Dim lowerStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                                Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                    x.TradableInstrument.Strike <= runningCandlePayload.PreviousPayload.ClosePrice.Value
-                                                                                                                            End Function)
-                                Dim upperStrikePrice As Decimal = Decimal.MaxValue
-                                Dim lowerStrikePrice As Decimal = Decimal.MinValue
-                                If upperStrikes IsNot Nothing AndAlso upperStrikes.Count > 0 Then
-                                    upperStrikePrice = upperStrikes.OrderBy(Function(x)
-                                                                                Return x.TradableInstrument.Strike
-                                                                            End Function).FirstOrDefault.TradableInstrument.Strike
-                                End If
-                                If lowerStrikes IsNot Nothing AndAlso lowerStrikes.Count > 0 Then
-                                    lowerStrikePrice = lowerStrikes.OrderBy(Function(x)
-                                                                                Return x.TradableInstrument.Strike
-                                                                            End Function).LastOrDefault.TradableInstrument.Strike
-                                End If
                                 Dim atmStrikePrice As Decimal = Decimal.MinValue
-                                If upperStrikePrice <> Decimal.MaxValue AndAlso lowerStrikePrice <> Decimal.MinValue Then
-                                    If upperStrikePrice - runningCandlePayload.PreviousPayload.ClosePrice.Value < runningCandlePayload.PreviousPayload.ClosePrice.Value - lowerStrikePrice Then
+                                Dim supertrendColor As Color = Color.White
+                                If File.Exists(_strikeFileName) Then
+                                    atmStrikePrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
+                                    supertrendColor = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item2
+                                Else
+                                    supertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+                                    Dim upperStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
+                                                                                                                                    Return x.TradableInstrument.FetchHistorical AndAlso
+                                                                                                                                        x.TradableInstrument.Strike >= runningCandlePayload.PreviousPayload.ClosePrice.Value
+                                                                                                                                End Function)
+                                    Dim lowerStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
+                                                                                                                                    Return x.TradableInstrument.FetchHistorical AndAlso
+                                                                                                                                        x.TradableInstrument.Strike <= runningCandlePayload.PreviousPayload.ClosePrice.Value
+                                                                                                                                End Function)
+                                    Dim upperStrikePrice As Decimal = Decimal.MaxValue
+                                    Dim lowerStrikePrice As Decimal = Decimal.MinValue
+                                    If upperStrikes IsNot Nothing AndAlso upperStrikes.Count > 0 Then
+                                        upperStrikePrice = upperStrikes.OrderBy(Function(x)
+                                                                                    Return x.TradableInstrument.Strike
+                                                                                End Function).FirstOrDefault.TradableInstrument.Strike
+                                    End If
+                                    If lowerStrikes IsNot Nothing AndAlso lowerStrikes.Count > 0 Then
+                                        lowerStrikePrice = lowerStrikes.OrderBy(Function(x)
+                                                                                    Return x.TradableInstrument.Strike
+                                                                                End Function).LastOrDefault.TradableInstrument.Strike
+                                    End If
+
+                                    If upperStrikePrice <> Decimal.MaxValue AndAlso lowerStrikePrice <> Decimal.MinValue Then
+                                        If upperStrikePrice - runningCandlePayload.PreviousPayload.ClosePrice.Value < runningCandlePayload.PreviousPayload.ClosePrice.Value - lowerStrikePrice Then
+                                            atmStrikePrice = upperStrikePrice
+                                        Else
+                                            atmStrikePrice = lowerStrikePrice
+                                        End If
+                                    ElseIf upperStrikePrice <> Decimal.MaxValue Then
                                         atmStrikePrice = upperStrikePrice
-                                    Else
+                                    ElseIf lowerStrikePrice <> Decimal.MinValue Then
                                         atmStrikePrice = lowerStrikePrice
                                     End If
-                                ElseIf upperStrikePrice <> Decimal.MaxValue Then
-                                    atmStrikePrice = upperStrikePrice
-                                ElseIf lowerStrikePrice <> Decimal.MinValue Then
-                                    atmStrikePrice = lowerStrikePrice
+                                    OnHeartbeat(String.Format("{0}: Close Price={1}, Selected ATM Strike={2}", Me.TradableInstrument.TradingSymbol, runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice))
+                                    If atmStrikePrice <> Decimal.MinValue Then Utilities.Strings.SerializeFromCollection(Of Tuple(Of Decimal, Color))(_strikeFileName, New Tuple(Of Decimal, Color)(atmStrikePrice, supertrendColor))
                                 End If
-                                OnHeartbeat(String.Format("{0}: Close Price={1}, Selected ATM Strike={2}", Me.TradableInstrument.TradingSymbol, runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice))
                                 If atmStrikePrice <> Decimal.MinValue Then
                                     Dim atmCall As NFOStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
                                                                                                                   Return x.TradableInstrument.Strike = atmStrikePrice AndAlso x.TradableInstrument.RawInstrumentType = "CE"
@@ -195,8 +221,16 @@ Public Class NFOStrategyInstrument
                                                                                                                  Return x.TradableInstrument.Strike = atmStrikePrice AndAlso x.TradableInstrument.RawInstrumentType = "PE"
                                                                                                              End Function).FirstOrDefault
                                     If atmCall IsNot Nothing AndAlso atmPut IsNot Nothing Then
-                                        atmCall.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).NumberOfLots
-                                        atmPut.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol).NumberOfLots
+                                        For Each runningStrategyInstrument In _myOptionStrategyInstruments
+                                            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmCall.TradableInstrument.InstrumentIdentifier AndAlso
+                                                runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmPut.TradableInstrument.InstrumentIdentifier Then
+                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
+                                            End If
+                                        Next
+
+                                        atmCall.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper).NumberOfLots
+                                        atmPut.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper).NumberOfLots
                                         If supertrendColor = Color.Green Then
                                             atmPut.TakeTrade = True
                                             atmPut.MyOppositeOptionInstrument = atmCall
@@ -214,7 +248,7 @@ Public Class NFOStrategyInstrument
                         Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
                     End While
                 Else
-                    stopReason = "No option instrument found"
+                    Me.StopInstrumentReason = "No option instrument found"
                 End If
             Else
                 While True
@@ -227,12 +261,6 @@ Public Class NFOStrategyInstrument
                         Throw Me._RMSException
                     End If
                     If Me.StopInstrument Then
-                        If Now < Me.ParentStrategy.UserSettings.TradeStartTime Then
-                            stopReason = "Outside accepted range according to open price"
-                        Else
-                            stopReason = "Not an ATM instrument"
-                        End If
-
                         Exit While
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
@@ -249,7 +277,9 @@ Public Class NFOStrategyInstrument
                                 If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
                                     _entryOrderPlaced = True
                                 Else
-                                    Me.MyOppositeOptionInstrument.TakeTrade = True
+                                    If Me.MyOppositeOptionInstrument IsNot Nothing Then
+                                        Me.MyOppositeOptionInstrument.TakeTrade = True
+                                    End If
                                     Exit While
                                 End If
                             End If
@@ -267,7 +297,8 @@ Public Class NFOStrategyInstrument
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         Finally
-            OnHeartbeat(String.Format("{0} Strategy Instrument Stopped: {1}", Me.ToString, stopReason))
+            Me.TradableInstrument.FetchHistorical = False
+            OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
             _strategyInstrumentRunning = False
         End Try
     End Function
@@ -309,36 +340,56 @@ Public Class NFOStrategyInstrument
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
             runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Me.TradableInstrument.IsHistoricalCompleted AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso stConsumer.ConsumerPayloads.Count > 0 AndAlso
-            stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
+            stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
             Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.NumberOfLotsToTrade
             If currentTime <= userSettings.EODExitTime Then
                 If Not _entryOrderPlaced Then
                     If Me.TakeTrade AndAlso currentTime <= userSettings.LastTradeEntryTime Then
-                        If supertrendColor = Color.Red Then
-                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                 .Quantity = quantity}
+                        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 1 Then
+                            _entryOrderPlaced = True
                         Else
-                            If log Then
-                                OnHeartbeat("{0}: Supertrend Color:Green. So it will wait now for entry.")
+                            If supertrendColor = Color.Red Then
+                                parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                     .Quantity = quantity}
+                            Else
+                                If log Then
+                                    OnHeartbeat("{0}: Supertrend Color:Green. So it will wait now for entry.")
+                                End If
                             End If
                         End If
                     End If
                 Else
-                    If supertrendColor = Color.Green Then
-                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                 .Quantity = quantity}
+                    If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 2 Then
+                        If Me.MyOppositeOptionInstrument IsNot Nothing Then
+                            Me.MyOppositeOptionInstrument.TakeTrade = True
+                        End If
+                        Me.StopInstrumentReason = "Both trades taken"
+                        Me.StopInstrument = True
+                    Else
+                        If supertrendColor = Color.Green Then
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                     .Quantity = quantity}
+                        End If
                     End If
                 End If
             Else
                 If _entryOrderPlaced Then
-                    parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                    If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 2 Then
+                        If Me.MyOppositeOptionInstrument IsNot Nothing Then
+                            Me.MyOppositeOptionInstrument.TakeTrade = True
+                        End If
+                        Me.StopInstrumentReason = "Both trades taken"
+                        Me.StopInstrument = True
+                    Else
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
                                  .Supporting = New List(Of Object) From {"EOD Exit"}}
+                    End If
                 End If
             End If
         End If

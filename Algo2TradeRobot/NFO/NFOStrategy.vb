@@ -131,6 +131,7 @@ Public Class NFOStrategy
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
             'tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf KeepToolAliveAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -148,5 +149,20 @@ Public Class NFOStrategy
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
         Throw New NotImplementedException
+    End Function
+
+    Private Async Function KeepToolAliveAsync() As Task
+        Try
+            While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            logger.Error(ex.ToString)
+            Throw ex
+        End Try
     End Function
 End Class

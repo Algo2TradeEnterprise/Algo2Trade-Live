@@ -747,6 +747,13 @@ Public Class frmMainTabbed
                     If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
                 End If
             Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.StrikeDetails.a2t")
+                If deleteAll Then
+                    File.Delete(runningFile)
+                Else
+                    If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+                End If
+            Next
         Catch ex As Exception
             logger.Error(ex)
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
