@@ -16,16 +16,14 @@
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Running")
             For Each instrument In _TradableStrategyInstruments
-                If instrument.StrategyInstrumentRunning Then
-                    Dim row As DataRow = dt.NewRow
-                    row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
-                    row("Exchange") = instrument.TradableInstrument.RawExchange
-                    row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
-                    row("Expiry") = instrument.TradableInstrument.Expiry
-                    row("Lot Size") = instrument.TradableInstrument.LotSize
-                    row("Running") = instrument.StrategyInstrumentRunning
-                    dt.Rows.Add(row)
-                End If
+                Dim row As DataRow = dt.NewRow
+                row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
+                row("Exchange") = instrument.TradableInstrument.RawExchange
+                row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
+                row("Expiry") = instrument.TradableInstrument.Expiry
+                row("Lot Size") = instrument.TradableInstrument.LotSize
+                row("Running") = instrument.StrategyInstrumentRunning
+                dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
             dgvTradableInstruments.Refresh()

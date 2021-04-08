@@ -7,9 +7,9 @@ Imports Algo2TradeCore.Entities.UserSettings
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "SpotOptionSettings.Strategy.a2t")
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "FutureSupertrendSettings.Strategy.a2t")
 
-    Public Property StrikePriceSelectionRangePercentage As Decimal
+    Public Property ExpireDaysBefore As Integer
 
     Public Property SupertrendPeriod As Integer
     Public Property SupertrendMultiplier As Decimal
@@ -21,6 +21,7 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property InstrumentName As String
         Public Property NumberOfLots As Integer
+        Public Property ModifiedNumberOfLots As Integer
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -33,7 +34,7 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"RAW INSTRUMENT NAME", "NUMBER OF LOTS"}
 
                         For colCtr = 0 To 1
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
@@ -75,7 +76,8 @@ Public Class NFOUserInputs
                             If instrumentName IsNot Nothing AndAlso quantity > 0 Then
                                 Dim instrumentData As New InstrumentDetails With {
                                     .InstrumentName = instrumentName.ToUpper.Trim,
-                                    .NumberOfLots = quantity
+                                    .NumberOfLots = quantity,
+                                    .ModifiedNumberOfLots = quantity
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)

@@ -16,17 +16,13 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _lastPrevPayloadPlaceOrder As String = ""
-    Private _entryOrderPlaced As Boolean = False
-    Private _myOptionStrategyInstruments As IEnumerable(Of StrategyInstrument)
-    Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
-    Private ReadOnly _strikeFileName As String = Nothing
+    'Public ForceExitForContractRolloverDone As Boolean
+    Public ForceExitForContractRollover As Boolean
+    Public ForceEntryForContractRolloverDone As Boolean
+    Public ForceEntryForContractRollover As Boolean
 
-    Public NumberOfLotsToTrade As Integer = 1
-    Public StopInstrument As Boolean
-    Public StopInstrumentReason As String = ""
-    Public TakeTrade As Boolean
-    Public MyOppositeOptionInstrument As NFOStrategyInstrument
+    Private _lastPrevPayloadPlaceOrder As String = ""
+    Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -58,14 +54,6 @@ Public Class NFOStrategyInstrument
             RawPayloadDependentConsumers.Add(chartConsumer)
             _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, userInputs.SupertrendPeriod, userInputs.SupertrendMultiplier)
         End If
-
-        If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options Then
-            Me.TradableInstrument.FetchHistorical = False
-        End If
-        Me.TakeTrade = False
-        Me.StopInstrument = False
-
-        _strikeFileName = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.StrikeDetails.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -89,208 +77,48 @@ Public Class NFOStrategyInstrument
     Public Overrides Async Function MonitorAsync() As Task
         Try
             _strategyInstrumentRunning = True
-            If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Options Then
-                Dim optionRawInstrumentName As String = Me.TradableInstrument.TradingSymbol
-                If Me.TradableInstrument.TradingSymbol.Trim.ToUpper = "NIFTY 50" Then
-                    optionRawInstrumentName = "NIFTY"
-                ElseIf Me.TradableInstrument.TradingSymbol.Trim.ToUpper = "NIFTY BANK" Then
-                    optionRawInstrumentName = "BANKNIFTY"
+
+            While True
+                If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
-
-                _myOptionStrategyInstruments = Me.ParentStrategy.TradableStrategyInstruments.Where(Function(x)
-                                                                                                       Return x.TradableInstrument.RawInstrumentName.ToUpper = optionRawInstrumentName.ToUpper AndAlso
-                                                                                                        x.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options
-                                                                                                   End Function)
-
-                If _myOptionStrategyInstruments IsNot Nothing AndAlso _myOptionStrategyInstruments.Count > 0 Then
-                    Dim optionSelectionDone As Boolean = False
-                    Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-                    While True
-                        If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                            Throw Me.ParentStrategy.ParentController.OrphanException
-                        End If
-                        If Me._RMSException IsNot Nothing AndAlso
-                            _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                            OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                            Throw Me._RMSException
-                        End If
-                        _cts.Token.ThrowIfCancellationRequested()
-                        If Not optionSelectionDone AndAlso Now >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
-                            Me.TradableInstrument.LastTick IsNot Nothing AndAlso
-                            Me.TradableInstrument.LastTick.Timestamp.Value >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime Then
-                            If Not File.Exists(_strikeFileName) Then
-                                Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
-                                OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
-                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                    If runningStrategyInstrument.TradableInstrument.Strike >= openPrice - openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 AndAlso
-                                    runningStrategyInstrument.TradableInstrument.Strike <= openPrice + openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 Then
-                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
-                                    Else
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Outside allowable range according to open price"
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
-                                    End If
-                                Next
-                            Else
-                                Dim strikePrice As Decimal = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
-                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                    If runningStrategyInstrument.TradableInstrument.Strike = strikePrice Then
-                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
-                                    Else
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
-                                    End If
-                                Next
-                            End If
-                            optionSelectionDone = True
-                        End If
-                        If optionSelectionDone Then
-                            Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
-                            Dim stConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
-                            Try
-                                If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-                                    Me.TradableInstrument.IsHistoricalCompleted Then
-                                    If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
-                                        _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
-                                        logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, TradingSymbol:{8}",
-                                                    runningCandlePayload.SnapshotDateTime.ToString,
-                                                    runningCandlePayload.PayloadGeneratedBy.ToString,
-                                                    Me.TradableInstrument.IsHistoricalCompleted,
-                                                    Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                                    CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
-                                                    Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
-                                                    Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
-                                                    Now.ToString("dd-MMM-yyyy HH:mm:ss"),
-                                                    Me.TradableInstrument.TradingSymbol)
-                                    End If
-                                End If
-                            Catch ex As Exception
-                                logger.Error(ex)
-                            End Try
-
-                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Now >= userSettings.TradeStartTime AndAlso
-                                runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-                                stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-                                Dim atmStrikePrice As Decimal = Decimal.MinValue
-                                Dim supertrendColor As Color = Color.White
-                                If File.Exists(_strikeFileName) Then
-                                    atmStrikePrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
-                                    supertrendColor = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item2
-                                Else
-                                    supertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
-                                    Dim upperStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                                    Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                        x.TradableInstrument.Strike >= runningCandlePayload.PreviousPayload.ClosePrice.Value
-                                                                                                                                End Function)
-                                    Dim lowerStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                                    Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                        x.TradableInstrument.Strike <= runningCandlePayload.PreviousPayload.ClosePrice.Value
-                                                                                                                                End Function)
-                                    Dim upperStrikePrice As Decimal = Decimal.MaxValue
-                                    Dim lowerStrikePrice As Decimal = Decimal.MinValue
-                                    If upperStrikes IsNot Nothing AndAlso upperStrikes.Count > 0 Then
-                                        upperStrikePrice = upperStrikes.OrderBy(Function(x)
-                                                                                    Return x.TradableInstrument.Strike
-                                                                                End Function).FirstOrDefault.TradableInstrument.Strike
-                                    End If
-                                    If lowerStrikes IsNot Nothing AndAlso lowerStrikes.Count > 0 Then
-                                        lowerStrikePrice = lowerStrikes.OrderBy(Function(x)
-                                                                                    Return x.TradableInstrument.Strike
-                                                                                End Function).LastOrDefault.TradableInstrument.Strike
-                                    End If
-
-                                    If upperStrikePrice <> Decimal.MaxValue AndAlso lowerStrikePrice <> Decimal.MinValue Then
-                                        If upperStrikePrice - runningCandlePayload.PreviousPayload.ClosePrice.Value < runningCandlePayload.PreviousPayload.ClosePrice.Value - lowerStrikePrice Then
-                                            atmStrikePrice = upperStrikePrice
-                                        Else
-                                            atmStrikePrice = lowerStrikePrice
-                                        End If
-                                    ElseIf upperStrikePrice <> Decimal.MaxValue Then
-                                        atmStrikePrice = upperStrikePrice
-                                    ElseIf lowerStrikePrice <> Decimal.MinValue Then
-                                        atmStrikePrice = lowerStrikePrice
-                                    End If
-                                    OnHeartbeat(String.Format("{0}: Close Price={1}, Selected ATM Strike={2}", Me.TradableInstrument.TradingSymbol, runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice))
-                                    If atmStrikePrice <> Decimal.MinValue Then Utilities.Strings.SerializeFromCollection(Of Tuple(Of Decimal, Color))(_strikeFileName, New Tuple(Of Decimal, Color)(atmStrikePrice, supertrendColor))
-                                End If
-                                If atmStrikePrice <> Decimal.MinValue Then
-                                    Dim atmCall As NFOStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                  Return x.TradableInstrument.Strike = atmStrikePrice AndAlso x.TradableInstrument.RawInstrumentType = "CE"
-                                                                                                              End Function).FirstOrDefault
-                                    Dim atmPut As NFOStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                                 Return x.TradableInstrument.Strike = atmStrikePrice AndAlso x.TradableInstrument.RawInstrumentType = "PE"
-                                                                                                             End Function).FirstOrDefault
-                                    If atmCall IsNot Nothing AndAlso atmPut IsNot Nothing Then
-                                        For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmCall.TradableInstrument.InstrumentIdentifier AndAlso
-                                                runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmPut.TradableInstrument.InstrumentIdentifier Then
-                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
-                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
-                                            End If
-                                        Next
-
-                                        atmCall.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper).NumberOfLots
-                                        atmPut.NumberOfLotsToTrade = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper).NumberOfLots
-                                        If supertrendColor = Color.Green Then
-                                            atmPut.TakeTrade = True
-                                            atmPut.MyOppositeOptionInstrument = atmCall
-                                        Else
-                                            atmCall.TakeTrade = True
-                                            atmCall.MyOppositeOptionInstrument = atmPut
-                                        End If
-                                        Exit While
-                                    End If
-                                End If
-                            End If
-                        End If
-
-                        _cts.Token.ThrowIfCancellationRequested()
-                        Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
-                    End While
-                Else
-                    Me.StopInstrumentReason = "No option instrument found"
+                If Me._RMSException IsNot Nothing AndAlso _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                    Throw Me._RMSException
                 End If
-            Else
-                While True
-                    If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                        Throw Me.ParentStrategy.ParentController.OrphanException
-                    End If
-                    If Me._RMSException IsNot Nothing AndAlso
-                        _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-                        OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-                        Throw Me._RMSException
-                    End If
-                    If Me.StopInstrument Then
-                        Exit While
-                    End If
-                    _cts.Token.ThrowIfCancellationRequested()
+                _cts.Token.ThrowIfCancellationRequested()
 
-                    'Place Order block start
-                    Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
-                    If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
-                        placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                'Place Order block start
+                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                    If placeOrderTriggers.FirstOrDefault.Item2.Quantity <> 0 Then
                         Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
                         If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
                             Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
                             If placeOrderResponse.ContainsKey("data") AndAlso
                                 placeOrderResponse("data").ContainsKey("order_id") Then
-                                If placeOrderTriggers.FirstOrDefault.Item2.EntryDirection = IOrder.TypeOfTransaction.Sell Then
-                                    _entryOrderPlaced = True
-                                Else
-                                    If Me.MyOppositeOptionInstrument IsNot Nothing Then
-                                        Me.MyOppositeOptionInstrument.TakeTrade = True
-                                    End If
-                                    Exit While
-                                End If
+                                If ForceExitForContractRollover Then ForceExitForContractRollover = False
+                                If ForceEntryForContractRollover Then ForceEntryForContractRollover = False
                             End If
                         End If
+                    Else
+                        If ForceExitForContractRollover Then
+                            ForceExitForContractRollover = False
+                            OnHeartbeat(String.Format("No position available for contract rollover force exit: {0}", Me.TradableInstrument.TradingSymbol))
+                        End If
+                        If ForceEntryForContractRollover Then
+                            ForceEntryForContractRollover = False
+                            ForceEntryForContractRolloverDone = True
+                            OnHeartbeat(String.Format("No position available for contract rollover force entry: {0}", Me.TradableInstrument.TradingSymbol))
+                        End If
                     End If
-                    'Place Order block end
+                End If
+                'Place Order block end
 
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
-                End While
-            End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+            End While
         Catch ex As Exception
             'To log exceptions getting created from this function as the bubble up of the exception
             'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
@@ -298,7 +126,7 @@ Public Class NFOStrategyInstrument
             Throw ex
         Finally
             Me.TradableInstrument.FetchHistorical = False
-            OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
+            OnHeartbeat("Strategy Instrument Stopped")
             _strategyInstrumentRunning = False
         End Try
     End Function
@@ -314,22 +142,25 @@ Public Class NFOStrategyInstrument
         Dim log As Boolean = False
 
         Try
-            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
+            If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+                runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted Then
                 If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder OrElse forcePrint Then
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     log = True
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Take Trade:{8}, Entry Order Placed:{9}, TradingSymbol:{10}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Pre Supertrend Color:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Is My Another Contract Available:{8}, Force Exit For Contract Rollover:{9}, Force Entry For Contract Rollover:{10}, Traded Quantity:{11}, Current Time:{12}, TradingSymbol:{13}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
                                 Me.ParentStrategy.IsFirstTimeInformationCollected,
+                                CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
                                 CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
                                 Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
                                 Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
+                                IsMyAnotherContractAvailable(),
+                                Me.ForceExitForContractRollover,
+                                Me.ForceEntryForContractRollover,
                                 Now.ToString("dd-MMM-yyyy HH:mm:ss"),
-                                Me.TakeTrade,
-                                _entryOrderPlaced,
                                 Me.TradableInstrument.TradingSymbol)
                 End If
             End If
@@ -338,57 +169,75 @@ Public Class NFOStrategyInstrument
         End Try
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If currentTime >= userSettings.TradeStartTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
-            runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+        If (Me.ForceExitForContractRollover OrElse Me.ForceEntryForContractRollover) AndAlso
+            currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
+            Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
+            Dim quantity As Integer = GetQuantityToTrade()
+
+            If ForceExitForContractRollover Then
+                userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).ModifiedNumberOfLots = quantity / Me.TradableInstrument.LotSize
+            End If
+
+            If quantity > 0 Then
+                parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                               {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                .Quantity = Math.Abs(quantity),
+                                .Supporting = New List(Of Object) From {"Exit"}}
+            Else
+                parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                              {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                               .Quantity = Math.Abs(quantity),
+                               .Supporting = New List(Of Object) From {"Exit"}}
+            End If
+
+            If Me.ForceEntryForContractRollover Then
+                quantity = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).ModifiedNumberOfLots * Me.TradableInstrument.LotSize
+                If quantity > 0 Then
+                    parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                   {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                    .Quantity = Math.Abs(quantity)}
+                Else
+                    parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                  {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                   .Quantity = Math.Abs(quantity)}
+                End If
+            End If
+        ElseIf currentTime >= userSettings.TradeStartTime AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
+            currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
+            runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
-            stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
-            Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
-            Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.NumberOfLotsToTrade
-            If currentTime <= userSettings.EODExitTime Then
-                If Not _entryOrderPlaced Then
-                    If Me.TakeTrade AndAlso currentTime <= userSettings.LastTradeEntryTime Then
-                        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 1 Then
-                            _entryOrderPlaced = True
-                        Else
-                            If supertrendColor = Color.Red Then
-                                parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                     .Quantity = quantity}
-                            Else
-                                If log Then
-                                    OnHeartbeat("{0}: Supertrend Color:Green. So it will wait now for entry.")
-                                End If
-                            End If
+            stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+            stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
+            If (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
+                (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
+                (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
+
+                Dim preSupertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+                Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+
+                Dim quantity As Integer = GetQuantityToTrade()
+                If quantity = 0 Then
+                    If supertrendColor <> preSupertrendColor Then
+                        quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper).NumberOfLots
+                        If supertrendColor = Color.Green Then
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                           {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                            .Quantity = Math.Abs(quantity)}
+                        ElseIf supertrendColor = Color.Red Then
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                           {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                            .Quantity = Math.Abs(quantity)}
                         End If
                     End If
                 Else
-                    If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 2 Then
-                        If Me.MyOppositeOptionInstrument IsNot Nothing Then
-                            Me.MyOppositeOptionInstrument.TakeTrade = True
-                        End If
-                        Me.StopInstrumentReason = "Both trades taken"
-                        Me.StopInstrument = True
-                    Else
-                        If supertrendColor = Color.Green Then
-                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                     .Quantity = quantity}
-                        End If
-                    End If
-                End If
-            Else
-                If _entryOrderPlaced Then
-                    If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count >= 2 Then
-                        If Me.MyOppositeOptionInstrument IsNot Nothing Then
-                            Me.MyOppositeOptionInstrument.TakeTrade = True
-                        End If
-                        Me.StopInstrumentReason = "Both trades taken"
-                        Me.StopInstrument = True
-                    Else
+                    If supertrendColor = Color.Green AndAlso quantity < 0 Then
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                 .Quantity = quantity,
-                                 .Supporting = New List(Of Object) From {"EOD Exit"}}
+                                       {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                        .Quantity = Math.Abs(quantity) * 2}
+                    ElseIf supertrendColor = Color.Red AndAlso quantity > 0 Then
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                       {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                        .Quantity = Math.Abs(quantity) * 2}
                     End If
                 End If
             End If
@@ -405,7 +254,7 @@ Public Class NFOStrategyInstrument
                 logger.Warn(ex)
             End Try
 
-            If parameters IsNot Nothing AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+            If parameters IsNot Nothing Then
                 Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
                 If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
                     Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
@@ -471,6 +320,58 @@ Public Class NFOStrategyInstrument
             End If
         End If
         Return ret
+    End Function
+
+    Private Function GetQuantityToTrade() As Integer
+        Dim ret As Integer = 0
+        If PositionDetails IsNot Nothing Then
+            ret = Me.PositionDetails.Quantity
+        End If
+        Return ret
+    End Function
+
+    Private Function IsMyAnotherContractAvailable() As Tuple(Of Boolean, NFOStrategyInstrument)
+        Dim ret As Tuple(Of Boolean, NFOStrategyInstrument) = New Tuple(Of Boolean, NFOStrategyInstrument)(False, Nothing)
+        For Each runningStrategyInstrument As NFOStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
+            If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> Me.TradableInstrument.InstrumentIdentifier AndAlso
+                runningStrategyInstrument.TradableInstrument.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
+                ret = New Tuple(Of Boolean, NFOStrategyInstrument)(True, runningStrategyInstrument)
+                Exit For
+            End If
+        Next
+        Return ret
+    End Function
+
+    Public Async Function ContractRolloverAsync() As Task
+        Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
+        If Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable().Item1 Then
+            Try
+                While True
+                    If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                        Throw Me.ParentStrategy.ParentController.OrphanException
+                    End If
+                    _cts.Token.ThrowIfCancellationRequested()
+
+                    If Now >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime Then
+                        Me.ForceExitForContractRollover = True
+                        While Me.ForceExitForContractRollover
+                            Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                        End While
+                        'Me.ForceExitForContractRolloverDone = True
+
+                        IsMyAnotherContractAvailable.Item2.ForceEntryForContractRollover = True
+                        IsMyAnotherContractAvailable.Item2.ForceEntryForContractRolloverDone = False
+
+                        Exit While
+                    End If
+
+                    Await Task.Delay(60000, _cts.Token).ConfigureAwait(False)
+                End While
+            Catch ex As Exception
+                logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
+                Throw ex
+            End Try
+        End If
     End Function
 
 #Region "Not required functions"

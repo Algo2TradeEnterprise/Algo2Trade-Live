@@ -36,10 +36,7 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeframe.Text = _settings.SignalTimeFrame
-            dtpckrTradeStartTime.Value = _settings.TradeStartTime
-            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
-            dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtStrikeRangePer.Text = _settings.StrikePriceSelectionRangePercentage
+            txtExpireBefore.Text = _settings.ExpireDaysBefore
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
 
             txtSupertrendPeriod.Text = _settings.SupertrendPeriod
@@ -49,10 +46,7 @@ Public Class frmNFOSettings
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeframe.Text
-        _settings.TradeStartTime = dtpckrTradeStartTime.Value
-        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
-        _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.StrikePriceSelectionRangePercentage = txtStrikeRangePer.Text
+        _settings.ExpireDaysBefore = txtExpireBefore.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         _settings.SupertrendPeriod = txtSupertrendPeriod.Text
@@ -80,7 +74,7 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, 180, txtSignalTimeframe, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtStrikeRangePer)
+        ValidateNumbers(0, 15, txtExpireBefore, True)
 
         ValidateNumbers(1, Integer.MaxValue, txtSupertrendPeriod, True)
         ValidateNumbers(1, Decimal.MaxValue, txtSupertrendMultiplier, False)
