@@ -115,9 +115,9 @@ Public Class NFOStrategyInstrument
                             Throw Me._RMSException
                         End If
                         _cts.Token.ThrowIfCancellationRequested()
-                        If Not optionSelectionDone AndAlso Now >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
-                            Me.TradableInstrument.LastTick IsNot Nothing AndAlso
-                            Me.TradableInstrument.LastTick.Timestamp.Value >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime Then
+                        If Not optionSelectionDone AndAlso Me.TradableInstrument.LastTick IsNot Nothing AndAlso
+                            Me.TradableInstrument.LastTick.Timestamp.Value.Date = Now.Date AndAlso
+                            Now >= New Date(Now.Year, Now.Month, Now.Day, 9, 8, 0) Then
                             If Not File.Exists(_strikeFileName) Then
                                 Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
                                 OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
