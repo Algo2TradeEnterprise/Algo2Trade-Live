@@ -352,7 +352,7 @@ Public Class NFOStrategyInstrument
                             _entryOrderPlaced = True
                         Else
                             If supertrendColor = Color.Red Then
-                                OnHeartbeat("Supertrend Color:Red. So it will place entry order.")
+                                OnHeartbeat("***** Supertrend Color:Red. So it will place entry order.")
                                 parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .Quantity = quantity}
@@ -371,12 +371,13 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrumentReason = "Both trades taken"
                         Me.StopInstrument = True
                     Else
-                        If log Then OnHeartbeat(String.Format("Supertrend Color:{0}", supertrendColor.Name))
                         If supertrendColor = Color.Green Then
-                            OnHeartbeat("Supertrend Color:Green. So it will place exit order.")
+                            OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                      .Quantity = quantity}
+                        Else
+                            If log Then OnHeartbeat(String.Format("Supertrend Color:{0}. So it will not place exit order", supertrendColor.Name))
                         End If
                     End If
                 End If
@@ -389,7 +390,7 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrumentReason = "Both trades taken"
                         Me.StopInstrument = True
                     Else
-                        OnHeartbeat(String.Format("Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
+                        OnHeartbeat(String.Format("***** Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
