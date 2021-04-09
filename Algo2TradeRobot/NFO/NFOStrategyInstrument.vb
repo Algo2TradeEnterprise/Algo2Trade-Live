@@ -176,6 +176,7 @@ Public Class NFOStrategyInstrument
                                 If File.Exists(_strikeFileName) Then
                                     atmStrikePrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
                                     supertrendColor = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item2
+                                    OnHeartbeat(String.Format("Close Price={0}, Selected ATM Strike={1}, Supertrend Color={2}", runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice, supertrendColor.Name))
                                 Else
                                     supertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                                     Dim upperStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
@@ -210,7 +211,7 @@ Public Class NFOStrategyInstrument
                                     ElseIf lowerStrikePrice <> Decimal.MinValue Then
                                         atmStrikePrice = lowerStrikePrice
                                     End If
-                                    OnHeartbeat(String.Format("{0}: Close Price={1}, Selected ATM Strike={2}", Me.TradableInstrument.TradingSymbol, runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice))
+                                    OnHeartbeat(String.Format("Close Price={0}, Selected ATM Strike={1}, Supertrend Color={2}", runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice, supertrendColor.Name))
                                     If atmStrikePrice <> Decimal.MinValue Then Utilities.Strings.SerializeFromCollection(Of Tuple(Of Decimal, Color))(_strikeFileName, New Tuple(Of Decimal, Color)(atmStrikePrice, supertrendColor))
                                 End If
                                 If atmStrikePrice <> Decimal.MinValue Then
@@ -351,12 +352,13 @@ Public Class NFOStrategyInstrument
                             _entryOrderPlaced = True
                         Else
                             If supertrendColor = Color.Red Then
+                                OnHeartbeat("Supertrend Color:Red. So it will place entry order.")
                                 parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .Quantity = quantity}
                             Else
                                 If log Then
-                                    OnHeartbeat("{0}: Supertrend Color:Green. So it will wait now for entry.")
+                                    OnHeartbeat("Supertrend Color:Green. So it will wait now for entry.")
                                 End If
                             End If
                         End If
@@ -369,7 +371,9 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrumentReason = "Both trades taken"
                         Me.StopInstrument = True
                     Else
+                        If log Then OnHeartbeat(String.Format("Supertrend Color:{0}", supertrendColor.Name))
                         If supertrendColor = Color.Green Then
+                            OnHeartbeat("Supertrend Color:Green. So it will place exit order.")
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                      .Quantity = quantity}
@@ -385,6 +389,7 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrumentReason = "Both trades taken"
                         Me.StopInstrument = True
                     Else
+                        OnHeartbeat(String.Format("Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
