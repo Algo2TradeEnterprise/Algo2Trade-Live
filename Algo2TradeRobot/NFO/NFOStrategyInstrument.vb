@@ -217,18 +217,18 @@ Public Class NFOStrategyInstrument
                 (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
                 Dim preSupertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                 Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
-                If log Then
-                    OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
-                End If
+                If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
                 Dim quantity As Integer = GetQuantityToTrade()
                 If quantity = 0 Then
                     If supertrendColor <> preSupertrendColor Then
                         quantity = Me.TradableInstrument.LotSize * userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper).NumberOfLots
                         If supertrendColor = Color.Green Then
+                            If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}. So Buy trade will be taken", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                            {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                             .Quantity = Math.Abs(quantity)}
                         ElseIf supertrendColor = Color.Red Then
+                            If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}. So Sell trade will be taken", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                            {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                             .Quantity = Math.Abs(quantity)}
@@ -236,10 +236,12 @@ Public Class NFOStrategyInstrument
                     End If
                 Else
                     If supertrendColor = Color.Green AndAlso quantity < 0 Then
+                        If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}. So Buy trade will be taken", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                         .Quantity = Math.Abs(quantity) * 2}
                     ElseIf supertrendColor = Color.Red AndAlso quantity > 0 Then
+                        If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}. So Sell trade will be taken", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                        {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                         .Quantity = Math.Abs(quantity) * 2}
