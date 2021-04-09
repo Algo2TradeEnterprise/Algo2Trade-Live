@@ -15,6 +15,7 @@
             dt.Columns.Add("Expiry")
             dt.Columns.Add("Lot Size")
             dt.Columns.Add("Running")
+            dt.Columns.Add("Historical")
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
@@ -23,6 +24,7 @@
                 row("Expiry") = instrument.TradableInstrument.Expiry
                 row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Running") = instrument.StrategyInstrumentRunning
+                row("Historical") = instrument.TradableInstrument.IsHistoricalCompleted
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
