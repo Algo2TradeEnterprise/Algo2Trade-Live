@@ -160,7 +160,8 @@ Public Class NFOStrategyInstrument
                                 IsMyAnotherContractAvailable(),
                                 Me.ForceExitForContractRollover,
                                 Me.ForceEntryForContractRollover,
-                                Now.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                GetQuantityToTrade(),
+                                currentTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                 Me.TradableInstrument.TradingSymbol)
                 End If
             End If
