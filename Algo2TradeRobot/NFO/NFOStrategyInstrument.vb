@@ -173,6 +173,9 @@ Public Class NFOStrategyInstrument
         If (Me.ForceExitForContractRollover OrElse Me.ForceEntryForContractRollover) AndAlso
             currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
+            If log Then
+                OnHeartbeat(String.Format("Force Exit For Contract Rollover: {0}, Force Entry For Contract Rollover: {1}", ForceExitForContractRollover, ForceEntryForContractRollover))
+            End If
             Dim quantity As Integer = GetQuantityToTrade()
 
             If ForceExitForContractRollover Then
@@ -212,10 +215,11 @@ Public Class NFOStrategyInstrument
             If (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
                 (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
                 (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
-
                 Dim preSupertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                 Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
-
+                If log Then
+                    OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
+                End If
                 Dim quantity As Integer = GetQuantityToTrade()
                 If quantity = 0 Then
                     If supertrendColor <> preSupertrendColor Then
