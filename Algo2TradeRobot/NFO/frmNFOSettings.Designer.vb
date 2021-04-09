@@ -93,7 +93,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendMultiplier.Name = "txtSupertrendMultiplier"
         Me.txtSupertrendMultiplier.Size = New System.Drawing.Size(255, 22)
         Me.txtSupertrendMultiplier.TabIndex = 1
-        Me.txtSupertrendMultiplier.Tag = "LT EMA2 Period"
+        Me.txtSupertrendMultiplier.Tag = "Supertrend Multiplier"
         '
         'lblLTEMA2Period
         '
@@ -112,7 +112,7 @@ Partial Class frmNFOSettings
         Me.txtSupertrendPeriod.Name = "txtSupertrendPeriod"
         Me.txtSupertrendPeriod.Size = New System.Drawing.Size(256, 22)
         Me.txtSupertrendPeriod.TabIndex = 0
-        Me.txtSupertrendPeriod.Tag = "LT EMA1 Period"
+        Me.txtSupertrendPeriod.Tag = "Supertrend Period"
         '
         'lblLTEMA1Period
         '
@@ -260,7 +260,7 @@ Partial Class frmNFOSettings
         Me.txtSignalTimeframe.Name = "txtSignalTimeframe"
         Me.txtSignalTimeframe.Size = New System.Drawing.Size(255, 22)
         Me.txtSignalTimeframe.TabIndex = 0
-        Me.txtSignalTimeframe.Tag = "Lower Time Frame"
+        Me.txtSignalTimeframe.Tag = "Signal Timeframe"
         '
         'lblSignalTimeframe
         '
