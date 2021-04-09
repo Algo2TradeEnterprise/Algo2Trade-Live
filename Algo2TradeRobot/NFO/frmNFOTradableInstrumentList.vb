@@ -12,33 +12,17 @@
             dt.Columns.Add("Instrument Name")
             dt.Columns.Add("Exchange")
             dt.Columns.Add("Instrument Type")
-            'dt.Columns.Add("Expiry")
-            'dt.Columns.Add("Lot Size")
+            dt.Columns.Add("Expiry")
+            dt.Columns.Add("Lot Size")
             dt.Columns.Add("Running")
-            dt.Columns.Add("Total Quantity")
-            dt.Columns.Add("Average Price")
-            dt.Columns.Add("Downward Drop %")
-            dt.Columns.Add("Downward Rise %")
-            dt.Columns.Add("Upward Rise %")
-            dt.Columns.Add("Upward Drop %")
             For Each instrument In _TradableStrategyInstruments
                 Dim row As DataRow = dt.NewRow
                 row("Instrument Name") = instrument.TradableInstrument.TradingSymbol
                 row("Exchange") = instrument.TradableInstrument.RawExchange
                 row("Instrument Type") = instrument.TradableInstrument.RawInstrumentType
-                'row("Expiry") = instrument.TradableInstrument.Expiry
-                'row("Lot Size") = instrument.TradableInstrument.LotSize
+                row("Expiry") = instrument.TradableInstrument.Expiry
+                row("Lot Size") = instrument.TradableInstrument.LotSize
                 row("Running") = instrument.StrategyInstrumentRunning
-                Try
-                    row("Total Quantity") = instrument.SignalData.TotalQuantity
-                    row("Average Price") = Math.Round(instrument.SignalData.AveragePrice, 2)
-                    row("Downward Drop %") = Math.Round(instrument.SignalData.DownwardDropPercentage, 2)
-                    row("Downward Rise %") = Math.Round(instrument.SignalData.DownwardNetRisePercentage, 2)
-                    row("Upward Rise %") = Math.Round(instrument.SignalData.UpwardRisePercentage, 2)
-                    row("Upward Drop %") = Math.Round(instrument.SignalData.UpwardNetDropPercentage, 2)
-                Catch ex As Exception
-                    'Ignore
-                End Try
                 dt.Rows.Add(row)
             Next
             dgvTradableInstruments.DataSource = dt
