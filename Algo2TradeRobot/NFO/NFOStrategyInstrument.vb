@@ -117,7 +117,8 @@ Public Class NFOStrategyInstrument
                         _cts.Token.ThrowIfCancellationRequested()
                         If Not optionSelectionDone AndAlso Me.TradableInstrument.LastTick IsNot Nothing AndAlso
                             Me.TradableInstrument.LastTick.Timestamp.Value.Date = Now.Date AndAlso
-                            Now >= New Date(Now.Year, Now.Month, Now.Day, 9, 8, 0) Then
+                            Now >= New Date(Now.Year, Now.Month, Now.Day, 9, 10, 0) AndAlso
+                            Me.TradableInstrument.LastTick.Open > 0 Then
                             If Not File.Exists(_strikeFileName) Then
                                 Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
                                 OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
@@ -151,13 +152,13 @@ Public Class NFOStrategyInstrument
                                     Me.TradableInstrument.IsHistoricalCompleted Then
                                     If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                                         _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
-                                        logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
+                                        logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.ToString)
                                         logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, TradingSymbol:{8}",
                                                     runningCandlePayload.SnapshotDateTime.ToString,
                                                     runningCandlePayload.PayloadGeneratedBy.ToString,
                                                     Me.TradableInstrument.IsHistoricalCompleted,
                                                     Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                                    CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
+                                                    CType(stConsumer.ConsumerPayloads(runningCandlePayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
                                                     Now.ToString("dd-MMM-yyyy HH:mm:ss"),
@@ -168,24 +169,24 @@ Public Class NFOStrategyInstrument
                                 logger.Error(ex)
                             End Try
 
-                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Now >= userSettings.TradeStartTime AndAlso
-                                runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-                                stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso
+                                runningCandlePayload IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
                                 Dim atmStrikePrice As Decimal = Decimal.MinValue
                                 Dim supertrendColor As Color = Color.White
                                 If File.Exists(_strikeFileName) Then
                                     atmStrikePrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item1
                                     supertrendColor = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Color))(_strikeFileName).Item2
-                                    OnHeartbeat(String.Format("Close Price={0}, Selected ATM Strike={1}, Supertrend Color={2}", runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice, supertrendColor.Name))
+                                    OnHeartbeat(String.Format("Selected ATM Strike={0}, Supertrend Color={1}", atmStrikePrice, supertrendColor.Name))
                                 Else
-                                    supertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+                                    supertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+                                    Dim currentPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
                                     Dim upperStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
                                                                                                                                     Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                        x.TradableInstrument.Strike >= runningCandlePayload.PreviousPayload.ClosePrice.Value
+                                                                                                                                        x.TradableInstrument.Strike >= currentPrice
                                                                                                                                 End Function)
                                     Dim lowerStrikes As IEnumerable(Of StrategyInstrument) = _myOptionStrategyInstruments.Where(Function(x)
                                                                                                                                     Return x.TradableInstrument.FetchHistorical AndAlso
-                                                                                                                                        x.TradableInstrument.Strike <= runningCandlePayload.PreviousPayload.ClosePrice.Value
+                                                                                                                                        x.TradableInstrument.Strike <= currentPrice
                                                                                                                                 End Function)
                                     Dim upperStrikePrice As Decimal = Decimal.MaxValue
                                     Dim lowerStrikePrice As Decimal = Decimal.MinValue
@@ -201,7 +202,7 @@ Public Class NFOStrategyInstrument
                                     End If
 
                                     If upperStrikePrice <> Decimal.MaxValue AndAlso lowerStrikePrice <> Decimal.MinValue Then
-                                        If upperStrikePrice - runningCandlePayload.PreviousPayload.ClosePrice.Value < runningCandlePayload.PreviousPayload.ClosePrice.Value - lowerStrikePrice Then
+                                        If upperStrikePrice - currentPrice < currentPrice - lowerStrikePrice Then
                                             atmStrikePrice = upperStrikePrice
                                         Else
                                             atmStrikePrice = lowerStrikePrice
@@ -211,7 +212,7 @@ Public Class NFOStrategyInstrument
                                     ElseIf lowerStrikePrice <> Decimal.MinValue Then
                                         atmStrikePrice = lowerStrikePrice
                                     End If
-                                    OnHeartbeat(String.Format("Close Price={0}, Selected ATM Strike={1}, Supertrend Color={2}", runningCandlePayload.PreviousPayload.ClosePrice.Value, atmStrikePrice, supertrendColor.Name))
+                                    OnHeartbeat(String.Format("Price={0}, Selected ATM Strike={1}, Supertrend Color={2}", currentPrice, atmStrikePrice, supertrendColor.Name))
                                     If atmStrikePrice <> Decimal.MinValue Then Utilities.Strings.SerializeFromCollection(Of Tuple(Of Decimal, Color))(_strikeFileName, New Tuple(Of Decimal, Color)(atmStrikePrice, supertrendColor))
                                 End If
                                 If atmStrikePrice <> Decimal.MinValue Then
