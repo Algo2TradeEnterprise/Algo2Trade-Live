@@ -452,8 +452,14 @@ Public Class frmMainTabbed
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
+            Dim maxTF As Integer = 1
+            If _nfoUserInputs.InstrumentsData IsNot Nothing AndAlso _nfoUserInputs.InstrumentsData.Count > 0 Then
+                maxTF = _nfoUserInputs.InstrumentsData.Max(Function(x)
+                                                               Return x.Value.Timeframe
+                                                           End Function)
+            End If
             Dim numberOfDayForHistorical As Integer = 8
-            Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / _nfoUserInputs.SignalTimeFrame)
+            Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / maxTF)
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
             numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 

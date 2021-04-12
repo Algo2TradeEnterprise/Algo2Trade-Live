@@ -48,11 +48,12 @@ Public Class NFOStrategyInstrument
         RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             Dim userInputs As NFOUserInputs = Me.ParentStrategy.UserSettings
-            Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(userInputs.SignalTimeFrame)
+            Dim instrumentData As NFOUserInputs.InstrumentDetails = userInputs.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper)
+            Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(instrumentData.Timeframe)
             chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer)
-            chartConsumer.OnwardLevelConsumers.Add(New SupertrendConsumer(chartConsumer, userInputs.SupertrendPeriod, userInputs.SupertrendMultiplier))
+            chartConsumer.OnwardLevelConsumers.Add(New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier))
             RawPayloadDependentConsumers.Add(chartConsumer)
-            _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, userInputs.SupertrendPeriod, userInputs.SupertrendMultiplier)
+            _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier)
         End If
     End Sub
 
@@ -135,7 +136,7 @@ Public Class NFOStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+        Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper).Timeframe)
         Dim stConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
@@ -179,7 +180,7 @@ Public Class NFOStrategyInstrument
             Dim quantity As Integer = GetQuantityToTrade()
 
             If ForceExitForContractRollover Then
-                userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).ModifiedNumberOfLots = quantity / Me.TradableInstrument.LotSize
+                userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper).ModifiedNumberOfLots = quantity / Me.TradableInstrument.LotSize
             End If
 
             If quantity > 0 Then
@@ -195,7 +196,7 @@ Public Class NFOStrategyInstrument
             End If
 
             If Me.ForceEntryForContractRollover Then
-                quantity = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName).ModifiedNumberOfLots * Me.TradableInstrument.LotSize
+                quantity = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper).ModifiedNumberOfLots * Me.TradableInstrument.LotSize
                 If quantity > 0 Then
                     parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
@@ -341,7 +342,7 @@ Public Class NFOStrategyInstrument
         Dim ret As Tuple(Of Boolean, NFOStrategyInstrument) = New Tuple(Of Boolean, NFOStrategyInstrument)(False, Nothing)
         For Each runningStrategyInstrument As NFOStrategyInstrument In Me.ParentStrategy.TradableStrategyInstruments
             If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> Me.TradableInstrument.InstrumentIdentifier AndAlso
-                runningStrategyInstrument.TradableInstrument.RawInstrumentName = Me.TradableInstrument.RawInstrumentName Then
+                runningStrategyInstrument.TradableInstrument.RawInstrumentName.ToUpper = Me.TradableInstrument.RawInstrumentName.ToUpper Then
                 ret = New Tuple(Of Boolean, NFOStrategyInstrument)(True, runningStrategyInstrument)
                 Exit For
             End If

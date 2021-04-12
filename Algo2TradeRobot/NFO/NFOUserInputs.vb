@@ -11,9 +11,6 @@ Public Class NFOUserInputs
 
     Public Property ExpireDaysBefore As Integer
 
-    Public Property SupertrendPeriod As Integer
-    Public Property SupertrendMultiplier As Decimal
-
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
@@ -22,6 +19,10 @@ Public Class NFOUserInputs
         Public Property InstrumentName As String
         Public Property NumberOfLots As Integer
         Public Property ModifiedNumberOfLots As Integer
+
+        Public Property Timeframe As Integer
+        Public Property SupertrendPeriod As Integer
+        Public Property SupertrendMultiplier As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -34,9 +35,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"RAW INSTRUMENT NAME", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"RAW INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER"}
 
-                        For colCtr = 0 To 1
+                        For colCtr = 0 To 4
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -48,6 +49,9 @@ Public Class NFOUserInputs
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim instrumentName As String = Nothing
                             Dim quantity As Integer = Integer.MinValue
+                            Dim timeframe As Integer = Integer.MinValue
+                            Dim stPeriod As Integer = Integer.MinValue
+                            Dim stMultiplier As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -71,13 +75,55 @@ Public Class NFOUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Number Of Lots cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
+                                ElseIf columnCtr = 2 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
+                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
+                                            If Val(instrumentDetails(rowCtr, columnCtr)) > 0 AndAlso Val(instrumentDetails(rowCtr, columnCtr)) <= 180 Then
+                                                timeframe = Val(instrumentDetails(rowCtr, columnCtr))
+                                            Else
+                                                Throw New ApplicationException(String.Format("Timeframe cannot be < 1 & > 180 for {0}", instrumentName))
+                                            End If
+                                        Else
+                                            Throw New ApplicationException(String.Format("Timeframe cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Timeframe cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 3 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
+                                            Math.Round(Val(instrumentDetails(rowCtr, columnCtr)), 0) = Val(instrumentDetails(rowCtr, columnCtr)) Then
+                                            stPeriod = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Supertrend Period cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Supertrend Period cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 4 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            stMultiplier = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Supertrend Multiplier cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Supertrend Multiplier cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing AndAlso quantity > 0 Then
                                 Dim instrumentData As New InstrumentDetails With {
                                     .InstrumentName = instrumentName.ToUpper.Trim,
                                     .NumberOfLots = quantity,
-                                    .ModifiedNumberOfLots = quantity
+                                    .ModifiedNumberOfLots = quantity,
+                                    .Timeframe = timeframe,
+                                    .SupertrendPeriod = stPeriod,
+                                    .SupertrendMultiplier = stMultiplier
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)

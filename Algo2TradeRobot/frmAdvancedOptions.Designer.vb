@@ -284,7 +284,7 @@ Partial Class frmAdvancedOptions
         Me.GroupBox1.Size = New System.Drawing.Size(399, 110)
         Me.GroupBox1.TabIndex = 29
         Me.GroupBox1.TabStop = False
-        Me.GroupBox1.Text = "NSE / NFO"
+        Me.GroupBox1.Text = "NSE / NFO / BSE"
         '
         'dtpckrNSEContractRolloverTime
         '

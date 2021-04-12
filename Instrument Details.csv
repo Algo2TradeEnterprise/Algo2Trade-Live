@@ -1,2 +1,2 @@
-Raw Instrument Name,Number Of Lots
-BANKNIFTY,1
+Raw Instrument Name,Number Of Lots,Timeframe,Supertrend Period,Supertrend Multiplier
+BANKNIFTY,1,15,20,2.5

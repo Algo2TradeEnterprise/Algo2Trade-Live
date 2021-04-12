@@ -35,22 +35,15 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtSignalTimeframe.Text = _settings.SignalTimeFrame
             txtExpireBefore.Text = _settings.ExpireDaysBefore
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtSupertrendPeriod.Text = _settings.SupertrendPeriod
-            txtSupertrendMultiplier.Text = _settings.SupertrendMultiplier
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeframe.Text
+        _settings.SignalTimeFrame = 1
         _settings.ExpireDaysBefore = txtExpireBefore.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.SupertrendPeriod = txtSupertrendPeriod.Text
-        _settings.SupertrendMultiplier = txtSupertrendMultiplier.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -73,11 +66,7 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 180, txtSignalTimeframe, True)
         ValidateNumbers(0, 15, txtExpireBefore, True)
-
-        ValidateNumbers(1, Integer.MaxValue, txtSupertrendPeriod, True)
-        ValidateNumbers(1, Decimal.MaxValue, txtSupertrendMultiplier, False)
 
         ValidateFile()
     End Sub
