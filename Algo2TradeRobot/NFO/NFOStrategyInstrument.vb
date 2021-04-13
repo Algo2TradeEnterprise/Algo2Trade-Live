@@ -427,7 +427,11 @@ Public Class NFOStrategyInstrument
 
         Public ReadOnly Property AveragePrice As Decimal
             Get
-                Return (Me.HoldingsAveragePrice * Me.HoldingsQuantity + Me.PositionsAveragePrice * Me.PositionsQuantity) / Me.TotalQuantity
+                If Me.TotalQuantity > 1 Then
+                    Return (Me.HoldingsAveragePrice * Me.HoldingsQuantity + Me.PositionsAveragePrice * Me.PositionsQuantity) / Me.TotalQuantity
+                Else
+                    Return Me.HoldingsAveragePrice
+                End If
             End Get
         End Property
 
