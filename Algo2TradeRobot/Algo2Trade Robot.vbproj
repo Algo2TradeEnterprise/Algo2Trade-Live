@@ -221,6 +221,21 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Strangle\frmStrangleSettings.Designer.vb">
+      <DependentUpon>frmStrangleSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Strangle\frmStrangleSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Strangle\frmStrangleTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmStrangleTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Strangle\frmStrangleTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Strangle\StrangleStrategy.vb" />
+    <Compile Include="Strangle\StrangleStrategyInstrument.vb" />
+    <Compile Include="Strangle\StrangleUserInputs.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="frmAbout.resx">
@@ -249,6 +264,12 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strangle\frmStrangleSettings.resx">
+      <DependentUpon>frmStrangleSettings.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Strangle\frmStrangleTradableInstrumentList.resx">
+      <DependentUpon>frmStrangleTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

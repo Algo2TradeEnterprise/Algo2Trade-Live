@@ -45,7 +45,23 @@ Partial Class frmMainTabbed
         Me.pnlNFOBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstNFOLog = New System.Windows.Forms.ListBox()
         Me.sfdgvNFOMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tabStrangle = New System.Windows.Forms.TabPage()
+        Me.pnlStrangleMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlStrangleTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnStrangleStop = New System.Windows.Forms.Button()
+        Me.btnStrangleStart = New System.Windows.Forms.Button()
+        Me.Panel1 = New System.Windows.Forms.Panel()
+        Me.blbStrangleTickerStatus = New Bulb.LedBulb()
+        Me.lblStrangleTickerStatus = New System.Windows.Forms.Label()
+        Me.btnStrangleSettings = New System.Windows.Forms.Button()
+        Me.linklblStrangleTradableInstruments = New System.Windows.Forms.LinkLabel()
+        Me.TableLayoutPanel3 = New System.Windows.Forms.TableLayoutPanel()
+        Me.pctrBxStrangle = New System.Windows.Forms.PictureBox()
+        Me.pnlStrangleBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.lstStrangleLog = New System.Windows.Forms.ListBox()
+        Me.sfdgvStrangleMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -56,6 +72,14 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxNFO, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.pnlNFOBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvNFOMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabStrangle.SuspendLayout()
+        Me.pnlStrangleMainPanelHorizontalSplitter.SuspendLayout()
+        Me.pnlStrangleTopHeaderVerticalSplitter.SuspendLayout()
+        Me.Panel1.SuspendLayout()
+        Me.TableLayoutPanel3.SuspendLayout()
+        CType(Me.pctrBxStrangle, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.pnlStrangleBodyHorizontalSplitter.SuspendLayout()
+        CType(Me.sfdgvStrangleMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -99,6 +123,7 @@ Partial Class frmMainTabbed
         'tabMain
         '
         Me.tabMain.Controls.Add(Me.tabNFO)
+        Me.tabMain.Controls.Add(Me.tabStrangle)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tabMain.Location = New System.Drawing.Point(0, 28)
         Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
@@ -321,9 +346,226 @@ Partial Class frmMainTabbed
         Me.sfdgvNFOMainDashboard.TabIndex = 6
         Me.sfdgvNFOMainDashboard.Text = "SfDataGrid1"
         '
+        'tabStrangle
+        '
+        Me.tabStrangle.Controls.Add(Me.pnlStrangleMainPanelHorizontalSplitter)
+        Me.tabStrangle.Location = New System.Drawing.Point(4, 25)
+        Me.tabStrangle.Name = "tabStrangle"
+        Me.tabStrangle.Padding = New System.Windows.Forms.Padding(3)
+        Me.tabStrangle.Size = New System.Drawing.Size(1363, 693)
+        Me.tabStrangle.TabIndex = 1
+        Me.tabStrangle.Text = "STRANGLE"
+        Me.tabStrangle.UseVisualStyleBackColor = True
+        '
+        'pnlStrangleMainPanelHorizontalSplitter
+        '
+        Me.pnlStrangleMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlStrangleMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStrangleMainPanelHorizontalSplitter.Controls.Add(Me.pnlStrangleTopHeaderVerticalSplitter, 0, 0)
+        Me.pnlStrangleMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel3, 0, 1)
+        Me.pnlStrangleMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStrangleMainPanelHorizontalSplitter.Location = New System.Drawing.Point(3, 3)
+        Me.pnlStrangleMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStrangleMainPanelHorizontalSplitter.Name = "pnlStrangleMainPanelHorizontalSplitter"
+        Me.pnlStrangleMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlStrangleMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlStrangleMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlStrangleMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1357, 687)
+        Me.pnlStrangleMainPanelHorizontalSplitter.TabIndex = 1
+        '
+        'pnlStrangleTopHeaderVerticalSplitter
+        '
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnCount = 15
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.Controls.Add(Me.btnStrangleStop, 0, 0)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Controls.Add(Me.btnStrangleStart, 0, 0)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Controls.Add(Me.btnStrangleSettings, 9, 0)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Controls.Add(Me.linklblStrangleTradableInstruments, 10, 0)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStrangleTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStrangleTopHeaderVerticalSplitter.Name = "pnlStrangleTopHeaderVerticalSplitter"
+        Me.pnlStrangleTopHeaderVerticalSplitter.RowCount = 1
+        Me.pnlStrangleTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStrangleTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1349, 40)
+        Me.pnlStrangleTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnStrangleStop
+        '
+        Me.btnStrangleStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStrangleStop.Location = New System.Drawing.Point(93, 4)
+        Me.btnStrangleStop.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStrangleStop.Name = "btnStrangleStop"
+        Me.btnStrangleStop.Size = New System.Drawing.Size(81, 32)
+        Me.btnStrangleStop.TabIndex = 10
+        Me.btnStrangleStop.Text = "Stop"
+        Me.btnStrangleStop.UseVisualStyleBackColor = True
+        '
+        'btnStrangleStart
+        '
+        Me.btnStrangleStart.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStrangleStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnStrangleStart.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStrangleStart.Name = "btnStrangleStart"
+        Me.btnStrangleStart.Size = New System.Drawing.Size(81, 32)
+        Me.btnStrangleStart.TabIndex = 2
+        Me.btnStrangleStart.Text = "Start"
+        Me.btnStrangleStart.UseVisualStyleBackColor = True
+        '
+        'Panel1
+        '
+        Me.Panel1.Controls.Add(Me.blbStrangleTickerStatus)
+        Me.Panel1.Controls.Add(Me.lblStrangleTickerStatus)
+        Me.Panel1.Location = New System.Drawing.Point(1190, 4)
+        Me.Panel1.Margin = New System.Windows.Forms.Padding(4)
+        Me.Panel1.Name = "Panel1"
+        Me.Panel1.Size = New System.Drawing.Size(147, 31)
+        Me.Panel1.TabIndex = 9
+        '
+        'blbStrangleTickerStatus
+        '
+        Me.blbStrangleTickerStatus.Color = System.Drawing.Color.Pink
+        Me.blbStrangleTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
+        Me.blbStrangleTickerStatus.Location = New System.Drawing.Point(100, 0)
+        Me.blbStrangleTickerStatus.Margin = New System.Windows.Forms.Padding(4)
+        Me.blbStrangleTickerStatus.Name = "blbStrangleTickerStatus"
+        Me.blbStrangleTickerStatus.On = True
+        Me.blbStrangleTickerStatus.Size = New System.Drawing.Size(47, 31)
+        Me.blbStrangleTickerStatus.TabIndex = 7
+        Me.blbStrangleTickerStatus.Text = "LedBulb1"
+        '
+        'lblStrangleTickerStatus
+        '
+        Me.lblStrangleTickerStatus.AutoSize = True
+        Me.lblStrangleTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblStrangleTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblStrangleTickerStatus.Name = "lblStrangleTickerStatus"
+        Me.lblStrangleTickerStatus.Size = New System.Drawing.Size(91, 17)
+        Me.lblStrangleTickerStatus.TabIndex = 9
+        Me.lblStrangleTickerStatus.Text = "Ticker Status"
+        '
+        'btnStrangleSettings
+        '
+        Me.btnStrangleSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStrangleSettings.Location = New System.Drawing.Point(805, 4)
+        Me.btnStrangleSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStrangleSettings.Name = "btnStrangleSettings"
+        Me.btnStrangleSettings.Size = New System.Drawing.Size(81, 32)
+        Me.btnStrangleSettings.TabIndex = 11
+        Me.btnStrangleSettings.Text = "Settings"
+        Me.btnStrangleSettings.UseVisualStyleBackColor = True
+        '
+        'linklblStrangleTradableInstruments
+        '
+        Me.linklblStrangleTradableInstruments.AutoSize = True
+        Me.linklblStrangleTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblStrangleTradableInstruments.Enabled = False
+        Me.linklblStrangleTradableInstruments.Location = New System.Drawing.Point(893, 0)
+        Me.linklblStrangleTradableInstruments.Name = "linklblStrangleTradableInstruments"
+        Me.linklblStrangleTradableInstruments.Size = New System.Drawing.Size(219, 40)
+        Me.linklblStrangleTradableInstruments.TabIndex = 12
+        Me.linklblStrangleTradableInstruments.TabStop = True
+        Me.linklblStrangleTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblStrangleTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'TableLayoutPanel3
+        '
+        Me.TableLayoutPanel3.ColumnCount = 2
+        Me.TableLayoutPanel3.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.TableLayoutPanel3.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.TableLayoutPanel3.Controls.Add(Me.pctrBxStrangle, 0, 0)
+        Me.TableLayoutPanel3.Controls.Add(Me.pnlStrangleBodyHorizontalSplitter, 0, 0)
+        Me.TableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel3.Location = New System.Drawing.Point(4, 52)
+        Me.TableLayoutPanel3.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel3.Name = "TableLayoutPanel3"
+        Me.TableLayoutPanel3.RowCount = 1
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.TableLayoutPanel3.Size = New System.Drawing.Size(1349, 631)
+        Me.TableLayoutPanel3.TabIndex = 1
+        '
+        'pctrBxStrangle
+        '
+        Me.pctrBxStrangle.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pctrBxStrangle.Image = CType(resources.GetObject("pctrBxStrangle.Image"), System.Drawing.Image)
+        Me.pctrBxStrangle.Location = New System.Drawing.Point(947, 2)
+        Me.pctrBxStrangle.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.pctrBxStrangle.Name = "pctrBxStrangle"
+        Me.pctrBxStrangle.Size = New System.Drawing.Size(399, 627)
+        Me.pctrBxStrangle.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
+        Me.pctrBxStrangle.TabIndex = 2
+        Me.pctrBxStrangle.TabStop = False
+        '
+        'pnlStrangleBodyHorizontalSplitter
+        '
+        Me.pnlStrangleBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlStrangleBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStrangleBodyHorizontalSplitter.Controls.Add(Me.lstStrangleLog, 0, 1)
+        Me.pnlStrangleBodyHorizontalSplitter.Controls.Add(Me.sfdgvStrangleMainDashboard, 0, 0)
+        Me.pnlStrangleBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStrangleBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlStrangleBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStrangleBodyHorizontalSplitter.Name = "pnlStrangleBodyHorizontalSplitter"
+        Me.pnlStrangleBodyHorizontalSplitter.RowCount = 2
+        Me.pnlStrangleBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlStrangleBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlStrangleBodyHorizontalSplitter.Size = New System.Drawing.Size(936, 623)
+        Me.pnlStrangleBodyHorizontalSplitter.TabIndex = 0
+        '
+        'lstStrangleLog
+        '
+        Me.lstStrangleLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstStrangleLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.lstStrangleLog.FormattingEnabled = True
+        Me.lstStrangleLog.HorizontalScrollbar = True
+        Me.lstStrangleLog.ItemHeight = 16
+        Me.lstStrangleLog.Location = New System.Drawing.Point(4, 440)
+        Me.lstStrangleLog.Margin = New System.Windows.Forms.Padding(4)
+        Me.lstStrangleLog.Name = "lstStrangleLog"
+        Me.lstStrangleLog.Size = New System.Drawing.Size(928, 179)
+        Me.lstStrangleLog.TabIndex = 9
+        '
+        'sfdgvStrangleMainDashboard
+        '
+        Me.sfdgvStrangleMainDashboard.AccessibleName = "Table"
+        Me.sfdgvStrangleMainDashboard.AllowDraggingColumns = True
+        Me.sfdgvStrangleMainDashboard.AllowEditing = False
+        Me.sfdgvStrangleMainDashboard.AllowFiltering = True
+        Me.sfdgvStrangleMainDashboard.AllowResizingColumns = True
+        Me.sfdgvStrangleMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.sfdgvStrangleMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.sfdgvStrangleMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.sfdgvStrangleMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvStrangleMainDashboard.Margin = New System.Windows.Forms.Padding(4)
+        Me.sfdgvStrangleMainDashboard.Name = "sfdgvStrangleMainDashboard"
+        Me.sfdgvStrangleMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.sfdgvStrangleMainDashboard.Size = New System.Drawing.Size(928, 428)
+        Me.sfdgvStrangleMainDashboard.TabIndex = 6
+        Me.sfdgvStrangleMainDashboard.Text = "SfDataGrid1"
+        '
         'tmrNFOTickerStatus
         '
         Me.tmrNFOTickerStatus.Enabled = True
+        '
+        'tmrStrangleTickerStatus
+        '
+        Me.tmrStrangleTickerStatus.Enabled = True
         '
         'frmMainTabbed
         '
@@ -351,6 +593,16 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxNFO, System.ComponentModel.ISupportInitialize).EndInit()
         Me.pnlNFOBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvNFOMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabStrangle.ResumeLayout(False)
+        Me.pnlStrangleMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.pnlStrangleTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlStrangleTopHeaderVerticalSplitter.PerformLayout()
+        Me.Panel1.ResumeLayout(False)
+        Me.Panel1.PerformLayout()
+        Me.TableLayoutPanel3.ResumeLayout(False)
+        CType(Me.pctrBxStrangle, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.pnlStrangleBodyHorizontalSplitter.ResumeLayout(False)
+        CType(Me.sfdgvStrangleMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -378,4 +630,20 @@ Partial Class frmMainTabbed
     Friend WithEvents miAdvancedOptions As ToolStripMenuItem
     Friend WithEvents linklblNFOTradableInstruments As LinkLabel
     Friend WithEvents pctrBxNFO As PictureBox
+    Friend WithEvents tabStrangle As TabPage
+    Friend WithEvents pnlStrangleMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlStrangleTopHeaderVerticalSplitter As TableLayoutPanel
+    Friend WithEvents btnStrangleStop As Button
+    Friend WithEvents btnStrangleStart As Button
+    Friend WithEvents Panel1 As Panel
+    Friend WithEvents blbStrangleTickerStatus As Bulb.LedBulb
+    Friend WithEvents lblStrangleTickerStatus As Label
+    Friend WithEvents btnStrangleSettings As Button
+    Friend WithEvents linklblStrangleTradableInstruments As LinkLabel
+    Friend WithEvents TableLayoutPanel3 As TableLayoutPanel
+    Friend WithEvents pctrBxStrangle As PictureBox
+    Friend WithEvents pnlStrangleBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents lstStrangleLog As ListBox
+    Friend WithEvents sfdgvStrangleMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
+    Friend WithEvents tmrStrangleTickerStatus As Timer
 End Class
