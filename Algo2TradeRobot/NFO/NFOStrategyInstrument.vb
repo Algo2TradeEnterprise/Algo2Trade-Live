@@ -127,7 +127,7 @@ Public Class NFOStrategyInstrument
                                     runningStrategyInstrument.TradableInstrument.Strike <= openPrice + openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 Then
                                         runningStrategyInstrument.TradableInstrument.FetchHistorical = True
                                     Else
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Outside allowable range according to open price"
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "+++ Outside allowable range according to open price"
                                         CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
                                     End If
                                 Next
@@ -137,7 +137,7 @@ Public Class NFOStrategyInstrument
                                     If runningStrategyInstrument.TradableInstrument.Strike = strikePrice Then
                                         runningStrategyInstrument.TradableInstrument.FetchHistorical = True
                                     Else
-                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                        CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
                                         CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
                                     End If
                                 Next
@@ -226,7 +226,7 @@ Public Class NFOStrategyInstrument
                                         For Each runningStrategyInstrument In _myOptionStrategyInstruments
                                             If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmCall.TradableInstrument.InstrumentIdentifier AndAlso
                                                 runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> atmPut.TradableInstrument.InstrumentIdentifier Then
-                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                                CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
                                                 CType(runningStrategyInstrument, NFOStrategyInstrument).StopInstrument = True
                                             End If
                                         Next
@@ -300,8 +300,10 @@ Public Class NFOStrategyInstrument
             Throw ex
         Finally
             Me.TradableInstrument.FetchHistorical = False
-            OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
             _strategyInstrumentRunning = False
+            If Not Me.StopInstrumentReason.StartsWith("+++") Then
+                OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
+            End If
         End Try
     End Function
 
