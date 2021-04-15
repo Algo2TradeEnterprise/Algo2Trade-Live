@@ -266,6 +266,7 @@ Public Class frmMainTabbed
     Private _connection As IConnection = Nothing
     Private _commonControllerUserInput As ControllerUserInputs = Nothing
     Private _lastException As Exception = Nothing
+    Private _tickerStatusFilepath As String = Path.Combine(My.Application.Info.DirectoryPath, "Ticker Status.a2t")
 #End Region
 
     Private _toolRunning As Boolean = False
@@ -1116,6 +1117,11 @@ Public Class frmMainTabbed
         End If
     End Function
 
+    Private Sub tmrTickerMoniter_Tick(sender As Object, e As EventArgs) Handles tmrTickerMoniter.Tick
+        If blbNFOTickerStatus.Color = Color.Lime OrElse blbStrangleTickerStatus.Color = Color.Lime Then
+            Utilities.Strings.SerializeFromCollection(Of String)(_tickerStatusFilepath, "")
+        End If
+    End Sub
 #End Region
 
 #Region "EX Users"
@@ -1144,7 +1150,7 @@ Public Class frmMainTabbed
         pnlStrangleBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlStrangleBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
-        tabMain.TabPages.Remove(tabStrangle)
+        'tabMain.TabPages.Remove(tabStrangle)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
