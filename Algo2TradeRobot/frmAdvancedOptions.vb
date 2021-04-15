@@ -31,6 +31,7 @@ Public Class frmAdvancedOptions
         If _UserInputs IsNot Nothing Then
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
+            txtTickerStatusUpdateDelay.Text = _UserInputs.TickerStatusCheckDelay
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
             dtpckrDeadStateStartTime.Value = _UserInputs.IdleStateStartTime
             dtpckrDeadStateEndTime.Value = _UserInputs.IdleStateEndTime
@@ -69,6 +70,7 @@ Public Class frmAdvancedOptions
         If _UserInputs Is Nothing Then _UserInputs = New ControllerUserInputs
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
+        _UserInputs.TickerStatusCheckDelay = txtTickerStatusUpdateDelay.Text
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
         _UserInputs.IdleStateStartTime = dtpckrDeadStateStartTime.Value
         _UserInputs.IdleStateEndTime = dtpckrDeadStateEndTime.Value
@@ -112,6 +114,7 @@ Public Class frmAdvancedOptions
     Private Sub ValidateInputs()
         ValidateNumbers(1, 1000, txtGetInformationDelay)
         ValidateNumbers(1, 1000, txtBackToBackOrderCoolOffDelay)
+        ValidateNumbers(1, 1000, txtTickerStatusUpdateDelay)
         If dtpckrForceRestartTime.Value.Hour = 0 AndAlso dtpckrForceRestartTime.Value.Minute = 0 Then
             Throw New ApplicationException("Force Restart Time can not be blank")
         End If
@@ -127,5 +130,4 @@ Public Class frmAdvancedOptions
         If Not ret Then Throw New ApplicationException(String.Format("{0} cannot have a value < {1} or > {2}", inputTB.Tag, startNumber, endNumber))
         Return ret
     End Function
-
 End Class

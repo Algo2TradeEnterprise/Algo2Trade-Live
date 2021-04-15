@@ -62,7 +62,6 @@ Partial Class frmMainTabbed
         Me.sfdgvStrangleMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.tmrTickerMoniter = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -568,11 +567,6 @@ Partial Class frmMainTabbed
         '
         Me.tmrStrangleTickerStatus.Enabled = True
         '
-        'tmrTickerMoniter
-        '
-        Me.tmrTickerMoniter.Enabled = True
-        Me.tmrTickerMoniter.Interval = 59000
-        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -652,5 +646,4 @@ Partial Class frmMainTabbed
     Friend WithEvents lstStrangleLog As ListBox
     Friend WithEvents sfdgvStrangleMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrStrangleTickerStatus As Timer
-    Friend WithEvents tmrTickerMoniter As Timer
 End Class
