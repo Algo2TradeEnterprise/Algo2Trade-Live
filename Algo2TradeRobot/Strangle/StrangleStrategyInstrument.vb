@@ -159,7 +159,7 @@ Public Class StrangleStrategyInstrument
                                     If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                                         _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                                         logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeIStranglermationCollected:{3}, Supertrend:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Current Time:{8}, TradingSymbol:{9}",
+                                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Current Time:{8}, TradingSymbol:{9}",
                                                     runningCandlePayload.SnapshotDateTime.ToString,
                                                     runningCandlePayload.PayloadGeneratedBy.ToString,
                                                     Me.TradableInstrument.IsHistoricalCompleted,
@@ -244,6 +244,9 @@ Public Class StrangleStrategyInstrument
                                         End If
                                     Else
                                         OnHeartbeat(String.Format("Supertrend={0}, Supertrend Strike={1}, Supertrend Color={2}", supertrend.Supertrend.Value, supertrendATM, supertrend.SupertrendColor.Name))
+                                    End If
+                                    If mainInstrument IsNot Nothing AndAlso supportInstrument IsNot Nothing Then
+                                        Utilities.Strings.SerializeFromCollection(Of Tuple(Of String, String))(_strangleFileName, New Tuple(Of String, String)(mainInstrument.TradableInstrument.TradingSymbol, supportInstrument.TradableInstrument.TradingSymbol))
                                     End If
                                 End If
                                 If mainInstrument IsNot Nothing AndAlso supportInstrument IsNot Nothing Then
@@ -354,7 +357,7 @@ Public Class StrangleStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     log = True
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeIStranglermationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Main Trade:{8}, Support Trade:{9}, Active Instrument:{10}, Open Instrument:{11}, TradingSymbol:{12}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Main Trade:{8}, Support Trade:{9}, Active Instrument:{10}, Open Instrument:{11}, TradingSymbol:{12}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,

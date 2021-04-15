@@ -161,7 +161,7 @@ Public Class NFOStrategyInstrument
                                                     CType(stConsumer.ConsumerPayloads(runningCandlePayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
-                                                    Now.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                    Me.TradableInstrument.LastTick.Timestamp.Value.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                     Me.TradableInstrument.TradingSymbol)
                                     End If
                                 End If
