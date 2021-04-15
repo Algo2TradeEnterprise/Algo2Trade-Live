@@ -25,6 +25,8 @@ Partial Class frmAliceUserDetails
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmAliceUserDetails))
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.txtAliceAppID = New System.Windows.Forms.TextBox()
+        Me.lblAliceAppID = New System.Windows.Forms.Label()
         Me.txtAlice2FAAnswer = New System.Windows.Forms.TextBox()
         Me.lblAlice2FAAnswer = New System.Windows.Forms.Label()
         Me.txtAliceAPISecret = New System.Windows.Forms.TextBox()
@@ -35,8 +37,6 @@ Partial Class frmAliceUserDetails
         Me.lblAliceUserId = New System.Windows.Forms.Label()
         Me.btnSaveAliceUserDetails = New System.Windows.Forms.Button()
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.txtAliceAppID = New System.Windows.Forms.TextBox()
-        Me.lblAliceAppID = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -59,6 +59,24 @@ Partial Class frmAliceUserDetails
         Me.GroupBox1.Size = New System.Drawing.Size(460, 203)
         Me.GroupBox1.TabIndex = 2
         Me.GroupBox1.TabStop = False
+        '
+        'txtAliceAppID
+        '
+        Me.txtAliceAppID.Location = New System.Drawing.Point(103, 131)
+        Me.txtAliceAppID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtAliceAppID.Name = "txtAliceAppID"
+        Me.txtAliceAppID.Size = New System.Drawing.Size(348, 22)
+        Me.txtAliceAppID.TabIndex = 8
+        '
+        'lblAliceAppID
+        '
+        Me.lblAliceAppID.AutoSize = True
+        Me.lblAliceAppID.Location = New System.Drawing.Point(9, 134)
+        Me.lblAliceAppID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblAliceAppID.Name = "lblAliceAppID"
+        Me.lblAliceAppID.Size = New System.Drawing.Size(50, 17)
+        Me.lblAliceAppID.TabIndex = 10
+        Me.lblAliceAppID.Text = "App ID"
         '
         'txtAlice2FAAnswer
         '
@@ -153,24 +171,6 @@ Partial Class frmAliceUserDetails
         Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
         Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
         Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
-        '
-        'txtAliceAppID
-        '
-        Me.txtAliceAppID.Location = New System.Drawing.Point(103, 131)
-        Me.txtAliceAppID.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtAliceAppID.Name = "txtAliceAppID"
-        Me.txtAliceAppID.Size = New System.Drawing.Size(348, 22)
-        Me.txtAliceAppID.TabIndex = 11
-        '
-        'lblAliceAppID
-        '
-        Me.lblAliceAppID.AutoSize = True
-        Me.lblAliceAppID.Location = New System.Drawing.Point(9, 134)
-        Me.lblAliceAppID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblAliceAppID.Name = "lblAliceAppID"
-        Me.lblAliceAppID.Size = New System.Drawing.Size(50, 17)
-        Me.lblAliceAppID.TabIndex = 10
-        Me.lblAliceAppID.Text = "App ID"
         '
         'frmAliceUserDetails
         '
