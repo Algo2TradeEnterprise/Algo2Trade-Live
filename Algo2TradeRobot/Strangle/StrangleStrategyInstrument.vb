@@ -306,9 +306,9 @@ Public Class StrangleStrategyInstrument
                         If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
                             placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
                             Dim orderResponse = Nothing
-                            If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL_M Then
-                                orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
-                            Else
+                            If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL Then
+                                orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMISOrder, Nothing).ConfigureAwait(False)
+                            ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
                                 orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
                             End If
                             'If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
@@ -368,7 +368,7 @@ Public Class StrangleStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     log = True
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Main Trade:{8}, Support Trade:{9}, Active Instrument:{10}, Open Instrument:{11}, TradingSymbol:{12}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Main Trade:{8}, Support Trade:{9}, Active Instrument:{10}, Open Instrument:{11}, Support Complete:{12}, TradingSymbol:{13}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -381,6 +381,7 @@ Public Class StrangleStrategyInstrument
                                 Me.SupportTrade,
                                 IsRunningInstrument(),
                                 IsOpenInstrument(),
+                                If(Me.SupportTrade, IsTradeComplete(), False),
                                 Me.TradableInstrument.TradingSymbol)
                 End If
             End If
@@ -409,10 +410,12 @@ Public Class StrangleStrategyInstrument
                                 If log Then OnHeartbeat("Supertrend Color:Green. So it will wait now for entry.")
                             End If
                         ElseIf Me.SupportTrade Then
-                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                            If Not IsTradeComplete() Then
+                                parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .Quantity = quantity,
                                      .OrderType = IOrder.TypeOfOrder.Market}
+                            End If
                         End If
                     End If
                 ElseIf IsRunningInstrument() Then
@@ -433,11 +436,19 @@ Public Class StrangleStrategyInstrument
                                     runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                     Dim triggerPrice As Double = ConvertFloorCeling(runningOrder.ParentOrder.AveragePrice * MyParentInstrumentDetails.StoplossMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                                     If currentTick.LastPrice < triggerPrice Then
+                                        'parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                        '                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                        '                 .Quantity = quantity,
+                                        '                 .TriggerPrice = triggerPrice,
+                                        '                 .OrderType = IOrder.TypeOfOrder.SL_M}
+
+                                        Dim price As Double = ConvertFloorCeling(triggerPrice * MyParentInstrumentDetails.StoplossMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                                         {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                                          .Quantity = quantity,
                                                          .TriggerPrice = triggerPrice,
-                                                         .OrderType = IOrder.TypeOfOrder.SL_M}
+                                                         .Price = price,
+                                                         .OrderType = IOrder.TypeOfOrder.SL}
                                     Else
                                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                                         {.EntryDirection = IOrder.TypeOfTransaction.Buy,
@@ -631,7 +642,7 @@ Public Class StrangleStrategyInstrument
                 End If
             Next
 
-            If totalTraded <> 0 Then ret = True
+            ret = totalTraded <> 0
         End If
         Return ret
     End Function
@@ -648,6 +659,30 @@ Public Class StrangleStrategyInstrument
                     End If
                 End If
             Next
+        End If
+        Return ret
+    End Function
+
+    Private Function IsTradeComplete() As Boolean
+        Dim ret As Boolean = False
+        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
+            Dim totalTraded As Integer = 0
+            Dim validTradeFound As Boolean = False
+            For Each runningOrder In Me.OrderDetails
+                If runningOrder.Value.ParentOrder IsNot Nothing Then
+                    If runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
+                        runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
+                        validTradeFound = True
+                        If runningOrder.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                            totalTraded += Math.Abs(runningOrder.Value.ParentOrder.Quantity)
+                        ElseIf runningOrder.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                            totalTraded -= Math.Abs(runningOrder.Value.ParentOrder.Quantity)
+                        End If
+                    End If
+                End If
+            Next
+
+            ret = validTradeFound AndAlso totalTraded = 0
         End If
         Return ret
     End Function
