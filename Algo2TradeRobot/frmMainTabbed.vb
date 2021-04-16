@@ -1036,6 +1036,7 @@ Public Class frmMainTabbed
             Select Case mode
                 Case LogMode.All
                     SetListAddItem_ThreadSafe(lstNFOLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstStrangleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1143,7 +1144,7 @@ Public Class frmMainTabbed
         pnlStrangleBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlStrangleBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
-        tabMain.TabPages.Remove(tabStrangle)
+        'tabMain.TabPages.Remove(tabStrangle)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)

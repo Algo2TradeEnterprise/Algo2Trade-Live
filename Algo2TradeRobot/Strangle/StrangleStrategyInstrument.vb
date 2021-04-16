@@ -53,7 +53,18 @@ Public Class StrangleStrategyInstrument
         RawPayloadDependentConsumers = New List(Of IPayloadConsumer)
         If Me.ParentStrategy.IsStrategyCandleStickBased Then
             Dim userInputs As StrangleUserInputs = Me.ParentStrategy.UserSettings
-            Dim instrumentData As StrangleUserInputs.InstrumentDetails = userInputs.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper)
+            Dim instrumentData As StrangleUserInputs.InstrumentDetails = Nothing
+            If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options Then
+                If Me.TradableInstrument.RawInstrumentName = "NIFTY" Then
+                    instrumentData = userInputs.InstrumentsData("NIFTY 50")
+                ElseIf Me.TradableInstrument.RawInstrumentName = "BANKNIFTY" Then
+                    instrumentData = userInputs.InstrumentsData("NIFTY BANK")
+                Else
+                    instrumentData = userInputs.InstrumentsData(Me.TradableInstrument.RawInstrumentName.ToUpper)
+                End If
+            Else
+                instrumentData = userInputs.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper)
+            End If
             Dim chartConsumer As PayloadToChartConsumer = New PayloadToChartConsumer(instrumentData.Timeframe)
             chartConsumer.OnwardLevelConsumers = New List(Of IPayloadConsumer)
             chartConsumer.OnwardLevelConsumers.Add(New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier))
@@ -131,7 +142,7 @@ Public Class StrangleStrategyInstrument
                                     runningStrategyInstrument.TradableInstrument.Strike <= openPrice + openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 Then
                                         runningStrategyInstrument.TradableInstrument.FetchHistorical = True
                                     Else
-                                        CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "Outside allowable range according to open price"
+                                        CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "+++ Outside allowable range according to open price"
                                         CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrument = True
                                     End If
                                 Next
@@ -143,7 +154,7 @@ Public Class StrangleStrategyInstrument
                                         runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = supportIns.ToUpper Then
                                         runningStrategyInstrument.TradableInstrument.FetchHistorical = True
                                     Else
-                                        CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                        CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
                                         CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrument = True
                                     End If
                                 Next
@@ -151,7 +162,7 @@ Public Class StrangleStrategyInstrument
                             optionSelectionDone = True
                         End If
                         If optionSelectionDone Then
-                            Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
+                            Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(instrumentDetails.Timeframe)
                             Dim stConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
                             Try
                                 If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
@@ -253,7 +264,7 @@ Public Class StrangleStrategyInstrument
                                     For Each runningStrategyInstrument In _myOptionStrategyInstruments
                                         If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> mainInstrument.TradableInstrument.InstrumentIdentifier AndAlso
                                             runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> supportInstrument.TradableInstrument.InstrumentIdentifier Then
-                                            CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "Not an ATM instrument"
+                                            CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
                                             CType(runningStrategyInstrument, StrangleStrategyInstrument).StopInstrument = True
                                         End If
                                     Next
@@ -336,7 +347,7 @@ Public Class StrangleStrategyInstrument
             Throw ex
         Finally
             Me.TradableInstrument.FetchHistorical = False
-            OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
+            If Not Me.StopInstrumentReason.StartsWith("+++") Then OnHeartbeat(String.Format("Strategy Instrument Stopped. {0}", Me.StopInstrumentReason))
             _strategyInstrumentRunning = False
         End Try
     End Function
@@ -421,11 +432,18 @@ Public Class StrangleStrategyInstrument
                                 If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
                                     runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
                                     Dim triggerPrice As Double = ConvertFloorCeling(runningOrder.ParentOrder.AveragePrice * MyParentInstrumentDetails.StoplossMultiplier, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                    parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                                     .Quantity = quantity,
-                                                     .TriggerPrice = triggerPrice,
-                                                     .OrderType = IOrder.TypeOfOrder.SL_M}
+                                    If currentTick.LastPrice < triggerPrice Then
+                                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                                         .Quantity = quantity,
+                                                         .TriggerPrice = triggerPrice,
+                                                         .OrderType = IOrder.TypeOfOrder.SL_M}
+                                    Else
+                                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                                        {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                                         .Quantity = quantity,
+                                                         .OrderType = IOrder.TypeOfOrder.Market}
+                                    End If
                                 End If
                             Next
                         End If
