@@ -457,7 +457,7 @@ Public Class frmMainTabbed
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
             numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, numberOfDayForHistorical, _cts)
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 5, _nfoUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -749,7 +749,7 @@ Public Class frmMainTabbed
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
             numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 
-            _strangleStrategyToExecute = New StrangleStrategy(_commonController, 2, _strangleUserInputs, numberOfDayForHistorical, _cts)
+            _strangleStrategyToExecute = New StrangleStrategy(_commonController, 6, _strangleUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _strangleStrategyToExecute.ToString), New List(Of Object) From {_strangleStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()

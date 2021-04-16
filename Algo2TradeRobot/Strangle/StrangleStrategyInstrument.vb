@@ -227,7 +227,7 @@ Public Class StrangleStrategyInstrument
                                             Dim closeATM As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value + instrumentDetails.DistanceFromClose, allStrikes)
                                             If closeATM <> Decimal.MinValue Then
                                                 supportInstrument = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                           Return x.TradableInstrument.Strike = supertrendATM AndAlso
+                                                                                                           Return x.TradableInstrument.Strike = closeATM AndAlso
                                                                                                            x.TradableInstrument.RawInstrumentType = "CE"
                                                                                                        End Function).FirstOrDefault
                                             End If
@@ -244,7 +244,7 @@ Public Class StrangleStrategyInstrument
                                             Dim closeATM As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value - instrumentDetails.DistanceFromClose, allStrikes)
                                             If closeATM <> Decimal.MinValue Then
                                                 supportInstrument = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                                           Return x.TradableInstrument.Strike = supertrendATM AndAlso
+                                                                                                           Return x.TradableInstrument.Strike = closeATM AndAlso
                                                                                                            x.TradableInstrument.RawInstrumentType = "PE"
                                                                                                        End Function).FirstOrDefault
                                             End If

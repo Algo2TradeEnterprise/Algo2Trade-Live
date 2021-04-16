@@ -354,7 +354,7 @@ Partial Class frmMainTabbed
         Me.tabStrangle.Padding = New System.Windows.Forms.Padding(3)
         Me.tabStrangle.Size = New System.Drawing.Size(1363, 693)
         Me.tabStrangle.TabIndex = 1
-        Me.tabStrangle.Text = "STRANGLE"
+        Me.tabStrangle.Text = "Strangle"
         Me.tabStrangle.UseVisualStyleBackColor = True
         '
         'pnlStrangleMainPanelHorizontalSplitter
