@@ -221,6 +221,21 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Straddle\frmStraddleSettings.Designer.vb">
+      <DependentUpon>frmStraddleSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Straddle\frmStraddleSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Straddle\frmStraddleTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmStraddleTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Straddle\frmStraddleTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Straddle\StraddleStrategy.vb" />
+    <Compile Include="Straddle\StraddleStrategyInstrument.vb" />
+    <Compile Include="Straddle\StraddleUserInputs.vb" />
     <Compile Include="Strangle\frmStrangleSettings.Designer.vb">
       <DependentUpon>frmStrangleSettings.vb</DependentUpon>
     </Compile>
@@ -264,6 +279,12 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Straddle\frmStraddleSettings.resx">
+      <DependentUpon>frmStraddleSettings.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Straddle\frmStraddleTradableInstrumentList.resx">
+      <DependentUpon>frmStraddleTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Strangle\frmStrangleSettings.resx">
       <DependentUpon>frmStrangleSettings.vb</DependentUpon>

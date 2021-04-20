@@ -254,6 +254,7 @@ Public Class NFOStrategyInstrument
                 End If
             Else
                 While True
+                    Me.TradableInstrument.FetchHistorical = True
                     If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                         Throw Me.ParentStrategy.ParentController.OrphanException
                     End If

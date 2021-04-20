@@ -60,8 +60,24 @@ Partial Class frmMainTabbed
         Me.pnlStrangleBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstStrangleLog = New System.Windows.Forms.ListBox()
         Me.sfdgvStrangleMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tabStraddle = New System.Windows.Forms.TabPage()
+        Me.pnlStraddleMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.pnlStraddleTopHeaderVerticalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnStraddleStop = New System.Windows.Forms.Button()
+        Me.btnStraddleStart = New System.Windows.Forms.Button()
+        Me.Panel2 = New System.Windows.Forms.Panel()
+        Me.blbStraddleTickerStatus = New Bulb.LedBulb()
+        Me.lblStraddleTickerStatus = New System.Windows.Forms.Label()
+        Me.btnStraddleSettings = New System.Windows.Forms.Button()
+        Me.linklblStraddleTradableInstruments = New System.Windows.Forms.LinkLabel()
+        Me.TableLayoutPanel4 = New System.Windows.Forms.TableLayoutPanel()
+        Me.pctrBxStraddle = New System.Windows.Forms.PictureBox()
+        Me.pnlStraddleBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.lstStraddleLog = New System.Windows.Forms.ListBox()
+        Me.sfdgvStraddleMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrStraddleTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -80,6 +96,14 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxStrangle, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.pnlStrangleBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvStrangleMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabStraddle.SuspendLayout()
+        Me.pnlStraddleMainPanelHorizontalSplitter.SuspendLayout()
+        Me.pnlStraddleTopHeaderVerticalSplitter.SuspendLayout()
+        Me.Panel2.SuspendLayout()
+        Me.TableLayoutPanel4.SuspendLayout()
+        CType(Me.pctrBxStraddle, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.pnlStraddleBodyHorizontalSplitter.SuspendLayout()
+        CType(Me.sfdgvStraddleMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -124,6 +148,7 @@ Partial Class frmMainTabbed
         '
         Me.tabMain.Controls.Add(Me.tabNFO)
         Me.tabMain.Controls.Add(Me.tabStrangle)
+        Me.tabMain.Controls.Add(Me.tabStraddle)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tabMain.Location = New System.Drawing.Point(0, 28)
         Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
@@ -496,7 +521,7 @@ Partial Class frmMainTabbed
         Me.TableLayoutPanel3.Name = "TableLayoutPanel3"
         Me.TableLayoutPanel3.RowCount = 1
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 631.0!))
         Me.TableLayoutPanel3.Size = New System.Drawing.Size(1349, 631)
         Me.TableLayoutPanel3.TabIndex = 1
         '
@@ -559,6 +584,218 @@ Partial Class frmMainTabbed
         Me.sfdgvStrangleMainDashboard.TabIndex = 6
         Me.sfdgvStrangleMainDashboard.Text = "SfDataGrid1"
         '
+        'tabStraddle
+        '
+        Me.tabStraddle.Controls.Add(Me.pnlStraddleMainPanelHorizontalSplitter)
+        Me.tabStraddle.Location = New System.Drawing.Point(4, 25)
+        Me.tabStraddle.Name = "tabStraddle"
+        Me.tabStraddle.Size = New System.Drawing.Size(1363, 693)
+        Me.tabStraddle.TabIndex = 2
+        Me.tabStraddle.Text = "Straddle"
+        Me.tabStraddle.UseVisualStyleBackColor = True
+        '
+        'pnlStraddleMainPanelHorizontalSplitter
+        '
+        Me.pnlStraddleMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlStraddleMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStraddleMainPanelHorizontalSplitter.Controls.Add(Me.pnlStraddleTopHeaderVerticalSplitter, 0, 0)
+        Me.pnlStraddleMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel4, 0, 1)
+        Me.pnlStraddleMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStraddleMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlStraddleMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStraddleMainPanelHorizontalSplitter.Name = "pnlStraddleMainPanelHorizontalSplitter"
+        Me.pnlStraddleMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlStraddleMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlStraddleMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlStraddleMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
+        Me.pnlStraddleMainPanelHorizontalSplitter.TabIndex = 2
+        '
+        'pnlStraddleTopHeaderVerticalSplitter
+        '
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnCount = 15
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.Controls.Add(Me.btnStraddleStop, 0, 0)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Controls.Add(Me.btnStraddleStart, 0, 0)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Controls.Add(Me.Panel2, 14, 0)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Controls.Add(Me.btnStraddleSettings, 9, 0)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Controls.Add(Me.linklblStraddleTradableInstruments, 10, 0)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStraddleTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStraddleTopHeaderVerticalSplitter.Name = "pnlStraddleTopHeaderVerticalSplitter"
+        Me.pnlStraddleTopHeaderVerticalSplitter.RowCount = 1
+        Me.pnlStraddleTopHeaderVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStraddleTopHeaderVerticalSplitter.Size = New System.Drawing.Size(1355, 40)
+        Me.pnlStraddleTopHeaderVerticalSplitter.TabIndex = 0
+        '
+        'btnStraddleStop
+        '
+        Me.btnStraddleStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStraddleStop.Location = New System.Drawing.Point(94, 4)
+        Me.btnStraddleStop.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStraddleStop.Name = "btnStraddleStop"
+        Me.btnStraddleStop.Size = New System.Drawing.Size(82, 32)
+        Me.btnStraddleStop.TabIndex = 10
+        Me.btnStraddleStop.Text = "Stop"
+        Me.btnStraddleStop.UseVisualStyleBackColor = True
+        '
+        'btnStraddleStart
+        '
+        Me.btnStraddleStart.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStraddleStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnStraddleStart.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStraddleStart.Name = "btnStraddleStart"
+        Me.btnStraddleStart.Size = New System.Drawing.Size(82, 32)
+        Me.btnStraddleStart.TabIndex = 2
+        Me.btnStraddleStart.Text = "Start"
+        Me.btnStraddleStart.UseVisualStyleBackColor = True
+        '
+        'Panel2
+        '
+        Me.Panel2.Controls.Add(Me.blbStraddleTickerStatus)
+        Me.Panel2.Controls.Add(Me.lblStraddleTickerStatus)
+        Me.Panel2.Location = New System.Drawing.Point(1201, 4)
+        Me.Panel2.Margin = New System.Windows.Forms.Padding(4)
+        Me.Panel2.Name = "Panel2"
+        Me.Panel2.Size = New System.Drawing.Size(147, 31)
+        Me.Panel2.TabIndex = 9
+        '
+        'blbStraddleTickerStatus
+        '
+        Me.blbStraddleTickerStatus.Color = System.Drawing.Color.Pink
+        Me.blbStraddleTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
+        Me.blbStraddleTickerStatus.Location = New System.Drawing.Point(100, 0)
+        Me.blbStraddleTickerStatus.Margin = New System.Windows.Forms.Padding(4)
+        Me.blbStraddleTickerStatus.Name = "blbStraddleTickerStatus"
+        Me.blbStraddleTickerStatus.On = True
+        Me.blbStraddleTickerStatus.Size = New System.Drawing.Size(47, 31)
+        Me.blbStraddleTickerStatus.TabIndex = 7
+        Me.blbStraddleTickerStatus.Text = "LedBulb1"
+        '
+        'lblStraddleTickerStatus
+        '
+        Me.lblStraddleTickerStatus.AutoSize = True
+        Me.lblStraddleTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblStraddleTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblStraddleTickerStatus.Name = "lblStraddleTickerStatus"
+        Me.lblStraddleTickerStatus.Size = New System.Drawing.Size(91, 17)
+        Me.lblStraddleTickerStatus.TabIndex = 9
+        Me.lblStraddleTickerStatus.Text = "Ticker Status"
+        '
+        'btnStraddleSettings
+        '
+        Me.btnStraddleSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnStraddleSettings.Location = New System.Drawing.Point(814, 4)
+        Me.btnStraddleSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnStraddleSettings.Name = "btnStraddleSettings"
+        Me.btnStraddleSettings.Size = New System.Drawing.Size(82, 32)
+        Me.btnStraddleSettings.TabIndex = 11
+        Me.btnStraddleSettings.Text = "Settings"
+        Me.btnStraddleSettings.UseVisualStyleBackColor = True
+        '
+        'linklblStraddleTradableInstruments
+        '
+        Me.linklblStraddleTradableInstruments.AutoSize = True
+        Me.linklblStraddleTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblStraddleTradableInstruments.Enabled = False
+        Me.linklblStraddleTradableInstruments.Location = New System.Drawing.Point(903, 0)
+        Me.linklblStraddleTradableInstruments.Name = "linklblStraddleTradableInstruments"
+        Me.linklblStraddleTradableInstruments.Size = New System.Drawing.Size(220, 40)
+        Me.linklblStraddleTradableInstruments.TabIndex = 12
+        Me.linklblStraddleTradableInstruments.TabStop = True
+        Me.linklblStraddleTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblStraddleTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'TableLayoutPanel4
+        '
+        Me.TableLayoutPanel4.ColumnCount = 2
+        Me.TableLayoutPanel4.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.TableLayoutPanel4.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.TableLayoutPanel4.Controls.Add(Me.pctrBxStraddle, 0, 0)
+        Me.TableLayoutPanel4.Controls.Add(Me.pnlStraddleBodyHorizontalSplitter, 0, 0)
+        Me.TableLayoutPanel4.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel4.Location = New System.Drawing.Point(4, 52)
+        Me.TableLayoutPanel4.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel4.Name = "TableLayoutPanel4"
+        Me.TableLayoutPanel4.RowCount = 1
+        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.TableLayoutPanel4.Size = New System.Drawing.Size(1355, 637)
+        Me.TableLayoutPanel4.TabIndex = 1
+        '
+        'pctrBxStraddle
+        '
+        Me.pctrBxStraddle.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pctrBxStraddle.Image = CType(resources.GetObject("pctrBxStraddle.Image"), System.Drawing.Image)
+        Me.pctrBxStraddle.Location = New System.Drawing.Point(951, 2)
+        Me.pctrBxStraddle.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.pctrBxStraddle.Name = "pctrBxStraddle"
+        Me.pctrBxStraddle.Size = New System.Drawing.Size(401, 633)
+        Me.pctrBxStraddle.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
+        Me.pctrBxStraddle.TabIndex = 2
+        Me.pctrBxStraddle.TabStop = False
+        '
+        'pnlStraddleBodyHorizontalSplitter
+        '
+        Me.pnlStraddleBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlStraddleBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlStraddleBodyHorizontalSplitter.Controls.Add(Me.lstStraddleLog, 0, 1)
+        Me.pnlStraddleBodyHorizontalSplitter.Controls.Add(Me.sfdgvStraddleMainDashboard, 0, 0)
+        Me.pnlStraddleBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlStraddleBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlStraddleBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlStraddleBodyHorizontalSplitter.Name = "pnlStraddleBodyHorizontalSplitter"
+        Me.pnlStraddleBodyHorizontalSplitter.RowCount = 2
+        Me.pnlStraddleBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlStraddleBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlStraddleBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 629)
+        Me.pnlStraddleBodyHorizontalSplitter.TabIndex = 0
+        '
+        'lstStraddleLog
+        '
+        Me.lstStraddleLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstStraddleLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.lstStraddleLog.FormattingEnabled = True
+        Me.lstStraddleLog.HorizontalScrollbar = True
+        Me.lstStraddleLog.ItemHeight = 16
+        Me.lstStraddleLog.Location = New System.Drawing.Point(4, 444)
+        Me.lstStraddleLog.Margin = New System.Windows.Forms.Padding(4)
+        Me.lstStraddleLog.Name = "lstStraddleLog"
+        Me.lstStraddleLog.Size = New System.Drawing.Size(932, 181)
+        Me.lstStraddleLog.TabIndex = 9
+        '
+        'sfdgvStraddleMainDashboard
+        '
+        Me.sfdgvStraddleMainDashboard.AccessibleName = "Table"
+        Me.sfdgvStraddleMainDashboard.AllowDraggingColumns = True
+        Me.sfdgvStraddleMainDashboard.AllowEditing = False
+        Me.sfdgvStraddleMainDashboard.AllowFiltering = True
+        Me.sfdgvStraddleMainDashboard.AllowResizingColumns = True
+        Me.sfdgvStraddleMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.sfdgvStraddleMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.sfdgvStraddleMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.sfdgvStraddleMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvStraddleMainDashboard.Margin = New System.Windows.Forms.Padding(4)
+        Me.sfdgvStraddleMainDashboard.Name = "sfdgvStraddleMainDashboard"
+        Me.sfdgvStraddleMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.sfdgvStraddleMainDashboard.Size = New System.Drawing.Size(932, 432)
+        Me.sfdgvStraddleMainDashboard.TabIndex = 6
+        Me.sfdgvStraddleMainDashboard.Text = "SfDataGrid1"
+        '
         'tmrNFOTickerStatus
         '
         Me.tmrNFOTickerStatus.Enabled = True
@@ -566,6 +803,10 @@ Partial Class frmMainTabbed
         'tmrStrangleTickerStatus
         '
         Me.tmrStrangleTickerStatus.Enabled = True
+        '
+        'tmrStraddleTickerStatus
+        '
+        Me.tmrStraddleTickerStatus.Enabled = True
         '
         'frmMainTabbed
         '
@@ -603,6 +844,16 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxStrangle, System.ComponentModel.ISupportInitialize).EndInit()
         Me.pnlStrangleBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvStrangleMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabStraddle.ResumeLayout(False)
+        Me.pnlStraddleMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.pnlStraddleTopHeaderVerticalSplitter.ResumeLayout(False)
+        Me.pnlStraddleTopHeaderVerticalSplitter.PerformLayout()
+        Me.Panel2.ResumeLayout(False)
+        Me.Panel2.PerformLayout()
+        Me.TableLayoutPanel4.ResumeLayout(False)
+        CType(Me.pctrBxStraddle, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.pnlStraddleBodyHorizontalSplitter.ResumeLayout(False)
+        CType(Me.sfdgvStraddleMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -646,4 +897,20 @@ Partial Class frmMainTabbed
     Friend WithEvents lstStrangleLog As ListBox
     Friend WithEvents sfdgvStrangleMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrStrangleTickerStatus As Timer
+    Friend WithEvents tabStraddle As TabPage
+    Friend WithEvents pnlStraddleMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents pnlStraddleTopHeaderVerticalSplitter As TableLayoutPanel
+    Friend WithEvents btnStraddleStop As Button
+    Friend WithEvents btnStraddleStart As Button
+    Friend WithEvents Panel2 As Panel
+    Friend WithEvents blbStraddleTickerStatus As Bulb.LedBulb
+    Friend WithEvents lblStraddleTickerStatus As Label
+    Friend WithEvents btnStraddleSettings As Button
+    Friend WithEvents linklblStraddleTradableInstruments As LinkLabel
+    Friend WithEvents TableLayoutPanel4 As TableLayoutPanel
+    Friend WithEvents pctrBxStraddle As PictureBox
+    Friend WithEvents pnlStraddleBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents lstStraddleLog As ListBox
+    Friend WithEvents sfdgvStraddleMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
+    Friend WithEvents tmrStraddleTickerStatus As Timer
 End Class
