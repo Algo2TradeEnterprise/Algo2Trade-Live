@@ -174,10 +174,8 @@ Public Class NFOStrategyInstrument
                                                 End If
                                             End If
                                         Catch aex As AdapterBusinessException
-                                            If aex.ExceptionType = AdapterBusinessException.TypeOfException.UnknownException Then
-                                                OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Unknown Error occured. Error-{0}", aex.Message))
-                                                _exception = aex
-                                            End If
+                                            OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Bussiness Error occured. Error-{0}", aex.Message))
+                                            _exception = aex
                                         Finally
                                             Interlocked.Exchange(_tradeLock, 0)
                                         End Try
@@ -204,10 +202,8 @@ Public Class NFOStrategyInstrument
                                                 End If
                                             End If
                                         Catch aex As AdapterBusinessException
-                                            If aex.ExceptionType = AdapterBusinessException.TypeOfException.UnknownException Then
-                                                OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Unknown Error occured. Error-{0}", aex.Message))
-                                                _exception = aex
-                                            End If
+                                            OnHeartbeat(String.Format("***** Will not take no more action in this instrument as Bussiness Error occured. Error-{0}", aex.Message))
+                                            _exception = aex
                                         Finally
                                             Interlocked.Exchange(_tradeLock, 0)
                                         End Try
