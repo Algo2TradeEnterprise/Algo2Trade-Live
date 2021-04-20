@@ -1501,6 +1501,8 @@ Public Class frmMainTabbed
         End If
         Me.Text = String.Format("Algo2Trade Robot v{0}{1}", My.Application.Info.Version, If(formRemarks IsNot Nothing, String.Format(" - {0}", formRemarks), ""))
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(StrangleStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(StraddleStrategy))
 
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
