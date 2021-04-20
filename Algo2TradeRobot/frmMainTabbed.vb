@@ -1511,7 +1511,9 @@ Public Class frmMainTabbed
         pnlStraddleBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlStraddleBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
+        'tabMain.TabPages.Remove(tabNFO)
         'tabMain.TabPages.Remove(tabStrangle)
+        'tabMain.TabPages.Remove(tabStraddle)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)

@@ -356,7 +356,7 @@ Public Class NFOStrategyInstrument
                             _entryOrderPlaced = True
                         Else
                             If supertrendColor = Color.Red Then
-                                OnHeartbeat("***** Supertrend Color:Red. So it will place entry order.")
+                                If forcePrint Then OnHeartbeat("***** Supertrend Color:Red. So it will place entry order.")
                                 parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                      .Quantity = quantity}
@@ -376,7 +376,7 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrument = True
                     Else
                         If supertrendColor = Color.Green Then
-                            OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
+                            If forcePrint Then OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                     {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                      .Quantity = quantity}
@@ -394,7 +394,7 @@ Public Class NFOStrategyInstrument
                         Me.StopInstrumentReason = "Both trades taken"
                         Me.StopInstrument = True
                     Else
-                        OnHeartbeat(String.Format("***** Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
+                        If forcePrint Then OnHeartbeat(String.Format("***** Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
