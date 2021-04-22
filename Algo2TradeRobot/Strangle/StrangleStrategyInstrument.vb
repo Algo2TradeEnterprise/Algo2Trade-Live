@@ -443,7 +443,7 @@ Public Class StrangleStrategyInstrument
                                         '                 .TriggerPrice = triggerPrice,
                                         '                 .OrderType = IOrder.TypeOfOrder.SL_M}
 
-                                        Dim price As Double = ConvertFloorCeling(triggerPrice * 10 / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                                        Dim price As Double = ConvertFloorCeling(triggerPrice + triggerPrice * 10 / 100, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                                         {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                                          .Quantity = quantity,
