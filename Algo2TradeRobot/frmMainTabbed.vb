@@ -749,7 +749,7 @@ Public Class frmMainTabbed
             Dim numberOfDayForHistorical As Integer = 8
             Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / maxTF)
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
-            numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
+            numberOfDayForHistorical = Math.Max(numberOfDayForHistorical, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 
             _strangleStrategyToExecute = New StrangleStrategy(_commonController, 9, _strangleUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _strangleStrategyToExecute.ToString), New List(Of Object) From {_strangleStrategyToExecute})
@@ -1043,7 +1043,7 @@ Public Class frmMainTabbed
             Dim numberOfDayForHistorical As Integer = 8
             Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / maxTF)
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
-            numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
+            numberOfDayForHistorical = Math.Max(numberOfDayForHistorical, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 
             _straddleStrategyToExecute = New StraddleStrategy(_commonController, 7, _straddleUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _straddleStrategyToExecute.ToString), New List(Of Object) From {_straddleStrategyToExecute})
