@@ -209,7 +209,7 @@ Public Class NFOStrategyInstrument
             End If
         ElseIf currentTime >= userSettings.TradeStartTime AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
             currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso runningCandlePayload.PayloadGeneratedBy = OHLCPayload.PayloadSource.CalculatedTick AndAlso
+            runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso
             Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
             stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
             stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
@@ -263,7 +263,7 @@ Public Class NFOStrategyInstrument
             End Try
 
             If parameters IsNot Nothing Then
-                Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
+                Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
                 If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
                     Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
                     If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
