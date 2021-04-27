@@ -185,8 +185,9 @@ Public Class StraddleStrategyInstrument
                                 logger.Error(ex)
                             End Try
 
-                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso
-                                runningCandlePayload IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
+                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing AndAlso
+                                Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
+                                stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
                                 Dim instrument1 As StraddleStrategyInstrument = Nothing
                                 Dim instrument2 As StraddleStrategyInstrument = Nothing
                                 If File.Exists(_straddleFileName) Then
@@ -340,9 +341,8 @@ Public Class StraddleStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
-            runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
-            stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso
+            stConsumer.ConsumerPayloads IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
             Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.MyParentInstrumentDetails.NumberOfLots
             If currentTime <= userSettings.EODExitTime Then

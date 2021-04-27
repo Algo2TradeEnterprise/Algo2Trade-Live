@@ -187,8 +187,9 @@ Public Class StrangleStrategyInstrument
                                 logger.Error(ex)
                             End Try
 
-                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso
-                                runningCandlePayload IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
+                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing AndAlso
+                                Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
+                                stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
                                 Dim mainInstrument As StrangleStrategyInstrument = Nothing
                                 Dim supportInstrument As StrangleStrategyInstrument = Nothing
                                 If File.Exists(_strangleFileName) Then
@@ -392,9 +393,8 @@ Public Class StrangleStrategyInstrument
 
         Dim parameters As PlaceOrderParameters = Nothing
         If currentTime >= userSettings.TradeStartTime AndAlso runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.SnapshotDateTime >= userSettings.TradeStartTime AndAlso
-            runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
-            Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
-            stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+            runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso
+            stConsumer.ConsumerPayloads IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
             Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.MyParentInstrumentDetails.NumberOfLots
             If currentTime <= userSettings.EODExitTime Then
@@ -555,9 +555,7 @@ Public Class StrangleStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim currentTick As ITick = Me.TradableInstrument.LastTick
-
-        If currentTick IsNot Nothing AndAlso currentTick.Timestamp.Value >= Me.ParentStrategy.UserSettings.EODExitTime Then
+        If Now >= Me.ParentStrategy.UserSettings.EODExitTime Then
             If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
                 For Each runningOrder In Me.OrderDetails.Values
                     If runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.TriggerPending OrElse
