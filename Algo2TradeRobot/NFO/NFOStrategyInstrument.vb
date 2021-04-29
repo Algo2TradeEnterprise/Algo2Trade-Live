@@ -100,7 +100,10 @@ Public Class NFOStrategyInstrument
                             If placeOrderResponse.ContainsKey("data") AndAlso
                                 placeOrderResponse("data").ContainsKey("order_id") Then
                                 If ForceExitForContractRollover Then ForceExitForContractRollover = False
-                                If ForceEntryForContractRollover Then ForceEntryForContractRollover = False
+                                If ForceEntryForContractRollover Then
+                                    ForceEntryForContractRollover = False
+                                    ForceEntryForContractRolloverDone = True
+                                End If
                             End If
                         End If
                     Else
@@ -149,7 +152,7 @@ Public Class NFOStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     log = True
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Pre Supertrend Color:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Is My Another Contract Available:{8}, Force Exit For Contract Rollover:{9}, Force Entry For Contract Rollover:{10}, Traded Quantity:{11}, Current Time:{12}, TradingSymbol:{13}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Pre Supertrend Color:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Is My Another Contract Available:{8}, Force Exit For Contract Rollover:{9}, Force Entry For Contract Rollover:{10}, Force Entry For Contract Rollover Done:{11}, Traded Quantity:{12}, Current Time:{13}, TradingSymbol:{14}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -161,6 +164,7 @@ Public Class NFOStrategyInstrument
                                 IsMyAnotherContractAvailable(),
                                 Me.ForceExitForContractRollover,
                                 Me.ForceEntryForContractRollover,
+                                Me.ForceEntryForContractRolloverDone,
                                 GetQuantityToTrade(),
                                 currentTime.ToString("dd-MMM-yyyy HH:mm:ss"),
                                 Me.TradableInstrument.TradingSymbol)
