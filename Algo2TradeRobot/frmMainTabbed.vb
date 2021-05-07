@@ -271,7 +271,7 @@ Public Class frmMainTabbed
     Private _toolRunning As Boolean = False
 
     Private Sub miUserDetails_Click(sender As Object, e As EventArgs) Handles miUserDetails.Click
-        Dim newForm As New frmAliceUserDetails(_commonControllerUserInput, _toolRunning)
+        Dim newForm As New frmZerodhaUserDetails(_commonControllerUserInput, _toolRunning)
         newForm.ShowDialog()
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
@@ -346,14 +346,14 @@ Public Class frmMainTabbed
             End If
             logger.Debug(Utilities.Strings.JsonSerialize(_nfoUserInputs))
 
-            If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
-            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
+            If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As ZerodhaUser = Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput)
             logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
 
             If _commonController IsNot Nothing Then
                 _commonController.RefreshCancellationToken(_cts)
             Else
-                _commonController = New AliceStrategyController(currentUser, _commonControllerUserInput, _cts)
+                _commonController = New ZerodhaStrategyController(currentUser, _commonControllerUserInput, _cts)
 
                 RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
                 RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
@@ -407,7 +407,7 @@ Public Class frmMainTabbed
                     _connection = Nothing
                     loginMessage = Nothing
                     Try
-                        OnHeartbeat("Attempting to get connection to Alice API")
+                        OnHeartbeat("Attempting to get connection to Zerodha API")
                         _cts.Token.ThrowIfCancellationRequested()
                         _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
                         _cts.Token.ThrowIfCancellationRequested()
@@ -436,9 +436,9 @@ Public Class frmMainTabbed
                 End While
                 If _connection Is Nothing Then
                     If loginMessage IsNot Nothing Then
-                        Throw New ApplicationException(String.Format("No connection to Alice API could be established | Details:{0}", loginMessage))
+                        Throw New ApplicationException(String.Format("No connection to Zerodha API could be established | Details:{0}", loginMessage))
                     Else
-                        Throw New ApplicationException("No connection to Alice API could be established")
+                        Throw New ApplicationException("No connection to Zerodha API could be established")
                     End If
                 End If
 #End Region
@@ -513,11 +513,11 @@ Public Class frmMainTabbed
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
         Dim authenticationUserId As String = "AB201344"
-        If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
-            Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
-            (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+        If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
+            Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
+            (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
             MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
             Exit Sub
         End If
@@ -778,7 +778,7 @@ Public Class frmMainTabbed
         If File.Exists(ControllerUserInputs.Filename) Then
             _commonControllerUserInput = Utilities.Strings.DeserializeToCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename)
         End If
-        If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then
+        If Not Common.IsZerodhaUserDetailsPopulated(_commonControllerUserInput) Then
             miUserDetails_Click(sender, e)
         End If
         Dim formRemarks As String = Nothing
