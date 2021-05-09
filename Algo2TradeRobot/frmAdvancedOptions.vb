@@ -31,6 +31,7 @@ Public Class frmAdvancedOptions
         If _UserInputs IsNot Nothing Then
             txtGetInformationDelay.Text = _UserInputs.GetInformationDelay
             txtBackToBackOrderCoolOffDelay.Text = _UserInputs.BackToBackOrderCoolOffDelay
+            txtTickerStatusUpdateDelay.Text = _UserInputs.TickerStatusCheckDelay
             dtpckrForceRestartTime.Value = _UserInputs.ForceRestartTime
             dtpckrDeadStateStartTime.Value = _UserInputs.IdleStateStartTime
             dtpckrDeadStateEndTime.Value = _UserInputs.IdleStateEndTime
@@ -69,6 +70,7 @@ Public Class frmAdvancedOptions
         If _UserInputs Is Nothing Then _UserInputs = New ControllerUserInputs
         _UserInputs.GetInformationDelay = txtGetInformationDelay.Text
         _UserInputs.BackToBackOrderCoolOffDelay = txtBackToBackOrderCoolOffDelay.Text
+        _UserInputs.TickerStatusCheckDelay = txtTickerStatusUpdateDelay.Text
         _UserInputs.ForceRestartTime = dtpckrForceRestartTime.Value
         _UserInputs.IdleStateStartTime = dtpckrDeadStateStartTime.Value
         _UserInputs.IdleStateEndTime = dtpckrDeadStateEndTime.Value

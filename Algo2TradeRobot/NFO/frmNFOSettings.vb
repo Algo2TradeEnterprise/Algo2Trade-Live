@@ -35,31 +35,22 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtLowerTimeFrame.Text = _settings.SignalTimeFrame
-            txtHigherTimeFrame.Text = _settings.HigherTimeframe
-            txtStrikeRangePer.Text = _settings.StrikePriceRangePercentage
+
+            dtpckrTradeStartTime.Value = _settings.TradeStartTime
+            dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
+            dtpckrEODExitTime.Value = _settings.EODExitTime
 
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtLTEMA1Period.Text = _settings.LTEMA1Period
-            txtLTEMA2Period.Text = _settings.LTEMA2Period
-            txtHTEMA1Period.Text = _settings.HTEMA1Period
-            txtHTEMA2Period.Text = _settings.HTEMA2Period
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtLowerTimeFrame.Text
-        _settings.HigherTimeframe = txtHigherTimeFrame.Text
-        _settings.StrikePriceRangePercentage = txtStrikeRangePer.Text
+        _settings.SignalTimeFrame = 1
+        _settings.TradeStartTime = dtpckrTradeStartTime.Value
+        _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
+        _settings.EODExitTime = dtpckrEODExitTime.Value
 
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.LTEMA1Period = txtLTEMA1Period.Text
-        _settings.LTEMA2Period = txtLTEMA2Period.Text
-        _settings.HTEMA1Period = txtHTEMA1Period.Text
-        _settings.HTEMA2Period = txtHTEMA2Period.Text
-
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -82,12 +73,6 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, 240, txtLowerTimeFrame, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtStrikeRangePer)
-
-        ValidateNumbers(1, Integer.MaxValue, txtLTEMA1Period, True)
-        ValidateNumbers(1, Integer.MaxValue, txtLTEMA2Period, True)
-
         ValidateFile()
     End Sub
 

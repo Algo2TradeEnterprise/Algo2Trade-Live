@@ -445,14 +445,14 @@ Public Class frmMainTabbed
 
                 OnHeartbeat("Completing all pre-automation requirements")
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync(False).ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
             End If 'Common controller
             EnableDisableUIEx(UIMode.ReleaseOther, GetType(NFOStrategy))
 
-            _nfoStrategyToExecute = New NFOStrategy(_commonController, 5, _nfoUserInputs, 8, _cts)
+            _nfoStrategyToExecute = New NFOStrategy(_commonController, 1, _nfoUserInputs, 0, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _nfoStrategyToExecute.ToString), New List(Of Object) From {_nfoStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
@@ -460,7 +460,7 @@ Public Class frmMainTabbed
             _cts.Token.ThrowIfCancellationRequested()
 
             _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments"))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -512,12 +512,10 @@ Public Class frmMainTabbed
         'End If
     End Function
     Private Async Sub btnNFOStart_Click(sender As Object, e As EventArgs) Handles btnNFOStart.Click
-        Dim authenticationUserId As String = "AB201344"
+        Dim authenticationUserId As String = "FD9435"
         If Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
             Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
-            (authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "AB096403" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
-            "AB096403" <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+            authenticationUserId <> Common.GetZerodhaCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper Then
             MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
             Exit Sub
         End If
@@ -736,6 +734,13 @@ Public Class frmMainTabbed
                 End If
             Next
             For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.PreMarketTick.a2t")
+                If deleteAll Then
+                    File.Delete(runningFile)
+                Else
+                    If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+                End If
+            Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.Options.a2t")
                 If deleteAll Then
                     File.Delete(runningFile)
                 Else
