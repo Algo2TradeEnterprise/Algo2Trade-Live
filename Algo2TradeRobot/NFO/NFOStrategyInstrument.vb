@@ -42,7 +42,7 @@ Public Class NFOStrategyInstrument
         AddHandler _APIAdapter.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
         AddHandler _APIAdapter.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
         _ParentInstrument = parentInstrument
-        _ITMOptionsFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("ITMOptions {0}.Options.a2t", Now.ToString("yy_MM_dd")))
+        _ITMOptionsFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.Options.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
     End Sub
 
     Public Overrides Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -65,7 +65,10 @@ Public Class NFOStrategyInstrument
         End If
         If instrumentsToSubscribe IsNot Nothing AndAlso instrumentsToSubscribe.Count > 0 Then
             Await CType(Me.ParentStrategy, NFOStrategy).CreateDependentTradableStrategyInstrumentsAsync(instrumentsToSubscribe).ConfigureAwait(False)
-            Dim allOptions As List(Of String) = Utilities.Strings.DeserializeToCollection(Of List(Of String))(_ITMOptionsFilename)
+            Dim allOptions As List(Of String) = Nothing
+            If File.Exists(_ITMOptionsFilename) Then
+                allOptions = Utilities.Strings.DeserializeToCollection(Of List(Of String))(_ITMOptionsFilename)
+            End If
             For Each runningInstrument In instrumentsToSubscribe
                 Dim subscribedStrategyInstrument As StrategyInstrument =
                     Me.ParentStrategy.TradableStrategyInstruments.ToList.Find(Function(x)
@@ -105,6 +108,7 @@ Public Class NFOStrategyInstrument
                 Next
 
                 Await CreateStrategyInstrumentAndPopulateAsync(instrumentsToSubscribe).ConfigureAwait(False)
+                Await Task.Delay(5000).ConfigureAwait(False)
             End If
         End If
     End Function
@@ -128,66 +132,65 @@ Public Class NFOStrategyInstrument
                             Throw Me.ParentStrategy.ParentController.OrphanException
                         End If
                         _cts.Token.ThrowIfCancellationRequested()
-                        If _DependentCEOptionStrategyInstruments IsNot Nothing AndAlso _DependentCEOptionStrategyInstruments.Count > 0 AndAlso
-                            _DependentPEOptionStrategyInstruments IsNot Nothing AndAlso _DependentPEOptionStrategyInstruments.Count > 0 Then
-
-                        Else
-                            If Me.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso 
-                                Me.TradableInstrument.LastTick.Timestamp.Value >= Me.ParentStrategy.UserSettings.TradeStartTime Then
-                                Dim ltp As Decimal = Me.TradableInstrument.LastTick.LastPrice
-                                Dim itmCall As IInstrument = GetITMCall(ltp)
-                                Dim itmPut As IInstrument = GetITMPut(ltp)
-                                If itmCall IsNot Nothing AndAlso itmPut IsNot Nothing Then
-                                    Dim ceStrategyInstrument As NFOStrategyInstrument = Nothing
-                                    If _DependentCEOptionStrategyInstruments IsNot Nothing AndAlso _DependentCEOptionStrategyInstruments.Count > 0 Then
-                                        For Each runningStrategyInstrument As NFOStrategyInstrument In _DependentCEOptionStrategyInstruments
-                                            If runningStrategyInstrument.IsRunningInstrument OrElse runningStrategyInstrument.IsOpenInstrument Then
-                                                ceStrategyInstrument = runningStrategyInstrument
-                                                Exit For
-                                            End If
-                                        Next
-                                    End If
-                                    If ceStrategyInstrument Is Nothing Then
-                                        Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmCall}).ConfigureAwait(False)
-                                        ceStrategyInstrument = _DependentCEOptionStrategyInstruments.Find(Function(x)
-                                                                                                              Return x.TradableInstrument.InstrumentIdentifier = itmCall.InstrumentIdentifier
-                                                                                                          End Function)
-                                    End If
-                                    If ceStrategyInstrument IsNot Nothing Then
-                                        Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
-                                        Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
-                                        If Me.StrategyExitAllTriggerd Then
-                                            Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
-                                        ElseIf ceStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
-                                            ceStrategyInstrument.IsRunningInstrument AndAlso ceStrategyInstrument.IsOpenInstrument Then
-                                            Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                        If Me.TradableInstrument.LastTick IsNot Nothing AndAlso Me.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso
+                            Me.TradableInstrument.LastTick.Timestamp.Value >= Me.ParentStrategy.UserSettings.TradeStartTime Then
+                            Dim ltp As Decimal = Me.TradableInstrument.LastTick.LastPrice
+                            Dim itmCall As IInstrument = GetITMCall(ltp)
+                            Dim itmPut As IInstrument = GetITMPut(ltp)
+                            If itmCall IsNot Nothing AndAlso itmPut IsNot Nothing Then
+                                Dim ceStrategyInstrument As NFOStrategyInstrument = Nothing
+                                If _DependentCEOptionStrategyInstruments IsNot Nothing AndAlso _DependentCEOptionStrategyInstruments.Count > 0 Then
+                                    For Each runningStrategyInstrument As NFOStrategyInstrument In _DependentCEOptionStrategyInstruments
+                                        If runningStrategyInstrument.IsRunningInstrument OrElse runningStrategyInstrument.IsOpenInstrument Then
+                                            ceStrategyInstrument = runningStrategyInstrument
+                                            Exit For
                                         End If
+                                    Next
+                                End If
+                                If ceStrategyInstrument Is Nothing Then
+                                    Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmCall}).ConfigureAwait(False)
+                                    ceStrategyInstrument = _DependentCEOptionStrategyInstruments.Find(Function(x)
+                                                                                                          Return x.TradableInstrument.InstrumentIdentifier = itmCall.InstrumentIdentifier
+                                                                                                      End Function)
+                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{0}", ceStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
+                                End If
+                                If ceStrategyInstrument IsNot Nothing Then
+                                    Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
+                                    Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
+                                    If Me.StrategyExitAllTriggerd Then
+                                        Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                    ElseIf ceStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
+                                        ceStrategyInstrument.IsRunningInstrument AndAlso ceStrategyInstrument.IsOpenInstrument Then
+                                        OnHeartbeat("ITM Call Strike changed. So it will cancel existing CE order.")
+                                        Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                     End If
+                                End If
 
-                                    Dim peStrategyInstrument As NFOStrategyInstrument = Nothing
-                                    If _DependentPEOptionStrategyInstruments IsNot Nothing AndAlso _DependentPEOptionStrategyInstruments.Count > 0 Then
-                                        For Each runningStrategyInstrument As NFOStrategyInstrument In _DependentPEOptionStrategyInstruments
-                                            If runningStrategyInstrument.IsRunningInstrument OrElse runningStrategyInstrument.IsOpenInstrument Then
-                                                peStrategyInstrument = runningStrategyInstrument
-                                                Exit For
-                                            End If
-                                        Next
-                                    End If
-                                    If peStrategyInstrument Is Nothing Then
-                                        Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmCall}).ConfigureAwait(False)
-                                        peStrategyInstrument = _DependentPEOptionStrategyInstruments.Find(Function(x)
-                                                                                                              Return x.TradableInstrument.InstrumentIdentifier = itmCall.InstrumentIdentifier
-                                                                                                          End Function)
-                                    End If
-                                    If peStrategyInstrument IsNot Nothing Then
-                                        Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
-                                        Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
-                                        If Me.StrategyExitAllTriggerd Then
-                                            Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
-                                        ElseIf peStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
-                                            peStrategyInstrument.IsRunningInstrument AndAlso peStrategyInstrument.IsOpenInstrument Then
-                                            Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                Dim peStrategyInstrument As NFOStrategyInstrument = Nothing
+                                If _DependentPEOptionStrategyInstruments IsNot Nothing AndAlso _DependentPEOptionStrategyInstruments.Count > 0 Then
+                                    For Each runningStrategyInstrument As NFOStrategyInstrument In _DependentPEOptionStrategyInstruments
+                                        If runningStrategyInstrument.IsRunningInstrument OrElse runningStrategyInstrument.IsOpenInstrument Then
+                                            peStrategyInstrument = runningStrategyInstrument
+                                            Exit For
                                         End If
+                                    Next
+                                End If
+                                If peStrategyInstrument Is Nothing Then
+                                    Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmPut}).ConfigureAwait(False)
+                                    peStrategyInstrument = _DependentPEOptionStrategyInstruments.Find(Function(x)
+                                                                                                          Return x.TradableInstrument.InstrumentIdentifier = itmPut.InstrumentIdentifier
+                                                                                                      End Function)
+                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{0}", ceStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
+                                End If
+                                If peStrategyInstrument IsNot Nothing Then
+                                    Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
+                                    Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
+                                    If Me.StrategyExitAllTriggerd Then
+                                        Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                    ElseIf peStrategyInstrument.TradableInstrument.Strike <> itmPut.Strike AndAlso
+                                        peStrategyInstrument.IsRunningInstrument AndAlso peStrategyInstrument.IsOpenInstrument Then
+                                        OnHeartbeat("ITM Put Strike changed. So it will cancel existing PE order.")
+                                        Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                     End If
                                 End If
                             End If
@@ -243,13 +246,14 @@ Public Class NFOStrategyInstrument
         Dim currentTime As Date = Now()
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If currentTime >= userSettings.TradeStartTime AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
+        If currentTick IsNot Nothing AndAlso currentTime >= userSettings.TradeStartTime AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
             Dim runningCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.Tick)
             runningCandle.OpenPrice.Value = currentTick.LastPrice
             runningCandle.LowPrice.Value = currentTick.LastPrice
             runningCandle.HighPrice.Value = currentTick.LastPrice
             runningCandle.ClosePrice.Value = currentTick.LastPrice
             runningCandle.SnapshotDateTime = currentTick.Timestamp.Value
+            runningCandle.TradingSymbol = Me.TradableInstrument.TradingSymbol
 
             Dim quantity As Integer = Me.TradableInstrument.LotSize * instrumentDetails.NumberOfLots
 
@@ -257,36 +261,42 @@ Public Class NFOStrategyInstrument
                 If Not IsRunningInstrument() AndAlso Not IsOpenInstrument() Then
                     If currentTime <= userSettings.LastTradeEntryTime Then
                         Dim triggerPrice As Double = ConvertFloorCeling(currentTick.LastPrice + instrumentDetails.EntryBuffer, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                        If forcePrint Then OnHeartbeat(String.Format("Place Entry Order. Trigger Price[LTP({0}+Buffer({1}))]={2}", currentTick.LastPrice, instrumentDetails.EntryBuffer, triggerPrice))
                         parameters = New PlaceOrderParameters(runningCandle) With
                                             {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                              .Quantity = quantity,
                                              .TriggerPrice = triggerPrice,
                                              .OrderType = IOrder.TypeOfOrder.SL_M}
                     End If
-                ElseIf IsRunningInstrument() Then
+                ElseIf IsRunningInstrument() AndAlso Not IsOpenInstrument() Then
                     If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-                        For Each runningOrder In Me.OrderDetails.Values
-                            If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
-                                runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                                Dim triggerPrice As Double = ConvertFloorCeling(runningOrder.ParentOrder.AveragePrice - instrumentDetails.InitialStoploss, Me.TradableInstrument.TickSize, RoundOfType.Floor)
-                                If currentTick.LastPrice > triggerPrice Then
-                                    parameters = New PlaceOrderParameters(runningCandle) With
-                                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                                     .Quantity = quantity,
-                                                     .TriggerPrice = triggerPrice,
-                                                     .OrderType = IOrder.TypeOfOrder.SL_M}
-                                Else
-                                    parameters = New PlaceOrderParameters(runningCandle) With
-                                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                                     .Quantity = quantity,
-                                                     .OrderType = IOrder.TypeOfOrder.Market}
-                                End If
+                        Dim entryOrder As IOrder = Me.OrderDetails.Where(Function(x)
+                                                                             Return x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                                                                             x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
+                                                                         End Function).OrderByDescending(Function(y)
+                                                                                                             Return y.Value.ParentOrder.TimeStamp
+                                                                                                         End Function).FirstOrDefault.Value.ParentOrder
+
+                        If entryOrder IsNot Nothing Then
+                            Dim triggerPrice As Double = ConvertFloorCeling(entryOrder.AveragePrice - instrumentDetails.InitialStoploss, Me.TradableInstrument.TickSize, RoundOfType.Floor)
+                            If forcePrint Then OnHeartbeat(String.Format("Place Stoploss Order. Trigger Price[EntryPrice({0}-InitialStoploss({1}))]={2}", entryOrder.AveragePrice, instrumentDetails.InitialStoploss, triggerPrice))
+                            If currentTick.LastPrice > triggerPrice Then
+                                parameters = New PlaceOrderParameters(runningCandle) With
+                                                {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                                 .Quantity = quantity,
+                                                 .TriggerPrice = triggerPrice,
+                                                 .OrderType = IOrder.TypeOfOrder.SL_M}
+                            Else
+                                parameters = New PlaceOrderParameters(runningCandle) With
+                                                {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                                 .Quantity = quantity,
+                                                 .OrderType = IOrder.TypeOfOrder.Market}
                             End If
-                        Next
+                        End If
                     End If
                 End If
             Else
-                If IsRunningInstrument() Then
+                If IsRunningInstrument() AndAlso Not IsOpenInstrument() Then
                     parameters = New PlaceOrderParameters(runningCandle) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                  .Quantity = quantity,
@@ -303,7 +313,7 @@ Public Class NFOStrategyInstrument
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0}, {1}, {2}",
                                  parameters.ToString,
-                                 If(parameters.Supporting Is Nothing, "", parameters.Supporting.FirstOrDefault.ToString),
+                                 If(parameters.Supporting IsNot Nothing AndAlso parameters.Supporting.Count > 0, parameters.Supporting.FirstOrDefault.ToString, ""),
                                  Me.TradableInstrument.TradingSymbol)
                 End If
             Catch ex As Exception
@@ -382,14 +392,14 @@ Public Class NFOStrategyInstrument
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
         Dim instrumentDetails As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.Name)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
-        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
+        If currentTick IsNot Nothing AndAlso Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             If IsOpenInstrument() AndAlso Not IsRunningInstrument() Then
                 Dim entryOrder As IOrder = Me.OrderDetails.Where(Function(x)
                                                                      Return x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
                                                                      x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
                                                                  End Function).OrderByDescending(Function(y)
                                                                                                      Return y.Value.ParentOrder.TimeStamp
-                                                                                                 End Function).FirstOrDefault.Value
+                                                                                                 End Function).FirstOrDefault.Value.ParentOrder
                 If entryOrder IsNot Nothing Then
                     Dim movememt As Decimal = currentTick.LastPrice - entryOrder.AveragePrice
                     Dim multiplier As Decimal = Math.Floor(movememt / instrumentDetails.TrailingStoploss)
@@ -412,7 +422,7 @@ Public Class NFOStrategyInstrument
                                         End If
                                     End If
                                     If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningOrder.ParentOrder, stoploss, "Trailing"))
+                                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, runningOrder.ParentOrder, stoploss, String.Format("Trailing {0}", multiplier)))
                                 End If
                             End If
                         Next
@@ -441,6 +451,15 @@ Public Class NFOStrategyInstrument
                     End If
                 Next
             End If
+        End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
+            Try
+                For Each runningOrder In ret
+                    OnHeartbeat(String.Format("***** Modify Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol))
+                Next
+            Catch ex As Exception
+                logger.Warn(ex)
+            End Try
         End If
         Return ret
     End Function
@@ -483,7 +502,7 @@ Public Class NFOStrategyInstrument
         Dim allInstruments As IEnumerable(Of IInstrument) = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             ret = allInstruments.Where(Function(x)
-                                           Return x.Strike <= price
+                                           Return x.Strike <= price AndAlso x.RawInstrumentType = "CE"
                                        End Function).OrderBy(Function(y)
                                                                  Return y.Strike
                                                              End Function).LastOrDefault
@@ -496,7 +515,7 @@ Public Class NFOStrategyInstrument
         Dim allInstruments As IEnumerable(Of IInstrument) = CType(Me.ParentStrategy, NFOStrategy).DependentInstruments
         If allInstruments IsNot Nothing AndAlso allInstruments.Count > 0 Then
             ret = allInstruments.Where(Function(x)
-                                           Return x.Strike > price
+                                           Return x.Strike > price AndAlso x.RawInstrumentType = "PE"
                                        End Function).OrderBy(Function(y)
                                                                  Return y.Strike
                                                              End Function).FirstOrDefault
