@@ -47,7 +47,7 @@ Public Class NFOStrategy
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
 
-                    Dim spotInstrumentName As String = Nothing
+                    Dim spotInstrumentName As String = instrument.Key
                     If instrument.Key = "BANKNIFTY" Then
                         spotInstrumentName = "NIFTY BANK"
                     ElseIf instrument.Key = "NIFTY" Then
@@ -62,7 +62,7 @@ Public Class NFOStrategy
                             retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
                             Dim dependentTradableInstruments As IEnumerable(Of IInstrument) = allInstruments.Where(Function(x)
-                                                                                                                       Return x.RawInstrumentName = instrument.Key AndAlso
+                                                                                                                       Return x.Name = instrument.Key AndAlso
                                                                                                                        x.InstrumentType = IInstrument.TypeOfInstrument.Options AndAlso
                                                                                                                        x.Expiry.Value.Date = instrument.Value.ExpiryDate.Date
                                                                                                                    End Function)
@@ -149,7 +149,7 @@ Public Class NFOStrategy
                 _cts.Token.ThrowIfCancellationRequested()
                 tasks.Add(Task.Run(AddressOf tradableStrategyInstrument.MonitorAsync, _cts.Token))
             Next
-            tasks.Add(Task.Run(AddressOf ForceExitAllTradesAsync, _cts.Token))
+            tasks.Add(Task.Run(AddressOf ExitAllTradesAsync, _cts.Token))
             Await Task.WhenAll(tasks).ConfigureAwait(False)
         Catch ex As Exception
             lastException = ex
@@ -166,8 +166,52 @@ Public Class NFOStrategy
         Return Me.GetType().Name
     End Function
     Protected Overrides Function IsTriggerReceivedForExitAllOrders() As Tuple(Of Boolean, String)
-        Dim ret As Tuple(Of Boolean, String) = Nothing
         Throw New NotImplementedException
+    End Function
+
+    Private Async Function ExitAllTradesAsync() As Task
+        Await Task.Delay(1).ConfigureAwait(False)
+        Try
+            While True
+                If Me.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentController.OrphanException
+                End If
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim exitAll As Boolean = False
+                Dim pl As Decimal = GetOverallPL()
+                If pl >= CType(Me.UserSettings, NFOUserInputs).MaxProfitPerDay Then
+                    OnHeartbeat(String.Format("Strategy Max Profit reached. PL:{0}", pl))
+                    exitAll = True
+                ElseIf pl <= CType(Me.UserSettings, NFOUserInputs).MaxLossPerDay Then
+                    OnHeartbeat(String.Format("Strategy Max Loss reached. PL:{0}", pl))
+                    exitAll = True
+                ElseIf Now >= CType(Me.UserSettings, NFOUserInputs).EODExitTime Then
+                    OnHeartbeat(String.Format("Strategy EOD Exit Time reached. Time:{0}", Now.ToString("HH:mm:ss")))
+                    exitAll = True
+                End If
+                If exitAll Then
+                    For Each runningStrategyInstrument In TradableStrategyInstruments
+                        runningStrategyInstrument.StrategyExitAllTriggerd = True
+                    Next
+                    Exit While
+                End If
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+            End While
+        Catch ex As Exception
+            'To log exceptions getting created from this function as the bubble up of the exception
+            'will anyways happen to Strategy.MonitorAsync but it will not be shown until all tasks exit
+            logger.Error("Strategy:{0}, error:{1}", Me.ToString, ex.ToString)
+            Throw ex
+        End Try
+    End Function
+
+    Public Function GetOverallPL() As Decimal
+        Dim ret As Decimal = 0
+        If Me.TradableStrategyInstruments IsNot Nothing AndAlso Me.TradableStrategyInstruments.Count > 0 Then
+            For Each runningStrategyInstrument As NFOStrategyInstrument In Me.TradableStrategyInstruments
+                ret += runningStrategyInstrument.GetTotalPL()
+            Next
+        End If
         Return ret
     End Function
 End Class

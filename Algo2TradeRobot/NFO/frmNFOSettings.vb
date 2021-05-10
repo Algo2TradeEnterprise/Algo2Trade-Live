@@ -39,6 +39,8 @@ Public Class frmNFOSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
+            txtMaxProfit.Text = _settings.MaxProfitPerDay
+            txtMaxLoss.Text = _settings.MaxLossPerDay
 
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
@@ -49,6 +51,8 @@ Public Class frmNFOSettings
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
+        _settings.MaxProfitPerDay = txtMaxProfit.Text
+        _settings.MaxLossPerDay = Math.Abs(Val(txtMaxLoss.Text)) * -1
 
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
@@ -73,6 +77,8 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
+        ValidateNumbers(1, Decimal.MaxValue, txtMaxProfit)
+        ValidateNumbers(Decimal.MinValue, Decimal.MaxValue, txtMaxProfit)
         ValidateFile()
     End Sub
 

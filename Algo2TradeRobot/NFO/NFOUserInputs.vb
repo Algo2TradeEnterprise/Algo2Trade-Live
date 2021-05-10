@@ -9,6 +9,9 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "NFOSettings.Strategy.a2t")
 
+    Public Property MaxProfitPerDay As Decimal
+    Public Property MaxLossPerDay As Decimal
+
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 

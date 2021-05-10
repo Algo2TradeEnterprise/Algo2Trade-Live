@@ -114,7 +114,7 @@ Public Class NFOStrategyInstrument
             _strategyInstrumentRunning = True
             If _ParentInstrument Then
                 Await SubscribeOptionInstrumentsFromA2TAsync().ConfigureAwait(False)
-                Dim instrumentName As String = Nothing
+                Dim instrumentName As String = Me.TradableInstrument.TradingSymbol
                 If Me.TradableInstrument.TradingSymbol = "NIFTY BANK" Then
                     instrumentName = "BANKNIFTY"
                 ElseIf Me.TradableInstrument.TradingSymbol = "NIFTY 50" Then
@@ -132,7 +132,8 @@ Public Class NFOStrategyInstrument
                             _DependentPEOptionStrategyInstruments IsNot Nothing AndAlso _DependentPEOptionStrategyInstruments.Count > 0 Then
 
                         Else
-                            If Me.TradableInstrument.LastTick.Timestamp.Value >= Me.ParentStrategy.UserSettings.TradeStartTime Then
+                            If Me.TradableInstrument.LastTick.Timestamp IsNot Nothing AndAlso 
+                                Me.TradableInstrument.LastTick.Timestamp.Value >= Me.ParentStrategy.UserSettings.TradeStartTime Then
                                 Dim ltp As Decimal = Me.TradableInstrument.LastTick.LastPrice
                                 Dim itmCall As IInstrument = GetITMCall(ltp)
                                 Dim itmPut As IInstrument = GetITMPut(ltp)
@@ -155,7 +156,7 @@ Public Class NFOStrategyInstrument
                                     If ceStrategyInstrument IsNot Nothing Then
                                         Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
                                         Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
-                                        If Now >= Me.ParentStrategy.UserSettings.EODExitTime Then
+                                        If Me.StrategyExitAllTriggerd Then
                                             Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                         ElseIf ceStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
                                             ceStrategyInstrument.IsRunningInstrument AndAlso ceStrategyInstrument.IsOpenInstrument Then
@@ -181,7 +182,7 @@ Public Class NFOStrategyInstrument
                                     If peStrategyInstrument IsNot Nothing Then
                                         Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
                                         Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.ModifyStoplossOrder, data:=Nothing).ConfigureAwait(False)
-                                        If Now >= Me.ParentStrategy.UserSettings.EODExitTime Then
+                                        If Me.StrategyExitAllTriggerd Then
                                             Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                         ElseIf peStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
                                             peStrategyInstrument.IsRunningInstrument AndAlso peStrategyInstrument.IsOpenInstrument Then
@@ -237,7 +238,7 @@ Public Class NFOStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim instrumentDetails As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName)
+        Dim instrumentDetails As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.Name)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
 
@@ -379,7 +380,7 @@ Public Class NFOStrategyInstrument
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        Dim instrumentDetails As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.RawInstrumentName)
+        Dim instrumentDetails As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.Name)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             If IsOpenInstrument() AndAlso Not IsRunningInstrument() Then
@@ -499,6 +500,23 @@ Public Class NFOStrategyInstrument
                                        End Function).OrderBy(Function(y)
                                                                  Return y.Strike
                                                              End Function).FirstOrDefault
+        End If
+        Return ret
+    End Function
+
+    Public Function GetTotalPL() As Decimal
+        Dim ret As Decimal = 0
+        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
+            Dim currentPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
+            For Each runningOrder In Me.OrderDetails.Values
+                If runningOrder.ParentOrder IsNot Nothing AndAlso runningOrder.ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                    If runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                        ret += (currentPrice - runningOrder.ParentOrder.AveragePrice) * runningOrder.ParentOrder.Quantity
+                    ElseIf runningOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                        ret += (runningOrder.ParentOrder.AveragePrice - currentPrice) * runningOrder.ParentOrder.Quantity
+                    End If
+                End If
+            Next
         End If
         Return ret
     End Function

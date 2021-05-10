@@ -28,15 +28,19 @@ Partial Class frmNFOSettings
         Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
         Me.opnFileSettings = New System.Windows.Forms.OpenFileDialog()
         Me.grpSettings = New System.Windows.Forms.GroupBox()
-        Me.btnBrowse = New System.Windows.Forms.Button()
-        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
-        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
+        Me.txtMaxLoss = New System.Windows.Forms.TextBox()
+        Me.lblMaxLoss = New System.Windows.Forms.Label()
+        Me.txtMaxProfit = New System.Windows.Forms.TextBox()
+        Me.lblMaxProfit = New System.Windows.Forms.Label()
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.lblEODExitTime = New System.Windows.Forms.Label()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
         Me.lblLastTradeEntryTime = New System.Windows.Forms.Label()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
         Me.lblTradeStartTime = New System.Windows.Forms.Label()
+        Me.btnBrowse = New System.Windows.Forms.Button()
+        Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
+        Me.lblInstrumentDetails = New System.Windows.Forms.Label()
         Me.grpSettings.SuspendLayout()
         Me.SuspendLayout()
         '
@@ -65,6 +69,10 @@ Partial Class frmNFOSettings
         '
         'grpSettings
         '
+        Me.grpSettings.Controls.Add(Me.txtMaxLoss)
+        Me.grpSettings.Controls.Add(Me.lblMaxLoss)
+        Me.grpSettings.Controls.Add(Me.txtMaxProfit)
+        Me.grpSettings.Controls.Add(Me.lblMaxProfit)
         Me.grpSettings.Controls.Add(Me.dtpckrEODExitTime)
         Me.grpSettings.Controls.Add(Me.lblEODExitTime)
         Me.grpSettings.Controls.Add(Me.dtpckrLastTradeEntryTime)
@@ -78,39 +86,45 @@ Partial Class frmNFOSettings
         Me.grpSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.grpSettings.Name = "grpSettings"
         Me.grpSettings.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpSettings.Size = New System.Drawing.Size(451, 151)
+        Me.grpSettings.Size = New System.Drawing.Size(451, 215)
         Me.grpSettings.TabIndex = 23
         Me.grpSettings.TabStop = False
         '
-        'btnBrowse
+        'txtMaxLoss
         '
-        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 115)
-        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
-        Me.btnBrowse.Name = "btnBrowse"
-        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
-        Me.btnBrowse.TabIndex = 3
-        Me.btnBrowse.Text = "..."
-        Me.btnBrowse.UseVisualStyleBackColor = True
+        Me.txtMaxLoss.Location = New System.Drawing.Point(174, 147)
+        Me.txtMaxLoss.Name = "txtMaxLoss"
+        Me.txtMaxLoss.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxLoss.TabIndex = 5
+        Me.txtMaxLoss.Tag = "Max Loss Per Day"
         '
-        'txtInstrumentDetalis
+        'lblMaxLoss
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 116)
-        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
-        Me.txtInstrumentDetalis.ReadOnly = True
-        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(223, 22)
-        Me.txtInstrumentDetalis.TabIndex = 3
+        Me.lblMaxLoss.AutoSize = True
+        Me.lblMaxLoss.Location = New System.Drawing.Point(7, 150)
+        Me.lblMaxLoss.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxLoss.Name = "lblMaxLoss"
+        Me.lblMaxLoss.Size = New System.Drawing.Size(122, 17)
+        Me.lblMaxLoss.TabIndex = 26
+        Me.lblMaxLoss.Text = "Max Loss Per Day"
         '
-        'lblInstrumentDetails
+        'txtMaxProfit
         '
-        Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(7, 119)
-        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
-        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
-        Me.lblInstrumentDetails.TabIndex = 8
-        Me.lblInstrumentDetails.Text = "Instrument Details"
+        Me.txtMaxProfit.Location = New System.Drawing.Point(174, 114)
+        Me.txtMaxProfit.Name = "txtMaxProfit"
+        Me.txtMaxProfit.Size = New System.Drawing.Size(255, 22)
+        Me.txtMaxProfit.TabIndex = 4
+        Me.txtMaxProfit.Tag = "Max Profit Per Day"
+        '
+        'lblMaxProfit
+        '
+        Me.lblMaxProfit.AutoSize = True
+        Me.lblMaxProfit.Location = New System.Drawing.Point(7, 117)
+        Me.lblMaxProfit.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblMaxProfit.Name = "lblMaxProfit"
+        Me.lblMaxProfit.Size = New System.Drawing.Size(125, 17)
+        Me.lblMaxProfit.TabIndex = 24
+        Me.lblMaxProfit.Text = "Max Profit Per Day"
         '
         'dtpckrEODExitTime
         '
@@ -119,7 +133,8 @@ Partial Class frmNFOSettings
         Me.dtpckrEODExitTime.Name = "dtpckrEODExitTime"
         Me.dtpckrEODExitTime.ShowUpDown = True
         Me.dtpckrEODExitTime.Size = New System.Drawing.Size(255, 22)
-        Me.dtpckrEODExitTime.TabIndex = 19
+        Me.dtpckrEODExitTime.TabIndex = 3
+        Me.dtpckrEODExitTime.Value = New Date(2021, 5, 10, 15, 0, 0, 0)
         '
         'lblEODExitTime
         '
@@ -138,7 +153,8 @@ Partial Class frmNFOSettings
         Me.dtpckrLastTradeEntryTime.Name = "dtpckrLastTradeEntryTime"
         Me.dtpckrLastTradeEntryTime.ShowUpDown = True
         Me.dtpckrLastTradeEntryTime.Size = New System.Drawing.Size(255, 22)
-        Me.dtpckrLastTradeEntryTime.TabIndex = 18
+        Me.dtpckrLastTradeEntryTime.TabIndex = 2
+        Me.dtpckrLastTradeEntryTime.Value = New Date(2021, 5, 10, 14, 45, 0, 0)
         '
         'lblLastTradeEntryTime
         '
@@ -157,7 +173,8 @@ Partial Class frmNFOSettings
         Me.dtpckrTradeStartTime.Name = "dtpckrTradeStartTime"
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(255, 22)
-        Me.dtpckrTradeStartTime.TabIndex = 17
+        Me.dtpckrTradeStartTime.TabIndex = 1
+        Me.dtpckrTradeStartTime.Value = New Date(2021, 5, 10, 9, 15, 0, 0)
         '
         'lblTradeStartTime
         '
@@ -169,11 +186,41 @@ Partial Class frmNFOSettings
         Me.lblTradeStartTime.TabIndex = 20
         Me.lblTradeStartTime.Text = "Trade Start Time"
         '
+        'btnBrowse
+        '
+        Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 179)
+        Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.btnBrowse.Name = "btnBrowse"
+        Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
+        Me.btnBrowse.TabIndex = 6
+        Me.btnBrowse.Text = "..."
+        Me.btnBrowse.UseVisualStyleBackColor = True
+        '
+        'txtInstrumentDetalis
+        '
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 180)
+        Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
+        Me.txtInstrumentDetalis.ReadOnly = True
+        Me.txtInstrumentDetalis.Size = New System.Drawing.Size(223, 22)
+        Me.txtInstrumentDetalis.TabIndex = 6
+        '
+        'lblInstrumentDetails
+        '
+        Me.lblInstrumentDetails.AutoSize = True
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(7, 183)
+        Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
+        Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
+        Me.lblInstrumentDetails.TabIndex = 8
+        Me.lblInstrumentDetails.Text = "Instrument Details"
+        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(580, 156)
+        Me.ClientSize = New System.Drawing.Size(580, 215)
         Me.Controls.Add(Me.grpSettings)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -202,4 +249,8 @@ Partial Class frmNFOSettings
     Friend WithEvents lblLastTradeEntryTime As Label
     Friend WithEvents dtpckrTradeStartTime As DateTimePicker
     Friend WithEvents lblTradeStartTime As Label
+    Friend WithEvents txtMaxLoss As TextBox
+    Friend WithEvents lblMaxLoss As Label
+    Friend WithEvents txtMaxProfit As TextBox
+    Friend WithEvents lblMaxProfit As Label
 End Class
