@@ -18,7 +18,7 @@ Public Class NFOStrategyInstrument
 
     Private _DependentCEOptionStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
     Private _DependentPEOptionStrategyInstruments As List(Of NFOStrategyInstrument) = Nothing
-
+    Private _placedOrder As String = Nothing
     Private ReadOnly _ParentInstrument As Boolean
     Private ReadOnly _ITMOptionsFilename As String
     Public Sub New(ByVal associatedInstrument As IInstrument,
@@ -147,12 +147,12 @@ Public Class NFOStrategyInstrument
                                         End If
                                     Next
                                 End If
-                                If ceStrategyInstrument Is Nothing Then
+                                If ceStrategyInstrument Is Nothing AndAlso Not Me.StrategyExitAllTriggerd Then
                                     Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmCall}).ConfigureAwait(False)
                                     ceStrategyInstrument = _DependentCEOptionStrategyInstruments.Find(Function(x)
                                                                                                           Return x.TradableInstrument.InstrumentIdentifier = itmCall.InstrumentIdentifier
                                                                                                       End Function)
-                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{0}", ceStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
+                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{1}", ceStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
                                 End If
                                 If ceStrategyInstrument IsNot Nothing Then
                                     Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
@@ -161,8 +161,16 @@ Public Class NFOStrategyInstrument
                                         Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                     ElseIf ceStrategyInstrument.TradableInstrument.Strike <> itmCall.Strike AndAlso
                                         ceStrategyInstrument.IsRunningInstrument AndAlso ceStrategyInstrument.IsOpenInstrument Then
-                                        OnHeartbeat("ITM Call Strike changed. So it will cancel existing CE order.")
-                                        Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        Dim mid As Decimal = (ceStrategyInstrument.TradableInstrument.Strike + itmCall.Strike) / 2
+                                        If ceStrategyInstrument.TradableInstrument.Strike > itmCall.Strike AndAlso ltp < mid Then
+                                            OnHeartbeat(String.Format("***** ITM Call Strike changed from {0} to {1}. So it will cancel existing CE order.",
+                                                              ceStrategyInstrument.TradableInstrument.Strike, itmCall.Strike))
+                                            Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        ElseIf ceStrategyInstrument.TradableInstrument.Strike < itmCall.Strike AndAlso ltp > mid Then
+                                            OnHeartbeat(String.Format("***** ITM Call Strike changed from {0} to {1}. So it will cancel existing CE order.",
+                                                              ceStrategyInstrument.TradableInstrument.Strike, itmCall.Strike))
+                                            Await ceStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        End If
                                     End If
                                 End If
 
@@ -175,12 +183,12 @@ Public Class NFOStrategyInstrument
                                         End If
                                     Next
                                 End If
-                                If peStrategyInstrument Is Nothing Then
+                                If peStrategyInstrument Is Nothing AndAlso Not Me.StrategyExitAllTriggerd Then
                                     Await CreateStrategyInstrumentAndPopulateAsync(New List(Of IInstrument) From {itmPut}).ConfigureAwait(False)
                                     peStrategyInstrument = _DependentPEOptionStrategyInstruments.Find(Function(x)
                                                                                                           Return x.TradableInstrument.InstrumentIdentifier = itmPut.InstrumentIdentifier
                                                                                                       End Function)
-                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{0}", ceStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
+                                    OnHeartbeat(String.Format("{0} subscribed. LTP:{1}", peStrategyInstrument.TradableInstrument.TradingSymbol, ltp))
                                 End If
                                 If peStrategyInstrument IsNot Nothing Then
                                     Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketMISOrder, data:=Nothing).ConfigureAwait(False)
@@ -189,8 +197,16 @@ Public Class NFOStrategyInstrument
                                         Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
                                     ElseIf peStrategyInstrument.TradableInstrument.Strike <> itmPut.Strike AndAlso
                                         peStrategyInstrument.IsRunningInstrument AndAlso peStrategyInstrument.IsOpenInstrument Then
-                                        OnHeartbeat("ITM Put Strike changed. So it will cancel existing PE order.")
-                                        Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        Dim mid As Decimal = (peStrategyInstrument.TradableInstrument.Strike + itmPut.Strike) / 2
+                                        If peStrategyInstrument.TradableInstrument.Strike > itmPut.Strike AndAlso ltp < mid Then
+                                            OnHeartbeat(String.Format("***** ITM Put Strike changed from {0} to {1}. So it will cancel existing PE order.",
+                                                                  peStrategyInstrument.TradableInstrument.Strike, itmPut.Strike))
+                                            Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        ElseIf peStrategyInstrument.TradableInstrument.Strike < itmPut.Strike AndAlso ltp > mid Then
+                                            OnHeartbeat(String.Format("****** ITM Put Strike changed from {0} to {1}. So it will cancel existing PE order.",
+                                                                  peStrategyInstrument.TradableInstrument.Strike, itmPut.Strike))
+                                            Await peStrategyInstrument.MonitorAsync(command:=ExecuteCommands.CancelRegularOrder, data:=Nothing).ConfigureAwait(False)
+                                        End If
                                     End If
                                 End If
                             End If
@@ -221,6 +237,12 @@ Public Class NFOStrategyInstrument
                         orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
                     ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
                         orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
+                    End If
+                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                        Dim orderData As Dictionary(Of String, Object) = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                        If orderData.ContainsKey("data") AndAlso orderData("data").ContainsKey("order_id") Then
+                            _placedOrder = orderData("data")("order_id")
+                        End If
                     End If
                 End If
             ElseIf command = ExecuteCommands.ModifyStoplossOrder Then
@@ -270,14 +292,18 @@ Public Class NFOStrategyInstrument
                     End If
                 ElseIf IsRunningInstrument() AndAlso Not IsOpenInstrument() Then
                     If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
-                        Dim entryOrder As IOrder = Me.OrderDetails.Where(Function(x)
-                                                                             Return x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
-                                                                             x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
-                                                                         End Function).OrderByDescending(Function(y)
-                                                                                                             Return y.Value.ParentOrder.TimeStamp
-                                                                                                         End Function).FirstOrDefault.Value.ParentOrder
+                        Dim entryOrders As IEnumerable(Of KeyValuePair(Of String, IBusinessOrder)) =
+                            Me.OrderDetails.Where(Function(x)
+                                                      Return x.Value.ParentOrder IsNot Nothing AndAlso
+                                                      x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                                                      x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
+                                                  End Function)
 
-                        If entryOrder IsNot Nothing Then
+                        If entryOrders IsNot Nothing AndAlso entryOrders.Count > 0 Then
+                            Dim entryOrder As IOrder = entryOrders.OrderByDescending(Function(y)
+                                                                                         Return y.Value.ParentOrder.TimeStamp
+                                                                                     End Function).FirstOrDefault.Value.ParentOrder
+
                             Dim triggerPrice As Double = ConvertFloorCeling(entryOrder.AveragePrice - instrumentDetails.InitialStoploss, Me.TradableInstrument.TickSize, RoundOfType.Floor)
                             If forcePrint Then OnHeartbeat(String.Format("Place Stoploss Order. Trigger Price[EntryPrice({0}-InitialStoploss({1}))]={2}", entryOrder.AveragePrice, instrumentDetails.InitialStoploss, triggerPrice))
                             If currentTick.LastPrice > triggerPrice Then
@@ -394,13 +420,18 @@ Public Class NFOStrategyInstrument
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         If currentTick IsNot Nothing AndAlso Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             If IsOpenInstrument() AndAlso Not IsRunningInstrument() Then
-                Dim entryOrder As IOrder = Me.OrderDetails.Where(Function(x)
-                                                                     Return x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
-                                                                     x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
-                                                                 End Function).OrderByDescending(Function(y)
-                                                                                                     Return y.Value.ParentOrder.TimeStamp
-                                                                                                 End Function).FirstOrDefault.Value.ParentOrder
-                If entryOrder IsNot Nothing Then
+                Dim entryOrders As IEnumerable(Of KeyValuePair(Of String, IBusinessOrder)) =
+                            Me.OrderDetails.Where(Function(x)
+                                                      Return x.Value.ParentOrder IsNot Nothing AndAlso
+                                                      x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                                                      x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy
+                                                  End Function)
+
+                If entryOrders IsNot Nothing AndAlso entryOrders.Count > 0 Then
+                    Dim entryOrder As IOrder = entryOrders.OrderByDescending(Function(y)
+                                                                                 Return y.Value.ParentOrder.TimeStamp
+                                                                             End Function).FirstOrDefault.Value.ParentOrder
+
                     Dim movememt As Decimal = currentTick.LastPrice - entryOrder.AveragePrice
                     Dim multiplier As Decimal = Math.Floor(movememt / instrumentDetails.TrailingStoploss)
                     If multiplier > 0 Then
@@ -455,7 +486,7 @@ Public Class NFOStrategyInstrument
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             Try
                 For Each runningOrder In ret
-                    OnHeartbeat(String.Format("***** Modify Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol))
+                    OnHeartbeat(String.Format("***** Modify Order ***** Order ID:{0}, Reason:{1}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4))
                 Next
             Catch ex As Exception
                 logger.Warn(ex)
@@ -488,7 +519,7 @@ Public Class NFOStrategyInstrument
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             Try
                 For Each runningOrder In ret
-                    OnHeartbeat(String.Format("***** Exit Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol))
+                    OnHeartbeat(String.Format("***** Exit Order ***** Order ID:{0}", runningOrder.Item2.OrderIdentifier))
                 Next
             Catch ex As Exception
                 logger.Warn(ex)
@@ -545,6 +576,7 @@ Public Class NFOStrategyInstrument
         If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             Dim totalTraded As Integer = 0
             For Each runningOrder In Me.OrderDetails
+                If _placedOrder IsNot Nothing AndAlso _placedOrder = runningOrder.Key Then _placedOrder = Nothing
                 If runningOrder.Value.ParentOrder IsNot Nothing Then
                     If runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
                         runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
@@ -557,7 +589,13 @@ Public Class NFOStrategyInstrument
                 End If
             Next
 
-            ret = totalTraded <> 0
+            If totalTraded <> 0 Then
+                ret = True
+            ElseIf _placedOrder IsNot Nothing AndAlso _placedOrder.Trim <> "" Then
+                ret = True
+            End If
+        Else
+            ret = _placedOrder IsNot Nothing AndAlso _placedOrder.Trim <> ""
         End If
         Return ret
     End Function
@@ -566,6 +604,7 @@ Public Class NFOStrategyInstrument
         Dim ret As Boolean = False
         If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
             For Each runningOrder In Me.OrderDetails
+                If _placedOrder IsNot Nothing AndAlso _placedOrder = runningOrder.Key Then _placedOrder = Nothing
                 If runningOrder.Value.ParentOrder IsNot Nothing Then
                     If runningOrder.Value.ParentOrder.Status = IOrder.TypeOfStatus.Open OrElse
                         runningOrder.Value.ParentOrder.Status = IOrder.TypeOfStatus.TriggerPending Then
@@ -574,6 +613,8 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
             Next
+        Else
+            ret = _placedOrder IsNot Nothing AndAlso _placedOrder.Trim <> ""
         End If
         Return ret
     End Function
