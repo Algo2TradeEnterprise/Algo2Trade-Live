@@ -249,6 +249,8 @@ Public Class NFOStrategyInstrument
                     Catch aex As AdapterBusinessException
                         If aex.ExceptionType = AdapterBusinessException.TypeOfException.InputException Then
                             logger.Warn(aex.ToString)
+                        Else
+                            Throw aex
                         End If
                     End Try
                 End If
