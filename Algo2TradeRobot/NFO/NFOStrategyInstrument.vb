@@ -6,6 +6,7 @@ Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
 Imports Algo2TradeCore.ChartHandler.ChartStyle
+Imports Algo2TradeCore.Exceptions
 
 Public Class NFOStrategyInstrument
     Inherits StrategyInstrument
@@ -232,18 +233,24 @@ Public Class NFOStrategyInstrument
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
                     placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
-                    Dim orderResponse = Nothing
-                    If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL_M Then
-                        orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
-                    ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
-                        orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
-                    End If
-                    If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                        Dim orderData As Dictionary(Of String, Object) = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                        If orderData.ContainsKey("data") AndAlso orderData("data").ContainsKey("order_id") Then
-                            _placedOrder = orderData("data")("order_id")
+                    Try
+                        Dim orderResponse = Nothing
+                        If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.SL_M Then
+                            orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularSLMMISOrder, Nothing).ConfigureAwait(False)
+                        ElseIf placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Market Then
+                            orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketMISOrder, Nothing).ConfigureAwait(False)
                         End If
-                    End If
+                        If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
+                            Dim orderData As Dictionary(Of String, Object) = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                            If orderData.ContainsKey("data") AndAlso orderData("data").ContainsKey("order_id") Then
+                                _placedOrder = orderData("data")("order_id")
+                            End If
+                        End If
+                    Catch aex As AdapterBusinessException
+                        If aex.ExceptionType = AdapterBusinessException.TypeOfException.InputException Then
+                            logger.Warn(aex.ToString)
+                        End If
+                    End Try
                 End If
             ElseIf command = ExecuteCommands.ModifyStoplossOrder Then
                 Dim modifyStoplossOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyStoplossOrderAsync(False).ConfigureAwait(False)
