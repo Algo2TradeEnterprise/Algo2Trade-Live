@@ -72,9 +72,9 @@ Public Class ORBStrategy
                                                                                                                               End Function)
                             If optionTradableInstruments IsNot Nothing AndAlso optionTradableInstruments.Count > 0 Then
                                 retTradableInstrumentsAsPerStrategy.AddRange(optionTradableInstruments)
+                                ret = True
                             End If
                         End If
-                        ret = True
                     Else
                         OnHeartbeat(String.Format("Unable to find instrument for: {0}", instrument.Key))
                     End If

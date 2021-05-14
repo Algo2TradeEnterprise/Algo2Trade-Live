@@ -40,7 +40,6 @@ Public Class frmORBSettings
             dtpckrTradeStartTime.Value = _settings.TradeStartTime
             dtpckrLastTradeEntryTime.Value = _settings.LastTradeEntryTime
             dtpckrEODExitTime.Value = _settings.EODExitTime
-            txtStrikeRangePer.Text = _settings.StrikePriceSelectionRangePercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
     End Sub
@@ -50,7 +49,6 @@ Public Class frmORBSettings
         _settings.TradeStartTime = dtpckrTradeStartTime.Value
         _settings.LastTradeEntryTime = dtpckrLastTradeEntryTime.Value
         _settings.EODExitTime = dtpckrEODExitTime.Value
-        _settings.StrikePriceSelectionRangePercentage = txtStrikeRangePer.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         Utilities.Strings.SerializeFromCollection(Of ORBUserInputs)(_settingsFilename, _settings)
@@ -77,8 +75,6 @@ Public Class frmORBSettings
     End Sub
 
     Private Sub ValidateInputs()
-        ValidateNumbers(0, Decimal.MaxValue, txtStrikeRangePer)
-
         ValidateFile()
     End Sub
 

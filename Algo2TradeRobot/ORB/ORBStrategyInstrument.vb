@@ -26,7 +26,10 @@ Public Class ORBStrategyInstrument
     Public StopInstrumentReason As String = ""
 
     Public MyParentInstrumentDetails As ORBUserInputs.InstrumentDetails
-    Public TakeTrade As Boolean
+    Public MyParentInstrumentHigh As Decimal = Decimal.MinValue
+    Public MyParentInstrumentLow As Decimal = Decimal.MinValue
+    Public MyParentLTP As Decimal = Decimal.MinValue
+    Public TakeTrade As Boolean = False
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -118,6 +121,10 @@ Public Class ORBStrategyInstrument
                     Dim optionSelectionDone As Boolean = False
                     Dim userSettings As ORBUserInputs = Me.ParentStrategy.UserSettings
                     Dim instrumentDetails As ORBUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.TradableInstrument.TradingSymbol.ToUpper)
+                    Dim highPrice As Decimal = Decimal.MinValue
+                    Dim lowPrice As Decimal = Decimal.MinValue
+                    Dim peStrategyInstrument As ORBStrategyInstrument = Nothing
+                    Dim ceStrategyInstrument As ORBStrategyInstrument = Nothing
                     While True
                         If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw Me.ParentStrategy.ParentController.OrphanException
@@ -130,54 +137,84 @@ Public Class ORBStrategyInstrument
                         _cts.Token.ThrowIfCancellationRequested()
                         If Not optionSelectionDone AndAlso Me.TradableInstrument.LastTick IsNot Nothing AndAlso
                             Me.TradableInstrument.LastTick.Timestamp.Value.Date = Now.Date AndAlso
-                            Now >= New Date(Now.Year, Now.Month, Now.Day, 9, 10, 0) AndAlso
-                            Me.TradableInstrument.LastTick.Open > 0 Then
+                            Now >= instrumentDetails.FirstCandleTime AndAlso Me.TradableInstrument.LastTick.Open > 0 Then
+                            Dim currentTick As ITick = Me.TradableInstrument.LastTick
                             If Not File.Exists(_ORBFileName) Then
-                                Dim openPrice As Decimal = Me.TradableInstrument.LastTick.Open
-                                OnHeartbeat(String.Format("{0}: Open Price={1}. Now it will eliminate instruments outside {2}% range", Me.TradableInstrument.TradingSymbol, openPrice, userSettings.StrikePriceSelectionRangePercentage))
-                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                    If runningStrategyInstrument.TradableInstrument.Strike >= openPrice - openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 AndAlso
-                                    runningStrategyInstrument.TradableInstrument.Strike <= openPrice + openPrice * userSettings.StrikePriceSelectionRangePercentage / 100 Then
-                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
-                                    Else
-                                        CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrumentReason = "+++ Outside allowable range according to open price"
-                                        CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrument = True
-                                    End If
-                                Next
+                                highPrice = currentTick.High
+                                lowPrice = currentTick.Low
+
+                                Utilities.Strings.SerializeFromCollection(Of Tuple(Of Decimal, Decimal))(_ORBFileName, New Tuple(Of Decimal, Decimal)(highPrice, lowPrice))
+
+                                OnHeartbeat(String.Format("{0}: High Price={1}, Low Price={2}, Time={3}. Now it will eliminate other option instruments.",
+                                                          Me.TradableInstrument.TradingSymbol, highPrice, lowPrice, currentTick.Timestamp.Value.ToString("dd-MM-yyyy HH:mm:ss")))
                             Else
-                                Dim ins1 As String = Utilities.Strings.DeserializeToCollection(Of Tuple(Of String, String))(_ORBFileName).Item1
-                                Dim ins2 As String = Utilities.Strings.DeserializeToCollection(Of Tuple(Of String, String))(_ORBFileName).Item2
-                                For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                    If runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = ins1.ToUpper OrElse
-                                        runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = ins2.ToUpper Then
-                                        runningStrategyInstrument.TradableInstrument.FetchHistorical = True
-                                    Else
-                                        CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
-                                        CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrument = True
-                                    End If
-                                Next
+                                highPrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Decimal))(_ORBFileName).Item1
+                                lowPrice = Utilities.Strings.DeserializeToCollection(Of Tuple(Of Decimal, Decimal))(_ORBFileName).Item2
                             End If
+
+                            Dim allStrikes As List(Of Decimal) = Nothing
+                            For Each runningInstrument In _myOptionStrategyInstruments
+                                If allStrikes Is Nothing Then allStrikes = New List(Of Decimal)
+                                If Not allStrikes.Contains(runningInstrument.TradableInstrument.Strike) Then
+                                    allStrikes.Add(runningInstrument.TradableInstrument.Strike)
+                                End If
+                            Next
+
+                            Dim highATM As Decimal = GetATMStrike(highPrice, allStrikes)
+                            Dim lowATM As Decimal = GetATMStrike(lowPrice, allStrikes)
+                            peStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
+                                                                                          Return x.TradableInstrument.Strike = highATM AndAlso
+                                                                                                x.TradableInstrument.RawInstrumentType = "PE"
+                                                                                      End Function).FirstOrDefault
+
+                            ceStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
+                                                                                          Return x.TradableInstrument.Strike = lowPrice AndAlso
+                                                                                                x.TradableInstrument.RawInstrumentType = "CE"
+                                                                                      End Function).FirstOrDefault
+
+                            peStrategyInstrument.MyParentInstrumentDetails = instrumentDetails
+                            peStrategyInstrument.MyParentInstrumentHigh = highPrice
+                            peStrategyInstrument.MyParentInstrumentLow = lowPrice
+
+                            ceStrategyInstrument.MyParentInstrumentDetails = instrumentDetails
+                            ceStrategyInstrument.MyParentInstrumentHigh = highPrice
+                            ceStrategyInstrument.MyParentInstrumentLow = lowPrice
+
+                            For Each runningStrategyInstrument In _myOptionStrategyInstruments
+                                If runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = peStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper OrElse
+                                   runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = ceStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper Then
+                                    runningStrategyInstrument.TradableInstrument.FetchHistorical = True
+                                Else
+                                    CType(runningStrategyInstrument, StraddleStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
+                                    CType(runningStrategyInstrument, StraddleStrategyInstrument).StopInstrument = True
+                                End If
+                            Next
+
+                            OnHeartbeat(String.Format("Selected PE Instrument={0}, CE Instrument={1}",
+                                                       peStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                       ceStrategyInstrument.TradableInstrument.TradingSymbol))
                             optionSelectionDone = True
                         End If
                         If optionSelectionDone Then
+                            Dim currentTick As ITick = Me.TradableInstrument.LastTick
                             Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(instrumentDetails.Timeframe)
-                            Dim stConsumer As SupertrendConsumer = GetConsumer(Me.RawPayloadDependentConsumers, _dummySupertrendConsumer)
                             Try
                                 If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing AndAlso
                                     Me.TradableInstrument.IsHistoricalCompleted Then
                                     If Not runningCandlePayload.PreviousPayload.ToString = _lastPrevPayloadPlaceOrder Then
                                         _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                                         logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.ToString)
-                                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend:{4}, Supertrend Color:{5}, Exchange Start Time:{6}, Exchange End Time:{7}, Current Time:{8}, TradingSymbol:{9}",
+                                        logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, High Price:{4}, Low Price:{5}, LTP:{6}, Exchange Start Time:{7}, Exchange End Time:{8}, Current Time:{9}, TradingSymbol:{10}",
                                                     runningCandlePayload.SnapshotDateTime.ToString,
                                                     runningCandlePayload.PayloadGeneratedBy.ToString,
                                                     Me.TradableInstrument.IsHistoricalCompleted,
                                                     Me.ParentStrategy.IsFirstTimeInformationCollected,
-                                                    CType(stConsumer.ConsumerPayloads(runningCandlePayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value,
-                                                    CType(stConsumer.ConsumerPayloads(runningCandlePayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor.Name,
+                                                    highPrice,
+                                                    lowPrice,
+                                                    currentTick.LastPrice,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeStartTime.ToString,
                                                     Me.TradableInstrument.ExchangeDetails.ExchangeEndTime.ToString,
-                                                    Now.ToString("dd-MMM-yyyy HH:mm:ss"),
+                                                    currentTick.Timestamp.Value.ToString("dd-MMM-yyyy HH:mm:ss"),
                                                     Me.TradableInstrument.TradingSymbol)
                                     End If
                                 End If
@@ -185,67 +222,17 @@ Public Class ORBStrategyInstrument
                                 logger.Error(ex)
                             End Try
 
-                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso runningCandlePayload IsNot Nothing AndAlso
-                                Me.TradableInstrument.LastTick.Timestamp.Value >= userSettings.TradeStartTime AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
-                                stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.SnapshotDateTime) Then
-                                Dim instrument1 As ORBStrategyInstrument = Nothing
-                                Dim instrument2 As ORBStrategyInstrument = Nothing
-                                If File.Exists(_ORBFileName) Then
-                                    Dim ins1 As String = Utilities.Strings.DeserializeToCollection(Of Tuple(Of String, String))(_ORBFileName).Item1
-                                    Dim ins2 As String = Utilities.Strings.DeserializeToCollection(Of Tuple(Of String, String))(_ORBFileName).Item2
-
-                                    instrument1 = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                         Return x.TradableInstrument.TradingSymbol.ToUpper = ins1.ToUpper
-                                                                                     End Function).FirstOrDefault
-                                    instrument2 = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                         Return x.TradableInstrument.TradingSymbol.ToUpper = ins2.ToUpper
-                                                                                     End Function).FirstOrDefault
-
-                                    OnHeartbeat(String.Format("Selected Main Instrument={0}, Supporting Instrument={1}",
-                                                              instrument1.TradableInstrument.TradingSymbol, instrument2.TradableInstrument.TradingSymbol))
-                                Else
-                                    Dim allStrikes As List(Of Decimal) = Nothing
-                                    For Each runningInstrument In _myOptionStrategyInstruments
-                                        If runningInstrument.StrategyInstrumentRunning Then
-                                            If allStrikes Is Nothing Then allStrikes = New List(Of Decimal)
-                                            If Not allStrikes.Contains(runningInstrument.TradableInstrument.Strike) Then
-                                                allStrikes.Add(runningInstrument.TradableInstrument.Strike)
-                                            End If
-                                        End If
-                                    Next
-                                    Dim currentPrice As Decimal = Me.TradableInstrument.LastTick.LastPrice
-                                    Dim atm As Decimal = GetATMStrike(currentPrice, allStrikes)
-                                    If atm <> Decimal.MinValue Then
-                                        instrument1 = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                             Return x.TradableInstrument.Strike = atm AndAlso
-                                                                                                x.TradableInstrument.RawInstrumentType = "PE"
-                                                                                         End Function).FirstOrDefault
-
-                                        instrument2 = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                             Return x.TradableInstrument.Strike = atm AndAlso
-                                                                                                x.TradableInstrument.RawInstrumentType = "CE"
-                                                                                         End Function).FirstOrDefault
-
-                                        OnHeartbeat(String.Format("LTP={0}, ATM Strike={1}", currentPrice, atm))
-                                    End If
-                                    If instrument1 IsNot Nothing AndAlso instrument2 IsNot Nothing Then
-                                        Utilities.Strings.SerializeFromCollection(Of Tuple(Of String, String))(_ORBFileName, New Tuple(Of String, String)(instrument1.TradableInstrument.TradingSymbol, instrument2.TradableInstrument.TradingSymbol))
-                                    End If
+                            If Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.TradableInstrument.LastTick.Timestamp.Value >= instrumentDetails.FirstCandleTime Then
+                                If currentTick.LastPrice >= highPrice + instrumentDetails.Distance Then
+                                    peStrategyInstrument.MyParentLTP = currentTick.LastPrice
+                                    peStrategyInstrument.TakeTrade = True
                                 End If
-                                If instrument1 IsNot Nothing AndAlso instrument2 IsNot Nothing Then
-                                    For Each runningStrategyInstrument In _myOptionStrategyInstruments
-                                        If runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrument1.TradableInstrument.InstrumentIdentifier AndAlso
-                                            runningStrategyInstrument.TradableInstrument.InstrumentIdentifier <> instrument2.TradableInstrument.InstrumentIdentifier Then
-                                            CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
-                                            CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrument = True
-                                        End If
-                                    Next
+                                If currentTick.LastPrice <= lowPrice - instrumentDetails.Distance Then
+                                    ceStrategyInstrument.MyParentLTP = currentTick.LastPrice
+                                    ceStrategyInstrument.TakeTrade = True
+                                End If
 
-                                    instrument1.MyParentInstrumentDetails = instrumentDetails
-                                    instrument1.TakeTrade = True
-                                    instrument2.MyParentInstrumentDetails = instrumentDetails
-                                    instrument2.TakeTrade = True
-
+                                If peStrategyInstrument.TakeTrade AndAlso ceStrategyInstrument.TakeTrade Then
                                     Exit While
                                 End If
                             End If
@@ -344,29 +331,47 @@ Public Class ORBStrategyInstrument
             runningCandlePayload.PreviousPayload IsNot Nothing AndAlso Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso
             stConsumer.ConsumerPayloads IsNot Nothing AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
             Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+            Dim supertrend As Decimal = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).Supertrend.Value
             Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.MyParentInstrumentDetails.NumberOfLots
             If currentTime <= userSettings.EODExitTime Then
                 If Not IsOpenInstrument() Then
                     If currentTime <= userSettings.LastTradeEntryTime Then
-                        If supertrendColor = Color.Red Then
-                            If forcePrint Then OnHeartbeat("***** Supertrend Color:Red. So it will place entry order.")
-                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                        If forcePrint Then OnHeartbeat("***** Spot LTP crosees high/Low distance. So it will place entry order.")
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Sell,
                                  .Quantity = quantity,
                                  .OrderType = IOrder.TypeOfOrder.Market}
-                        Else
-                            If log Then OnHeartbeat("Supertrend Color:Green. So it will wait now for entry.")
-                        End If
                     End If
                 Else
-                    If supertrendColor = Color.Green Then
-                        If forcePrint Then OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
-                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                    Dim entryOrders As IEnumerable(Of KeyValuePair(Of String, IBusinessOrder)) =
+                            Me.OrderDetails.Where(Function(x)
+                                                      Return x.Value.ParentOrder IsNot Nothing AndAlso
+                                                      x.Value.ParentOrder.Status = IOrder.TypeOfStatus.Complete AndAlso
+                                                      x.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell
+                                                  End Function)
+
+                    If entryOrders IsNot Nothing AndAlso entryOrders.Count > 0 Then
+                        Dim entryOrder As IOrder = entryOrders.OrderByDescending(Function(y)
+                                                                                     Return y.Value.ParentOrder.TimeStamp
+                                                                                 End Function).FirstOrDefault.Value.ParentOrder
+
+                        Dim stoploss1 As Decimal = entryOrder.AveragePrice + entryOrder.AveragePrice * 40 / 100
+                        Dim stoploss2 As Decimal = entryOrder.AveragePrice + (Me.MyParentInstrumentHigh - Me.MyParentInstrumentLow) * 0.5
+                        Dim stoploss3 As Decimal = Decimal.MaxValue
+                        If supertrendColor = Color.Red Then stoploss3 = supertrend
+
+                        Dim finalStoploss As Decimal = Math.Min(stoploss1, Math.Min(stoploss2, stoploss3))
+
+                        If currentTick.LastPrice > finalStoploss Then
+                            If forcePrint Then OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
                                  .OrderType = IOrder.TypeOfOrder.Market}
-                    Else
-                        If log Then OnHeartbeat(String.Format("Supertrend Color:{0}. So it will not place exit order", supertrendColor.Name))
+                        Else
+                            If log Then OnHeartbeat(String.Format("Entry Price:{0}. SL1:{1}, SL2:{2}, SL3:{3}(ST Color:{4}). So SL:{5}, Price:{6}. So it will not place exit order",
+                                                                  entryOrder.AveragePrice, stoploss1, stoploss2, If(stoploss3 = Decimal.MaxValue, "Max", stoploss3), supertrendColor.Name, finalStoploss, currentTick.LastPrice))
+                        End If
                     End If
                 End If
             Else

@@ -9,8 +9,6 @@ Public Class ORBUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "ORBSettings.Strategy.a2t")
 
-    Public Property StrikePriceSelectionRangePercentage As Decimal
-
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
@@ -22,6 +20,17 @@ Public Class ORBUserInputs
         Public Property Timeframe As Integer
         Public Property SupertrendPeriod As Integer
         Public Property SupertrendMultiplier As Decimal
+        Public Property Distance As Decimal
+
+        Private _FirstCandleTime As Date
+        Public Property FirstCandleTime As Date
+            Get
+                Return New Date(Now.Year, Now.Month, Now.Day, _FirstCandleTime.Hour, _FirstCandleTime.Minute, _FirstCandleTime.Second)
+            End Get
+            Set(value As Date)
+                _FirstCandleTime = value
+            End Set
+        End Property
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -34,9 +43,9 @@ Public Class ORBUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER", ",FIRST CANDLE TIME", "DISTANCE"}
 
-                        For colCtr = 0 To 4
+                        For colCtr = 0 To 6
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -51,6 +60,8 @@ Public Class ORBUserInputs
                             Dim timeframe As Integer = Integer.MinValue
                             Dim stPeriod As Integer = Integer.MinValue
                             Dim stMultiplier As Decimal = Decimal.MinValue
+                            Dim firstCandleTime As Date = Date.MinValue
+                            Dim distance As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -116,6 +127,28 @@ Public Class ORBUserInputs
                                     Else
                                         Throw New ApplicationException(String.Format("Supertrend Multiplier cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        Try
+                                            firstCandleTime = Date.ParseExact(instrumentDetails(rowCtr, columnCtr).ToString, "HH:mm", Nothing)
+                                        Catch ex As Exception
+                                            Throw New ApplicationException(String.Format("First Candle Time should be in HH:mm format for {0}", instrumentName))
+                                        End Try
+                                    Else
+                                        Throw New ApplicationException(String.Format("First Candle Time cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 6 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            distance = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Distance cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Distance cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
                                 End If
                             Next
                             If instrumentName IsNot Nothing Then
@@ -124,7 +157,9 @@ Public Class ORBUserInputs
                                     .NumberOfLots = nmbrOfLots,
                                     .Timeframe = timeframe,
                                     .SupertrendPeriod = stPeriod,
-                                    .SupertrendMultiplier = stMultiplier
+                                    .SupertrendMultiplier = stMultiplier,
+                                    .Distance = distance,
+                                    .FirstCandleTime = firstCandleTime
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)

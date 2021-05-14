@@ -19,7 +19,7 @@ Entry
 
 When underlying current price crosses ( High/ low of first candle Spot Nifty/ Bank nifty @ X time + distance).
 	When price crosses high + distance, sell PE
-When Price crosses low + distance, sell CE
+When Price crosses low - distance, sell CE
 
 Stop Loss	
 Select lowest values of….

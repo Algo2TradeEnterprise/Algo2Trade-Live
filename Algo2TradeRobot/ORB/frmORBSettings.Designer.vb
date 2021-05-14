@@ -30,8 +30,6 @@ Partial Class frmORBSettings
         Me.lblLastTradeEntryTime = New System.Windows.Forms.Label()
         Me.dtpckrTradeStartTime = New System.Windows.Forms.DateTimePicker()
         Me.lblTradeStartTime = New System.Windows.Forms.Label()
-        Me.txtStrikeRangePer = New System.Windows.Forms.TextBox()
-        Me.lblStrikeRangePer = New System.Windows.Forms.Label()
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
@@ -90,7 +88,7 @@ Partial Class frmORBSettings
         Me.dtpckrTradeStartTime.ShowUpDown = True
         Me.dtpckrTradeStartTime.Size = New System.Drawing.Size(255, 22)
         Me.dtpckrTradeStartTime.TabIndex = 1
-        Me.dtpckrTradeStartTime.Value = New Date(2021, 4, 14, 9, 20, 0, 0)
+        Me.dtpckrTradeStartTime.Value = New Date(2021, 4, 14, 9, 15, 0, 0)
         '
         'lblTradeStartTime
         '
@@ -102,29 +100,10 @@ Partial Class frmORBSettings
         Me.lblTradeStartTime.TabIndex = 12
         Me.lblTradeStartTime.Text = "Trade Start Time"
         '
-        'txtStrikeRangePer
-        '
-        Me.txtStrikeRangePer.Location = New System.Drawing.Point(175, 113)
-        Me.txtStrikeRangePer.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtStrikeRangePer.Name = "txtStrikeRangePer"
-        Me.txtStrikeRangePer.Size = New System.Drawing.Size(255, 22)
-        Me.txtStrikeRangePer.TabIndex = 4
-        Me.txtStrikeRangePer.Tag = "Strike Price Range %"
-        '
-        'lblStrikeRangePer
-        '
-        Me.lblStrikeRangePer.AutoSize = True
-        Me.lblStrikeRangePer.Location = New System.Drawing.Point(9, 116)
-        Me.lblStrikeRangePer.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblStrikeRangePer.Name = "lblStrikeRangePer"
-        Me.lblStrikeRangePer.Size = New System.Drawing.Size(142, 17)
-        Me.lblStrikeRangePer.TabIndex = 10
-        Me.lblStrikeRangePer.Text = "Strike Price Range %"
-        '
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(404, 144)
+        Me.btnBrowse.Location = New System.Drawing.Point(404, 115)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
@@ -134,7 +113,7 @@ Partial Class frmORBSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 145)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(174, 116)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -144,7 +123,7 @@ Partial Class frmORBSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 148)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(9, 119)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
@@ -168,8 +147,6 @@ Partial Class frmORBSettings
         Me.grpSettings.Controls.Add(Me.lblLastTradeEntryTime)
         Me.grpSettings.Controls.Add(Me.dtpckrTradeStartTime)
         Me.grpSettings.Controls.Add(Me.lblTradeStartTime)
-        Me.grpSettings.Controls.Add(Me.txtStrikeRangePer)
-        Me.grpSettings.Controls.Add(Me.lblStrikeRangePer)
         Me.grpSettings.Controls.Add(Me.btnBrowse)
         Me.grpSettings.Controls.Add(Me.txtInstrumentDetalis)
         Me.grpSettings.Controls.Add(Me.lblInstrumentDetails)
@@ -177,7 +154,7 @@ Partial Class frmORBSettings
         Me.grpSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.grpSettings.Name = "grpSettings"
         Me.grpSettings.Padding = New System.Windows.Forms.Padding(4)
-        Me.grpSettings.Size = New System.Drawing.Size(451, 179)
+        Me.grpSettings.Size = New System.Drawing.Size(451, 147)
         Me.grpSettings.TabIndex = 8
         Me.grpSettings.TabStop = False
         '
@@ -199,7 +176,7 @@ Partial Class frmORBSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(580, 187)
+        Me.ClientSize = New System.Drawing.Size(580, 154)
         Me.Controls.Add(Me.grpSettings)
         Me.Controls.Add(Me.btnSave)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -219,8 +196,6 @@ Partial Class frmORBSettings
     Friend WithEvents lblLastTradeEntryTime As Label
     Friend WithEvents dtpckrTradeStartTime As DateTimePicker
     Friend WithEvents lblTradeStartTime As Label
-    Friend WithEvents txtStrikeRangePer As TextBox
-    Friend WithEvents lblStrikeRangePer As Label
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
