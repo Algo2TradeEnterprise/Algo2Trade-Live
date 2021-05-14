@@ -78,6 +78,21 @@ Partial Class frmMainTabbed
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrStraddleTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tabORB = New System.Windows.Forms.TabPage()
+        Me.pnlORBMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.TableLayoutPanel2 = New System.Windows.Forms.TableLayoutPanel()
+        Me.btnORBStop = New System.Windows.Forms.Button()
+        Me.btnORBStart = New System.Windows.Forms.Button()
+        Me.Panel3 = New System.Windows.Forms.Panel()
+        Me.blbORBTickerStatus = New Bulb.LedBulb()
+        Me.lblORBTickerStatus = New System.Windows.Forms.Label()
+        Me.btnORBSettings = New System.Windows.Forms.Button()
+        Me.linklblORBTradableInstruments = New System.Windows.Forms.LinkLabel()
+        Me.TableLayoutPanel5 = New System.Windows.Forms.TableLayoutPanel()
+        Me.pctrBxORB = New System.Windows.Forms.PictureBox()
+        Me.pnlORBBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
+        Me.lstORBLog = New System.Windows.Forms.ListBox()
+        Me.sfdgvORBMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -104,6 +119,14 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxStraddle, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.pnlStraddleBodyHorizontalSplitter.SuspendLayout()
         CType(Me.sfdgvStraddleMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabORB.SuspendLayout()
+        Me.pnlORBMainPanelHorizontalSplitter.SuspendLayout()
+        Me.TableLayoutPanel2.SuspendLayout()
+        Me.Panel3.SuspendLayout()
+        Me.TableLayoutPanel5.SuspendLayout()
+        CType(Me.pctrBxORB, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.pnlORBBodyHorizontalSplitter.SuspendLayout()
+        CType(Me.sfdgvORBMainDashboard, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'msMainMenuStrip
@@ -149,6 +172,7 @@ Partial Class frmMainTabbed
         Me.tabMain.Controls.Add(Me.tabNFO)
         Me.tabMain.Controls.Add(Me.tabStrangle)
         Me.tabMain.Controls.Add(Me.tabStraddle)
+        Me.tabMain.Controls.Add(Me.tabORB)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tabMain.Location = New System.Drawing.Point(0, 28)
         Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
@@ -808,6 +832,218 @@ Partial Class frmMainTabbed
         '
         Me.tmrStraddleTickerStatus.Enabled = True
         '
+        'tabORB
+        '
+        Me.tabORB.Controls.Add(Me.pnlORBMainPanelHorizontalSplitter)
+        Me.tabORB.Location = New System.Drawing.Point(4, 25)
+        Me.tabORB.Name = "tabORB"
+        Me.tabORB.Size = New System.Drawing.Size(1363, 693)
+        Me.tabORB.TabIndex = 3
+        Me.tabORB.Text = "ORB"
+        Me.tabORB.UseVisualStyleBackColor = True
+        '
+        'pnlORBMainPanelHorizontalSplitter
+        '
+        Me.pnlORBMainPanelHorizontalSplitter.ColumnCount = 1
+        Me.pnlORBMainPanelHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlORBMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel2, 0, 0)
+        Me.pnlORBMainPanelHorizontalSplitter.Controls.Add(Me.TableLayoutPanel5, 0, 1)
+        Me.pnlORBMainPanelHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlORBMainPanelHorizontalSplitter.Location = New System.Drawing.Point(0, 0)
+        Me.pnlORBMainPanelHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlORBMainPanelHorizontalSplitter.Name = "pnlORBMainPanelHorizontalSplitter"
+        Me.pnlORBMainPanelHorizontalSplitter.RowCount = 2
+        Me.pnlORBMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
+        Me.pnlORBMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
+        Me.pnlORBMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
+        Me.pnlORBMainPanelHorizontalSplitter.TabIndex = 3
+        '
+        'TableLayoutPanel2
+        '
+        Me.TableLayoutPanel2.ColumnCount = 15
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 16.70379!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 0.8166295!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 1.707498!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.741935!))
+        Me.TableLayoutPanel2.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 11.29032!))
+        Me.TableLayoutPanel2.Controls.Add(Me.btnORBStop, 0, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.btnORBStart, 0, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.Panel3, 14, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.btnORBSettings, 9, 0)
+        Me.TableLayoutPanel2.Controls.Add(Me.linklblORBTradableInstruments, 10, 0)
+        Me.TableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel2.Location = New System.Drawing.Point(4, 4)
+        Me.TableLayoutPanel2.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel2.Name = "TableLayoutPanel2"
+        Me.TableLayoutPanel2.RowCount = 1
+        Me.TableLayoutPanel2.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel2.Size = New System.Drawing.Size(1355, 40)
+        Me.TableLayoutPanel2.TabIndex = 0
+        '
+        'btnORBStop
+        '
+        Me.btnORBStop.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnORBStop.Location = New System.Drawing.Point(94, 4)
+        Me.btnORBStop.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnORBStop.Name = "btnORBStop"
+        Me.btnORBStop.Size = New System.Drawing.Size(82, 32)
+        Me.btnORBStop.TabIndex = 10
+        Me.btnORBStop.Text = "Stop"
+        Me.btnORBStop.UseVisualStyleBackColor = True
+        '
+        'btnORBStart
+        '
+        Me.btnORBStart.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnORBStart.Location = New System.Drawing.Point(4, 4)
+        Me.btnORBStart.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnORBStart.Name = "btnORBStart"
+        Me.btnORBStart.Size = New System.Drawing.Size(82, 32)
+        Me.btnORBStart.TabIndex = 2
+        Me.btnORBStart.Text = "Start"
+        Me.btnORBStart.UseVisualStyleBackColor = True
+        '
+        'Panel3
+        '
+        Me.Panel3.Controls.Add(Me.blbORBTickerStatus)
+        Me.Panel3.Controls.Add(Me.lblORBTickerStatus)
+        Me.Panel3.Location = New System.Drawing.Point(1201, 4)
+        Me.Panel3.Margin = New System.Windows.Forms.Padding(4)
+        Me.Panel3.Name = "Panel3"
+        Me.Panel3.Size = New System.Drawing.Size(147, 31)
+        Me.Panel3.TabIndex = 9
+        '
+        'blbORBTickerStatus
+        '
+        Me.blbORBTickerStatus.Color = System.Drawing.Color.Pink
+        Me.blbORBTickerStatus.Dock = System.Windows.Forms.DockStyle.Right
+        Me.blbORBTickerStatus.Location = New System.Drawing.Point(100, 0)
+        Me.blbORBTickerStatus.Margin = New System.Windows.Forms.Padding(4)
+        Me.blbORBTickerStatus.Name = "blbORBTickerStatus"
+        Me.blbORBTickerStatus.On = True
+        Me.blbORBTickerStatus.Size = New System.Drawing.Size(47, 31)
+        Me.blbORBTickerStatus.TabIndex = 7
+        Me.blbORBTickerStatus.Text = "LedBulb1"
+        '
+        'lblORBTickerStatus
+        '
+        Me.lblORBTickerStatus.AutoSize = True
+        Me.lblORBTickerStatus.Location = New System.Drawing.Point(9, 9)
+        Me.lblORBTickerStatus.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblORBTickerStatus.Name = "lblORBTickerStatus"
+        Me.lblORBTickerStatus.Size = New System.Drawing.Size(91, 17)
+        Me.lblORBTickerStatus.TabIndex = 9
+        Me.lblORBTickerStatus.Text = "Ticker Status"
+        '
+        'btnORBSettings
+        '
+        Me.btnORBSettings.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.btnORBSettings.Location = New System.Drawing.Point(814, 4)
+        Me.btnORBSettings.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnORBSettings.Name = "btnORBSettings"
+        Me.btnORBSettings.Size = New System.Drawing.Size(82, 32)
+        Me.btnORBSettings.TabIndex = 11
+        Me.btnORBSettings.Text = "Settings"
+        Me.btnORBSettings.UseVisualStyleBackColor = True
+        '
+        'linklblORBTradableInstruments
+        '
+        Me.linklblORBTradableInstruments.AutoSize = True
+        Me.linklblORBTradableInstruments.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.linklblORBTradableInstruments.Enabled = False
+        Me.linklblORBTradableInstruments.Location = New System.Drawing.Point(903, 0)
+        Me.linklblORBTradableInstruments.Name = "linklblORBTradableInstruments"
+        Me.linklblORBTradableInstruments.Size = New System.Drawing.Size(220, 40)
+        Me.linklblORBTradableInstruments.TabIndex = 12
+        Me.linklblORBTradableInstruments.TabStop = True
+        Me.linklblORBTradableInstruments.Text = "Tradable Instruments: 0"
+        Me.linklblORBTradableInstruments.TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        '
+        'TableLayoutPanel5
+        '
+        Me.TableLayoutPanel5.ColumnCount = 2
+        Me.TableLayoutPanel5.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.TableLayoutPanel5.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.TableLayoutPanel5.Controls.Add(Me.pctrBxORB, 0, 0)
+        Me.TableLayoutPanel5.Controls.Add(Me.pnlORBBodyHorizontalSplitter, 0, 0)
+        Me.TableLayoutPanel5.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.TableLayoutPanel5.Location = New System.Drawing.Point(4, 52)
+        Me.TableLayoutPanel5.Margin = New System.Windows.Forms.Padding(4)
+        Me.TableLayoutPanel5.Name = "TableLayoutPanel5"
+        Me.TableLayoutPanel5.RowCount = 1
+        Me.TableLayoutPanel5.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel5.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.TableLayoutPanel5.Size = New System.Drawing.Size(1355, 637)
+        Me.TableLayoutPanel5.TabIndex = 1
+        '
+        'pctrBxORB
+        '
+        Me.pctrBxORB.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pctrBxORB.Image = CType(resources.GetObject("pctrBxORB.Image"), System.Drawing.Image)
+        Me.pctrBxORB.Location = New System.Drawing.Point(951, 2)
+        Me.pctrBxORB.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.pctrBxORB.Name = "pctrBxORB"
+        Me.pctrBxORB.Size = New System.Drawing.Size(401, 633)
+        Me.pctrBxORB.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
+        Me.pctrBxORB.TabIndex = 2
+        Me.pctrBxORB.TabStop = False
+        '
+        'pnlORBBodyHorizontalSplitter
+        '
+        Me.pnlORBBodyHorizontalSplitter.ColumnCount = 1
+        Me.pnlORBBodyHorizontalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.pnlORBBodyHorizontalSplitter.Controls.Add(Me.lstORBLog, 0, 1)
+        Me.pnlORBBodyHorizontalSplitter.Controls.Add(Me.sfdgvORBMainDashboard, 0, 0)
+        Me.pnlORBBodyHorizontalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.pnlORBBodyHorizontalSplitter.Location = New System.Drawing.Point(4, 4)
+        Me.pnlORBBodyHorizontalSplitter.Margin = New System.Windows.Forms.Padding(4)
+        Me.pnlORBBodyHorizontalSplitter.Name = "pnlORBBodyHorizontalSplitter"
+        Me.pnlORBBodyHorizontalSplitter.RowCount = 2
+        Me.pnlORBBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
+        Me.pnlORBBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
+        Me.pnlORBBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 629)
+        Me.pnlORBBodyHorizontalSplitter.TabIndex = 0
+        '
+        'lstORBLog
+        '
+        Me.lstORBLog.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstORBLog.ForeColor = System.Drawing.Color.FromArgb(CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer), CType(CType(29, Byte), Integer))
+        Me.lstORBLog.FormattingEnabled = True
+        Me.lstORBLog.HorizontalScrollbar = True
+        Me.lstORBLog.ItemHeight = 16
+        Me.lstORBLog.Location = New System.Drawing.Point(4, 444)
+        Me.lstORBLog.Margin = New System.Windows.Forms.Padding(4)
+        Me.lstORBLog.Name = "lstORBLog"
+        Me.lstORBLog.Size = New System.Drawing.Size(932, 181)
+        Me.lstORBLog.TabIndex = 9
+        '
+        'sfdgvORBMainDashboard
+        '
+        Me.sfdgvORBMainDashboard.AccessibleName = "Table"
+        Me.sfdgvORBMainDashboard.AllowDraggingColumns = True
+        Me.sfdgvORBMainDashboard.AllowEditing = False
+        Me.sfdgvORBMainDashboard.AllowFiltering = True
+        Me.sfdgvORBMainDashboard.AllowResizingColumns = True
+        Me.sfdgvORBMainDashboard.AutoGenerateColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoGenerateColumnsMode.SmartReset
+        Me.sfdgvORBMainDashboard.AutoSizeColumnsMode = Syncfusion.WinForms.DataGrid.Enums.AutoSizeColumnsMode.AllCells
+        Me.sfdgvORBMainDashboard.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.sfdgvORBMainDashboard.Location = New System.Drawing.Point(4, 4)
+        Me.sfdgvORBMainDashboard.Margin = New System.Windows.Forms.Padding(4)
+        Me.sfdgvORBMainDashboard.Name = "sfdgvORBMainDashboard"
+        Me.sfdgvORBMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
+        Me.sfdgvORBMainDashboard.Size = New System.Drawing.Size(932, 432)
+        Me.sfdgvORBMainDashboard.TabIndex = 6
+        Me.sfdgvORBMainDashboard.Text = "SfDataGrid1"
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -854,6 +1090,16 @@ Partial Class frmMainTabbed
         CType(Me.pctrBxStraddle, System.ComponentModel.ISupportInitialize).EndInit()
         Me.pnlStraddleBodyHorizontalSplitter.ResumeLayout(False)
         CType(Me.sfdgvStraddleMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabORB.ResumeLayout(False)
+        Me.pnlORBMainPanelHorizontalSplitter.ResumeLayout(False)
+        Me.TableLayoutPanel2.ResumeLayout(False)
+        Me.TableLayoutPanel2.PerformLayout()
+        Me.Panel3.ResumeLayout(False)
+        Me.Panel3.PerformLayout()
+        Me.TableLayoutPanel5.ResumeLayout(False)
+        CType(Me.pctrBxORB, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.pnlORBBodyHorizontalSplitter.ResumeLayout(False)
+        CType(Me.sfdgvORBMainDashboard, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -913,4 +1159,19 @@ Partial Class frmMainTabbed
     Friend WithEvents lstStraddleLog As ListBox
     Friend WithEvents sfdgvStraddleMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrStraddleTickerStatus As Timer
+    Friend WithEvents tabORB As TabPage
+    Friend WithEvents pnlORBMainPanelHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents TableLayoutPanel2 As TableLayoutPanel
+    Friend WithEvents btnORBStop As Button
+    Friend WithEvents btnORBStart As Button
+    Friend WithEvents Panel3 As Panel
+    Friend WithEvents blbORBTickerStatus As Bulb.LedBulb
+    Friend WithEvents lblORBTickerStatus As Label
+    Friend WithEvents btnORBSettings As Button
+    Friend WithEvents linklblORBTradableInstruments As LinkLabel
+    Friend WithEvents TableLayoutPanel5 As TableLayoutPanel
+    Friend WithEvents pctrBxORB As PictureBox
+    Friend WithEvents pnlORBBodyHorizontalSplitter As TableLayoutPanel
+    Friend WithEvents lstORBLog As ListBox
+    Friend WithEvents sfdgvORBMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
 End Class

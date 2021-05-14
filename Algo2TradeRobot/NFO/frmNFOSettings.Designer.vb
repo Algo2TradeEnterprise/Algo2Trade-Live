@@ -286,7 +286,7 @@ Partial Class frmNFOSettings
         Me.MinimizeBox = False
         Me.Name = "frmNFOSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Settings"
+        Me.Text = "Algo2Trade Settings"
         Me.grpSupertrend.ResumeLayout(False)
         Me.grpSupertrend.PerformLayout()
         Me.grpSettings.ResumeLayout(False)

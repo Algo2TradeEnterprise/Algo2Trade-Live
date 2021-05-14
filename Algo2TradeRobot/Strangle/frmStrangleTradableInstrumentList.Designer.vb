@@ -84,7 +84,7 @@ Partial Class frmStrangleTradableInstrumentList
         Me.MinimizeBox = False
         Me.Name = "frmStrangleTradableInstrumentList"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Strategy Tradable InstrumentList"
+        Me.Text = "Strangle Strategy Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 

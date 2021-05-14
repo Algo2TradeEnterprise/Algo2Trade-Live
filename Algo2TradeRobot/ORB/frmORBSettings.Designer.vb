@@ -1,5 +1,5 @@
 ﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
-Partial Class frmStrangleSettings
+Partial Class frmORBSettings
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
@@ -23,7 +23,7 @@ Partial Class frmStrangleSettings
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmStrangleSettings))
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmORBSettings))
         Me.dtpckrEODExitTime = New System.Windows.Forms.DateTimePicker()
         Me.lblEODExitTime = New System.Windows.Forms.Label()
         Me.dtpckrLastTradeEntryTime = New System.Windows.Forms.DateTimePicker()
@@ -173,12 +173,12 @@ Partial Class frmStrangleSettings
         Me.grpSettings.Controls.Add(Me.btnBrowse)
         Me.grpSettings.Controls.Add(Me.txtInstrumentDetalis)
         Me.grpSettings.Controls.Add(Me.lblInstrumentDetails)
-        Me.grpSettings.Location = New System.Drawing.Point(5, 2)
+        Me.grpSettings.Location = New System.Drawing.Point(5, 4)
         Me.grpSettings.Margin = New System.Windows.Forms.Padding(4)
         Me.grpSettings.Name = "grpSettings"
         Me.grpSettings.Padding = New System.Windows.Forms.Padding(4)
         Me.grpSettings.Size = New System.Drawing.Size(451, 179)
-        Me.grpSettings.TabIndex = 4
+        Me.grpSettings.TabIndex = 8
         Me.grpSettings.TabStop = False
         '
         'btnSave
@@ -186,16 +186,16 @@ Partial Class frmStrangleSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(464, 7)
+        Me.btnSave.Location = New System.Drawing.Point(464, 9)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
-        Me.btnSave.TabIndex = 3
+        Me.btnSave.TabIndex = 7
         Me.btnSave.Text = "&Save"
         Me.btnSave.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         Me.btnSave.UseVisualStyleBackColor = True
         '
-        'frmStrangleSettings
+        'frmORBSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
@@ -205,9 +205,8 @@ Partial Class frmStrangleSettings
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
         Me.MinimizeBox = False
-        Me.Name = "frmStrangleSettings"
-        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Strangle Settings"
+        Me.Name = "frmORBSettings"
+        Me.Text = "ORB Settings"
         Me.grpSettings.ResumeLayout(False)
         Me.grpSettings.PerformLayout()
         Me.ResumeLayout(False)

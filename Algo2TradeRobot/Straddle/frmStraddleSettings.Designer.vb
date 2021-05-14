@@ -207,7 +207,7 @@ Partial Class frmStraddleSettings
         Me.MinimizeBox = False
         Me.Name = "frmStraddleSettings"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Settings"
+        Me.Text = "Straddle Settings"
         Me.grpSettings.ResumeLayout(False)
         Me.grpSettings.PerformLayout()
         Me.ResumeLayout(False)

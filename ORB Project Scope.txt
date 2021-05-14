@@ -1,0 +1,35 @@
+Name of Scheme	ORB
+
+
+Operation	Intraday
+
+Variables required on screen for each instrument
+1.	Distance in terms of points
+2.	Super trend setting options and time period for chart
+3.	Time X for first candle (e.g. 09.25 OR first candle duration in minutes)
+4.	No of lots
+
+Instruments	NIFTY spot, BANKNIFTY spot, and related ATM options
+
+Trading Days	All
+
+Strike rate	Based on Nifty/ Bank nifty High for bullish view or low for bearish view @ X. Select ATM strike rounded to nearest 50
+
+Entry	
+
+When underlying current price crosses ( High/ low of first candle Spot Nifty/ Bank nifty @ X time + distance).
+	When price crosses high + distance, sell PE
+When Price crosses low + distance, sell CE
+
+Stop Loss	
+Select lowest values of….
+
+1.	Entry price + 40%
+2.	Entry Price + (first candle high- first candle low) * 0.5
+3.	ST stop loss when chart colour is red
+
+Exit	Exit based on stop loss. Re-enter only once in opposite direction of first candle of underlying
+
+Order	All orders at market price
+
+Force Exit	All open position at 3.00 PM
