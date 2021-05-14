@@ -372,11 +372,34 @@ Public Class StraddleStrategyInstrument
             Else
                 If IsOpenInstrument() Then
                     If forcePrint Then OnHeartbeat(String.Format("***** Current Time({0}) > EOD Exit Time({1}). So it will place exit order.", currentTime.ToString("HH:mm:ss"), userSettings.EODExitTime.ToString("HH:mm:ss")))
-                    parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
-                            {.EntryDirection = IOrder.TypeOfTransaction.Buy,
-                             .Quantity = quantity,
-                             .OrderType = IOrder.TypeOfOrder.Market,
-                             .Supporting = New List(Of Object) From {"EOD Exit"}}
+
+                    Dim openQuantity As Integer = 0
+                    For Each runningOrder In Me.OrderDetails
+                        If runningOrder.Value.ParentOrder IsNot Nothing Then
+                            If runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
+                                runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
+                                If runningOrder.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
+                                    openQuantity += Math.Abs(runningOrder.Value.ParentOrder.Quantity)
+                                ElseIf runningOrder.Value.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
+                                    openQuantity -= Math.Abs(runningOrder.Value.ParentOrder.Quantity)
+                                End If
+                            End If
+                        End If
+                    Next
+
+                    If openQuantity > 0 Then
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                    {.EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                     .Quantity = Math.Abs(openQuantity),
+                                     .OrderType = IOrder.TypeOfOrder.Market,
+                                     .Supporting = New List(Of Object) From {"EOD Exit"}}
+                    ElseIf openQuantity < 0 Then
+                        parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                    {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                     .Quantity = Math.Abs(openQuantity),
+                                     .OrderType = IOrder.TypeOfOrder.Market,
+                                     .Supporting = New List(Of Object) From {"EOD Exit"}}
+                    End If
                 End If
             End If
         End If
