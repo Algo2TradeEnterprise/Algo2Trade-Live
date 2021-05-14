@@ -75,9 +75,6 @@ Partial Class frmMainTabbed
         Me.pnlStraddleBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstStraddleLog = New System.Windows.Forms.ListBox()
         Me.sfdgvStraddleMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
-        Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
-        Me.tmrStraddleTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tabORB = New System.Windows.Forms.TabPage()
         Me.pnlORBMainPanelHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.TableLayoutPanel2 = New System.Windows.Forms.TableLayoutPanel()
@@ -93,6 +90,10 @@ Partial Class frmMainTabbed
         Me.pnlORBBodyHorizontalSplitter = New System.Windows.Forms.TableLayoutPanel()
         Me.lstORBLog = New System.Windows.Forms.ListBox()
         Me.sfdgvORBMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
+        Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrStrangleTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrStraddleTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.tmrORBTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -757,7 +758,7 @@ Partial Class frmMainTabbed
         Me.TableLayoutPanel4.Name = "TableLayoutPanel4"
         Me.TableLayoutPanel4.RowCount = 1
         Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.TableLayoutPanel4.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 637.0!))
         Me.TableLayoutPanel4.Size = New System.Drawing.Size(1355, 637)
         Me.TableLayoutPanel4.TabIndex = 1
         '
@@ -819,18 +820,6 @@ Partial Class frmMainTabbed
         Me.sfdgvStraddleMainDashboard.Size = New System.Drawing.Size(932, 432)
         Me.sfdgvStraddleMainDashboard.TabIndex = 6
         Me.sfdgvStraddleMainDashboard.Text = "SfDataGrid1"
-        '
-        'tmrNFOTickerStatus
-        '
-        Me.tmrNFOTickerStatus.Enabled = True
-        '
-        'tmrStrangleTickerStatus
-        '
-        Me.tmrStrangleTickerStatus.Enabled = True
-        '
-        'tmrStraddleTickerStatus
-        '
-        Me.tmrStraddleTickerStatus.Enabled = True
         '
         'tabORB
         '
@@ -1044,6 +1033,22 @@ Partial Class frmMainTabbed
         Me.sfdgvORBMainDashboard.TabIndex = 6
         Me.sfdgvORBMainDashboard.Text = "SfDataGrid1"
         '
+        'tmrNFOTickerStatus
+        '
+        Me.tmrNFOTickerStatus.Enabled = True
+        '
+        'tmrStrangleTickerStatus
+        '
+        Me.tmrStrangleTickerStatus.Enabled = True
+        '
+        'tmrStraddleTickerStatus
+        '
+        Me.tmrStraddleTickerStatus.Enabled = True
+        '
+        'tmrORBTickerStatus
+        '
+        Me.tmrORBTickerStatus.Enabled = True
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -1174,4 +1179,5 @@ Partial Class frmMainTabbed
     Friend WithEvents pnlORBBodyHorizontalSplitter As TableLayoutPanel
     Friend WithEvents lstORBLog As ListBox
     Friend WithEvents sfdgvORBMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
+    Friend WithEvents tmrORBTickerStatus As Timer
 End Class

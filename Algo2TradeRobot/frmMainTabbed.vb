@@ -333,7 +333,7 @@ Public Class frmMainTabbed
                 Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
             End If
 
-            OnHeartbeat("Validating user settings")
+            OnHeartbeat("Validating Algo2Trade user settings")
             If File.Exists(NFOUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(NFOUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -621,7 +621,7 @@ Public Class frmMainTabbed
                 Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
             End If
 
-            OnHeartbeat("Validating stangle user settings")
+            OnHeartbeat("Validating Strangle user settings")
             If File.Exists(StrangleUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(StrangleUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -915,7 +915,7 @@ Public Class frmMainTabbed
                 Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
             End If
 
-            OnHeartbeat("Validating staddle user settings")
+            OnHeartbeat("Validating Straddle user settings")
             If File.Exists(StraddleUserInputs.SettingsFileName) Then
                 Dim fs As Stream = New FileStream(StraddleUserInputs.SettingsFileName, FileMode.Open)
                 Dim bf As BinaryFormatter = New BinaryFormatter()
@@ -1173,6 +1173,300 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
+#Region "ORB"
+    Private _orbStrategyRunning As Boolean = False
+    Private _orbUserInputs As ORBUserInputs = Nothing
+    Private _orbDashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _orbTradableInstruments As IEnumerable(Of ORBStrategyInstrument) = Nothing
+    Private _orbStrategyToExecute As ORBStrategy = Nothing
+    Private Sub sfdgvORBMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvORBMainDashboard.FilterPopupShowing
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(ORBStrategy))
+    End Sub
+    Private Sub sfdgvORBMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvORBMainDashboard.AutoGeneratingColumn
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(ORBStrategy))
+    End Sub
+    Private Async Function ORBWorkerAsync() As Task
+        'If GetObjectText_ThreadSafe(btnorbStart) = Common.LOGIN_PENDING Then
+        '    MsgBox("Cannot start as another strategy is loggin in")
+        '    Exit Function
+        'End If
+
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
+        _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
+
+        Try
+            EnableDisableUIEx(UIMode.Active, GetType(ORBStrategy))
+            While GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+            EnableDisableUIEx(UIMode.BlockOther, GetType(ORBStrategy))
+
+            If _commonControllerUserInput IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays.Count > 0 AndAlso
+                Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
+                Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
+            End If
+
+            OnHeartbeat("Validating ORB user settings")
+            If File.Exists(ORBUserInputs.SettingsFileName) Then
+                Dim fs As Stream = New FileStream(ORBUserInputs.SettingsFileName, FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _orbUserInputs = CType(bf.Deserialize(fs), ORBUserInputs)
+                fs.Close()
+                _orbUserInputs.InstrumentsData = Nothing
+                _orbUserInputs.FillInstrumentDetails(_orbUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
+            logger.Debug(Utilities.Strings.JsonSerialize(_orbUserInputs))
+
+            If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
+            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
+
+            If _commonController IsNot Nothing Then
+                _commonController.RefreshCancellationToken(_cts)
+            Else
+                _commonController = New AliceStrategyController(currentUser, _commonControllerUserInput, _cts)
+
+                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+                RemoveHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
+
+                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                AddHandler _commonController.TickerError, AddressOf OnTickerError
+                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+                AddHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
+
+                Dim currentAssembly As Assembly = Assembly.GetExecutingAssembly()
+                Dim attribute As GuidAttribute = currentAssembly.GetCustomAttributes(GetType(GuidAttribute), True)(0)
+                Dim toolID As String = attribute.Value
+                Dim toolRunning As Boolean = Await _commonController.IsToolRunning(toolID).ConfigureAwait(False)
+                If Not toolRunning Then Throw New ApplicationException("You version is expired. Please contact Algo2Trade.")
+
+#Region "Login"
+                Dim loginMessage As String = Nothing
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Nothing
+                    loginMessage = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Alice API")
+                        _cts.Token.ThrowIfCancellationRequested()
+                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch cx As OperationCanceledException
+                        loginMessage = cx.Message
+                        logger.Error(cx)
+                        Exit While
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If _connection Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Alice API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Alice API could be established")
+                    End If
+                End If
+#End Region
+
+                OnHeartbeat("Completing all pre-automation requirements")
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync(False).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
+                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+            End If 'Common controller
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(ORBStrategy))
+
+            Dim maxTF As Integer = 1
+            If _orbUserInputs.InstrumentsData IsNot Nothing AndAlso _orbUserInputs.InstrumentsData.Count > 0 Then
+                maxTF = _orbUserInputs.InstrumentsData.Max(Function(x)
+                                                               Return x.Value.Timeframe
+                                                           End Function)
+            End If
+            Dim numberOfDayForHistorical As Integer = 8
+            Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / maxTF)
+            Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
+            numberOfDayForHistorical = Math.Max(numberOfDayForHistorical, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
+
+            _orbStrategyToExecute = New ORBStrategy(_commonController, 3, _orbUserInputs, numberOfDayForHistorical, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", _orbStrategyToExecute.ToString), New List(Of Object) From {_orbStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.SubscribeStrategyAsync(_orbStrategyToExecute).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _orbTradableInstruments = _orbStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblORBTradableInstruments, String.Format("Tradable Instruments"))
+            SetObjectEnableDisable_ThreadSafe(linklblORBTradableInstruments, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _orbDashboadList = New BindingList(Of ActivityDashboard)(_orbStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                            Return x.EntryRequestTime
+                                                                                                                                        End Function).ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, _orbDashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvORBMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Await _orbStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                GenerateTelegramMessageAsync(aex.Message)
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            OnHeartbeat(fex.Message)
+            _lastException = fex
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            GenerateTelegramMessageAsync(cx.Message)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            GenerateTelegramMessageAsync(ex.Message)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+            SetObjectText_ThreadSafe(linklblORBTradableInstruments, String.Format("Tradable Instruments: {0}", 0))
+            SetObjectEnableDisable_ThreadSafe(linklblORBTradableInstruments, False)
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(ORBStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(ORBStrategy))
+        End Try
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and iorbrmation collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
+    End Function
+    Private Async Sub btnORBStart_Click(sender As Object, e As EventArgs) Handles btnORBStart.Click
+        logger.Debug("ORB Button Start Clicked")
+        Dim authenticationUserId As String = "269468"
+        If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
+            Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
+            (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+            MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            Exit Sub
+        End If
+
+        PreviousDayCleanup(False)
+        Await Task.Run(AddressOf ORBWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            SetObjectEnableDisable_ThreadSafe(btnORBStart, False)
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnORBStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
+                    Debug.WriteLine("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
+                    logger.Debug("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
+                    Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
+                    Debug.WriteLine("Restart for idle state end")
+                    logger.Debug("Restarting the application again for idle state end")
+                    btnORBStart_Click(sender, e)
+                ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
+                    Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
+                    Debug.WriteLine("Restart for non trading day end")
+                    logger.Debug("Restarting the application again for non trading day end")
+                    btnORBStart_Click(sender, e)
+                Else
+                    Debug.WriteLine("Restart for daily refresh")
+                    logger.Debug("Restarting the application again for daily refresh")
+                    PreviousDayCleanup(True)
+                    btnORBStart_Click(sender, e)
+                End If
+            End If
+        End If
+    End Sub
+    Private Sub tmrORBTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrORBTickerStatus.Tick
+        FlashTickerBulbEx(GetType(ORBStrategy))
+    End Sub
+    Private Async Sub btnORBStop_Click(sender As Object, e As EventArgs) Handles btnORBStop.Click
+        logger.Debug("ORB Button Stop Clicked")
+        OnEndOfTheDay(_orbStrategyToExecute)
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+    Private Sub btnORBSettings_Click(sender As Object, e As EventArgs) Handles btnORBSettings.Click
+        Dim newForm As New frmORBSettings(_orbUserInputs, _orbStrategyRunning)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblORBTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblORBTradableInstruments.LinkClicked
+        Dim newForm As New frmORBTradableInstrumentList(_orbTradableInstruments)
+        newForm.ShowDialog()
+    End Sub
+#End Region
+
 #Region "Common to all stratgeies"
 
 #Region "EX function"
@@ -1199,6 +1493,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStraddleStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnStraddleStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnStrangleStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnStrangleStart, "Start")
@@ -1207,6 +1505,10 @@ Public Class frmMainTabbed
                     If GetObjectText_ThreadSafe(btnStraddleStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnStraddleStart, "Start")
                         SetObjectText_ThreadSafe(btnStraddleStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnORBStart, "Start")
+                        SetObjectText_ThreadSafe(btnORBStop, "Stop")
                     End If
                 Case UIMode.Idle
                     _nfoStrategyRunning = False
@@ -1229,6 +1531,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStraddleStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnStraddleStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnNFOStart, "Start")
@@ -1237,6 +1543,10 @@ Public Class frmMainTabbed
                     If GetObjectText_ThreadSafe(btnStraddleStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnStraddleStart, "Start")
                         SetObjectText_ThreadSafe(btnStraddleStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnORBStart, "Start")
+                        SetObjectText_ThreadSafe(btnORBStop, "Stop")
                     End If
                 Case UIMode.Idle
                     _strangleStrategyRunning = False
@@ -1247,7 +1557,7 @@ Public Class frmMainTabbed
         ElseIf source Is GetType(StraddleStrategy) Then
             Select Case mode
                 Case UIMode.Active
-                    _strangleStrategyRunning = True
+                    _straddleStrategyRunning = True
                     SetObjectEnableDisable_ThreadSafe(btnStraddleStart, False)
                     SetObjectEnableDisable_ThreadSafe(btnStraddleStop, True)
                 Case UIMode.BlockOther
@@ -1259,6 +1569,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStrangleStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnStrangleStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnNFOStart, "Start")
@@ -1268,14 +1582,56 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStrangleStart, "Start")
                         SetObjectText_ThreadSafe(btnStrangleStop, "Stop")
                     End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnORBStart, "Start")
+                        SetObjectText_ThreadSafe(btnORBStop, "Stop")
+                    End If
                 Case UIMode.Idle
-                    _strangleStrategyRunning = False
+                    _straddleStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnStraddleStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnStraddleStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvStraddleMainDashboard, Nothing)
             End Select
+        ElseIf source Is GetType(ORBStrategy) Then
+            Select Case mode
+                Case UIMode.Active
+                    _orbStrategyRunning = True
+                    SetObjectEnableDisable_ThreadSafe(btnORBStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnORBStop, True)
+                Case UIMode.BlockOther
+                    If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnNFOStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnStrangleStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnStrangleStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnStrangleStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnStraddleStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnStraddleStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnStraddleStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.ReleaseOther
+                    If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnNFOStart, "Start")
+                        SetObjectText_ThreadSafe(btnNFOStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnStrangleStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnStrangleStart, "Start")
+                        SetObjectText_ThreadSafe(btnStrangleStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnStraddleStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnStraddleStart, "Start")
+                        SetObjectText_ThreadSafe(btnStraddleStop, "Stop")
+                    End If
+                Case UIMode.Idle
+                    _orbStrategyRunning = False
+                    SetObjectEnableDisable_ThreadSafe(btnORBStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnORBStop, False)
+                    SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, Nothing)
+            End Select
         End If
-        _toolRunning = _nfoStrategyRunning
+        _toolRunning = _nfoStrategyRunning OrElse _strangleStrategyRunning OrElse _straddleStrategyRunning OrElse _orbStrategyRunning
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
@@ -1289,6 +1645,9 @@ Public Class frmMainTabbed
         ElseIf source Is GetType(StraddleStrategy) Then
             blbTickerStatusCommon = blbStraddleTickerStatus
             tmrTickerStatusCommon = tmrStraddleTickerStatus
+        ElseIf source Is GetType(ORBStrategy) Then
+            blbTickerStatusCommon = blbORBTickerStatus
+            tmrTickerStatusCommon = tmrORBTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
@@ -1310,6 +1669,8 @@ Public Class frmMainTabbed
             blbTickerStatusCommon = blbStrangleTickerStatus
         ElseIf source Is GetType(StraddleStrategy) Then
             blbTickerStatusCommon = blbStraddleTickerStatus
+        ElseIf source Is GetType(ORBStrategy) Then
+            blbTickerStatusCommon = blbORBTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -1327,6 +1688,8 @@ Public Class frmMainTabbed
             sfdgvCommon = sfdgvStrangleMainDashboard
         ElseIf source Is GetType(StraddleStrategy) Then
             sfdgvCommon = sfdgvStraddleMainDashboard
+        ElseIf source Is GetType(ORBStrategy) Then
+            sfdgvCommon = sfdgvORBMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
@@ -1388,12 +1751,18 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstStraddleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
+        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(ORBStrategy) Then
+            Select Case mode
+                Case LogMode.One
+                    SetListAddItem_ThreadSafe(lstORBLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
                     SetListAddItem_ThreadSafe(lstNFOLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstStrangleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstStraddleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstORBLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1456,6 +1825,13 @@ Public Class frmMainTabbed
                     If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
                 End If
             Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.ORB.a2t")
+                If deleteAll Then
+                    File.Delete(runningFile)
+                Else
+                    If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+                End If
+            Next
         Catch ex As Exception
             logger.Error(ex)
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
@@ -1503,6 +1879,7 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(NFOStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(StrangleStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(StraddleStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(ORBStrategy))
 
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
@@ -1513,20 +1890,26 @@ Public Class frmMainTabbed
         pnlStraddleBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlStraddleBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
+        pnlORBBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
+        pnlORBBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
+
         'tabMain.TabPages.Remove(tabNFO)
         'tabMain.TabPages.Remove(tabStrangle)
         'tabMain.TabPages.Remove(tabStraddle)
+        'tabMain.TabPages.Remove(tabORB)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(ORBStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(ORBStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
@@ -1534,6 +1917,7 @@ Public Class frmMainTabbed
             ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(StrangleStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(StraddleStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(ORBStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1546,6 +1930,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(ORBStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
@@ -1598,6 +1983,8 @@ Public Class frmMainTabbed
                     BindingListAdd_ThreadSafe(_strangleDashboadList, item)
                 Case GetType(StraddleStrategy)
                     BindingListAdd_ThreadSafe(_straddleDashboadList, item)
+                Case GetType(ORBStrategy)
+                    BindingListAdd_ThreadSafe(_orbDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
@@ -1623,6 +2010,12 @@ Public Class frmMainTabbed
                 _straddleDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
                 SetSFGridDataBind_ThreadSafe(sfdgvStraddleMainDashboard, _straddleDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvStraddleMainDashboard)
+            Case GetType(ORBStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, Nothing)
+                _orbDashboadList = Nothing
+                _orbDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, _orbDashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvORBMainDashboard)
             Case Else
                 Throw New NotImplementedException
         End Select
@@ -1636,6 +2029,8 @@ Public Class frmMainTabbed
                     ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("Strangle Order Book.csv")))
                 Case GetType(StraddleStrategy)
                     ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("Straddle Order Book.csv")))
+                Case GetType(ORBStrategy)
+                    ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("ORB Order Book.csv")))
                 Case Else
                     Throw New NotImplementedException
             End Select
