@@ -74,9 +74,9 @@ Public Class ORBStrategyInstrument
             _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier)
         End If
 
-        If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options Then
-            Me.TradableInstrument.FetchHistorical = False
-        End If
+        'If Me.TradableInstrument.InstrumentType = IInstrument.TypeOfInstrument.Options Then
+        '    Me.TradableInstrument.FetchHistorical = False
+        'End If
         Me.TakeTrade = False
         Me.StopInstrument = False
 
@@ -168,7 +168,7 @@ Public Class ORBStrategyInstrument
                                                                                       End Function).FirstOrDefault
 
                             ceStrategyInstrument = _myOptionStrategyInstruments.Where(Function(x)
-                                                                                          Return x.TradableInstrument.Strike = lowPrice AndAlso
+                                                                                          Return x.TradableInstrument.Strike = lowATM AndAlso
                                                                                                 x.TradableInstrument.RawInstrumentType = "CE"
                                                                                       End Function).FirstOrDefault
 
@@ -185,8 +185,8 @@ Public Class ORBStrategyInstrument
                                    runningStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper = ceStrategyInstrument.TradableInstrument.TradingSymbol.ToUpper Then
                                     runningStrategyInstrument.TradableInstrument.FetchHistorical = True
                                 Else
-                                    CType(runningStrategyInstrument, StraddleStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
-                                    CType(runningStrategyInstrument, StraddleStrategyInstrument).StopInstrument = True
+                                    CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrumentReason = "+++ Not an ATM instrument"
+                                    CType(runningStrategyInstrument, ORBStrategyInstrument).StopInstrument = True
                                 End If
                             Next
 
@@ -308,7 +308,7 @@ Public Class ORBStrategyInstrument
                     _lastPrevPayloadPlaceOrder = runningCandlePayload.PreviousPayload.ToString
                     log = True
                     logger.Debug("PlaceOrder-> Potential Signal Candle is:{0}. Will check rest parameters.", runningCandlePayload.PreviousPayload.ToString)
-                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Take Trade:{8}, Open Instrument:{9}, TradingSymbol:{10}",
+                    logger.Debug("PlaceOrder-> Rest all parameters: RunningCandleTime:{0}, PayloadGeneratedBy:{1}, IsHistoricalCompleted:{2}, IsFirstTimeInformationCollected:{3}, Supertrend Color:{4}, Exchange Start Time:{5}, Exchange End Time:{6}, Current Time:{7}, Take Trade:{8}, Open Instrument:{9}, Valid Trade Placed:{10}, TradingSymbol:{11}",
                                 runningCandlePayload.SnapshotDateTime.ToString,
                                 runningCandlePayload.PayloadGeneratedBy.ToString,
                                 Me.TradableInstrument.IsHistoricalCompleted,
@@ -319,6 +319,7 @@ Public Class ORBStrategyInstrument
                                 Now.ToString("dd-MMM-yyyy HH:mm:ss"),
                                 Me.TakeTrade,
                                 IsOpenInstrument(),
+                                IsValidTradePlaced(),
                                 Me.TradableInstrument.TradingSymbol)
                 End If
             End If
@@ -335,7 +336,7 @@ Public Class ORBStrategyInstrument
             Dim quantity As Integer = Me.TradableInstrument.LotSize * Me.MyParentInstrumentDetails.NumberOfLots
             If currentTime <= userSettings.EODExitTime Then
                 If Not IsOpenInstrument() Then
-                    If currentTime <= userSettings.LastTradeEntryTime Then
+                    If currentTime <= userSettings.LastTradeEntryTime AndAlso Not IsValidTradePlaced() Then
                         If forcePrint Then OnHeartbeat("***** Spot LTP crosees high/Low distance. So it will place entry order.")
                         parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Sell,
@@ -357,20 +358,34 @@ Public Class ORBStrategyInstrument
 
                         Dim stoploss1 As Decimal = entryOrder.AveragePrice + entryOrder.AveragePrice * 40 / 100
                         Dim stoploss2 As Decimal = entryOrder.AveragePrice + (Me.MyParentInstrumentHigh - Me.MyParentInstrumentLow) * 0.5
-                        Dim stoploss3 As Decimal = Decimal.MaxValue
-                        If supertrendColor = Color.Red Then stoploss3 = supertrend
 
-                        Dim finalStoploss As Decimal = Math.Min(stoploss1, Math.Min(stoploss2, stoploss3))
+                        Dim preSupertrendColor As Color = Color.White
+                        If runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso
+                            stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
+                            preSupertrendColor = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
+                        End If
 
-                        If currentTick.LastPrice > finalStoploss Then
-                            If forcePrint Then OnHeartbeat("***** Supertrend Color:Green. So it will place exit order.")
+                        If currentTick.LastPrice > stoploss1 Then
+                            If forcePrint Then OnHeartbeat(String.Format("***** LTP({0})>=SL1({1}). So it will place exit order.", currentTick.LastPrice, stoploss1))
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                 .Quantity = quantity,
+                                 .OrderType = IOrder.TypeOfOrder.Market}
+                        ElseIf currentTick.LastPrice > stoploss2 Then
+                            If forcePrint Then OnHeartbeat(String.Format("***** LTP({0})>=SL2({1}). So it will place exit order.", currentTick.LastPrice, stoploss2))
+                            parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
+                                {.EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                 .Quantity = quantity,
+                                 .OrderType = IOrder.TypeOfOrder.Market}
+                        ElseIf preSupertrendColor = Color.Red AndAlso supertrendColor = Color.Green AndAlso entryOrder.TimeStamp >= runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime Then
+                            If forcePrint Then OnHeartbeat(String.Format("***** ST Color:{0}, Pre ST Color:{1}. So it will place exit order.", supertrendColor.Name, preSupertrendColor.Name))
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
                                  .OrderType = IOrder.TypeOfOrder.Market}
                         Else
-                            If log Then OnHeartbeat(String.Format("Entry Price:{0}. SL1:{1}, SL2:{2}, SL3:{3}(ST Color:{4}). So SL:{5}, Price:{6}. So it will not place exit order",
-                                                                  entryOrder.AveragePrice, stoploss1, stoploss2, If(stoploss3 = Decimal.MaxValue, "Max", stoploss3), supertrendColor.Name, finalStoploss, currentTick.LastPrice))
+                            If log Then OnHeartbeat(String.Format("Entry Price:{0}. SL1:{1}, SL2:{2}, ST Color:{3}, Pre ST Color:{4}, Entry Time:{5}. LTP:{6}, Close Price:{7}. So it will not place exit order",
+                                                                  entryOrder.AveragePrice, stoploss1, stoploss2, supertrendColor.Name, preSupertrendColor.Name, entryOrder.TimeStamp.ToString("dd-MM-yyyy HH:mm:ss"), currentTick.LastPrice, runningCandlePayload.PreviousPayload.ClosePrice.Value))
                         End If
                     End If
                 End If
@@ -543,6 +558,22 @@ Public Class ORBStrategyInstrument
             Next
 
             ret = totalTraded <> 0
+        End If
+        Return ret
+    End Function
+
+    Private Function IsValidTradePlaced() As Boolean
+        Dim ret As Boolean = False
+        If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.Count > 0 Then
+            For Each runningOrder In Me.OrderDetails
+                If runningOrder.Value.ParentOrder IsNot Nothing Then
+                    If runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Rejected AndAlso
+                        runningOrder.Value.ParentOrder.Status <> IOrder.TypeOfStatus.Cancelled Then
+                        ret = True
+                        Exit For
+                    End If
+                End If
+            Next
         End If
         Return ret
     End Function

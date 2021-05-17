@@ -1893,9 +1893,9 @@ Public Class frmMainTabbed
         pnlORBBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlORBBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
-        'tabMain.TabPages.Remove(tabNFO)
-        'tabMain.TabPages.Remove(tabStrangle)
-        'tabMain.TabPages.Remove(tabStraddle)
+        tabMain.TabPages.Remove(tabNFO)
+        tabMain.TabPages.Remove(tabStrangle)
+        tabMain.TabPages.Remove(tabStraddle)
         'tabMain.TabPages.Remove(tabORB)
     End Sub
     Private Sub OnTickerClose()

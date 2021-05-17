@@ -183,6 +183,7 @@ Partial Class frmORBSettings
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmORBSettings"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "ORB Settings"
         Me.grpSettings.ResumeLayout(False)
         Me.grpSettings.PerformLayout()

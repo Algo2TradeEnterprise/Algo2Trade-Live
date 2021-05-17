@@ -83,6 +83,7 @@ Partial Class frmORBTradableInstrumentList
         Me.MaximizeBox = False
         Me.MinimizeBox = False
         Me.Name = "frmORBTradableInstrumentList"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "ORB Strategy Tradable Instruments"
         CType(Me.dgvTradableInstruments, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)

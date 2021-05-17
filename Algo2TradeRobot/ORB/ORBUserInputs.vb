@@ -43,14 +43,14 @@ Public Class ORBUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER", ",FIRST CANDLE TIME", "DISTANCE"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER", "FIRST CANDLE TIME", "DISTANCE"}
 
                         For colCtr = 0 To 6
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
                                 If Not excelColumnList.Contains(Trim(instrumentDetails(0, colCtr).ToString.ToUpper)) Then
-                                    Throw New ApplicationException(String.Format("Invalid format or invalid column at ColumnNumber: {0}", colCtr))
+                                    Throw New ApplicationException(String.Format("Invalid format or invalid column at ColumnNumber: {0}", colCtr + 1))
                                 End If
                             End If
                         Next
