@@ -1,2 +1,2 @@
-Instrument Name,Number Of Lots,Timeframe,Supertrend Period,Supertrend Multiplier,First Candle Time,Distance
-NIFTY 50,1,1,7,3,09:16,10
+Instrument Name,Number Of Lots,Timeframe,Supertrend Period,Supertrend Multiplier,First Candle Time,Distance,Stoploss %,Delta
+NIFTY 50,1,1,7,3,09:16,10,40,0.5

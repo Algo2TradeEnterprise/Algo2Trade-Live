@@ -356,8 +356,8 @@ Public Class ORBStrategyInstrument
                                                                                      Return y.Value.ParentOrder.TimeStamp
                                                                                  End Function).FirstOrDefault.Value.ParentOrder
 
-                        Dim stoploss1 As Decimal = entryOrder.AveragePrice + entryOrder.AveragePrice * 40 / 100
-                        Dim stoploss2 As Decimal = entryOrder.AveragePrice + (Me.MyParentInstrumentHigh - Me.MyParentInstrumentLow) * 0.5
+                        Dim stoploss1 As Decimal = entryOrder.AveragePrice + entryOrder.AveragePrice * Me.MyParentInstrumentDetails.StoplossPercentage / 100
+                        Dim stoploss2 As Decimal = entryOrder.AveragePrice + (Me.MyParentInstrumentHigh - Me.MyParentInstrumentLow) * Me.MyParentInstrumentDetails.Delta
 
                         Dim preSupertrendColor As Color = Color.White
                         If runningCandlePayload.PreviousPayload.PreviousPayload IsNot Nothing AndAlso

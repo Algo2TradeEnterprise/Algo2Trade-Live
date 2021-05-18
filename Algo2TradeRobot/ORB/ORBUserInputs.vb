@@ -31,6 +31,9 @@ Public Class ORBUserInputs
                 _FirstCandleTime = value
             End Set
         End Property
+
+        Public Property StoplossPercentage As Decimal
+        Public Property Delta As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -43,9 +46,9 @@ Public Class ORBUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER", "FIRST CANDLE TIME", "DISTANCE"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "NUMBER OF LOTS", "TIMEFRAME", "SUPERTREND PERIOD", "SUPERTREND MULTIPLIER", "FIRST CANDLE TIME", "DISTANCE", "STOPLOSS %", "DELTA"}
 
-                        For colCtr = 0 To 6
+                        For colCtr = 0 To 8
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -62,6 +65,8 @@ Public Class ORBUserInputs
                             Dim stMultiplier As Decimal = Decimal.MinValue
                             Dim firstCandleTime As Date = Date.MinValue
                             Dim distance As Decimal = Decimal.MinValue
+                            Dim slPer As Decimal = Decimal.MinValue
+                            Dim delta As Decimal = Decimal.MinValue
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
@@ -148,6 +153,28 @@ Public Class ORBUserInputs
                                         End If
                                     Else
                                         Throw New ApplicationException(String.Format("Distance cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 7 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            slPer = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Stoploss % cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Stoploss % cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 8 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            delta = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Delta cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Delta cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
                                 End If
                             Next
