@@ -377,7 +377,7 @@ Public Class ORBStrategyInstrument
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
                                  .Quantity = quantity,
                                  .OrderType = IOrder.TypeOfOrder.Market}
-                        ElseIf preSupertrendColor = Color.Red AndAlso supertrendColor = Color.Green AndAlso entryOrder.TimeStamp >= runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime Then
+                        ElseIf preSupertrendColor = Color.Red AndAlso supertrendColor = Color.Green AndAlso entryOrder.TimeStamp <= runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime Then
                             If forcePrint Then OnHeartbeat(String.Format("***** ST Color:{0}, Pre ST Color:{1}. So it will place exit order.", supertrendColor.Name, preSupertrendColor.Name))
                             parameters = New PlaceOrderParameters(runningCandlePayload.PreviousPayload) With
                                 {.EntryDirection = IOrder.TypeOfTransaction.Buy,
