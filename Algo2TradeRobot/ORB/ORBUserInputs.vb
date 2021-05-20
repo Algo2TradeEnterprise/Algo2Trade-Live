@@ -186,7 +186,9 @@ Public Class ORBUserInputs
                                     .SupertrendPeriod = stPeriod,
                                     .SupertrendMultiplier = stMultiplier,
                                     .Distance = distance,
-                                    .FirstCandleTime = firstCandleTime
+                                    .FirstCandleTime = firstCandleTime,
+                                    .StoplossPercentage = slPer,
+                                    .Delta = delta
                                 }
 
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
