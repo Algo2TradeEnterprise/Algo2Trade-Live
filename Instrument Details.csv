@@ -1,7 +1,7 @@
-Instrument Name,Buy Capital,Downward Drop%,Downward Rise%,Upward Rise%,Upward Drop%,Skip
-AIRAN,500,1,0.2,1,0.15,
-BANKBARODA,500,1,0.2,1,0.15,
-CANBK,500,1,0.2,1,0.15,
-DISHTV,500,1,0.2,1,0.15,
-GODFRYPHLP,500,1,0.2,1,0.15,
-AREYDRG,500,1,0.2,1,0.15,
+Instrument Name,Buy Capital,Downward Drop%,Downward Rise%,Upward Rise%,Upward Drop%,Stoploss%,Skip
+AIRAN,500,1,0.2,1,0.15,1,
+BANKBARODA,500,1,0.2,1,0.15,1,
+CANBK,500,1,0.2,1,0.15,1,
+DISHTV,500,1,0.2,1,0.15,1,
+GODFRYPHLP,500,1,0.2,1,0.15,1,
+AREYDRG,500,1,0.2,1,0.15,1,

@@ -20,6 +20,7 @@ Public Class NFOUserInputs
         Public Property DownwardRisePercentage As Decimal
         Public Property UpwardDropPercentage As Decimal
         Public Property UpwardRisePercentage As Decimal
+        Public Property StoplossPercentage As Decimal
     End Class
 
     Public Sub FillInstrumentDetails(ByVal filePath As String, ByVal canceller As CancellationTokenSource)
@@ -32,9 +33,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "BUY CAPITAL", "DOWNWARD DROP%", "DOWNWARD RISE%", "UPWARD RISE%", "UPWARD DROP%", "SKIP"}
+                        Dim excelColumnList As New List(Of String) From {"INSTRUMENT NAME", "BUY CAPITAL", "DOWNWARD DROP%", "DOWNWARD RISE%", "UPWARD RISE%", "UPWARD DROP%", "STOPLOSS%", "SKIP"}
 
-                        For colCtr = 0 To 6
+                        For colCtr = 0 To 7
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -50,6 +51,7 @@ Public Class NFOUserInputs
                             Dim downrise As Decimal = Decimal.MinValue
                             Dim uprise As Decimal = Decimal.MinValue
                             Dim updrop As Decimal = Decimal.MinValue
+                            Dim stoploss As Decimal = Decimal.MinValue
                             Dim skip As String = Nothing
 
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
@@ -118,6 +120,17 @@ Public Class NFOUserInputs
                                         Throw New ApplicationException(String.Format("Upward Drop% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
                                     End If
                                 ElseIf columnCtr = 6 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            stoploss = Val(instrumentDetails(rowCtr, columnCtr))
+                                        Else
+                                            Throw New ApplicationException(String.Format("Stoploss% cannot be of type {0} for {1}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                        End If
+                                    Else
+                                        Throw New ApplicationException(String.Format("Stoploss% cannot be null for {0}", instrumentDetails(rowCtr, columnCtr).GetType, instrumentName))
+                                    End If
+                                ElseIf columnCtr = 7 Then
                                     skip = instrumentDetails(rowCtr, columnCtr)
                                     If skip IsNot Nothing AndAlso skip.Trim <> "" AndAlso skip.Trim.ToUpper <> "Y" AndAlso skip.Trim.ToUpper <> "N" Then
                                         Throw New ApplicationException(String.Format("Skip cannot be other than 'Y'/'N'/Blank. RowNumber: {0}", rowCtr))
@@ -132,7 +145,8 @@ Public Class NFOUserInputs
                                             .DownwardDropPercentage = downdrop,
                                             .DownwardRisePercentage = downrise,
                                             .UpwardDropPercentage = updrop,
-                                            .UpwardRisePercentage = uprise
+                                            .UpwardRisePercentage = uprise,
+                                            .StoplossPercentage = stoploss
                                         }
 
                                     If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
