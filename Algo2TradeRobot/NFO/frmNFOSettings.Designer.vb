@@ -30,8 +30,6 @@ Partial Class frmNFOSettings
         Me.btnBrowse = New System.Windows.Forms.Button()
         Me.txtInstrumentDetalis = New System.Windows.Forms.TextBox()
         Me.lblInstrumentDetails = New System.Windows.Forms.Label()
-        Me.txtExpireBefore = New System.Windows.Forms.TextBox()
-        Me.lblExpireBefore = New System.Windows.Forms.Label()
         Me.SuspendLayout()
         '
         'btnSave
@@ -39,7 +37,7 @@ Partial Class frmNFOSettings
         Me.btnSave.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
         Me.btnSave.ImageKey = "save-icon-36533.png"
         Me.btnSave.ImageList = Me.ImageList1
-        Me.btnSave.Location = New System.Drawing.Point(234, 90)
+        Me.btnSave.Location = New System.Drawing.Point(234, 55)
         Me.btnSave.Margin = New System.Windows.Forms.Padding(4)
         Me.btnSave.Name = "btnSave"
         Me.btnSave.Size = New System.Drawing.Size(112, 58)
@@ -60,7 +58,7 @@ Partial Class frmNFOSettings
         'btnBrowse
         '
         Me.btnBrowse.Font = New System.Drawing.Font("Microsoft Sans Serif", 7.8!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.btnBrowse.Location = New System.Drawing.Point(532, 48)
+        Me.btnBrowse.Location = New System.Drawing.Point(532, 13)
         Me.btnBrowse.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.btnBrowse.Name = "btnBrowse"
         Me.btnBrowse.Size = New System.Drawing.Size(40, 23)
@@ -70,7 +68,7 @@ Partial Class frmNFOSettings
         '
         'txtInstrumentDetalis
         '
-        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(178, 49)
+        Me.txtInstrumentDetalis.Location = New System.Drawing.Point(178, 14)
         Me.txtInstrumentDetalis.Margin = New System.Windows.Forms.Padding(4)
         Me.txtInstrumentDetalis.Name = "txtInstrumentDetalis"
         Me.txtInstrumentDetalis.ReadOnly = True
@@ -80,39 +78,18 @@ Partial Class frmNFOSettings
         'lblInstrumentDetails
         '
         Me.lblInstrumentDetails.AutoSize = True
-        Me.lblInstrumentDetails.Location = New System.Drawing.Point(13, 52)
+        Me.lblInstrumentDetails.Location = New System.Drawing.Point(13, 17)
         Me.lblInstrumentDetails.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblInstrumentDetails.Name = "lblInstrumentDetails"
         Me.lblInstrumentDetails.Size = New System.Drawing.Size(121, 17)
         Me.lblInstrumentDetails.TabIndex = 8
         Me.lblInstrumentDetails.Text = "Instrument Details"
         '
-        'txtExpireBefore
-        '
-        Me.txtExpireBefore.Location = New System.Drawing.Point(178, 15)
-        Me.txtExpireBefore.Margin = New System.Windows.Forms.Padding(4)
-        Me.txtExpireBefore.Name = "txtExpireBefore"
-        Me.txtExpireBefore.Size = New System.Drawing.Size(75, 22)
-        Me.txtExpireBefore.TabIndex = 2
-        Me.txtExpireBefore.Tag = "Expire Before (Days)"
-        '
-        'lblExpireBefore
-        '
-        Me.lblExpireBefore.AutoSize = True
-        Me.lblExpireBefore.Location = New System.Drawing.Point(13, 18)
-        Me.lblExpireBefore.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
-        Me.lblExpireBefore.Name = "lblExpireBefore"
-        Me.lblExpireBefore.Size = New System.Drawing.Size(139, 17)
-        Me.lblExpireBefore.TabIndex = 37
-        Me.lblExpireBefore.Text = "Expire Before (Days)"
-        '
         'frmNFOSettings
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(580, 156)
-        Me.Controls.Add(Me.txtExpireBefore)
-        Me.Controls.Add(Me.lblExpireBefore)
+        Me.ClientSize = New System.Drawing.Size(580, 124)
         Me.Controls.Add(Me.btnBrowse)
         Me.Controls.Add(Me.txtInstrumentDetalis)
         Me.Controls.Add(Me.lblInstrumentDetails)
@@ -135,6 +112,4 @@ Partial Class frmNFOSettings
     Friend WithEvents btnBrowse As Button
     Friend WithEvents txtInstrumentDetalis As TextBox
     Friend WithEvents lblInstrumentDetails As Label
-    Friend WithEvents txtExpireBefore As TextBox
-    Friend WithEvents lblExpireBefore As Label
 End Class

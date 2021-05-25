@@ -1,0 +1,49 @@
+Name of Scheme.   spreads
+
+Operation.    Positional
+
+Variables required on screen for each instrument
+
+1.     Distance “entry gap”  in terms of points from close value at signal change
+
+2.     Super trend setting parameters for index and time period for chart
+
+3.     Distance ‘x’ of Bought option from Sold option
+
+4.     No of lots
+
+Instruments
+
+NIFTY spot, BANKNIFTY spot, and related WEEKLY options
+
+Trading Days.    All
+
+Entry
+
+Based on Nifty/ Bank nifty super trend Buy/ sell signal, positional credit option to be created.
+
+Strike rate
+
+Sell ATM put option if bullish / call option if bearish based on close price of underlying, when signal is changed. ATM option to be nearest multiple of 50 of the value “close price – “entry gap” for selling put and “close price + entry gap” for selling call
+
+ E.g. For a buy signal of a candle having close price as 14540. If “entry gap” is 30, then option strike is based on (14540-30=14510) will be 14500 (rounding of 14510)
+
+ Buy OTM option at ‘x’ points away to create option spread.
+
+Exit.   On signal change.
+
+Order.      All orders at market price in following order
+
+Square off existing position
+
+Buy sold option
+Sell Bought option
+
+ Enter new position
+
+Buy OTM option
+Sell ATM option
+
+Rollover
+
+On last weekly settlement day at 3.15 pm

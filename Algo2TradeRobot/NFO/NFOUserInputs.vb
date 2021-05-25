@@ -9,8 +9,6 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "FutureSupertrendSettings.Strategy.a2t")
 
-    Public Property ExpireDaysBefore As Integer
-
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 

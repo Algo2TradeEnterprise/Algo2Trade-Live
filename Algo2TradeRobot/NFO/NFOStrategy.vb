@@ -59,7 +59,7 @@ Public Class NFOStrategy
                         If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
                         retTradableInstrumentsAsPerStrategy.Add(runningTradableInstrument)
 
-                        If minExpiry.Date.AddDays(userInputs.ExpireDaysBefore * -1) = Now.Date Then
+                        If minExpiry.Date = Now.Date Then
                             Dim nextMinExpiry As Date = allRunningTradableInstruments.Min(Function(x)
                                                                                               If x.Expiry.Value.Date > minExpiry.Date Then
                                                                                                   Return x.Expiry.Value

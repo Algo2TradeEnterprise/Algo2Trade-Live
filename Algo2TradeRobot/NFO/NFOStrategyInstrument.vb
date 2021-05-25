@@ -217,9 +217,9 @@ Public Class NFOStrategyInstrument
             Me.TradableInstrument.IsHistoricalCompleted AndAlso Me.ParentStrategy.IsFirstTimeInformationCollected AndAlso stConsumer.ConsumerPayloads IsNot Nothing AndAlso
             stConsumer.ConsumerPayloads.Count > 0 AndAlso stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
             stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime) Then
-            If (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
-                (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
-                (Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
+            If (Me.TradableInstrument.Expiry.Value.Date <> Now.Date AndAlso Not IsMyAnotherContractAvailable.Item1) OrElse
+                (Me.TradableInstrument.Expiry.Value.Date <> Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ContractRolloverTime AndAlso Me.ForceEntryForContractRolloverDone) OrElse
+                (Me.TradableInstrument.Expiry.Value.Date = Now.Date AndAlso IsMyAnotherContractAvailable.Item1 AndAlso currentTime < Me.TradableInstrument.ExchangeDetails.ContractRolloverTime) Then
                 Dim preSupertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                 Dim supertrendColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                 If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Previous Supertrend Color:{1}, Traded Quantity:{2}", supertrendColor.Name, preSupertrendColor.Name, GetQuantityToTrade))
@@ -375,7 +375,7 @@ Public Class NFOStrategyInstrument
 
     Public Async Function ContractRolloverAsync() As Task
         Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
-        If Me.TradableInstrument.Expiry.Value.Date.AddDays(userSettings.ExpireDaysBefore * -1) = Now.Date AndAlso IsMyAnotherContractAvailable().Item1 Then
+        If Me.TradableInstrument.Expiry.Value.Date = Now.Date AndAlso IsMyAnotherContractAvailable().Item1 Then
             Try
                 While True
                     If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then

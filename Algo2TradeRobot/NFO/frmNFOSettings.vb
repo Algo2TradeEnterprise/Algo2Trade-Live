@@ -35,14 +35,12 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtExpireBefore.Text = _settings.ExpireDaysBefore
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = 1
-        _settings.ExpireDaysBefore = txtExpireBefore.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
@@ -66,8 +64,6 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(0, 15, txtExpireBefore, True)
-
         ValidateFile()
     End Sub
 
