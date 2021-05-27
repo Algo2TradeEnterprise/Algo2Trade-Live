@@ -88,7 +88,7 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miOptions, Me.miAbout})
         Me.msMainMenuStrip.Location = New System.Drawing.Point(0, 0)
         Me.msMainMenuStrip.Name = "msMainMenuStrip"
-        Me.msMainMenuStrip.Size = New System.Drawing.Size(1371, 28)
+        Me.msMainMenuStrip.Size = New System.Drawing.Size(1371, 30)
         Me.msMainMenuStrip.TabIndex = 0
         Me.msMainMenuStrip.Text = "MenuStrip1"
         '
@@ -96,7 +96,7 @@ Partial Class frmMainTabbed
         '
         Me.miOptions.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miUserDetails, Me.miAdvancedOptions})
         Me.miOptions.Name = "miOptions"
-        Me.miOptions.Size = New System.Drawing.Size(75, 24)
+        Me.miOptions.Size = New System.Drawing.Size(75, 26)
         Me.miOptions.Text = "&Options"
         '
         'miUserDetails
@@ -116,7 +116,7 @@ Partial Class frmMainTabbed
         'miAbout
         '
         Me.miAbout.Name = "miAbout"
-        Me.miAbout.Size = New System.Drawing.Size(64, 24)
+        Me.miAbout.Size = New System.Drawing.Size(64, 26)
         Me.miAbout.Text = "&About"
         '
         'tabMain
@@ -124,11 +124,11 @@ Partial Class frmMainTabbed
         Me.tabMain.Controls.Add(Me.tabNFO)
         Me.tabMain.Controls.Add(Me.tabSpread)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tabMain.Location = New System.Drawing.Point(0, 28)
+        Me.tabMain.Location = New System.Drawing.Point(0, 30)
         Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
         Me.tabMain.Name = "tabMain"
         Me.tabMain.SelectedIndex = 0
-        Me.tabMain.Size = New System.Drawing.Size(1371, 722)
+        Me.tabMain.Size = New System.Drawing.Size(1371, 720)
         Me.tabMain.TabIndex = 1
         '
         'tabNFO
@@ -138,7 +138,7 @@ Partial Class frmMainTabbed
         Me.tabNFO.Margin = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Name = "tabNFO"
         Me.tabNFO.Padding = New System.Windows.Forms.Padding(4)
-        Me.tabNFO.Size = New System.Drawing.Size(1363, 693)
+        Me.tabNFO.Size = New System.Drawing.Size(1363, 691)
         Me.tabNFO.TabIndex = 0
         Me.tabNFO.Text = "Algo2Trade"
         Me.tabNFO.UseVisualStyleBackColor = True
@@ -156,7 +156,7 @@ Partial Class frmMainTabbed
         Me.pnlNFOMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlNFOMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 685)
+        Me.pnlNFOMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 683)
         Me.pnlNFOMainPanelHorizontalSplitter.TabIndex = 0
         '
         'pnlNFOTopHeaderVerticalSplitter
@@ -282,8 +282,8 @@ Partial Class frmMainTabbed
         Me.pnlNFOBodyVerticalSplitter.Name = "pnlNFOBodyVerticalSplitter"
         Me.pnlNFOBodyVerticalSplitter.RowCount = 1
         Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 628.0!))
-        Me.pnlNFOBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
+        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
+        Me.pnlNFOBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 628)
         Me.pnlNFOBodyVerticalSplitter.TabIndex = 1
         '
         'pctrBxNFO
@@ -293,7 +293,7 @@ Partial Class frmMainTabbed
         Me.pctrBxNFO.Location = New System.Drawing.Point(945, 2)
         Me.pctrBxNFO.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.pctrBxNFO.Name = "pctrBxNFO"
-        Me.pctrBxNFO.Size = New System.Drawing.Size(399, 626)
+        Me.pctrBxNFO.Size = New System.Drawing.Size(399, 624)
         Me.pctrBxNFO.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
         Me.pctrBxNFO.TabIndex = 2
         Me.pctrBxNFO.TabStop = False
@@ -311,7 +311,7 @@ Partial Class frmMainTabbed
         Me.pnlNFOBodyHorizontalSplitter.RowCount = 2
         Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlNFOBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
+        Me.pnlNFOBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 620)
         Me.pnlNFOBodyHorizontalSplitter.TabIndex = 0
         '
         'lstNFOLog
@@ -321,10 +321,10 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.FormattingEnabled = True
         Me.lstNFOLog.HorizontalScrollbar = True
         Me.lstNFOLog.ItemHeight = 16
-        Me.lstNFOLog.Location = New System.Drawing.Point(4, 439)
+        Me.lstNFOLog.Location = New System.Drawing.Point(4, 438)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstNFOLog.Name = "lstNFOLog"
-        Me.lstNFOLog.Size = New System.Drawing.Size(926, 179)
+        Me.lstNFOLog.Size = New System.Drawing.Size(926, 178)
         Me.lstNFOLog.TabIndex = 9
         '
         'sfdgvNFOMainDashboard
@@ -341,7 +341,7 @@ Partial Class frmMainTabbed
         Me.sfdgvNFOMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvNFOMainDashboard.Name = "sfdgvNFOMainDashboard"
         Me.sfdgvNFOMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 427)
+        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 426)
         Me.sfdgvNFOMainDashboard.TabIndex = 6
         Me.sfdgvNFOMainDashboard.Text = "SfDataGrid1"
         '
@@ -350,7 +350,7 @@ Partial Class frmMainTabbed
         Me.tabSpread.Controls.Add(Me.pnlSpreadMainPanelHorizontalSplitter)
         Me.tabSpread.Location = New System.Drawing.Point(4, 25)
         Me.tabSpread.Name = "tabSpread"
-        Me.tabSpread.Size = New System.Drawing.Size(1363, 691)
+        Me.tabSpread.Size = New System.Drawing.Size(1363, 693)
         Me.tabSpread.TabIndex = 1
         Me.tabSpread.Text = "Spread"
         Me.tabSpread.UseVisualStyleBackColor = True
@@ -368,7 +368,7 @@ Partial Class frmMainTabbed
         Me.pnlSpreadMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlSpreadMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlSpreadMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlSpreadMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 691)
+        Me.pnlSpreadMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1363, 693)
         Me.pnlSpreadMainPanelHorizontalSplitter.TabIndex = 1
         '
         'pnlSpreadTopHeaderVerticalSplitter
@@ -495,7 +495,7 @@ Partial Class frmMainTabbed
         Me.TableLayoutPanel3.RowCount = 1
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel3.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
-        Me.TableLayoutPanel3.Size = New System.Drawing.Size(1355, 635)
+        Me.TableLayoutPanel3.Size = New System.Drawing.Size(1355, 637)
         Me.TableLayoutPanel3.TabIndex = 1
         '
         'pctrBxSpread
@@ -505,7 +505,7 @@ Partial Class frmMainTabbed
         Me.pctrBxSpread.Location = New System.Drawing.Point(951, 2)
         Me.pctrBxSpread.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.pctrBxSpread.Name = "pctrBxSpread"
-        Me.pctrBxSpread.Size = New System.Drawing.Size(401, 631)
+        Me.pctrBxSpread.Size = New System.Drawing.Size(401, 633)
         Me.pctrBxSpread.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
         Me.pctrBxSpread.TabIndex = 2
         Me.pctrBxSpread.TabStop = False
@@ -523,7 +523,7 @@ Partial Class frmMainTabbed
         Me.pnlSpreadBodyHorizontalSplitter.RowCount = 2
         Me.pnlSpreadBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlSpreadBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlSpreadBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 627)
+        Me.pnlSpreadBodyHorizontalSplitter.Size = New System.Drawing.Size(940, 629)
         Me.pnlSpreadBodyHorizontalSplitter.TabIndex = 0
         '
         'lstSpreadLog
@@ -533,7 +533,7 @@ Partial Class frmMainTabbed
         Me.lstSpreadLog.FormattingEnabled = True
         Me.lstSpreadLog.HorizontalScrollbar = True
         Me.lstSpreadLog.ItemHeight = 16
-        Me.lstSpreadLog.Location = New System.Drawing.Point(4, 442)
+        Me.lstSpreadLog.Location = New System.Drawing.Point(4, 444)
         Me.lstSpreadLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstSpreadLog.Name = "lstSpreadLog"
         Me.lstSpreadLog.Size = New System.Drawing.Size(932, 181)
@@ -553,7 +553,7 @@ Partial Class frmMainTabbed
         Me.sfdgvSpreadMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvSpreadMainDashboard.Name = "sfdgvSpreadMainDashboard"
         Me.sfdgvSpreadMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvSpreadMainDashboard.Size = New System.Drawing.Size(932, 430)
+        Me.sfdgvSpreadMainDashboard.Size = New System.Drawing.Size(932, 432)
         Me.sfdgvSpreadMainDashboard.TabIndex = 6
         Me.sfdgvSpreadMainDashboard.Text = "SfDataGrid1"
         '
