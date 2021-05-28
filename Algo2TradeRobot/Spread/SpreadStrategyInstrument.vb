@@ -200,7 +200,8 @@ Public Class SpreadStrategyInstrument
                             logger.Warn(ex)
                         End Try
 
-                        If stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) Then
+                        If stConsumer.ConsumerPayloads.ContainsKey(runningCandlePayload.PreviousPayload.SnapshotDateTime) AndAlso
+                            Now >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso Now <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
                             Dim stColor As Color = CType(stConsumer.ConsumerPayloads(runningCandlePayload.PreviousPayload.SnapshotDateTime), SupertrendConsumer.SupertrendPayload).SupertrendColor
                             If log Then OnHeartbeat(String.Format("Supertrend Color:{0}, Buy Active:{1}, Sell Active:{2}", stColor.Name, buyActive, sellActive))
                             If stColor = Color.Green Then
