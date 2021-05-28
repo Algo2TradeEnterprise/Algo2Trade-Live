@@ -237,7 +237,7 @@ Public Class SpreadStrategyInstrument
                                     Next
 
                                     Dim atmStrike As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value - instrumentData.EntryGap, allPEStrikes.Keys.ToList)
-                                    Dim otmStrike As Decimal = GetATMStrike(atmStrike + instrumentData.Distance, allPEStrikes.Keys.ToList)
+                                    Dim otmStrike As Decimal = GetATMStrike(atmStrike - instrumentData.Distance, allPEStrikes.Keys.ToList)
 
                                     Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {allPEStrikes(atmStrike), allPEStrikes(otmStrike)}).ConfigureAwait(False)
 
@@ -252,6 +252,11 @@ Public Class SpreadStrategyInstrument
                                                                                                                End Function)
                                     End If
                                     If otmStrategyInstrument IsNot Nothing AndAlso atmStrategyInstrument IsNot Nothing Then
+                                        OnHeartbeat(String.Format("Now it will take buy trade. Close:{0}, ATM:{1}, OTM:{2}",
+                                                                  runningCandlePayload.PreviousPayload.ClosePrice.Value,
+                                                                  atmStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                                  otmStrategyInstrument.TradableInstrument.TradingSymbol))
+
                                         Await otmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "BUY").ConfigureAwait(False)
                                         Await Task.Delay(1000).ConfigureAwait(False)
                                         Await atmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "SELL").ConfigureAwait(False)
@@ -292,7 +297,7 @@ Public Class SpreadStrategyInstrument
                                     Next
 
                                     Dim atmStrike As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value + instrumentData.EntryGap, allCEStrikes.Keys.ToList)
-                                    Dim otmStrike As Decimal = GetATMStrike(atmStrike - instrumentData.Distance, allCEStrikes.Keys.ToList)
+                                    Dim otmStrike As Decimal = GetATMStrike(atmStrike + instrumentData.Distance, allCEStrikes.Keys.ToList)
 
                                     Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {allCEStrikes(atmStrike), allCEStrikes(otmStrike)}).ConfigureAwait(False)
 
@@ -307,6 +312,11 @@ Public Class SpreadStrategyInstrument
                                                                                                                End Function)
                                     End If
                                     If otmStrategyInstrument IsNot Nothing AndAlso atmStrategyInstrument IsNot Nothing Then
+                                        OnHeartbeat(String.Format("Now it will take sell trade. Close:{0}, ATM:{1}, OTM:{2}",
+                                                                  runningCandlePayload.PreviousPayload.ClosePrice.Value,
+                                                                  atmStrategyInstrument.TradableInstrument.TradingSymbol,
+                                                                  otmStrategyInstrument.TradableInstrument.TradingSymbol))
+
                                         Await otmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "BUY").ConfigureAwait(False)
                                         Await Task.Delay(1000).ConfigureAwait(False)
                                         Await atmStrategyInstrument.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "SELL").ConfigureAwait(False)
@@ -397,7 +407,7 @@ Public Class SpreadStrategyInstrument
         End If
 
         'Below portion have to be done in every place order trigger
-        If parameters IsNot Nothing Then
+        If parameters IsNot Nothing AndAlso Now >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso Now <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
             Try
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)

@@ -755,7 +755,7 @@ Public Class frmMainTabbed
             Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
             numberOfDayForHistorical = Math.Max(minNumberOfDaysToFetch, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
 
-            _spreadStrategyToExecute = New SpreadStrategy(_commonController, 1, _spreadUserInputs, numberOfDayForHistorical, _cts)
+            _spreadStrategyToExecute = New SpreadStrategy(_commonController, 2, _spreadUserInputs, numberOfDayForHistorical, _cts)
             OnHeartbeatEx(String.Format("Running strategy:{0}", _spreadStrategyToExecute.ToString), New List(Of Object) From {_spreadStrategyToExecute})
 
             _cts.Token.ThrowIfCancellationRequested()
