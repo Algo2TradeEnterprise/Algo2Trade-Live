@@ -236,6 +236,21 @@
     <Compile Include="ORB\ORBStrategy.vb" />
     <Compile Include="ORB\ORBStrategyInstrument.vb" />
     <Compile Include="ORB\ORBUserInputs.vb" />
+    <Compile Include="Straddle Strangle\frmSSSettings.Designer.vb">
+      <DependentUpon>frmSSSettings.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Straddle Strangle\frmSSSettings.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Straddle Strangle\frmSSTradableInstrumentList.Designer.vb">
+      <DependentUpon>frmSSTradableInstrumentList.vb</DependentUpon>
+    </Compile>
+    <Compile Include="Straddle Strangle\frmSSTradableInstrumentList.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Straddle Strangle\SSStrategy.vb" />
+    <Compile Include="Straddle Strangle\SSStrategyInstrument.vb" />
+    <Compile Include="Straddle Strangle\SSUserInputs.vb" />
     <Compile Include="Straddle\frmStraddleSettings.Designer.vb">
       <DependentUpon>frmStraddleSettings.vb</DependentUpon>
     </Compile>
@@ -300,6 +315,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ORB\frmORBTradableInstrumentList.resx">
       <DependentUpon>frmORBTradableInstrumentList.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Straddle Strangle\frmSSSettings.resx">
+      <DependentUpon>frmSSSettings.vb</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Straddle Strangle\frmSSTradableInstrumentList.resx">
+      <DependentUpon>frmSSTradableInstrumentList.vb</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Straddle\frmStraddleSettings.resx">
       <DependentUpon>frmStraddleSettings.vb</DependentUpon>

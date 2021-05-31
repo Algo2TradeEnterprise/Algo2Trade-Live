@@ -1,0 +1,47 @@
+SS (name to be changed from existing straddle)
+
+Intraday
+
+Variables required on screen for each instrument
+
+1.     Super trend setting options and time period for chart
+
+2.     Time X for selling straddle and strangle
+
+3.     Y = % of entry price for stop loss
+
+4.     R = distance between straddle and strangle
+
+5.     No of lots of straddle
+
+6.   No. Of lots of strangle
+
+Instruments
+
+NIFTY spot, BANKNIFTY spot, and related ATM options
+
+Trading Days.   All
+
+Strike rate
+
+Based on Nifty/ Bank nifty at time ‘X’ select ATM strike rounded to nearest 50. Select strangle strike based on ATM and distance
+
+Entry
+
+Sell CE and PE straddle and strangle pair at time ’X’
+
+Stop Loss
+
+Select lowest values of….
+
+1.     Entry price + y% of entry price
+
+2.     Supertrend stop loss when chart colour is red
+
+Exit based on stop loss. No re-entry
+
+All orders at market price
+
+Force Exit All open position at 3.00 PM
+
+1,2,3,4,5,7,9

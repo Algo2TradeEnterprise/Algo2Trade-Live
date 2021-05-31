@@ -1117,7 +1117,7 @@ Public Class frmMainTabbed
         End If
 
         PreviousDayCleanup(False)
-        Await Task.Run(AddressOf straddleWorkerAsync).ConfigureAwait(False)
+        Await Task.Run(AddressOf StraddleWorkerAsync).ConfigureAwait(False)
 
         If _lastException IsNot Nothing Then
             SetObjectEnableDisable_ThreadSafe(btnStraddleStart, False)
@@ -1467,6 +1467,300 @@ Public Class frmMainTabbed
     End Sub
 #End Region
 
+#Region "SS"
+    Private _ssStrategyRunning As Boolean = False
+    Private _ssUserInputs As SSUserInputs = Nothing
+    Private _ssDashboadList As BindingList(Of ActivityDashboard) = Nothing
+    Private _ssTradableInstruments As IEnumerable(Of SSStrategyInstrument) = Nothing
+    Private _ssStrategyToExecute As SSStrategy = Nothing
+    Private Sub sfdgvSSMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvSSMainDashboard.FilterPopupShowing
+        ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(SSStrategy))
+    End Sub
+    Private Sub sfdgvSSMainDashboard_AutoGeneratingColumn(sender As Object, e As AutoGeneratingColumnArgs) Handles sfdgvSSMainDashboard.AutoGeneratingColumn
+        ManipulateGridEx(GridMode.TouchupAutogeneratingColumn, e, GetType(SSStrategy))
+    End Sub
+    Private Async Function SSWorkerAsync() As Task
+        'If GetObjectText_ThreadSafe(btnssStart) = Common.LOGIN_PENDING Then
+        '    MsgBox("Cannot start as another strategy is loggin in")
+        '    Exit Function
+        'End If
+
+        If _cts Is Nothing Then _cts = New CancellationTokenSource
+        _cts.Token.ThrowIfCancellationRequested()
+        _lastException = Nothing
+
+        Try
+            EnableDisableUIEx(UIMode.Active, GetType(SSStrategy))
+            While GetObjectText_ThreadSafe(btnSSStart) = Common.LOGIN_PENDING
+                Await Task.Delay(1000).ConfigureAwait(False)
+            End While
+            EnableDisableUIEx(UIMode.BlockOther, GetType(SSStrategy))
+
+            If _commonControllerUserInput IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays IsNot Nothing AndAlso
+                _commonControllerUserInput.TradingDays.Count > 0 AndAlso
+                Not _commonControllerUserInput.TradingDays.Contains(Now.DayOfWeek) Then
+                Throw New ForceExitException(ForceExitException.ForceExitType.NonTradingDay)
+            End If
+
+            OnHeartbeat("Validating SS user settings")
+            If File.Exists(SSUserInputs.SettingsFileName) Then
+                Dim fs As Stream = New FileStream(SSUserInputs.SettingsFileName, FileMode.Open)
+                Dim bf As BinaryFormatter = New BinaryFormatter()
+                _ssUserInputs = CType(bf.Deserialize(fs), SSUserInputs)
+                fs.Close()
+                _ssUserInputs.InstrumentsData = Nothing
+                _ssUserInputs.FillInstrumentDetails(_ssUserInputs.InstrumentDetailsFilePath, _cts)
+            Else
+                Throw New ApplicationException("Settings file not found. Please complete your settings properly.")
+            End If
+            logger.Debug(Utilities.Strings.JsonSerialize(_ssUserInputs))
+
+            If Not Common.IsAliceUserDetailsPopulated(_commonControllerUserInput) Then Throw New ApplicationException("Cannot proceed without API user details being entered")
+            Dim currentUser As AliceUser = Common.GetAliceCredentialsFromSettings(_commonControllerUserInput)
+            logger.Debug(Utilities.Strings.JsonSerialize(currentUser))
+
+            If _commonController IsNot Nothing Then
+                _commonController.RefreshCancellationToken(_cts)
+            Else
+                _commonController = New AliceStrategyController(currentUser, _commonControllerUserInput, _cts)
+
+                RemoveHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                RemoveHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                RemoveHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                RemoveHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                RemoveHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                RemoveHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                RemoveHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                RemoveHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                RemoveHandler _commonController.TickerClose, AddressOf OnTickerClose
+                RemoveHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                RemoveHandler _commonController.TickerError, AddressOf OnTickerError
+                RemoveHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                RemoveHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                RemoveHandler _commonController.FetcherError, AddressOf OnFetcherError
+                RemoveHandler _commonController.CollectorError, AddressOf OnCollectorError
+                RemoveHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                RemoveHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+                RemoveHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
+
+                AddHandler _commonController.Heartbeat, AddressOf OnHeartbeat
+                AddHandler _commonController.WaitingFor, AddressOf OnWaitingFor
+                AddHandler _commonController.DocumentRetryStatus, AddressOf OnDocumentRetryStatus
+                AddHandler _commonController.DocumentDownloadComplete, AddressOf OnDocumentDownloadComplete
+                AddHandler _commonController.HeartbeatEx, AddressOf OnHeartbeatEx
+                AddHandler _commonController.WaitingForEx, AddressOf OnWaitingForEx
+                AddHandler _commonController.DocumentRetryStatusEx, AddressOf OnDocumentRetryStatusEx
+                AddHandler _commonController.DocumentDownloadCompleteEx, AddressOf OnDocumentDownloadCompleteEx
+                AddHandler _commonController.TickerClose, AddressOf OnTickerClose
+                AddHandler _commonController.TickerConnect, AddressOf OnTickerConnect
+                AddHandler _commonController.TickerError, AddressOf OnTickerError
+                AddHandler _commonController.TickerErrorWithStatus, AddressOf OnTickerErrorWithStatus
+                AddHandler _commonController.TickerNoReconnect, AddressOf OnTickerNoReconnect
+                AddHandler _commonController.TickerReconnect, AddressOf OnTickerReconnect
+                AddHandler _commonController.FetcherError, AddressOf OnFetcherError
+                AddHandler _commonController.CollectorError, AddressOf OnCollectorError
+                AddHandler _commonController.NewItemAdded, AddressOf OnNewItemAdded
+                AddHandler _commonController.SessionExpiry, AddressOf OnSessionExpiry
+                AddHandler _commonController.EndOfTheDay, AddressOf OnEndOfTheDay
+
+                Dim currentAssembly As Assembly = Assembly.GetExecutingAssembly()
+                Dim attribute As GuidAttribute = currentAssembly.GetCustomAttributes(GetType(GuidAttribute), True)(0)
+                Dim toolID As String = attribute.Value
+                Dim toolRunning As Boolean = Await _commonController.IsToolRunning(toolID).ConfigureAwait(False)
+                If Not toolRunning Then Throw New ApplicationException("You version is expired. Please contact Algo2Trade.")
+
+#Region "Login"
+                Dim loginMessage As String = Nothing
+                While True
+                    _cts.Token.ThrowIfCancellationRequested()
+                    _connection = Nothing
+                    loginMessage = Nothing
+                    Try
+                        OnHeartbeat("Attempting to get connection to Alice API")
+                        _cts.Token.ThrowIfCancellationRequested()
+                        _connection = Await _commonController.LoginAsync().ConfigureAwait(False)
+                        _cts.Token.ThrowIfCancellationRequested()
+                    Catch cx As OperationCanceledException
+                        loginMessage = cx.Message
+                        logger.Error(cx)
+                        Exit While
+                    Catch ex As Exception
+                        loginMessage = ex.Message
+                        logger.Error(ex)
+                    End Try
+                    If _connection Is Nothing Then
+                        If loginMessage IsNot Nothing AndAlso (loginMessage.ToUpper.Contains("password".ToUpper) OrElse loginMessage.ToUpper.Contains("api_key".ToUpper) OrElse loginMessage.ToUpper.Contains("username".ToUpper)) Then
+                            'No need to retry as its a password failure
+                            OnHeartbeat(String.Format("Loging process failed:{0}", loginMessage))
+                            Exit While
+                        Else
+                            OnHeartbeat(String.Format("Loging process failed:{0} | Waiting for 10 seconds before retrying connection", loginMessage))
+                            _cts.Token.ThrowIfCancellationRequested()
+                            Await Task.Delay(10000, _cts.Token).ConfigureAwait(False)
+                            _cts.Token.ThrowIfCancellationRequested()
+                        End If
+                    Else
+                        Exit While
+                    End If
+                End While
+                If _connection Is Nothing Then
+                    If loginMessage IsNot Nothing Then
+                        Throw New ApplicationException(String.Format("No connection to Alice API could be established | Details:{0}", loginMessage))
+                    Else
+                        Throw New ApplicationException("No connection to Alice API could be established")
+                    End If
+                End If
+#End Region
+
+                OnHeartbeat("Completing all pre-automation requirements")
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync(False).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+
+                If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
+            End If 'Common controller
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(SSStrategy))
+
+            Dim maxTF As Integer = 1
+            If _ssUserInputs.InstrumentsData IsNot Nothing AndAlso _ssUserInputs.InstrumentsData.Count > 0 Then
+                maxTF = _ssUserInputs.InstrumentsData.Max(Function(x)
+                                                              Return x.Value.Timeframe
+                                                          End Function)
+            End If
+            Dim numberOfDayForHistorical As Integer = 8
+            Dim numberOfCandleInADay As Integer = Math.Ceiling(375 / maxTF)
+            Dim minNumberOfDaysToFetch As Integer = Math.Ceiling(200 / numberOfCandleInADay)
+            numberOfDayForHistorical = Math.Max(numberOfDayForHistorical, Math.Ceiling(minNumberOfDaysToFetch + minNumberOfDaysToFetch * 30 / 100))
+
+            _ssStrategyToExecute = New SSStrategy(_commonController, 4, _ssUserInputs, numberOfDayForHistorical, _cts)
+            OnHeartbeatEx(String.Format("Running strategy:{0}", _ssStrategyToExecute.ToString), New List(Of Object) From {_ssStrategyToExecute})
+
+            _cts.Token.ThrowIfCancellationRequested()
+            Await _commonController.SubscribeStrategyAsync(_ssStrategyToExecute).ConfigureAwait(False)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _ssTradableInstruments = _ssStrategyToExecute.TradableStrategyInstruments
+            SetObjectText_ThreadSafe(linklblSSTradableInstruments, String.Format("Tradable Instruments"))
+            SetObjectEnableDisable_ThreadSafe(linklblSSTradableInstruments, True)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            _ssDashboadList = New BindingList(Of ActivityDashboard)(_ssStrategyToExecute.SignalManager.ActivityDetails.Values.OrderBy(Function(x)
+                                                                                                                                          Return x.EntryRequestTime
+                                                                                                                                      End Function).ToList)
+            SetSFGridDataBind_ThreadSafe(sfdgvSSMainDashboard, _ssDashboadList)
+            SetSFGridFreezFirstColumn_ThreadSafe(sfdgvSSMainDashboard)
+            _cts.Token.ThrowIfCancellationRequested()
+
+            Await _ssStrategyToExecute.MonitorAsync().ConfigureAwait(False)
+        Catch aex As AdapterBusinessException
+            logger.Error(aex)
+            If aex.ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                _lastException = aex
+            Else
+                GenerateTelegramMessageAsync(aex.Message)
+                MsgBox(String.Format("The following error occurred: {0}", aex.Message), MsgBoxStyle.Critical)
+            End If
+        Catch fex As ForceExitException
+            logger.Error(fex)
+            OnHeartbeat(fex.Message)
+            _lastException = fex
+        Catch cx As OperationCanceledException
+            logger.Error(cx)
+            GenerateTelegramMessageAsync(cx.Message)
+            MsgBox(String.Format("The following error occurred: {0}", cx.Message), MsgBoxStyle.Critical)
+        Catch ex As Exception
+            logger.Error(ex)
+            GenerateTelegramMessageAsync(ex.Message)
+            MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
+        Finally
+            ProgressStatus("No pending actions")
+            SetObjectText_ThreadSafe(linklblSSTradableInstruments, String.Format("Tradable Instruments: {0}", 0))
+            SetObjectEnableDisable_ThreadSafe(linklblSSTradableInstruments, False)
+            EnableDisableUIEx(UIMode.ReleaseOther, GetType(SSStrategy))
+            EnableDisableUIEx(UIMode.Idle, GetType(SSStrategy))
+        End Try
+        'If _cts Is Nothing OrElse _cts.IsCancellationRequested Then
+        'Following portion need to be done for any kind of exception. Otherwise if we start again without closing the form then
+        'it will not new object of controller. So orphan exception will throw exception again and issrmation collector, historical data fetcher
+        'and ticker will not work.
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _commonController = Nothing
+        _connection = Nothing
+        _cts = Nothing
+        'End If
+    End Function
+    Private Async Sub btnSSStart_Click(sender As Object, e As EventArgs) Handles btnSSStart.Click
+        logger.Debug("SS Button Start Clicked")
+        Dim authenticationUserId As String = "269468"
+        If Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper IsNot Nothing AndAlso
+            Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper <> "" AndAlso
+            (authenticationUserId <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper AndAlso
+            "AB096403" <> Common.GetAliceCredentialsFromSettings(_commonControllerUserInput).UserId.ToUpper) Then
+            MsgBox("You are not an authentic user. Kindly contact Algo2Trade", MsgBoxStyle.Critical)
+            Exit Sub
+        End If
+
+        PreviousDayCleanup(False)
+        Await Task.Run(AddressOf SSWorkerAsync).ConfigureAwait(False)
+
+        If _lastException IsNot Nothing Then
+            SetObjectEnableDisable_ThreadSafe(btnSSStart, False)
+            If _lastException.GetType.BaseType Is GetType(AdapterBusinessException) AndAlso
+                CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
+                Debug.WriteLine("Restart for permission")
+                logger.Debug("Restarting the application again as there is premission issue")
+                btnSSStart_Click(sender, e)
+            ElseIf _lastException.GetType Is GetType(ForceExitException) Then
+                If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
+                    Debug.WriteLine("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
+                    logger.Debug("Force exit all process for idle state. Will restart applcation when idle state is over. Waiting ...")
+                    Dim remainingTime As Double = _commonControllerUserInput.IdleStateEndTime.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
+                    Debug.WriteLine("Restart for idle state end")
+                    logger.Debug("Restarting the application again for idle state end")
+                    btnSSStart_Click(sender, e)
+                ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
+                    Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    logger.Debug("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
+                    Dim remainingTime As Double = Now.Date.AddDays(1).Date.Subtract(Now).TotalMilliseconds
+                    Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
+                    Debug.WriteLine("Restart for non trading day end")
+                    logger.Debug("Restarting the application again for non trading day end")
+                    btnSSStart_Click(sender, e)
+                Else
+                    Debug.WriteLine("Restart for daily refresh")
+                    logger.Debug("Restarting the application again for daily refresh")
+                    PreviousDayCleanup(True)
+                    btnSSStart_Click(sender, e)
+                End If
+            End If
+        End If
+    End Sub
+    Private Sub tmrSSTickerStatus_Tick(sender As Object, e As EventArgs) Handles tmrSSTickerStatus.Tick
+        FlashTickerBulbEx(GetType(SSStrategy))
+    End Sub
+    Private Async Sub btnSSStop_Click(sender As Object, e As EventArgs) Handles btnSSStop.Click
+        logger.Debug("SS Button Stop Clicked")
+        OnEndOfTheDay(_ssStrategyToExecute)
+        If _commonController IsNot Nothing Then Await _commonController.CloseTickerIfConnectedAsync().ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseFetcherIfConnectedAsync(True).ConfigureAwait(False)
+        If _commonController IsNot Nothing Then Await _commonController.CloseCollectorIfConnectedAsync(True).ConfigureAwait(False)
+        _cts.Cancel()
+    End Sub
+    Private Sub btnSSSettings_Click(sender As Object, e As EventArgs) Handles btnSSSettings.Click
+        Dim newForm As New frmSSSettings(_ssUserInputs, _ssStrategyRunning)
+        newForm.ShowDialog()
+    End Sub
+    Private Sub linklblSSTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblSSTradableInstruments.LinkClicked
+        Dim newForm As New frmSSTradableInstrumentList(_ssTradableInstruments)
+        newForm.ShowDialog()
+    End Sub
+#End Region
+
 #Region "Common to all stratgeies"
 
 #Region "EX function"
@@ -1497,6 +1791,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnSSStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnSSStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnStrangleStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnStrangleStart, "Start")
@@ -1509,6 +1807,10 @@ Public Class frmMainTabbed
                     If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnORBStart, "Start")
                         SetObjectText_ThreadSafe(btnORBStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnSSStart, "Start")
+                        SetObjectText_ThreadSafe(btnSSStop, "Stop")
                     End If
                 Case UIMode.Idle
                     _nfoStrategyRunning = False
@@ -1535,6 +1837,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnSSStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnSSStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnNFOStart, "Start")
@@ -1547,6 +1853,10 @@ Public Class frmMainTabbed
                     If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnORBStart, "Start")
                         SetObjectText_ThreadSafe(btnORBStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnSSStart, "Start")
+                        SetObjectText_ThreadSafe(btnSSStop, "Stop")
                     End If
                 Case UIMode.Idle
                     _strangleStrategyRunning = False
@@ -1573,6 +1883,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnSSStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnSSStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnNFOStart, "Start")
@@ -1585,6 +1899,10 @@ Public Class frmMainTabbed
                     If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnORBStart, "Start")
                         SetObjectText_ThreadSafe(btnORBStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnSSStart, "Start")
+                        SetObjectText_ThreadSafe(btnSSStop, "Stop")
                     End If
                 Case UIMode.Idle
                     _straddleStrategyRunning = False
@@ -1611,6 +1929,10 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStraddleStart, Common.LOGIN_PENDING)
                         SetObjectText_ThreadSafe(btnStraddleStop, Common.LOGIN_PENDING)
                     End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnSSStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnSSStop, Common.LOGIN_PENDING)
+                    End If
                 Case UIMode.ReleaseOther
                     If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
                         SetObjectText_ThreadSafe(btnNFOStart, "Start")
@@ -1624,14 +1946,64 @@ Public Class frmMainTabbed
                         SetObjectText_ThreadSafe(btnStraddleStart, "Start")
                         SetObjectText_ThreadSafe(btnStraddleStop, "Stop")
                     End If
+                    If GetObjectText_ThreadSafe(btnSSStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnSSStart, "Start")
+                        SetObjectText_ThreadSafe(btnSSStop, "Stop")
+                    End If
                 Case UIMode.Idle
                     _orbStrategyRunning = False
                     SetObjectEnableDisable_ThreadSafe(btnORBStart, True)
                     SetObjectEnableDisable_ThreadSafe(btnORBStop, False)
                     SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, Nothing)
             End Select
+        ElseIf source Is GetType(SSStrategy) Then
+            Select Case mode
+                Case UIMode.Active
+                    _ssStrategyRunning = True
+                    SetObjectEnableDisable_ThreadSafe(btnSSStart, False)
+                    SetObjectEnableDisable_ThreadSafe(btnSSStop, True)
+                Case UIMode.BlockOther
+                    If GetObjectText_ThreadSafe(btnNFOStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnNFOStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnNFOStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnStrangleStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnStrangleStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnStrangleStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnStraddleStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnStraddleStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnStraddleStop, Common.LOGIN_PENDING)
+                    End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = "Start" Then
+                        SetObjectText_ThreadSafe(btnORBStart, Common.LOGIN_PENDING)
+                        SetObjectText_ThreadSafe(btnORBStop, Common.LOGIN_PENDING)
+                    End If
+                Case UIMode.ReleaseOther
+                    If GetObjectText_ThreadSafe(btnNFOStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnNFOStart, "Start")
+                        SetObjectText_ThreadSafe(btnNFOStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnStrangleStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnStrangleStart, "Start")
+                        SetObjectText_ThreadSafe(btnStrangleStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnStraddleStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnStraddleStart, "Start")
+                        SetObjectText_ThreadSafe(btnStraddleStop, "Stop")
+                    End If
+                    If GetObjectText_ThreadSafe(btnORBStart) = Common.LOGIN_PENDING Then
+                        SetObjectText_ThreadSafe(btnORBStart, "Start")
+                        SetObjectText_ThreadSafe(btnORBStop, "Stop")
+                    End If
+                Case UIMode.Idle
+                    _ssStrategyRunning = False
+                    SetObjectEnableDisable_ThreadSafe(btnSSStart, True)
+                    SetObjectEnableDisable_ThreadSafe(btnSSStop, False)
+                    SetSFGridDataBind_ThreadSafe(sfdgvSSMainDashboard, Nothing)
+            End Select
         End If
-        _toolRunning = _nfoStrategyRunning OrElse _strangleStrategyRunning OrElse _straddleStrategyRunning OrElse _orbStrategyRunning
+        _toolRunning = _nfoStrategyRunning OrElse _strangleStrategyRunning OrElse _straddleStrategyRunning OrElse _orbStrategyRunning OrElse _ssStrategyRunning
     End Sub
     Private Sub FlashTickerBulbEx(ByVal source As Object)
         Dim blbTickerStatusCommon As Bulb.LedBulb = Nothing
@@ -1648,6 +2020,9 @@ Public Class frmMainTabbed
         ElseIf source Is GetType(ORBStrategy) Then
             blbTickerStatusCommon = blbORBTickerStatus
             tmrTickerStatusCommon = tmrORBTickerStatus
+        ElseIf source Is GetType(SSStrategy) Then
+            blbTickerStatusCommon = blbSSTickerStatus
+            tmrTickerStatusCommon = tmrSSTickerStatus
         End If
 
         tmrTickerStatusCommon.Enabled = False
@@ -1671,6 +2046,8 @@ Public Class frmMainTabbed
             blbTickerStatusCommon = blbStraddleTickerStatus
         ElseIf source Is GetType(ORBStrategy) Then
             blbTickerStatusCommon = blbORBTickerStatus
+        ElseIf source Is GetType(SSStrategy) Then
+            blbTickerStatusCommon = blbSSTickerStatus
         End If
         blbTickerStatusCommon.Color = color
     End Sub
@@ -1690,11 +2067,12 @@ Public Class frmMainTabbed
             sfdgvCommon = sfdgvStraddleMainDashboard
         ElseIf source Is GetType(ORBStrategy) Then
             sfdgvCommon = sfdgvORBMainDashboard
+        ElseIf source Is GetType(SSStrategy) Then
+            sfdgvCommon = sfdgvSSMainDashboard
         End If
 
         Dim eFilterPopupShowingEventArgsCommon As FilterPopupShowingEventArgs = Nothing
         Dim eAutoGeneratingColumnArgsCommon As AutoGeneratingColumnArgs = Nothing
-        Dim colorToUseCommon As Color = Nothing
         Select Case mode
             Case GridMode.TouchupPopupFilter
                 eFilterPopupShowingEventArgsCommon = parameter
@@ -1756,6 +2134,11 @@ Public Class frmMainTabbed
                 Case LogMode.One
                     SetListAddItem_ThreadSafe(lstORBLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
+        ElseIf source IsNot Nothing AndAlso source.GetType Is GetType(SSStrategy) Then
+            Select Case mode
+                Case LogMode.One
+                    SetListAddItem_ThreadSafe(lstSSLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+            End Select
         ElseIf source Is Nothing Then
             Select Case mode
                 Case LogMode.All
@@ -1763,6 +2146,7 @@ Public Class frmMainTabbed
                     SetListAddItem_ThreadSafe(lstStrangleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstStraddleLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
                     SetListAddItem_ThreadSafe(lstORBLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
+                    SetListAddItem_ThreadSafe(lstSSLog, String.Format("{0}-{1}", Format(ISTNow, "yyyy-MM-dd HH:mm:ss"), msg))
             End Select
         End If
     End Sub
@@ -1832,6 +2216,13 @@ Public Class frmMainTabbed
                     If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
                 End If
             Next
+            For Each runningFile In Directory.GetFiles(My.Application.Info.DirectoryPath, "*.StraddleStrangle.a2t")
+                If deleteAll Then
+                    File.Delete(runningFile)
+                Else
+                    If Not runningFile.Contains(todayDate) Then File.Delete(runningFile)
+                End If
+            Next
         Catch ex As Exception
             logger.Error(ex)
             MsgBox(String.Format("The following error occurred: {0}", ex.Message), MsgBoxStyle.Critical)
@@ -1880,6 +2271,7 @@ Public Class frmMainTabbed
         EnableDisableUIEx(UIMode.Idle, GetType(StrangleStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(StraddleStrategy))
         EnableDisableUIEx(UIMode.Idle, GetType(ORBStrategy))
+        EnableDisableUIEx(UIMode.Idle, GetType(SSStrategy))
 
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlNFOBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
@@ -1893,16 +2285,18 @@ Public Class frmMainTabbed
         pnlORBBodyHorizontalSplitter.RowStyles.Item(0).SizeType = SizeType.Percent
         pnlORBBodyHorizontalSplitter.RowStyles.Item(0).Height = 0
 
-        'tabMain.TabPages.Remove(tabNFO)
-        'tabMain.TabPages.Remove(tabStrangle)
-        'tabMain.TabPages.Remove(tabStraddle)
+        tabMain.TabPages.Remove(tabNFO)
+        tabMain.TabPages.Remove(tabStrangle)
+        tabMain.TabPages.Remove(tabStraddle)
         'tabMain.TabPages.Remove(tabORB)
+        'tabMain.TabPages.Remove(tabSS)
     End Sub
     Private Sub OnTickerClose()
         ColorTickerBulbEx(GetType(NFOStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Pink)
         ColorTickerBulbEx(GetType(ORBStrategy), Color.Pink)
+        ColorTickerBulbEx(GetType(SSStrategy), Color.Pink)
         OnHeartbeat("Ticker:Closed")
     End Sub
     Private Sub OnTickerConnect()
@@ -1910,6 +2304,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Lime)
         ColorTickerBulbEx(GetType(ORBStrategy), Color.Lime)
+        ColorTickerBulbEx(GetType(SSStrategy), Color.Lime)
         OnHeartbeat("Ticker:Connected")
     End Sub
     Private Sub OnTickerErrorWithStatus(ByVal isConnected As Boolean, ByVal errorMsg As String)
@@ -1918,6 +2313,7 @@ Public Class frmMainTabbed
             ColorTickerBulbEx(GetType(StrangleStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(StraddleStrategy), Color.Pink)
             ColorTickerBulbEx(GetType(ORBStrategy), Color.Pink)
+            ColorTickerBulbEx(GetType(SSStrategy), Color.Pink)
         End If
     End Sub
     Private Sub OnTickerError(ByVal errorMsg As String)
@@ -1931,6 +2327,7 @@ Public Class frmMainTabbed
         ColorTickerBulbEx(GetType(StrangleStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(StraddleStrategy), Color.Yellow)
         ColorTickerBulbEx(GetType(ORBStrategy), Color.Yellow)
+        ColorTickerBulbEx(GetType(SSStrategy), Color.Yellow)
         OnHeartbeat("Ticker:Reconnecting")
     End Sub
     Private Sub OnFetcherError(ByVal instrumentIdentifier As String, ByVal errorMsg As String)
@@ -1985,6 +2382,8 @@ Public Class frmMainTabbed
                     BindingListAdd_ThreadSafe(_straddleDashboadList, item)
                 Case GetType(ORBStrategy)
                     BindingListAdd_ThreadSafe(_orbDashboadList, item)
+                Case GetType(SSStrategy)
+                    BindingListAdd_ThreadSafe(_ssDashboadList, item)
                 Case Else
                     Throw New NotImplementedException
             End Select
@@ -2016,6 +2415,12 @@ Public Class frmMainTabbed
                 _orbDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
                 SetSFGridDataBind_ThreadSafe(sfdgvORBMainDashboard, _orbDashboadList)
                 SetSFGridFreezFirstColumn_ThreadSafe(sfdgvORBMainDashboard)
+            Case GetType(SSStrategy)
+                SetSFGridDataBind_ThreadSafe(sfdgvSSMainDashboard, Nothing)
+                _ssDashboadList = Nothing
+                _ssDashboadList = New BindingList(Of ActivityDashboard)(runningStrategy.SignalManager.ActivityDetails.Values.ToList)
+                SetSFGridDataBind_ThreadSafe(sfdgvSSMainDashboard, _ssDashboadList)
+                SetSFGridFreezFirstColumn_ThreadSafe(sfdgvSSMainDashboard)
             Case Else
                 Throw New NotImplementedException
         End Select
@@ -2031,6 +2436,8 @@ Public Class frmMainTabbed
                     ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("Straddle Order Book.csv")))
                 Case GetType(ORBStrategy)
                     ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("ORB Order Book.csv")))
+                Case GetType(SSStrategy)
+                    ExportDataToCSV(runningStrategy, Path.Combine(My.Application.Info.DirectoryPath, String.Format("SS Order Book.csv")))
                 Case Else
                     Throw New NotImplementedException
             End Select
