@@ -198,12 +198,16 @@ Public Class SSStrategyInstrument
                                                        peStrangle.TradableInstrument.TradingSymbol,
                                                        ceStrangle.TradableInstrument.TradingSymbol))
 
+                            peStraddle.MyParentInstrumentDetails = instrumentDetails
                             peStraddle.InstrumentOption = OptionType.Straddle
                             peStraddle.TakeTrade = True
+                            ceStraddle.MyParentInstrumentDetails = instrumentDetails
                             ceStraddle.InstrumentOption = OptionType.Straddle
                             ceStraddle.TakeTrade = True
+                            peStrangle.MyParentInstrumentDetails = instrumentDetails
                             peStrangle.InstrumentOption = OptionType.Strangle
                             peStrangle.TakeTrade = True
+                            ceStrangle.MyParentInstrumentDetails = instrumentDetails
                             ceStrangle.InstrumentOption = OptionType.Strangle
                             ceStrangle.TakeTrade = True
 
