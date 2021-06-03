@@ -48,6 +48,8 @@ Partial Class frmAdvancedOptions
         Me.dtpckrNSEExchangeStartTime = New System.Windows.Forms.DateTimePicker()
         Me.lblNSEExchangeStartTime = New System.Windows.Forms.Label()
         Me.tabSettings = New System.Windows.Forms.TabPage()
+        Me.txtTickerStatusCheckDelay = New System.Windows.Forms.TextBox()
+        Me.lblTickerStatusCheckDelay = New System.Windows.Forms.Label()
         Me.grpTradingDays = New System.Windows.Forms.GroupBox()
         Me.chkbLstTradingDays = New System.Windows.Forms.CheckedListBox()
         Me.dtpckrDeadStateEndTime = New System.Windows.Forms.DateTimePicker()
@@ -351,6 +353,8 @@ Partial Class frmAdvancedOptions
         '
         'tabSettings
         '
+        Me.tabSettings.Controls.Add(Me.txtTickerStatusCheckDelay)
+        Me.tabSettings.Controls.Add(Me.lblTickerStatusCheckDelay)
         Me.tabSettings.Controls.Add(Me.grpTradingDays)
         Me.tabSettings.Controls.Add(Me.dtpckrDeadStateEndTime)
         Me.tabSettings.Controls.Add(Me.lblDeadStateEndTime)
@@ -371,15 +375,33 @@ Partial Class frmAdvancedOptions
         Me.tabSettings.Text = "Settings"
         Me.tabSettings.UseVisualStyleBackColor = True
         '
+        'txtTickerStatusCheckDelay
+        '
+        Me.txtTickerStatusCheckDelay.Location = New System.Drawing.Point(269, 81)
+        Me.txtTickerStatusCheckDelay.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtTickerStatusCheckDelay.Name = "txtTickerStatusCheckDelay"
+        Me.txtTickerStatusCheckDelay.Size = New System.Drawing.Size(135, 22)
+        Me.txtTickerStatusCheckDelay.TabIndex = 3
+        '
+        'lblTickerStatusCheckDelay
+        '
+        Me.lblTickerStatusCheckDelay.AutoSize = True
+        Me.lblTickerStatusCheckDelay.Location = New System.Drawing.Point(5, 84)
+        Me.lblTickerStatusCheckDelay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblTickerStatusCheckDelay.Name = "lblTickerStatusCheckDelay"
+        Me.lblTickerStatusCheckDelay.Size = New System.Drawing.Size(210, 17)
+        Me.lblTickerStatusCheckDelay.TabIndex = 28
+        Me.lblTickerStatusCheckDelay.Text = "Ticker Status Check Delay (sec)"
+        '
         'grpTradingDays
         '
         Me.grpTradingDays.Controls.Add(Me.chkbLstTradingDays)
-        Me.grpTradingDays.Location = New System.Drawing.Point(9, 199)
+        Me.grpTradingDays.Location = New System.Drawing.Point(3, 206)
         Me.grpTradingDays.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.grpTradingDays.Name = "grpTradingDays"
         Me.grpTradingDays.Padding = New System.Windows.Forms.Padding(3, 2, 3, 2)
-        Me.grpTradingDays.Size = New System.Drawing.Size(395, 133)
-        Me.grpTradingDays.TabIndex = 26
+        Me.grpTradingDays.Size = New System.Drawing.Size(401, 130)
+        Me.grpTradingDays.TabIndex = 7
         Me.grpTradingDays.TabStop = False
         Me.grpTradingDays.Text = "Select Trading Days"
         '
@@ -392,24 +414,24 @@ Partial Class frmAdvancedOptions
         Me.chkbLstTradingDays.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.chkbLstTradingDays.MultiColumn = True
         Me.chkbLstTradingDays.Name = "chkbLstTradingDays"
-        Me.chkbLstTradingDays.Size = New System.Drawing.Size(383, 118)
+        Me.chkbLstTradingDays.Size = New System.Drawing.Size(383, 99)
         Me.chkbLstTradingDays.TabIndex = 0
         '
         'dtpckrDeadStateEndTime
         '
         Me.dtpckrDeadStateEndTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrDeadStateEndTime.Location = New System.Drawing.Point(268, 170)
+        Me.dtpckrDeadStateEndTime.Location = New System.Drawing.Point(269, 180)
         Me.dtpckrDeadStateEndTime.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.dtpckrDeadStateEndTime.Name = "dtpckrDeadStateEndTime"
         Me.dtpckrDeadStateEndTime.ShowUpDown = True
         Me.dtpckrDeadStateEndTime.Size = New System.Drawing.Size(135, 22)
-        Me.dtpckrDeadStateEndTime.TabIndex = 24
+        Me.dtpckrDeadStateEndTime.TabIndex = 6
         Me.dtpckrDeadStateEndTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblDeadStateEndTime
         '
         Me.lblDeadStateEndTime.AutoSize = True
-        Me.lblDeadStateEndTime.Location = New System.Drawing.Point(5, 172)
+        Me.lblDeadStateEndTime.Location = New System.Drawing.Point(5, 183)
         Me.lblDeadStateEndTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblDeadStateEndTime.Name = "lblDeadStateEndTime"
         Me.lblDeadStateEndTime.Size = New System.Drawing.Size(131, 17)
@@ -419,18 +441,18 @@ Partial Class frmAdvancedOptions
         'dtpckrDeadStateStartTime
         '
         Me.dtpckrDeadStateStartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrDeadStateStartTime.Location = New System.Drawing.Point(268, 133)
+        Me.dtpckrDeadStateStartTime.Location = New System.Drawing.Point(269, 147)
         Me.dtpckrDeadStateStartTime.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.dtpckrDeadStateStartTime.Name = "dtpckrDeadStateStartTime"
         Me.dtpckrDeadStateStartTime.ShowUpDown = True
         Me.dtpckrDeadStateStartTime.Size = New System.Drawing.Size(135, 22)
-        Me.dtpckrDeadStateStartTime.TabIndex = 22
+        Me.dtpckrDeadStateStartTime.TabIndex = 5
         Me.dtpckrDeadStateStartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblDeadStateStartTime
         '
         Me.lblDeadStateStartTime.AutoSize = True
-        Me.lblDeadStateStartTime.Location = New System.Drawing.Point(5, 135)
+        Me.lblDeadStateStartTime.Location = New System.Drawing.Point(5, 150)
         Me.lblDeadStateStartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblDeadStateStartTime.Name = "lblDeadStateStartTime"
         Me.lblDeadStateStartTime.Size = New System.Drawing.Size(136, 17)
@@ -440,18 +462,18 @@ Partial Class frmAdvancedOptions
         'dtpckrForceRestartTime
         '
         Me.dtpckrForceRestartTime.Format = System.Windows.Forms.DateTimePickerFormat.Time
-        Me.dtpckrForceRestartTime.Location = New System.Drawing.Point(268, 96)
+        Me.dtpckrForceRestartTime.Location = New System.Drawing.Point(269, 114)
         Me.dtpckrForceRestartTime.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.dtpckrForceRestartTime.Name = "dtpckrForceRestartTime"
         Me.dtpckrForceRestartTime.ShowUpDown = True
         Me.dtpckrForceRestartTime.Size = New System.Drawing.Size(135, 22)
-        Me.dtpckrForceRestartTime.TabIndex = 3
+        Me.dtpckrForceRestartTime.TabIndex = 4
         Me.dtpckrForceRestartTime.Value = New Date(2019, 3, 12, 0, 0, 0, 0)
         '
         'lblForceRestartTime
         '
         Me.lblForceRestartTime.AutoSize = True
-        Me.lblForceRestartTime.Location = New System.Drawing.Point(5, 98)
+        Me.lblForceRestartTime.Location = New System.Drawing.Point(5, 117)
         Me.lblForceRestartTime.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblForceRestartTime.Name = "lblForceRestartTime"
         Me.lblForceRestartTime.Size = New System.Drawing.Size(129, 17)
@@ -460,7 +482,7 @@ Partial Class frmAdvancedOptions
         '
         'txtBackToBackOrderCoolOffDelay
         '
-        Me.txtBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(268, 57)
+        Me.txtBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(269, 48)
         Me.txtBackToBackOrderCoolOffDelay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtBackToBackOrderCoolOffDelay.Name = "txtBackToBackOrderCoolOffDelay"
         Me.txtBackToBackOrderCoolOffDelay.Size = New System.Drawing.Size(135, 22)
@@ -469,7 +491,7 @@ Partial Class frmAdvancedOptions
         'lblBackToBackOrderCoolOffDelay
         '
         Me.lblBackToBackOrderCoolOffDelay.AutoSize = True
-        Me.lblBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(5, 58)
+        Me.lblBackToBackOrderCoolOffDelay.Location = New System.Drawing.Point(5, 51)
         Me.lblBackToBackOrderCoolOffDelay.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblBackToBackOrderCoolOffDelay.Name = "lblBackToBackOrderCoolOffDelay"
         Me.lblBackToBackOrderCoolOffDelay.Size = New System.Drawing.Size(255, 17)
@@ -478,7 +500,7 @@ Partial Class frmAdvancedOptions
         '
         'txtGetInformationDelay
         '
-        Me.txtGetInformationDelay.Location = New System.Drawing.Point(268, 17)
+        Me.txtGetInformationDelay.Location = New System.Drawing.Point(269, 15)
         Me.txtGetInformationDelay.Margin = New System.Windows.Forms.Padding(4)
         Me.txtGetInformationDelay.Name = "txtGetInformationDelay"
         Me.txtGetInformationDelay.Size = New System.Drawing.Size(135, 22)
@@ -687,4 +709,6 @@ Partial Class frmAdvancedOptions
     Friend WithEvents lblDeadStateStartTime As Label
     Friend WithEvents grpTradingDays As GroupBox
     Friend WithEvents chkbLstTradingDays As CheckedListBox
+    Friend WithEvents txtTickerStatusCheckDelay As TextBox
+    Friend WithEvents lblTickerStatusCheckDelay As Label
 End Class
