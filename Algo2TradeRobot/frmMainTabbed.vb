@@ -445,7 +445,7 @@ Public Class frmMainTabbed
 
                 OnHeartbeat("Completing all pre-automation requirements")
                 _cts.Token.ThrowIfCancellationRequested()
-                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync().ConfigureAwait(False)
+                Dim isPreProcessingDone As Boolean = Await _commonController.PrepareToRunStrategyAsync(False).ConfigureAwait(False)
                 _cts.Token.ThrowIfCancellationRequested()
 
                 If Not isPreProcessingDone Then Throw New ApplicationException("PrepareToRunStrategyAsync did not succeed, cannot progress")
