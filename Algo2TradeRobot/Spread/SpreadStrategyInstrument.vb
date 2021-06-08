@@ -20,8 +20,12 @@ Public Class SpreadStrategyInstrument
     Public DependentOptionStrategyInstruments As IEnumerable(Of SpreadStrategyInstrument)
 
     Private _direction As IOrder.TypeOfTransaction = IOrder.TypeOfTransaction.None
-
+    Private _contractRolloverDone As Boolean = False
+    Private _contractRolloverATM As Decimal = Decimal.MinValue
     Private _lastPrevPayloadPlaceOrder As String = ""
+    Private _lastTickerStatusUpdateTime As Date
+
+    Private ReadOnly _tickerStatusFilename As String
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
@@ -61,6 +65,8 @@ Public Class SpreadStrategyInstrument
             RawPayloadDependentConsumers.Add(chartConsumer)
             _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier)
         End If
+        _tickerStatusFilename = Path.Combine(My.Application.Info.DirectoryPath, "TickerStatus.Spread.a2t")
+        _lastTickerStatusUpdateTime = Now.Date
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -158,7 +164,17 @@ Public Class SpreadStrategyInstrument
                     Throw Me._RMSException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-
+                Try
+                    If Now >= _lastTickerStatusUpdateTime.AddSeconds(Me.ParentStrategy.ParentController.UserInputs.TickerStatusCheckDelay) Then
+                        If Me.ParentStrategy.ParentController.IsTickerConnected() Then
+                            _lastTickerStatusUpdateTime = Now
+                            Utilities.Strings.SerializeFromCollection(Of String)(_tickerStatusFilename, "")
+                        End If
+                    End If
+                Catch ex As Exception
+                    logger.Warn(ex.ToString)
+                End Try
+                _cts.Token.ThrowIfCancellationRequested()
                 If Me.TradableInstrument.IsHistoricalCompleted Then
                     Dim runningCandlePayload As OHLCPayload = GetXMinuteCurrentCandle(instrumentData.Timeframe)
                     If runningCandlePayload IsNot Nothing AndAlso runningCandlePayload.PreviousPayload IsNot Nothing Then
@@ -238,6 +254,10 @@ Public Class SpreadStrategyInstrument
                                     Next
 
                                     Dim atmStrike As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value - instrumentData.EntryGap, allPEStrikes.Keys.ToList)
+                                    If _contractRolloverDone Then
+                                        _contractRolloverDone = False
+                                        atmStrike = _contractRolloverATM
+                                    End If
                                     Dim otmStrike As Decimal = GetATMStrike(atmStrike - instrumentData.Distance, allPEStrikes.Keys.ToList)
 
                                     Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {allPEStrikes(atmStrike), allPEStrikes(otmStrike)}).ConfigureAwait(False)
@@ -298,6 +318,10 @@ Public Class SpreadStrategyInstrument
                                     Next
 
                                     Dim atmStrike As Decimal = GetATMStrike(runningCandlePayload.PreviousPayload.ClosePrice.Value + instrumentData.EntryGap, allCEStrikes.Keys.ToList)
+                                    If _contractRolloverDone Then
+                                        _contractRolloverDone = False
+                                        atmStrike = _contractRolloverATM
+                                    End If
                                     Dim otmStrike As Decimal = GetATMStrike(atmStrike + instrumentData.Distance, allCEStrikes.Keys.ToList)
 
                                     Await CreateStrategyInstrumentAndPopulate(New List(Of IInstrument) From {allCEStrikes(atmStrike), allCEStrikes(otmStrike)}).ConfigureAwait(False)
@@ -583,7 +607,15 @@ Public Class SpreadStrategyInstrument
     End Function
 
     Public Async Function ContractRolloverAsync() As Task
-        Dim userSettings As SpreadUserInputs = Me.ParentStrategy.UserSettings
+        Dim rawInstrumentName As String = Me.TradableInstrument.TradingSymbol.ToUpper
+        If Me.TradableInstrument.TradingSymbol.ToUpper = "NIFTY 50" Then
+            rawInstrumentName = "NIFTY"
+        ElseIf Me.TradableInstrument.RawInstrumentName.ToUpper = "NIFTY BANK" Then
+            rawInstrumentName = "BANKNIFTY"
+        End If
+
+        Dim userInputs As SpreadUserInputs = Me.ParentStrategy.UserSettings
+        Dim instrumentData As SpreadUserInputs.InstrumentDetails = userInputs.InstrumentsData(rawInstrumentName)
         Try
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
@@ -608,10 +640,20 @@ Public Class SpreadStrategyInstrument
                     OnHeartbeat("Contract Rollover")
                     If exitInstrument1 IsNot Nothing Then
                         Await exitInstrument1.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "BUY").ConfigureAwait(False)
+                        _contractRolloverDone = True
+                        _contractRolloverATM = exitInstrument1.TradableInstrument.Strike
                     End If
                     If exitInstrument2 IsNot Nothing Then
                         Await exitInstrument2.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "SELL").ConfigureAwait(False)
+                        _contractRolloverDone = True
+                        If exitInstrument1.TradableInstrument.RawInstrumentType = "CE" Then
+                            _contractRolloverATM = exitInstrument1.TradableInstrument.Strike - instrumentData.Distance
+                        Else
+                            _contractRolloverATM = exitInstrument1.TradableInstrument.Strike + instrumentData.Distance
+                        End If
                     End If
+                    logger.Debug("Contract Rollover Done:{0}, Contract Rollover ATM:{1}",
+                                 _contractRolloverDone, If(_contractRolloverATM <> Decimal.MinValue, _contractRolloverATM, ""))
 
                     Exit While
                 End If

@@ -22,6 +22,9 @@ Public Class NFOStrategyInstrument
     Public ForceEntryForContractRollover As Boolean
 
     Private _lastPrevPayloadPlaceOrder As String = ""
+    Private _lastTickerStatusUpdateTime As Date
+
+    Private ReadOnly _tickerStatusFilename As String
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
@@ -55,6 +58,9 @@ Public Class NFOStrategyInstrument
             RawPayloadDependentConsumers.Add(chartConsumer)
             _dummySupertrendConsumer = New SupertrendConsumer(chartConsumer, instrumentData.SupertrendPeriod, instrumentData.SupertrendMultiplier)
         End If
+
+        _tickerStatusFilename = Path.Combine(My.Application.Info.DirectoryPath, "TickerStatus.NFO.a2t")
+        _lastTickerStatusUpdateTime = Now.Date
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -88,7 +94,17 @@ Public Class NFOStrategyInstrument
                     Throw Me._RMSException
                 End If
                 _cts.Token.ThrowIfCancellationRequested()
-
+                Try
+                    If Now >= _lastTickerStatusUpdateTime.AddSeconds(Me.ParentStrategy.ParentController.UserInputs.TickerStatusCheckDelay) Then
+                        If Me.ParentStrategy.ParentController.IsTickerConnected() Then
+                            _lastTickerStatusUpdateTime = Now
+                            Utilities.Strings.SerializeFromCollection(Of String)(_tickerStatusFilename, "")
+                        End If
+                    End If
+                Catch ex As Exception
+                    logger.Warn(ex.ToString)
+                End Try
+                _cts.Token.ThrowIfCancellationRequested()
                 'Place Order block start
                 Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso

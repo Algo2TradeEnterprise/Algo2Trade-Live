@@ -834,6 +834,7 @@ Public Class frmMainTabbed
                 CType(_lastException, AdapterBusinessException).ExceptionType = AdapterBusinessException.TypeOfException.PermissionException Then
                 Debug.WriteLine("Restart for permission")
                 logger.Debug("Restarting the application again as there is premission issue")
+                Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                 btnSpreadStart_Click(sender, e)
             ElseIf _lastException.GetType Is GetType(ForceExitException) Then
                 If CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.IdleState Then
@@ -843,6 +844,7 @@ Public Class frmMainTabbed
                     Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for idle state end")
                     logger.Debug("Restarting the application again for idle state end")
+                    Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     btnSpreadStart_Click(sender, e)
                 ElseIf CType(_lastException, ForceExitException).TypeOfForceExit = ForceExitException.ForceExitType.NonTradingDay Then
                     Debug.WriteLine("Force exit all process for non trading day. Will restart applcation on the next day. Waiting ...")
@@ -851,11 +853,13 @@ Public Class frmMainTabbed
                     Await Task.Delay(Math.Ceiling(remainingTime)).ConfigureAwait(False)
                     Debug.WriteLine("Restart for non trading day end")
                     logger.Debug("Restarting the application again for non trading day end")
+                    Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     btnSpreadStart_Click(sender, e)
                 Else
                     Debug.WriteLine("Restart for daily refresh")
                     logger.Debug("Restarting the application again for daily refresh")
                     PreviousDayCleanup(True)
+                    Await Task.Delay(2000, _cts.Token).ConfigureAwait(False)
                     btnSpreadStart_Click(sender, e)
                 End If
             End If
