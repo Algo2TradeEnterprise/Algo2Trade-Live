@@ -19,6 +19,9 @@ Public Class ORBStrategyInstrument
 
     Private _lastPrevPayloadPlaceOrder As String = ""
     Private _myOptionStrategyInstruments As IEnumerable(Of StrategyInstrument)
+    Private _lastTickerStatusUpdateTime As Date
+
+    Private ReadOnly _tickerStatusFilename As String
     Private ReadOnly _dummySupertrendConsumer As SupertrendConsumer
     Private ReadOnly _ORBFileName As String = Nothing
 
@@ -81,6 +84,8 @@ Public Class ORBStrategyInstrument
         Me.StopInstrument = False
 
         _ORBFileName = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} {1}.ORB.a2t", Me.TradableInstrument.TradingSymbol, Now.ToString("yy_MM_dd")))
+        _tickerStatusFilename = Path.Combine(My.Application.Info.DirectoryPath, "TickerStatus.ORB.a2t")
+        _lastTickerStatusUpdateTime = Now.Date
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -258,7 +263,17 @@ Public Class ORBStrategyInstrument
                         Exit While
                     End If
                     _cts.Token.ThrowIfCancellationRequested()
-
+                    Try
+                        If Now >= _lastTickerStatusUpdateTime.AddSeconds(Me.ParentStrategy.ParentController.UserInputs.TickerStatusCheckDelay) Then
+                            If Me.ParentStrategy.ParentController.IsTickerConnected() Then
+                                _lastTickerStatusUpdateTime = Now
+                                Utilities.Strings.SerializeFromCollection(Of String)(_tickerStatusFilename, "")
+                            End If
+                        End If
+                    Catch ex As Exception
+                        logger.Warn(ex.ToString)
+                    End Try
+                    _cts.Token.ThrowIfCancellationRequested()
                     'Place Order block start
                     If Me.MyParentInstrumentDetails IsNot Nothing AndAlso Me.TakeTrade Then
                         Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
