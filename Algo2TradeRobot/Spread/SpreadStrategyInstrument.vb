@@ -646,10 +646,10 @@ Public Class SpreadStrategyInstrument
                     If exitInstrument2 IsNot Nothing Then
                         Await exitInstrument2.MonitorAsync(command:=ExecuteCommands.PlaceRegularMarketCNCOrder, "SELL").ConfigureAwait(False)
                         _contractRolloverDone = True
-                        If exitInstrument1.TradableInstrument.RawInstrumentType = "CE" Then
-                            _contractRolloverATM = exitInstrument1.TradableInstrument.Strike - instrumentData.Distance
+                        If exitInstrument2.TradableInstrument.RawInstrumentType = "CE" Then
+                            _contractRolloverATM = exitInstrument2.TradableInstrument.Strike - instrumentData.Distance
                         Else
-                            _contractRolloverATM = exitInstrument1.TradableInstrument.Strike + instrumentData.Distance
+                            _contractRolloverATM = exitInstrument2.TradableInstrument.Strike + instrumentData.Distance
                         End If
                     End If
                     logger.Debug("Contract Rollover Done:{0}, Contract Rollover ATM:{1}",
