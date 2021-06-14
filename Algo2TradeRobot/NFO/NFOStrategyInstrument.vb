@@ -14,7 +14,11 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
+    Private _lastLogTime As Date = Now.Date
+
     Private _quantityToTrade As Integer
+    Private _orderType As IOrder.TypeOfOrder
+    Private _allowedSpreadPercentage As Decimal
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -44,8 +48,6 @@ Public Class NFOStrategyInstrument
                 Throw New ApplicationException(String.Format("Signal Timeframe is 0 or Nothing, does not adhere to the strategy:{0}", Me.ParentStrategy.ToString))
             End If
         End If
-
-        If Me.TradableInstrument.InstrumentType <> IInstrument.TypeOfInstrument.Cash Then Me.TradableInstrument.FetchHistorical = False
     End Sub
 
     Public Overrides Async Function PopulateChartAndIndicatorsAsync(candleCreator As Chart, currentCandle As OHLCPayload) As Task
@@ -58,11 +60,13 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-    Public Overrides Async Function MonitorAsync() As Task
-        Await Task.Delay(0).ConfigureAwait(False)
+    Public Async Function TakeTradeAsync(ordertype As IOrder.TypeOfOrder, quantity As Integer, signalCandleTime As Date, allowedSpreadPercentage As Decimal) As Task(Of Boolean)
+        Dim ret As Boolean = False
+        _orderType = ordertype
+        _quantityToTrade = quantity
+        _allowedSpreadPercentage = allowedSpreadPercentage
         Try
             While True
-                _cts.Token.ThrowIfCancellationRequested()
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
                 End If
@@ -71,56 +75,83 @@ Public Class NFOStrategyInstrument
                 '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
                 '    Throw Me._RMSException
                 'End If
-
-                Dim modifyTargetOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(False).ConfigureAwait(False)
-                If modifyTargetOrderTrigger IsNot Nothing AndAlso modifyTargetOrderTrigger.Count > 0 Then
-                    Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.ModifyTargetOrder, Nothing).ConfigureAwait(False)
+                _cts.Token.ThrowIfCancellationRequested()
+                Dim placeOrderTriggers As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Await IsTriggerReceivedForPlaceOrderAsync(False).ConfigureAwait(False)
+                If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
+                    placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
+                    Dim orderResponse
+                    If _orderType = IOrder.TypeOfOrder.Limit Then
+                        orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
+                    Else
+                        orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
+                    End If
                     If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                        Dim modifyOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                        If modifyTargetOrderTrigger.FirstOrDefault.Item4.ToUpper.Contains("MARKET") Then
-                            Exit While
+                        Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
+                        If placeOrderResponse.ContainsKey("data") AndAlso
+                            placeOrderResponse("data").ContainsKey("order_id") Then
+                            Dim orderID As String = placeOrderResponse("data")("order_id")
+                            ret = Await ModifyOrCancelTradeAsync(orderID, signalCandleTime).ConfigureAwait(False)
                         End If
                     End If
                 End If
 
-                Await Task.Delay(1000).ConfigureAwait(False)
+                If ret OrElse Now >= signalCandleTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame * 2) Then
+                    Exit While
+                End If
+
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         End Try
+        Return ret
     End Function
 
-    Public Overrides Async Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
-        Await Task.Delay(0).ConfigureAwait(False)
+    Public Async Function ModifyOrCancelTradeAsync(orderID As String, signalCandleTime As Date) As Task(Of Boolean)
+        Dim ret As Boolean = False
         Try
-            If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                Throw Me.ParentStrategy.ParentController.OrphanException
-            End If
-            'If Me._RMSException IsNot Nothing AndAlso
-            '    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
-            '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
-            '    Throw Me._RMSException
-            'End If
-
-            If command = ExecuteCommands.PlaceRegularLimitCNCOrder Then
-                _quantityToTrade = data
-                Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
-                If orderResponse IsNot Nothing AndAlso orderResponse.Count > 0 Then
-                    Dim placeOrderResponse = CType(orderResponse, Concurrent.ConcurrentBag(Of Object)).FirstOrDefault
-                    If placeOrderResponse.ContainsKey("data") AndAlso
-                        placeOrderResponse("data").ContainsKey("order_id") Then
-                        _quantityToTrade = 0
-                        MonitorAsync()
+            Await Task.Delay(3000, _cts.Token).ConfigureAwait(False)
+            While True
+                If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                    Throw Me.ParentStrategy.ParentController.OrphanException
+                End If
+                'If Me._RMSException IsNot Nothing AndAlso
+                '    _RMSException.ExceptionType = Algo2TradeCore.Exceptions.AdapterBusinessException.TypeOfException.RMSError Then
+                '    OnHeartbeat(String.Format("{0}:Will not take no more action in this instrument as RMS Error occured. Error-{1}", Me.TradableInstrument.TradingSymbol, _RMSException.Message))
+                '    Throw Me._RMSException
+                'End If
+                _cts.Token.ThrowIfCancellationRequested()
+                If Me.OrderDetails IsNot Nothing AndAlso Me.OrderDetails.ContainsKey(orderID) Then
+                    If Me.OrderDetails(orderID).ParentOrder.Status = IOrder.TypeOfStatus.Complete Then
+                        ret = True
+                        Exit While
+                    ElseIf Me.OrderDetails(orderID).ParentOrder.Status = IOrder.TypeOfStatus.Cancelled Then
+                        Exit While
                     End If
                 End If
-            Else
-                Throw New NotImplementedException
-            End If
+
+                If Now < signalCandleTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame * 2) Then
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim modifyTargetOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(False).ConfigureAwait(False)
+                    If modifyTargetOrderTrigger IsNot Nothing AndAlso modifyTargetOrderTrigger.Count > 0 Then
+                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.ModifyTargetOrder, Nothing).ConfigureAwait(False)
+                    End If
+                Else
+                    _cts.Token.ThrowIfCancellationRequested()
+                    Dim cancelOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                    If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
+                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
+                    End If
+                End If
+
+                Await Task.Delay(3000, _cts.Token).ConfigureAwait(False)
+            End While
         Catch ex As Exception
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
         End Try
+        Return ret
     End Function
 
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)))
@@ -128,40 +159,93 @@ Public Class NFOStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
+        Dim log As Boolean = False
+        If currentTime >= _lastLogTime.AddMinutes(1) OrElse forcePrint Then
+            _lastLogTime = currentTime
+            log = True
+        End If
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime AndAlso
-            Not IsActiveInstrument() Then
-            Dim signalCandle As OHLCPayload = New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
-            signalCandle.SnapshotDateTime = currentTick.Timestamp.Value.Date
+        If Not IsActiveInstrument() AndAlso currentTick IsNot Nothing Then
+            Dim spread As Decimal = Math.Abs(currentTick.FirstBidPrice - currentTick.FirstOfferPrice)
+            Dim spreadPer As Decimal = (spread / currentTick.LastPrice) * 100
+
+            Dim signalCandle As New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
             signalCandle.OpenPrice.Value = currentTick.LastPrice
             signalCandle.LowPrice.Value = currentTick.LastPrice
             signalCandle.HighPrice.Value = currentTick.LastPrice
             signalCandle.ClosePrice.Value = currentTick.LastPrice
             signalCandle.Volume.Value = currentTick.Volume
+            signalCandle.SnapshotDateTime = currentTick.Timestamp.Value.Date
+            signalCandle.TradingSymbol = Me.TradableInstrument.TradingSymbol
+
             If signalCandle IsNot Nothing Then
-                If _quantityToTrade > 0 Then
-                    parameters = New PlaceOrderParameters(signalCandle) With
+                If _orderType = IOrder.TypeOfOrder.Limit Then
+                    If log Then
+                        OnHeartbeat(String.Format("LTP={0}, Spread={1} [Bid({2})-Offer({3})], Spread %({4})<=Allowed Spread %({5})[{6}], Quantity={7}, Order Type={8}, LTP {9} Price[{10}]",
+                                                  currentTick.LastPrice, spread, currentTick.FirstBidPrice, currentTick.FirstOfferPrice,
+                                                  Math.Round(spreadPer, 4), _allowedSpreadPercentage, spreadPer <= _allowedSpreadPercentage,
+                                                  _quantityToTrade, _orderType.ToString,
+                                                  If(_quantityToTrade > 0, "> Offer", "< Bid"),
+                                                  If(_quantityToTrade > 0, currentTick.LastPrice > currentTick.FirstOfferPrice, currentTick.LastPrice < currentTick.FirstBidPrice)))
+                    End If
+                    If spreadPer <= _allowedSpreadPercentage Then
+                        If _quantityToTrade > 0 AndAlso currentTick.LastPrice > currentTick.FirstOfferPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                        .OrderType = _orderType,
+                                        .Price = currentTick.FirstOfferPrice,
+                                        .Quantity = Math.Abs(_quantityToTrade)
+                                     }
+                        ElseIf _quantityToTrade < 0 AndAlso currentTick.LastPrice < currentTick.FirstBidPrice Then
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                        .OrderType = _orderType,
+                                        .Price = currentTick.FirstBidPrice,
+                                        .Quantity = Math.Abs(_quantityToTrade)
+                                     }
+                        End If
+                    End If
+                ElseIf _orderType = IOrder.TypeOfOrder.Market Then
+                    If log Then
+                        OnHeartbeat(String.Format("LTP={0}, Spread={1} [Bid({2})-Offer({3})], Quantity={4}, Order Type={5}",
+                                                  currentTick.LastPrice, spread, currentTick.FirstBidPrice, currentTick.FirstOfferPrice,
+                                                  _quantityToTrade, _orderType.ToString))
+                    End If
+                    If _quantityToTrade > 0 Then
+                        parameters = New PlaceOrderParameters(signalCandle) With
                                  {
                                     .EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                    .OrderType = IOrder.TypeOfOrder.Limit,
-                                    .Price = currentTick.FirstBidPrice,
+                                    .OrderType = _orderType,
                                     .Quantity = Math.Abs(_quantityToTrade)
                                  }
-                ElseIf _quantityToTrade < 0 Then
-                    parameters = New PlaceOrderParameters(signalCandle) With
+                    ElseIf _quantityToTrade < 0 Then
+                        parameters = New PlaceOrderParameters(signalCandle) With
                                  {
                                     .EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                    .OrderType = IOrder.TypeOfOrder.Limit,
-                                    .Price = currentTick.FirstOfferPrice,
+                                    .OrderType = _orderType,
                                     .Quantity = Math.Abs(_quantityToTrade)
                                  }
+                    End If
+                Else
+                    Throw New NotImplementedException
                 End If
+            End If
+        Else
+            If log Then
+                Try
+                    logger.Debug("Is Active Instrument:{0}, Current Tick:{1}",
+                             IsActiveInstrument(), If(currentTick Is Nothing, "Nothing", currentTick.LastPrice))
+                Catch ex As Exception
+                    logger.Warn(ex.ToString)
+                End Try
             End If
         End If
 
         'Below portion have to be done in every place order trigger
-        If parameters IsNot Nothing Then
+        If parameters IsNot Nothing AndAlso currentTime >= Me.TradableInstrument.ExchangeDetails.ExchangeStartTime AndAlso currentTime <= Me.TradableInstrument.ExchangeDetails.ExchangeEndTime Then
             Try
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
@@ -241,6 +325,8 @@ Public Class NFOStrategyInstrument
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
+        Dim spread As Decimal = Math.Abs(currentTick.FirstBidPrice - currentTick.FirstOfferPrice)
+        Dim spreadPer As Decimal = (spread / currentTick.LastPrice) * 100
         If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
             For Each runningParentOrder In OrderDetails.Keys
                 Dim parentBussinessOrder As IBusinessOrder = OrderDetails(runningParentOrder)
@@ -248,20 +334,14 @@ Public Class NFOStrategyInstrument
                     Dim price As Decimal = Decimal.MinValue
                     Dim reason As String = ""
                     If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                        If currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(2) Then
-                            price = currentTick.LastPrice + ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
-                            reason = "Market Order"
-                        ElseIf currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(1) Then
-                            price = currentTick.FirstBidPrice
-                            reason = "Second Try"
+                        If currentTick.LastPrice > currentTick.FirstOfferPrice AndAlso spreadPer <= _allowedSpreadPercentage Then
+                            price = currentTick.FirstOfferPrice
+                            reason = "Offer Price Change"
                         End If
                     ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                        If currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(2) Then
-                            price = currentTick.LastPrice - ConvertFloorCeling(currentTick.LastPrice * 0.3 / 100, TradableInstrument.TickSize, RoundOfType.Celing)
-                            reason = "Market Order"
-                        ElseIf currentTime >= parentBussinessOrder.ParentOrder.TimeStamp.AddSeconds(1) Then
-                            price = currentTick.FirstOfferPrice
-                            reason = "Second Try"
+                        If currentTick.LastPrice < currentTick.FirstBidPrice AndAlso spreadPer <= _allowedSpreadPercentage Then
+                            price = currentTick.FirstBidPrice
+                            reason = "Bid Price Change"
                         End If
                     End If
                     If price <> Decimal.MinValue AndAlso parentBussinessOrder.ParentOrder.Price <> price Then
@@ -269,8 +349,8 @@ Public Class NFOStrategyInstrument
                         Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentBussinessOrder.ParentOrder.Tag)
                         If currentSignalActivities IsNot Nothing Then
                             If currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-                                        currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-                                        currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                                currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                                currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
                                 If Val(currentSignalActivities.TargetModifyActivity.Supporting) = price Then
                                     Continue For
                                 End If
@@ -284,7 +364,38 @@ Public Class NFOStrategyInstrument
         End If
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             For Each runningOrder In ret
-                logger.Debug("***** Modify Target ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
+                logger.Debug("***** Modify Target ***** Order ID:{0}, Price:{1}, Reason:{2}, {3}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
+            Next
+        End If
+        Return ret
+    End Function
+
+    Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
+        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Dim currentTick As ITick = Me.TradableInstrument.LastTick
+        Dim currentTime As Date = Now()
+        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
+            For Each runningParentOrder In OrderDetails.Keys
+                Dim parentBussinessOrder As IBusinessOrder = OrderDetails(runningParentOrder)
+                If parentBussinessOrder.ParentOrder.Status = IOrder.TypeOfStatus.Open Then
+                    'Below portion have to be done in every cancel order trigger
+                    Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentBussinessOrder.ParentOrder.Tag)
+                    If currentSignalActivities IsNot Nothing Then
+                        If currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
+                            currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
+                            currentSignalActivities.CancelActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
+                            Continue For
+                        End If
+                    End If
+                    If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
+                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, parentBussinessOrder.ParentOrder, "Time over"))
+                End If
+            Next
+        End If
+        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
+            For Each runningOrder In ret
+                logger.Debug("***** Cancel Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol)
             Next
         End If
         Return ret
@@ -326,11 +437,15 @@ Public Class NFOStrategyInstrument
     End Function
 
 #Region "Not Required For This Strategy"
-    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+    Public Overrides Function MonitorAsync() As Task
         Throw New NotImplementedException
     End Function
 
-    Protected Overrides Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
+    Public Overrides Function MonitorAsync(ByVal command As ExecuteCommands, ByVal data As Object) As Task
+        Throw New NotImplementedException
+    End Function
+
+    Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Throw New NotImplementedException
     End Function
 

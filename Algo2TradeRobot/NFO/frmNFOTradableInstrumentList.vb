@@ -1,31 +1,5 @@
 ﻿Public Class frmNFOTradableInstrumentList
 
-#Region "Common Delegate"
-    Delegate Sub SetObjectEnableDisable_Delegate(ByVal [obj] As Object, ByVal [value] As Boolean)
-    Public Sub SetObjectEnableDisable_ThreadSafe(ByVal [obj] As Object, ByVal [value] As Boolean)
-        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
-        ' If these threads are different, it returns true.  
-        If [obj].InvokeRequired Then
-            Dim MyDelegate As New SetObjectEnableDisable_Delegate(AddressOf SetObjectEnableDisable_ThreadSafe)
-            Me.Invoke(MyDelegate, New Object() {[obj], [value]})
-        Else
-            [obj].Enabled = [value]
-        End If
-    End Sub
-
-    Delegate Sub SetObjectText_Delegate(ByVal [Object] As Object, ByVal [text] As String)
-    Public Sub SetObjectText_ThreadSafe(ByVal [Object] As Object, ByVal [text] As String)
-        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
-        ' If these threads are different, it returns true.  
-        If [Object].InvokeRequired Then
-            Dim MyDelegate As New SetObjectText_Delegate(AddressOf SetObjectText_ThreadSafe)
-            Me.Invoke(MyDelegate, New Object() {[Object], [text]})
-        Else
-            [Object].Text = [text]
-        End If
-    End Sub
-#End Region
-
     Private _TradableStrategyInstruments As IEnumerable(Of NFOStrategyInstrument)
     Public Sub New(ByVal associatedTradableInstruments As IEnumerable(Of NFOStrategyInstrument))
         InitializeComponent()

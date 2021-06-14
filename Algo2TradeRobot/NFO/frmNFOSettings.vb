@@ -38,29 +38,19 @@ Public Class frmNFOSettings
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
             txtSignalTimeframe.Text = _settings.SignalTimeFrame
-            txtDaysBack.Text = _settings.DaysBack
+            txtLoopBackPeriod.Text = _settings.LoopBackPeriod
             txtEntrySDMultiplier.Text = _settings.EntrySDMultiplier
-            txtExitSDMultiplier.Text = _settings.ExitSDMultiplier
-            rbSameSideExit.Checked = _settings.SameSideExit
-            rbOppositeSide.Checked = _settings.OppositeSideExit
+            txtMaxSpreadPercentage.Text = _settings.MaxSpreadPercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
-
-            txtTelegramBotAPIKey.Text = _settings.TelegramBotAPIKey
-            txtTelegramTradeChatID.Text = _settings.TelegramTradeChatID
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = txtSignalTimeframe.Text
-        _settings.DaysBack = txtDaysBack.Text
+        _settings.LoopBackPeriod = txtLoopBackPeriod.Text
         _settings.EntrySDMultiplier = txtEntrySDMultiplier.Text
-        _settings.ExitSDMultiplier = txtExitSDMultiplier.Text
-        _settings.SameSideExit = rbSameSideExit.Checked
-        _settings.OppositeSideExit = rbOppositeSide.Checked
+        _settings.MaxSpreadPercentage = txtMaxSpreadPercentage.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
-
-        _settings.TelegramBotAPIKey = txtTelegramBotAPIKey.Text
-        _settings.TelegramTradeChatID = txtTelegramTradeChatID.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
     End Sub
@@ -92,7 +82,9 @@ Public Class frmNFOSettings
     End Sub
     Private Sub ValidateInputs()
         ValidateNumbers(1, Integer.MaxValue, txtSignalTimeframe, True)
-        ValidateNumbers(1, Integer.MaxValue, txtDaysBack, True)
+        ValidateNumbers(1, Integer.MaxValue, txtLoopBackPeriod, True)
+        ValidateNumbers(0, Decimal.MaxValue, txtEntrySDMultiplier, False)
+        ValidateNumbers(0, Decimal.MaxValue, txtMaxSpreadPercentage, False)
 
         ValidateFile()
     End Sub

@@ -10,14 +10,9 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Coinciding Pair.Strategy.a2t")
 
-    Public Property DaysBack As Integer
+    Public Property LoopBackPeriod As Integer
     Public Property EntrySDMultiplier As Decimal
-    Public Property ExitSDMultiplier As Decimal
-    Public Property SameSideExit As Boolean
-    Public Property OppositeSideExit As Boolean
-
-    Public Property TelegramBotAPIKey As String
-    Public Property TelegramTradeChatID As String
+    Public Property MaxSpreadPercentage As Decimal
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)

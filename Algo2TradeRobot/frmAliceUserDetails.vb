@@ -19,6 +19,7 @@ Public Class frmAliceUserDetails
             txtAliceUserId.Text = _UserInputs.UserDetails.UserId
             txtAlicePassword.Text = Decrypt(_UserInputs.UserDetails.Password, Common.MASTER_KEY)
             txtAlice2FAAnswer.Text = Decrypt(_UserInputs.UserDetails.API2FAPin, Common.MASTER_KEY)
+            txtAliceAppID.Text = Decrypt(_UserInputs.UserDetails.APIKey, Common.MASTER_KEY)
             txtAliceAPISecret.Text = Decrypt(_UserInputs.UserDetails.APISecret, Common.MASTER_KEY)
         End If
     End Sub
@@ -39,6 +40,7 @@ Public Class frmAliceUserDetails
         _UserInputs.UserDetails.UserId = txtAliceUserId.Text
         _UserInputs.UserDetails.Password = Encrypt(txtAlicePassword.Text, Common.MASTER_KEY)
         _UserInputs.UserDetails.API2FAPin = Encrypt(txtAlice2FAAnswer.Text, Common.MASTER_KEY)
+        _UserInputs.UserDetails.APIKey = Encrypt(txtAliceAppID.Text, Common.MASTER_KEY)
         _UserInputs.UserDetails.APISecret = Encrypt(txtAliceAPISecret.Text, Common.MASTER_KEY)
         Utilities.Strings.SerializeFromCollection(Of ControllerUserInputs)(ControllerUserInputs.Filename, _UserInputs)
     End Sub
@@ -47,6 +49,7 @@ Public Class frmAliceUserDetails
         ValidateTextLength(txtAliceUserId, 1, "User Id")
         ValidateTextLength(txtAlicePassword, 1, "Password")
         ValidateTextLength(txtAlice2FAAnswer, 1, "2FA Answer")
+        ValidateTextLength(txtAliceAppID, 1, "App ID")
         ValidateTextLength(txtAliceAPISecret, 1, "API Secret")
     End Sub
 

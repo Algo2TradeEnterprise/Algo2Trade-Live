@@ -24,7 +24,11 @@ Partial Class frmAliceUserDetails
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(frmAliceUserDetails))
-        Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.btnSaveAliceUserDetails = New System.Windows.Forms.Button()
+        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
+        Me.GroupBox4 = New System.Windows.Forms.GroupBox()
+        Me.txtAliceAppID = New System.Windows.Forms.TextBox()
+        Me.lblAliceAppID = New System.Windows.Forms.Label()
         Me.txtAlice2FAAnswer = New System.Windows.Forms.TextBox()
         Me.lblAlice2FAAnswer = New System.Windows.Forms.Label()
         Me.txtAliceAPISecret = New System.Windows.Forms.TextBox()
@@ -33,28 +37,66 @@ Partial Class frmAliceUserDetails
         Me.lblAliceAPISecret = New System.Windows.Forms.Label()
         Me.lblAlicePassword = New System.Windows.Forms.Label()
         Me.lblAliceUserId = New System.Windows.Forms.Label()
-        Me.btnSaveAliceUserDetails = New System.Windows.Forms.Button()
-        Me.ImageList1 = New System.Windows.Forms.ImageList(Me.components)
-        Me.GroupBox1.SuspendLayout()
+        Me.GroupBox4.SuspendLayout()
         Me.SuspendLayout()
         '
-        'GroupBox1
+        'btnSaveAliceUserDetails
         '
-        Me.GroupBox1.Controls.Add(Me.txtAlice2FAAnswer)
-        Me.GroupBox1.Controls.Add(Me.lblAlice2FAAnswer)
-        Me.GroupBox1.Controls.Add(Me.txtAliceAPISecret)
-        Me.GroupBox1.Controls.Add(Me.txtAlicePassword)
-        Me.GroupBox1.Controls.Add(Me.txtAliceUserId)
-        Me.GroupBox1.Controls.Add(Me.lblAliceAPISecret)
-        Me.GroupBox1.Controls.Add(Me.lblAlicePassword)
-        Me.GroupBox1.Controls.Add(Me.lblAliceUserId)
-        Me.GroupBox1.Location = New System.Drawing.Point(10, 10)
-        Me.GroupBox1.Margin = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Name = "GroupBox1"
-        Me.GroupBox1.Padding = New System.Windows.Forms.Padding(4)
-        Me.GroupBox1.Size = New System.Drawing.Size(460, 166)
-        Me.GroupBox1.TabIndex = 2
-        Me.GroupBox1.TabStop = False
+        Me.btnSaveAliceUserDetails.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
+        Me.btnSaveAliceUserDetails.ImageKey = "save-icon-36533.png"
+        Me.btnSaveAliceUserDetails.ImageList = Me.ImageList1
+        Me.btnSaveAliceUserDetails.Location = New System.Drawing.Point(470, 7)
+        Me.btnSaveAliceUserDetails.Margin = New System.Windows.Forms.Padding(4)
+        Me.btnSaveAliceUserDetails.Name = "btnSaveAliceUserDetails"
+        Me.btnSaveAliceUserDetails.Size = New System.Drawing.Size(112, 58)
+        Me.btnSaveAliceUserDetails.TabIndex = 3
+        Me.btnSaveAliceUserDetails.Text = "&Save"
+        Me.btnSaveAliceUserDetails.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        Me.btnSaveAliceUserDetails.UseVisualStyleBackColor = True
+        '
+        'ImageList1
+        '
+        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
+        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
+        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
+        '
+        'GroupBox4
+        '
+        Me.GroupBox4.Controls.Add(Me.txtAliceAppID)
+        Me.GroupBox4.Controls.Add(Me.lblAliceAppID)
+        Me.GroupBox4.Controls.Add(Me.txtAlice2FAAnswer)
+        Me.GroupBox4.Controls.Add(Me.lblAlice2FAAnswer)
+        Me.GroupBox4.Controls.Add(Me.txtAliceAPISecret)
+        Me.GroupBox4.Controls.Add(Me.txtAlicePassword)
+        Me.GroupBox4.Controls.Add(Me.txtAliceUserId)
+        Me.GroupBox4.Controls.Add(Me.lblAliceAPISecret)
+        Me.GroupBox4.Controls.Add(Me.lblAlicePassword)
+        Me.GroupBox4.Controls.Add(Me.lblAliceUserId)
+        Me.GroupBox4.Location = New System.Drawing.Point(2, 1)
+        Me.GroupBox4.Margin = New System.Windows.Forms.Padding(4)
+        Me.GroupBox4.Name = "GroupBox4"
+        Me.GroupBox4.Padding = New System.Windows.Forms.Padding(4)
+        Me.GroupBox4.Size = New System.Drawing.Size(460, 203)
+        Me.GroupBox4.TabIndex = 14
+        Me.GroupBox4.TabStop = False
+        '
+        'txtAliceAppID
+        '
+        Me.txtAliceAppID.Location = New System.Drawing.Point(103, 131)
+        Me.txtAliceAppID.Margin = New System.Windows.Forms.Padding(4)
+        Me.txtAliceAppID.Name = "txtAliceAppID"
+        Me.txtAliceAppID.Size = New System.Drawing.Size(348, 22)
+        Me.txtAliceAppID.TabIndex = 8
+        '
+        'lblAliceAppID
+        '
+        Me.lblAliceAppID.AutoSize = True
+        Me.lblAliceAppID.Location = New System.Drawing.Point(9, 134)
+        Me.lblAliceAppID.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
+        Me.lblAliceAppID.Name = "lblAliceAppID"
+        Me.lblAliceAppID.Size = New System.Drawing.Size(50, 17)
+        Me.lblAliceAppID.TabIndex = 10
+        Me.lblAliceAppID.Text = "App ID"
         '
         'txtAlice2FAAnswer
         '
@@ -77,7 +119,7 @@ Partial Class frmAliceUserDetails
         '
         'txtAliceAPISecret
         '
-        Me.txtAliceAPISecret.Location = New System.Drawing.Point(103, 131)
+        Me.txtAliceAPISecret.Location = New System.Drawing.Point(103, 165)
         Me.txtAliceAPISecret.Margin = New System.Windows.Forms.Padding(4)
         Me.txtAliceAPISecret.Name = "txtAliceAPISecret"
         Me.txtAliceAPISecret.Size = New System.Drawing.Size(348, 22)
@@ -103,7 +145,7 @@ Partial Class frmAliceUserDetails
         'lblAliceAPISecret
         '
         Me.lblAliceAPISecret.AutoSize = True
-        Me.lblAliceAPISecret.Location = New System.Drawing.Point(9, 135)
+        Me.lblAliceAPISecret.Location = New System.Drawing.Point(9, 169)
         Me.lblAliceAPISecret.Margin = New System.Windows.Forms.Padding(4, 0, 4, 0)
         Me.lblAliceAPISecret.Name = "lblAliceAPISecret"
         Me.lblAliceAPISecret.Size = New System.Drawing.Size(74, 17)
@@ -130,32 +172,12 @@ Partial Class frmAliceUserDetails
         Me.lblAliceUserId.TabIndex = 0
         Me.lblAliceUserId.Text = "UserId"
         '
-        'btnSaveAliceUserDetails
-        '
-        Me.btnSaveAliceUserDetails.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft
-        Me.btnSaveAliceUserDetails.ImageKey = "save-icon-36533.png"
-        Me.btnSaveAliceUserDetails.ImageList = Me.ImageList1
-        Me.btnSaveAliceUserDetails.Location = New System.Drawing.Point(481, 19)
-        Me.btnSaveAliceUserDetails.Margin = New System.Windows.Forms.Padding(4)
-        Me.btnSaveAliceUserDetails.Name = "btnSaveAliceUserDetails"
-        Me.btnSaveAliceUserDetails.Size = New System.Drawing.Size(112, 58)
-        Me.btnSaveAliceUserDetails.TabIndex = 3
-        Me.btnSaveAliceUserDetails.Text = "&Save"
-        Me.btnSaveAliceUserDetails.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        Me.btnSaveAliceUserDetails.UseVisualStyleBackColor = True
-        '
-        'ImageList1
-        '
-        Me.ImageList1.ImageStream = CType(resources.GetObject("ImageList1.ImageStream"), System.Windows.Forms.ImageListStreamer)
-        Me.ImageList1.TransparentColor = System.Drawing.Color.Transparent
-        Me.ImageList1.Images.SetKeyName(0, "save-icon-36533.png")
-        '
         'frmAliceUserDetails
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(603, 188)
-        Me.Controls.Add(Me.GroupBox1)
+        Me.ClientSize = New System.Drawing.Size(587, 210)
+        Me.Controls.Add(Me.GroupBox4)
         Me.Controls.Add(Me.btnSaveAliceUserDetails)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.MaximizeBox = False
@@ -163,13 +185,16 @@ Partial Class frmAliceUserDetails
         Me.Name = "frmAliceUserDetails"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Alice-Blue User Details"
-        Me.GroupBox1.ResumeLayout(False)
-        Me.GroupBox1.PerformLayout()
+        Me.GroupBox4.ResumeLayout(False)
+        Me.GroupBox4.PerformLayout()
         Me.ResumeLayout(False)
 
     End Sub
-
-    Friend WithEvents GroupBox1 As GroupBox
+    Friend WithEvents btnSaveAliceUserDetails As Button
+    Friend WithEvents ImageList1 As ImageList
+    Friend WithEvents GroupBox4 As GroupBox
+    Friend WithEvents txtAliceAppID As TextBox
+    Friend WithEvents lblAliceAppID As Label
     Friend WithEvents txtAlice2FAAnswer As TextBox
     Friend WithEvents lblAlice2FAAnswer As Label
     Friend WithEvents txtAliceAPISecret As TextBox
@@ -178,6 +203,4 @@ Partial Class frmAliceUserDetails
     Friend WithEvents lblAliceAPISecret As Label
     Friend WithEvents lblAlicePassword As Label
     Friend WithEvents lblAliceUserId As Label
-    Friend WithEvents btnSaveAliceUserDetails As Button
-    Friend WithEvents ImageList1 As ImageList
 End Class
