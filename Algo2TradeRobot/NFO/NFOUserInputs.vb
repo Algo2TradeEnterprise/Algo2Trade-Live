@@ -16,7 +16,6 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property InstrumentName As String
         Public Property NumberOfLots As Integer
-        Public Property ModifiedNumberOfLots As Integer
 
         Public Property Timeframe As Integer
         Public Property SupertrendPeriod As Integer
@@ -118,7 +117,6 @@ Public Class NFOUserInputs
                                 Dim instrumentData As New InstrumentDetails With {
                                     .InstrumentName = instrumentName.ToUpper.Trim,
                                     .NumberOfLots = quantity,
-                                    .ModifiedNumberOfLots = quantity,
                                     .Timeframe = timeframe,
                                     .SupertrendPeriod = stPeriod,
                                     .SupertrendMultiplier = stMultiplier
