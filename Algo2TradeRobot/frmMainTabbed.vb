@@ -231,6 +231,18 @@ Public Class frmMainTabbed
             Return [label].Text
         End If
     End Function
+
+    Delegate Function GetCheckBoxChecked_Delegate(ByVal [checkBox] As CheckBox) As Boolean
+    Public Function GetCheckBoxChecked_ThreadSafe(ByVal [checkBox] As CheckBox) As Boolean
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [checkBox].InvokeRequired Then
+            Dim MyDelegate As New GetCheckBoxChecked_Delegate(AddressOf GetCheckBoxChecked_ThreadSafe)
+            Return Me.Invoke(MyDelegate, New Object() {[checkBox]})
+        Else
+            Return [checkBox].Checked
+        End If
+    End Function
 #End Region
 
 #Region "Standard Event Handlers"
@@ -1465,6 +1477,15 @@ Public Class frmMainTabbed
         Dim newForm As New frmORBTradableInstrumentList(_orbTradableInstruments)
         newForm.ShowDialog()
     End Sub
+
+    Private Sub chkbMonitorORB_CheckedChanged(sender As Object, e As EventArgs) Handles chkbMonitorORB.CheckedChanged
+        Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, "Status Monitor.ORB.a2t")
+        If GetCheckBoxChecked_ThreadSafe(chkbMonitorORB) Then
+            If File.Exists(filename) Then File.Delete(filename)
+        Else
+            Utilities.Strings.SerializeFromCollection(Of String)(filename, "Off")
+        End If
+    End Sub
 #End Region
 
 #Region "SS"
@@ -1762,6 +1783,15 @@ Public Class frmMainTabbed
     Private Sub linklblSSTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblSSTradableInstruments.LinkClicked
         Dim newForm As New frmSSTradableInstrumentList(_ssTradableInstruments)
         newForm.ShowDialog()
+    End Sub
+
+    Private Sub chkbMonitorSS_CheckedChanged(sender As Object, e As EventArgs) Handles chkbMonitorSS.CheckedChanged
+        Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, "Status Monitor.StraddleStrangle.a2t")
+        If GetCheckBoxChecked_ThreadSafe(chkbMonitorSS) Then
+            If File.Exists(filename) Then File.Delete(filename)
+        Else
+            Utilities.Strings.SerializeFromCollection(Of String)(filename, "Off")
+        End If
     End Sub
 #End Region
 
