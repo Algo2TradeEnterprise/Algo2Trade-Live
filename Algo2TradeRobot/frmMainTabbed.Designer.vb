@@ -62,6 +62,8 @@ Partial Class frmMainTabbed
         Me.sfdgvSpreadMainDashboard = New Syncfusion.WinForms.DataGrid.SfDataGrid()
         Me.tmrNFOTickerStatus = New System.Windows.Forms.Timer(Me.components)
         Me.tmrSpreadTickerStatus = New System.Windows.Forms.Timer(Me.components)
+        Me.chkbMonitorNFO = New System.Windows.Forms.CheckBox()
+        Me.chkbMonitorSpread = New System.Windows.Forms.CheckBox()
         Me.msMainMenuStrip.SuspendLayout()
         Me.tabMain.SuspendLayout()
         Me.tabNFO.SuspendLayout()
@@ -88,7 +90,7 @@ Partial Class frmMainTabbed
         Me.msMainMenuStrip.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miOptions, Me.miAbout})
         Me.msMainMenuStrip.Location = New System.Drawing.Point(0, 0)
         Me.msMainMenuStrip.Name = "msMainMenuStrip"
-        Me.msMainMenuStrip.Size = New System.Drawing.Size(1371, 30)
+        Me.msMainMenuStrip.Size = New System.Drawing.Size(1371, 28)
         Me.msMainMenuStrip.TabIndex = 0
         Me.msMainMenuStrip.Text = "MenuStrip1"
         '
@@ -96,7 +98,7 @@ Partial Class frmMainTabbed
         '
         Me.miOptions.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.miUserDetails, Me.miAdvancedOptions})
         Me.miOptions.Name = "miOptions"
-        Me.miOptions.Size = New System.Drawing.Size(75, 26)
+        Me.miOptions.Size = New System.Drawing.Size(75, 24)
         Me.miOptions.Text = "&Options"
         '
         'miUserDetails
@@ -116,7 +118,7 @@ Partial Class frmMainTabbed
         'miAbout
         '
         Me.miAbout.Name = "miAbout"
-        Me.miAbout.Size = New System.Drawing.Size(64, 26)
+        Me.miAbout.Size = New System.Drawing.Size(64, 24)
         Me.miAbout.Text = "&About"
         '
         'tabMain
@@ -124,11 +126,11 @@ Partial Class frmMainTabbed
         Me.tabMain.Controls.Add(Me.tabNFO)
         Me.tabMain.Controls.Add(Me.tabSpread)
         Me.tabMain.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tabMain.Location = New System.Drawing.Point(0, 30)
+        Me.tabMain.Location = New System.Drawing.Point(0, 28)
         Me.tabMain.Margin = New System.Windows.Forms.Padding(4)
         Me.tabMain.Name = "tabMain"
         Me.tabMain.SelectedIndex = 0
-        Me.tabMain.Size = New System.Drawing.Size(1371, 720)
+        Me.tabMain.Size = New System.Drawing.Size(1371, 722)
         Me.tabMain.TabIndex = 1
         '
         'tabNFO
@@ -138,7 +140,7 @@ Partial Class frmMainTabbed
         Me.tabNFO.Margin = New System.Windows.Forms.Padding(4)
         Me.tabNFO.Name = "tabNFO"
         Me.tabNFO.Padding = New System.Windows.Forms.Padding(4)
-        Me.tabNFO.Size = New System.Drawing.Size(1363, 691)
+        Me.tabNFO.Size = New System.Drawing.Size(1363, 693)
         Me.tabNFO.TabIndex = 0
         Me.tabNFO.Text = "Algo2Trade"
         Me.tabNFO.UseVisualStyleBackColor = True
@@ -156,7 +158,7 @@ Partial Class frmMainTabbed
         Me.pnlNFOMainPanelHorizontalSplitter.RowCount = 2
         Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 7.0!))
         Me.pnlNFOMainPanelHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 93.0!))
-        Me.pnlNFOMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 683)
+        Me.pnlNFOMainPanelHorizontalSplitter.Size = New System.Drawing.Size(1355, 685)
         Me.pnlNFOMainPanelHorizontalSplitter.TabIndex = 0
         '
         'pnlNFOTopHeaderVerticalSplitter
@@ -167,8 +169,8 @@ Partial Class frmMainTabbed
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 10.61618!))
+        Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.598367!))
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlNFOTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
@@ -182,6 +184,7 @@ Partial Class frmMainTabbed
         Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.pnlNFOTicker, 14, 0)
         Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.btnNFOSettings, 9, 0)
         Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.linklblNFOTradableInstruments, 10, 0)
+        Me.pnlNFOTopHeaderVerticalSplitter.Controls.Add(Me.chkbMonitorNFO, 5, 0)
         Me.pnlNFOTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlNFOTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlNFOTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -217,7 +220,7 @@ Partial Class frmMainTabbed
         '
         Me.pnlNFOTicker.Controls.Add(Me.blbNFOTickerStatus)
         Me.pnlNFOTicker.Controls.Add(Me.lblNFOTickerStatus)
-        Me.pnlNFOTicker.Location = New System.Drawing.Point(1189, 4)
+        Me.pnlNFOTicker.Location = New System.Drawing.Point(1190, 4)
         Me.pnlNFOTicker.Margin = New System.Windows.Forms.Padding(4)
         Me.pnlNFOTicker.Name = "pnlNFOTicker"
         Me.pnlNFOTicker.Size = New System.Drawing.Size(147, 31)
@@ -282,8 +285,8 @@ Partial Class frmMainTabbed
         Me.pnlNFOBodyVerticalSplitter.Name = "pnlNFOBodyVerticalSplitter"
         Me.pnlNFOBodyVerticalSplitter.RowCount = 1
         Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 630.0!))
-        Me.pnlNFOBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 628)
+        Me.pnlNFOBodyVerticalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 628.0!))
+        Me.pnlNFOBodyVerticalSplitter.Size = New System.Drawing.Size(1347, 630)
         Me.pnlNFOBodyVerticalSplitter.TabIndex = 1
         '
         'pctrBxNFO
@@ -293,7 +296,7 @@ Partial Class frmMainTabbed
         Me.pctrBxNFO.Location = New System.Drawing.Point(945, 2)
         Me.pctrBxNFO.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
         Me.pctrBxNFO.Name = "pctrBxNFO"
-        Me.pctrBxNFO.Size = New System.Drawing.Size(399, 624)
+        Me.pctrBxNFO.Size = New System.Drawing.Size(399, 626)
         Me.pctrBxNFO.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage
         Me.pctrBxNFO.TabIndex = 2
         Me.pctrBxNFO.TabStop = False
@@ -311,7 +314,7 @@ Partial Class frmMainTabbed
         Me.pnlNFOBodyHorizontalSplitter.RowCount = 2
         Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70.0!))
         Me.pnlNFOBodyHorizontalSplitter.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30.0!))
-        Me.pnlNFOBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 620)
+        Me.pnlNFOBodyHorizontalSplitter.Size = New System.Drawing.Size(934, 622)
         Me.pnlNFOBodyHorizontalSplitter.TabIndex = 0
         '
         'lstNFOLog
@@ -321,10 +324,10 @@ Partial Class frmMainTabbed
         Me.lstNFOLog.FormattingEnabled = True
         Me.lstNFOLog.HorizontalScrollbar = True
         Me.lstNFOLog.ItemHeight = 16
-        Me.lstNFOLog.Location = New System.Drawing.Point(4, 438)
+        Me.lstNFOLog.Location = New System.Drawing.Point(4, 439)
         Me.lstNFOLog.Margin = New System.Windows.Forms.Padding(4)
         Me.lstNFOLog.Name = "lstNFOLog"
-        Me.lstNFOLog.Size = New System.Drawing.Size(926, 178)
+        Me.lstNFOLog.Size = New System.Drawing.Size(926, 179)
         Me.lstNFOLog.TabIndex = 9
         '
         'sfdgvNFOMainDashboard
@@ -341,7 +344,7 @@ Partial Class frmMainTabbed
         Me.sfdgvNFOMainDashboard.Margin = New System.Windows.Forms.Padding(4)
         Me.sfdgvNFOMainDashboard.Name = "sfdgvNFOMainDashboard"
         Me.sfdgvNFOMainDashboard.PasteOption = Syncfusion.WinForms.DataGrid.Enums.PasteOptions.None
-        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 426)
+        Me.sfdgvNFOMainDashboard.Size = New System.Drawing.Size(926, 427)
         Me.sfdgvNFOMainDashboard.TabIndex = 6
         Me.sfdgvNFOMainDashboard.Text = "SfDataGrid1"
         '
@@ -379,8 +382,8 @@ Partial Class frmMainTabbed
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
-        Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
+        Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 10.62731!))
+        Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 2.656826!))
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
         Me.pnlSpreadTopHeaderVerticalSplitter.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 6.666668!))
@@ -394,6 +397,7 @@ Partial Class frmMainTabbed
         Me.pnlSpreadTopHeaderVerticalSplitter.Controls.Add(Me.Panel1, 14, 0)
         Me.pnlSpreadTopHeaderVerticalSplitter.Controls.Add(Me.btnSpreadSettings, 9, 0)
         Me.pnlSpreadTopHeaderVerticalSplitter.Controls.Add(Me.linklblSpreadTradableInstruments, 10, 0)
+        Me.pnlSpreadTopHeaderVerticalSplitter.Controls.Add(Me.chkbMonitorSpread, 5, 0)
         Me.pnlSpreadTopHeaderVerticalSplitter.Dock = System.Windows.Forms.DockStyle.Fill
         Me.pnlSpreadTopHeaderVerticalSplitter.Location = New System.Drawing.Point(4, 4)
         Me.pnlSpreadTopHeaderVerticalSplitter.Margin = New System.Windows.Forms.Padding(4)
@@ -565,6 +569,32 @@ Partial Class frmMainTabbed
         '
         Me.tmrSpreadTickerStatus.Enabled = True
         '
+        'chkbMonitorNFO
+        '
+        Me.chkbMonitorNFO.AutoSize = True
+        Me.chkbMonitorNFO.Checked = True
+        Me.chkbMonitorNFO.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.chkbMonitorNFO.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.chkbMonitorNFO.Location = New System.Drawing.Point(448, 3)
+        Me.chkbMonitorNFO.Name = "chkbMonitorNFO"
+        Me.chkbMonitorNFO.Size = New System.Drawing.Size(137, 33)
+        Me.chkbMonitorNFO.TabIndex = 13
+        Me.chkbMonitorNFO.Text = "Monitor this tab"
+        Me.chkbMonitorNFO.UseVisualStyleBackColor = True
+        '
+        'chkbMonitorSpread
+        '
+        Me.chkbMonitorSpread.AutoSize = True
+        Me.chkbMonitorSpread.Checked = True
+        Me.chkbMonitorSpread.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.chkbMonitorSpread.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.chkbMonitorSpread.Location = New System.Drawing.Point(453, 3)
+        Me.chkbMonitorSpread.Name = "chkbMonitorSpread"
+        Me.chkbMonitorSpread.Size = New System.Drawing.Size(138, 34)
+        Me.chkbMonitorSpread.TabIndex = 13
+        Me.chkbMonitorSpread.Text = "Monitor this tab"
+        Me.chkbMonitorSpread.UseVisualStyleBackColor = True
+        '
         'frmMainTabbed
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
@@ -644,4 +674,6 @@ Partial Class frmMainTabbed
     Friend WithEvents lstSpreadLog As ListBox
     Friend WithEvents sfdgvSpreadMainDashboard As Syncfusion.WinForms.DataGrid.SfDataGrid
     Friend WithEvents tmrSpreadTickerStatus As Timer
+    Friend WithEvents chkbMonitorNFO As CheckBox
+    Friend WithEvents chkbMonitorSpread As CheckBox
 End Class

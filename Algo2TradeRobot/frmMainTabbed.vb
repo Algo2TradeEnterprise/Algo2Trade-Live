@@ -172,8 +172,8 @@ Public Class frmMainTabbed
             [label].Text = [text]
         End If
     End Sub
-    Delegate Function GetLabelText_Delegate(ByVal [label] As Label) As String
 
+    Delegate Function GetLabelText_Delegate(ByVal [label] As Label) As String
     Public Function GetLabelText_ThreadSafe(ByVal [label] As Label) As String
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
         ' If these threads are different, it returns true.  
@@ -196,8 +196,8 @@ Public Class frmMainTabbed
             [label].Tag = [tag]
         End If
     End Sub
-    Delegate Function GetLabelTag_Delegate(ByVal [label] As Label) As String
 
+    Delegate Function GetLabelTag_Delegate(ByVal [label] As Label) As String
     Public Function GetLabelTag_ThreadSafe(ByVal [label] As Label) As String
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
         ' If these threads are different, it returns true.  
@@ -208,6 +208,7 @@ Public Class frmMainTabbed
             Return [label].Tag
         End If
     End Function
+
     Delegate Sub SetToolStripLabel_Delegate(ByVal [toolStrip] As StatusStrip, ByVal [label] As ToolStripStatusLabel, ByVal [text] As String)
     Public Sub SetToolStripLabel_ThreadSafe(ByVal [toolStrip] As StatusStrip, ByVal [label] As ToolStripStatusLabel, ByVal [text] As String)
         ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
@@ -229,6 +230,18 @@ Public Class frmMainTabbed
             Return Me.Invoke(MyDelegate, New Object() {[toolStrip], [label]})
         Else
             Return [label].Text
+        End If
+    End Function
+
+    Delegate Function GetCheckBoxChecked_Delegate(ByVal [checkBox] As CheckBox) As Boolean
+    Public Function GetCheckBoxChecked_ThreadSafe(ByVal [checkBox] As CheckBox) As Boolean
+        ' InvokeRequired required compares the thread ID of the calling thread to the thread ID of the creating thread.  
+        ' If these threads are different, it returns true.  
+        If [checkBox].InvokeRequired Then
+            Dim MyDelegate As New GetCheckBoxChecked_Delegate(AddressOf GetCheckBoxChecked_ThreadSafe)
+            Return Me.Invoke(MyDelegate, New Object() {[checkBox]})
+        Else
+            Return [checkBox].Checked
         End If
     End Function
 #End Region
@@ -587,6 +600,15 @@ Public Class frmMainTabbed
         Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
         newForm.ShowDialog()
     End Sub
+    Private Sub chkbMonitorNFO_CheckedChanged(sender As Object, e As EventArgs) Handles chkbMonitorNFO.CheckedChanged
+        Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, "Status Monitor.NFO.a2t")
+        If GetCheckBoxChecked_ThreadSafe(chkbMonitorNFO) Then
+            If File.Exists(filename) Then File.Delete(filename)
+        Else
+            Utilities.Strings.SerializeFromCollection(Of String)(filename, "Off")
+        End If
+    End Sub
+
 #End Region
 
 #Region "Spread"
@@ -882,6 +904,15 @@ Public Class frmMainTabbed
     Private Sub linklblSpreadTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblSpreadTradableInstruments.LinkClicked
         Dim newForm As New frmSpreadTradableInstrumentList(_spreadTradableInstruments)
         newForm.ShowDialog()
+    End Sub
+
+    Private Sub chkbMonitorSpread_CheckedChanged(sender As Object, e As EventArgs) Handles chkbMonitorSpread.CheckedChanged
+        Dim filename As String = Path.Combine(My.Application.Info.DirectoryPath, "Status Monitor.Spread.a2t")
+        If GetCheckBoxChecked_ThreadSafe(chkbMonitorSpread) Then
+            If File.Exists(filename) Then File.Delete(filename)
+        Else
+            Utilities.Strings.SerializeFromCollection(Of String)(filename, "Off")
+        End If
     End Sub
 #End Region
 
