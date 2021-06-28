@@ -90,7 +90,8 @@ Public Class NFOPairInstrument
                             Dim candle As OHLCPayload = signalCheckingInstrument1.GetXMinuteCurrentCandle(userSettings.SignalTimeFrame)
                             If candle IsNot Nothing AndAlso candle.PreviousPayload.SnapshotDateTime <> lastCandle Then
                                 lastCandle = candle.PreviousPayload.SnapshotDateTime
-                                logger.Fatal("{0},{1},{2},{3},{4},{5},{6},{7}",
+                                logger.Fatal("{0},{1},{2},{3},{4},{5},{6},{7},{8}",
+                                             candle.PreviousPayload.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                              signalCheckingInstrument1.TradableInstrument.TradingSymbol,
                                              signalCheckingInstrument1.TradableInstrument.LastTick.LastPrice,
                                              signalCheckingInstrument1.TradableInstrument.LastTick.FirstBidPrice,
