@@ -78,7 +78,7 @@ Public Class NFOPairInstrument
                     Dim tradedSignal As SignalDetails = Nothing
                     'Dim rolloverTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 28, 0)
                     Dim lastCandle As Date = Now.Date
-                    logger.Fatal("Stock 1,LTP 1,Bid 1,Ask 1,Stock 2,LTP 2,Bid 2,Ask 2")
+                    logger.Fatal("Time,Stock 1,LTP 1,Bid 1,Ask 1,Stock 2,LTP 2,Bid 2,Ask 2")
                     While True
                         If _ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                             Throw _ParentStrategy.ParentController.OrphanException
