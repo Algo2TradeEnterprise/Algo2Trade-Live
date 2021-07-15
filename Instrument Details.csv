@@ -1,3 +1,2 @@
-Stock 1,Stock 2,Number Of Lots
-BANKNIFTY,FINNIFTY,1
-NIFTY,RELIANCE,1
+Stock 1,Stock 2,Loop Back Period,Correl,Entry SD,Exit SD
+AXISBANK,SBIN,200,70,1,0

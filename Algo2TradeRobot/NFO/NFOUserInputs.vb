@@ -2,17 +2,12 @@
 Imports System.Threading
 Imports Algo2TradeCore.Entities.UserSettings
 Imports Utilities.DAL
-Imports Algo2TradeCore.Entities
 
 <Serializable>
 Public Class NFOUserInputs
     Inherits StrategyUserInputs
 
-    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "Coinciding Pair.Strategy.a2t")
-
-    Public Property LoopBackPeriod As Integer
-    Public Property EntrySDMultiplier As Decimal
-    Public Property MaxSpreadPercentage As Decimal
+    Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "PairOnBoolinger.Strategy.a2t")
 
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
@@ -21,7 +16,10 @@ Public Class NFOUserInputs
     Public Class InstrumentDetails
         Public Property Stock1 As String
         Public Property Stock2 As String
-        Public Property NumberOfLots As Integer
+        Public Property LoopBackPeriod As Integer
+        Public Property Correl As Decimal
+        Public Property EntrySD As Decimal
+        Public Property ExitSD As Decimal
         Public ReadOnly Property PairName As String
             Get
                 Return String.Format("{0}-{1}", Me.Stock1, Me.Stock2)
@@ -39,9 +37,9 @@ Public Class NFOUserInputs
                         instrumentDetails = csvReader.Get2DArrayFromCSV(0)
                     End Using
                     If instrumentDetails IsNot Nothing AndAlso instrumentDetails.Length > 0 Then
-                        Dim excelColumnList As New List(Of String) From {"STOCK 1", "STOCK 2", "NUMBER OF LOTS"}
+                        Dim excelColumnList As New List(Of String) From {"STOCK 1", "STOCK 2", "LOOP BACK PERIOD", "CORREL", "ENTRY SD", "EXIT SD"}
 
-                        For colCtr = 0 To 2
+                        For colCtr = 0 To 5
                             If instrumentDetails(0, colCtr) Is Nothing OrElse Trim(instrumentDetails(0, colCtr).ToString) = "" Then
                                 Throw New ApplicationException(String.Format("Invalid format."))
                             Else
@@ -53,7 +51,11 @@ Public Class NFOUserInputs
                         For rowCtr = 1 To instrumentDetails.GetLength(0) - 1
                             Dim stock1 As String = Nothing
                             Dim stock2 As String = Nothing
-                            Dim numberOfLots As Integer = Integer.MinValue
+                            Dim loopBack As Integer = Integer.MinValue
+                            Dim corl As Decimal = Decimal.MinValue
+                            Dim enSD As Decimal = Decimal.MinValue
+                            Dim exSD As Decimal = Decimal.MinValue
+
                             For columnCtr = 0 To instrumentDetails.GetLength(1)
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
@@ -78,13 +80,52 @@ Public Class NFOUserInputs
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
                                         If IsNumeric(instrumentDetails(rowCtr, columnCtr)) AndAlso
                                             Val(instrumentDetails(rowCtr, columnCtr)) = CInt(instrumentDetails(rowCtr, columnCtr)) Then
-                                            numberOfLots = instrumentDetails(rowCtr, columnCtr)
+                                            loopBack = instrumentDetails(rowCtr, columnCtr)
                                         Else
-                                            Throw New ApplicationException(String.Format("Number Of Lots should be Integer type. RowNumber: {0}", rowCtr))
+                                            Throw New ApplicationException(String.Format("Loop Back Period should be Integer type. RowNumber: {0}", rowCtr))
                                         End If
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
-                                            Throw New ApplicationException(String.Format("Number Of Lots Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                            Throw New ApplicationException(String.Format("Loop Back Period Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 3 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            corl = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Correl should be Decimal type. RowNumber: {0}", rowCtr))
+                                        End If
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Correl Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 4 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            enSD = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Entry SD should be Decimal type. RowNumber: {0}", rowCtr))
+                                        End If
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Entry SD Missing or Blank Row. RowNumber: {0}", rowCtr))
+                                        End If
+                                    End If
+                                ElseIf columnCtr = 5 Then
+                                    If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
+                                        Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
+                                        If IsNumeric(instrumentDetails(rowCtr, columnCtr)) Then
+                                            exSD = instrumentDetails(rowCtr, columnCtr)
+                                        Else
+                                            Throw New ApplicationException(String.Format("Exit SD should be Decimal type. RowNumber: {0}", rowCtr))
+                                        End If
+                                    Else
+                                        If Not rowCtr = instrumentDetails.GetLength(0) Then
+                                            Throw New ApplicationException(String.Format("Exit SD Missing or Blank Row. RowNumber: {0}", rowCtr))
                                         End If
                                     End If
                                 End If
@@ -94,7 +135,10 @@ Public Class NFOUserInputs
                                 With instrumentData
                                     .Stock1 = stock1.ToUpper
                                     .Stock2 = stock2.ToUpper
-                                    .NumberOfLots = numberOfLots
+                                    .LoopBackPeriod = loopBack
+                                    .Correl = corl
+                                    .EntrySD = enSD
+                                    .ExitSD = exSD
                                 End With
                                 If Me.InstrumentsData Is Nothing Then Me.InstrumentsData = New Dictionary(Of String, InstrumentDetails)
                                 If Me.InstrumentsData.ContainsKey(instrumentData.PairName) Then

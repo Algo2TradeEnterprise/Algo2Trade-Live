@@ -37,19 +37,12 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
-            txtSignalTimeframe.Text = _settings.SignalTimeFrame
-            txtLoopBackPeriod.Text = _settings.LoopBackPeriod
-            txtEntrySDMultiplier.Text = _settings.EntrySDMultiplier
-            txtMaxSpreadPercentage.Text = _settings.MaxSpreadPercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
     End Sub
 
     Private Sub SaveSettings()
-        _settings.SignalTimeFrame = txtSignalTimeframe.Text
-        _settings.LoopBackPeriod = txtLoopBackPeriod.Text
-        _settings.EntrySDMultiplier = txtEntrySDMultiplier.Text
-        _settings.MaxSpreadPercentage = txtMaxSpreadPercentage.Text
+        _settings.SignalTimeFrame = 1
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
@@ -81,11 +74,6 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
-        ValidateNumbers(1, Integer.MaxValue, txtSignalTimeframe, True)
-        ValidateNumbers(1, Integer.MaxValue, txtLoopBackPeriod, True)
-        ValidateNumbers(0, Decimal.MaxValue, txtEntrySDMultiplier, False)
-        ValidateNumbers(0, Decimal.MaxValue, txtMaxSpreadPercentage, False)
-
         ValidateFile()
     End Sub
 

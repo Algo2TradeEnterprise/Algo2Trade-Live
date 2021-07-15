@@ -1,6 +1,5 @@
 ﻿Imports NLog
 Imports System.Threading
-Imports Utilities.Numbers
 Imports Algo2TradeCore.Adapter
 Imports Algo2TradeCore.Entities
 Imports Algo2TradeCore.Strategies
@@ -14,11 +13,10 @@ Public Class NFOStrategyInstrument
     Public Shared Shadows logger As Logger = LogManager.GetCurrentClassLogger
 #End Region
 
-    Private _lastLogTime As Date = Now.Date
+    Private _entryTime As Date = Now.Date
 
     Private _quantityToTrade As Integer
     Private _orderType As IOrder.TypeOfOrder
-    Private _allowedSpreadPercentage As Decimal
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -60,11 +58,11 @@ Public Class NFOStrategyInstrument
         End If
     End Function
 
-    Public Async Function TakeTradeAsync(ordertype As IOrder.TypeOfOrder, quantity As Integer, signalCandleTime As Date, allowedSpreadPercentage As Decimal) As Task(Of Boolean)
+    Public Async Function TakeTradeAsync(ordertype As IOrder.TypeOfOrder, quantity As Integer, myparentPairInstrument As NFOPairInstrument) As Task(Of Boolean)
         Dim ret As Boolean = False
+        _entryTime = Now
         _orderType = ordertype
         _quantityToTrade = quantity
-        _allowedSpreadPercentage = allowedSpreadPercentage
         Try
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
@@ -80,7 +78,7 @@ Public Class NFOStrategyInstrument
                 If placeOrderTriggers IsNot Nothing AndAlso placeOrderTriggers.Count > 0 AndAlso
                     placeOrderTriggers.FirstOrDefault.Item1 = ExecuteCommandAction.Take Then
                     Dim orderResponse
-                    If _orderType = IOrder.TypeOfOrder.Limit Then
+                    If placeOrderTriggers.FirstOrDefault.Item2.OrderType = IOrder.TypeOfOrder.Limit Then
                         orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularLimitCNCOrder, Nothing).ConfigureAwait(False)
                     Else
                         orderResponse = Await ExecuteCommandAsync(ExecuteCommands.PlaceRegularMarketCNCOrder, Nothing).ConfigureAwait(False)
@@ -90,12 +88,12 @@ Public Class NFOStrategyInstrument
                         If placeOrderResponse.ContainsKey("data") AndAlso
                             placeOrderResponse("data").ContainsKey("order_id") Then
                             Dim orderID As String = placeOrderResponse("data")("order_id")
-                            ret = Await ModifyOrCancelTradeAsync(orderID, signalCandleTime).ConfigureAwait(False)
+                            ret = Await CancelTradeAsync(orderID, myparentPairInstrument).ConfigureAwait(False)
                         End If
                     End If
                 End If
 
-                If ret OrElse Now >= signalCandleTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame * 2) Then
+                If ret OrElse Now >= _entryTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame) OrElse myparentPairInstrument.MyOnePairExitDone Then
                     Exit While
                 End If
 
@@ -108,10 +106,9 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Public Async Function ModifyOrCancelTradeAsync(orderID As String, signalCandleTime As Date) As Task(Of Boolean)
+    Private Async Function CancelTradeAsync(orderID As String, myparentPairInstrument As NFOPairInstrument) As Task(Of Boolean)
         Dim ret As Boolean = False
         Try
-            Await Task.Delay(3000, _cts.Token).ConfigureAwait(False)
             While True
                 If Me.ParentStrategy.ParentController.OrphanException IsNot Nothing Then
                     Throw Me.ParentStrategy.ParentController.OrphanException
@@ -131,21 +128,17 @@ Public Class NFOStrategyInstrument
                     End If
                 End If
 
-                If Now < signalCandleTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame * 2) Then
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim modifyTargetOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Await IsTriggerReceivedForModifyTargetOrderAsync(False).ConfigureAwait(False)
-                    If modifyTargetOrderTrigger IsNot Nothing AndAlso modifyTargetOrderTrigger.Count > 0 Then
-                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.ModifyTargetOrder, Nothing).ConfigureAwait(False)
-                    End If
-                Else
-                    _cts.Token.ThrowIfCancellationRequested()
-                    Dim cancelOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
-                    If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
-                        Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
+                If _orderType = IOrder.TypeOfOrder.Limit Then
+                    If Now >= _entryTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame) OrElse myparentPairInstrument.MyOnePairExitDone Then
+                        _cts.Token.ThrowIfCancellationRequested()
+                        Dim cancelOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
+                        If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
+                            Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
+                        End If
                     End If
                 End If
 
-                Await Task.Delay(3000, _cts.Token).ConfigureAwait(False)
+                Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
             End While
         Catch ex As Exception
             logger.Error("Strategy Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
@@ -157,90 +150,75 @@ Public Class NFOStrategyInstrument
     Protected Overrides Async Function IsTriggerReceivedForPlaceOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, PlaceOrderParameters, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
+        Dim currentCandle As OHLCPayload = GetXMinuteCurrentCandle(Me.ParentStrategy.UserSettings.SignalTimeFrame)
         Dim currentTick As ITick = Me.TradableInstrument.LastTick
         Dim currentTime As Date = Now()
-        Dim log As Boolean = False
-        If currentTime >= _lastLogTime.AddMinutes(1) OrElse forcePrint Then
-            _lastLogTime = currentTime
-            log = True
-        End If
+
+        logger.Debug("{0} -> Signal Candle: {1}",
+                     Me.TradableInstrument.TradingSymbol,
+                     If(currentCandle IsNot Nothing AndAlso currentCandle.PreviousPayload IsNot Nothing, currentCandle.PreviousPayload.ToString, "Nothing"))
 
         Dim parameters As PlaceOrderParameters = Nothing
-        If Not IsActiveInstrument() AndAlso currentTick IsNot Nothing Then
-            Dim spread As Decimal = Math.Abs(currentTick.FirstBidPrice - currentTick.FirstOfferPrice)
-            Dim spreadPer As Decimal = (spread / currentTick.LastPrice) * 100
-
-            Dim signalCandle As New OHLCPayload(OHLCPayload.PayloadSource.CalculatedTick)
-            signalCandle.OpenPrice.Value = currentTick.LastPrice
-            signalCandle.LowPrice.Value = currentTick.LastPrice
-            signalCandle.HighPrice.Value = currentTick.LastPrice
-            signalCandle.ClosePrice.Value = currentTick.LastPrice
-            signalCandle.Volume.Value = currentTick.Volume
-            signalCandle.SnapshotDateTime = currentTick.Timestamp.Value.Date
-            signalCandle.TradingSymbol = Me.TradableInstrument.TradingSymbol
-
+        If currentCandle IsNot Nothing AndAlso currentCandle.PreviousPayload IsNot Nothing Then
+            Dim signalCandle As OHLCPayload = currentCandle.PreviousPayload
             If signalCandle IsNot Nothing Then
                 If _orderType = IOrder.TypeOfOrder.Limit Then
-                    If log Then
-                        OnHeartbeat(String.Format("LTP={0}, Spread={1} [Bid({2})-Offer({3})], Spread %({4})<=Allowed Spread %({5})[{6}], Quantity={7}, Order Type={8}, LTP {9} Price[{10}]",
-                                                  currentTick.LastPrice, spread, currentTick.FirstBidPrice, currentTick.FirstOfferPrice,
-                                                  Math.Round(spreadPer, 4), _allowedSpreadPercentage, spreadPer <= _allowedSpreadPercentage,
-                                                  _quantityToTrade, _orderType.ToString,
-                                                  If(_quantityToTrade > 0, "> Offer", "< Bid"),
-                                                  If(_quantityToTrade > 0, currentTick.LastPrice > currentTick.FirstOfferPrice, currentTick.LastPrice < currentTick.FirstBidPrice)))
-                    End If
-                    If spreadPer <= _allowedSpreadPercentage Then
-                        If _quantityToTrade > 0 AndAlso currentTick.LastPrice > currentTick.FirstOfferPrice Then
+                    If _quantityToTrade > 0 Then
+                        If currentTick.LastPrice > signalCandle.LowPrice.Value Then
                             parameters = New PlaceOrderParameters(signalCandle) With
                                      {
                                         .EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                        .OrderType = _orderType,
-                                        .Price = currentTick.FirstOfferPrice,
+                                        .OrderType = IOrder.TypeOfOrder.Limit,
+                                        .Price = signalCandle.LowPrice.Value,
                                         .Quantity = Math.Abs(_quantityToTrade)
                                      }
-                        ElseIf _quantityToTrade < 0 AndAlso currentTick.LastPrice < currentTick.FirstBidPrice Then
+                        Else
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Buy,
+                                        .OrderType = IOrder.TypeOfOrder.Market,
+                                        .Price = signalCandle.LowPrice.Value,
+                                        .Quantity = Math.Abs(_quantityToTrade)
+                                     }
+                        End If
+                    ElseIf _quantityToTrade < 0 Then
+                        If currentTick.LastPrice < signalCandle.HighPrice.Value Then
                             parameters = New PlaceOrderParameters(signalCandle) With
                                      {
                                         .EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                        .OrderType = _orderType,
-                                        .Price = currentTick.FirstBidPrice,
+                                        .OrderType = IOrder.TypeOfOrder.Limit,
+                                        .Price = signalCandle.HighPrice.Value,
+                                        .Quantity = Math.Abs(_quantityToTrade)
+                                     }
+                        Else
+                            parameters = New PlaceOrderParameters(signalCandle) With
+                                     {
+                                        .EntryDirection = IOrder.TypeOfTransaction.Sell,
+                                        .OrderType = IOrder.TypeOfOrder.Market,
+                                        .Price = signalCandle.HighPrice.Value,
                                         .Quantity = Math.Abs(_quantityToTrade)
                                      }
                         End If
                     End If
                 ElseIf _orderType = IOrder.TypeOfOrder.Market Then
-                    If log Then
-                        OnHeartbeat(String.Format("LTP={0}, Spread={1} [Bid({2})-Offer({3})], Quantity={4}, Order Type={5}",
-                                                  currentTick.LastPrice, spread, currentTick.FirstBidPrice, currentTick.FirstOfferPrice,
-                                                  _quantityToTrade, _orderType.ToString))
-                    End If
                     If _quantityToTrade > 0 Then
                         parameters = New PlaceOrderParameters(signalCandle) With
                                  {
                                     .EntryDirection = IOrder.TypeOfTransaction.Buy,
-                                    .OrderType = _orderType,
+                                    .OrderType = IOrder.TypeOfOrder.Market,
                                     .Quantity = Math.Abs(_quantityToTrade)
                                  }
                     ElseIf _quantityToTrade < 0 Then
                         parameters = New PlaceOrderParameters(signalCandle) With
                                  {
                                     .EntryDirection = IOrder.TypeOfTransaction.Sell,
-                                    .OrderType = _orderType,
+                                    .OrderType = IOrder.TypeOfOrder.Market,
                                     .Quantity = Math.Abs(_quantityToTrade)
                                  }
                     End If
                 Else
                     Throw New NotImplementedException
                 End If
-            End If
-        Else
-            If log Then
-                Try
-                    logger.Debug("Is Active Instrument:{0}, Current Tick:{1}",
-                             IsActiveInstrument(), If(currentTick Is Nothing, "Nothing", currentTick.LastPrice))
-                Catch ex As Exception
-                    logger.Warn(ex.ToString)
-                End Try
             End If
         End If
 
@@ -250,7 +228,12 @@ Public Class NFOStrategyInstrument
                 If forcePrint Then
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
-                    logger.Fatal(Utilities.Strings.JsonSerialize(currentTick))
+
+                    OnHeartbeat(String.Format("***** Place Order ***** Direction:{0}, Order Type:{1}, Price:{2}, Quantity:{3}",
+                                              parameters.EntryDirection.ToString,
+                                              parameters.OrderType.ToString,
+                                              If(parameters.Price <> Decimal.MinValue, parameters.Price, 0),
+                                              parameters.Quantity))
                 End If
             Catch ex As Exception
                 logger.Error(ex)
@@ -320,56 +303,6 @@ Public Class NFOStrategyInstrument
         Return ret
     End Function
 
-    Protected Overrides Async Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
-        Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)) = Nothing
-        Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
-        Dim currentTick As ITick = Me.TradableInstrument.LastTick
-        Dim currentTime As Date = Now()
-        Dim spread As Decimal = Math.Abs(currentTick.FirstBidPrice - currentTick.FirstOfferPrice)
-        Dim spreadPer As Decimal = (spread / currentTick.LastPrice) * 100
-        If OrderDetails IsNot Nothing AndAlso OrderDetails.Count > 0 Then
-            For Each runningParentOrder In OrderDetails.Keys
-                Dim parentBussinessOrder As IBusinessOrder = OrderDetails(runningParentOrder)
-                If parentBussinessOrder.ParentOrder.Status = IOrder.TypeOfStatus.Open Then
-                    Dim price As Decimal = Decimal.MinValue
-                    Dim reason As String = ""
-                    If parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Buy Then
-                        If currentTick.LastPrice > currentTick.FirstOfferPrice AndAlso spreadPer <= _allowedSpreadPercentage Then
-                            price = currentTick.FirstOfferPrice
-                            reason = "Offer Price Change"
-                        End If
-                    ElseIf parentBussinessOrder.ParentOrder.TransactionType = IOrder.TypeOfTransaction.Sell Then
-                        If currentTick.LastPrice < currentTick.FirstBidPrice AndAlso spreadPer <= _allowedSpreadPercentage Then
-                            price = currentTick.FirstBidPrice
-                            reason = "Bid Price Change"
-                        End If
-                    End If
-                    If price <> Decimal.MinValue AndAlso parentBussinessOrder.ParentOrder.Price <> price Then
-                        'Below portion have to be done in every modify target order trigger
-                        Dim currentSignalActivities As ActivityDashboard = Me.ParentStrategy.SignalManager.GetSignalActivities(parentBussinessOrder.ParentOrder.Tag)
-                        If currentSignalActivities IsNot Nothing Then
-                            If currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Handled OrElse
-                                currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Activated OrElse
-                                currentSignalActivities.TargetModifyActivity.RequestStatus = ActivityDashboard.SignalStatusType.Completed Then
-                                If Val(currentSignalActivities.TargetModifyActivity.Supporting) = price Then
-                                    Continue For
-                                End If
-                            End If
-                        End If
-                        If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String))
-                        ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)(ExecuteCommandAction.Take, parentBussinessOrder.ParentOrder, price, reason))
-                    End If
-                End If
-            Next
-        End If
-        If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
-            For Each runningOrder In ret
-                logger.Debug("***** Modify Target ***** Order ID:{0}, Price:{1}, Reason:{2}, {3}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, runningOrder.Item4, Me.TradableInstrument.TradingSymbol)
-            Next
-        End If
-        Return ret
-    End Function
-
     Protected Overrides Async Function IsTriggerReceivedForExitOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, String)))
         Dim ret As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Nothing
         Await Task.Delay(0, _cts.Token).ConfigureAwait(False)
@@ -395,7 +328,7 @@ Public Class NFOStrategyInstrument
         End If
         If forcePrint AndAlso ret IsNot Nothing AndAlso ret.Count > 0 Then
             For Each runningOrder In ret
-                logger.Debug("***** Cancel Order ***** Order ID:{0}, Reason:{1}, {2}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3, Me.TradableInstrument.TradingSymbol)
+                OnHeartbeat(String.Format("***** Cancel Order ***** Order ID:{0}, Reason:{1}", runningOrder.Item2.OrderIdentifier, runningOrder.Item3))
             Next
         End If
         Return ret
@@ -446,6 +379,10 @@ Public Class NFOStrategyInstrument
     End Function
 
     Protected Overrides Function IsTriggerReceivedForModifyStoplossOrderAsync(ByVal forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
+        Throw New NotImplementedException
+    End Function
+
+    Protected Overrides Function IsTriggerReceivedForModifyTargetOrderAsync(forcePrint As Boolean) As Task(Of List(Of Tuple(Of ExecuteCommandAction, IOrder, Decimal, String)))
         Throw New NotImplementedException
     End Function
 

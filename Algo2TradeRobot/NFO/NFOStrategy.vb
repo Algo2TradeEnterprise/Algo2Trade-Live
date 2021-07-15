@@ -13,6 +13,8 @@ Public Class NFOStrategy
 
     Public Property TradablePairInstruments As IEnumerable(Of NFOPairInstrument)
 
+    Public ParallelRunningPairs As Concurrent.ConcurrentBag(Of String)
+
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
                    ByVal userSettings As NFOUserInputs,
@@ -23,6 +25,7 @@ Public Class NFOStrategy
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
+        Me.ParallelRunningPairs = New Concurrent.ConcurrentBag(Of String)
     End Sub
 
     ''' <summary>
@@ -51,7 +54,7 @@ Public Class NFOStrategy
                     Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim stock1FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                      Return x.RawInstrumentName = instrument.Value.Stock1 AndAlso
+                                                                                                      Return x.Name = instrument.Value.Stock1 AndAlso
                                                                                                       x.InstrumentType = IInstrument.TypeOfInstrument.Futures
                                                                                                   End Function)
                     Dim stk1futContracts As List(Of IInstrument) = GetCurrentFutureContracts(stock1FutInstrument)
@@ -63,7 +66,7 @@ Public Class NFOStrategy
 
                         _cts.Token.ThrowIfCancellationRequested()
                         Dim stock2FutInstrument As List(Of IInstrument) = dummyAllInstruments.FindAll(Function(x)
-                                                                                                          Return x.RawInstrumentName = instrument.Value.Stock2 AndAlso
+                                                                                                          Return x.Name = instrument.Value.Stock2 AndAlso
                                                                                                           x.InstrumentType = IInstrument.TypeOfInstrument.Futures
                                                                                                       End Function)
                         If stock2FutInstrument IsNot Nothing AndAlso stock2FutInstrument.Count > 0 Then
@@ -167,19 +170,19 @@ Public Class NFOStrategy
                                                                             End Function)
             If ret Is Nothing Then ret = New List(Of IInstrument)
             ret.Add(minExpryFutInstrmt)
-            'If minExpiry.Date.AddDays(-1) = Now.Date Then
-            '    Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
-            '                                                           If x.Expiry.Value.Date > minExpiry.Date Then
-            '                                                               Return x.Expiry.Value.Date
-            '                                                           Else
-            '                                                               Return Date.MaxValue
-            '                                                           End If
-            '                                                       End Function)
-            '    Dim nxtMinExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
-            '                                                                           Return x.Expiry.Value.Date = nextMinExpiry.Date
-            '                                                                       End Function)
-            '    ret.Add(nxtMinExpryFutInstrmt)
-            'End If
+            If minExpiry.Date = Now.Date Then
+                Dim nextMinExpiry As Date = allFutureContracts.Min(Function(x)
+                                                                       If x.Expiry.Value.Date > minExpiry.Date Then
+                                                                           Return x.Expiry.Value.Date
+                                                                       Else
+                                                                           Return Date.MaxValue
+                                                                       End If
+                                                                   End Function)
+                Dim nxtMinExpryFutInstrmt As IInstrument = allFutureContracts.Find(Function(x)
+                                                                                       Return x.Expiry.Value.Date = nextMinExpiry.Date
+                                                                                   End Function)
+                ret.Add(nxtMinExpryFutInstrmt)
+            End If
         End If
         Return ret
     End Function
