@@ -395,7 +395,7 @@ Public Class NFOPairInstrument
                                                                                 Return Date.MinValue
                                                                             End If
                                                                         End Function)
-                    maxAvailableDate = Now
+
                     Dim ins1BlankCandlesCount As Integer = 0
                     Dim ins2BlankCandlesCount As Integer = 0
                     If maxAvailableDate <> Date.MinValue Then
