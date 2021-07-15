@@ -13,7 +13,7 @@ Public Class NFOStrategy
 
     Public Property TradablePairInstruments As IEnumerable(Of NFOPairInstrument)
 
-    Public ParallelRunningPairs As Concurrent.ConcurrentBag(Of String)
+    Public ParallelPairCount As Integer = 0
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,
@@ -25,7 +25,6 @@ Public Class NFOStrategy
         'lets also initiatilize here so that after creation of the strategy and before populating strategy instruments,
         'the fron end grid can bind to this created TradableStrategyInstruments which will be empty
         'TradableStrategyInstruments = New List(Of StrategyInstrument)
-        Me.ParallelRunningPairs = New Concurrent.ConcurrentBag(Of String)
     End Sub
 
     ''' <summary>
@@ -49,6 +48,7 @@ Public Class NFOStrategy
             Dim userInputs As NFOUserInputs = Me.UserSettings
             If userInputs.InstrumentsData IsNot Nothing AndAlso userInputs.InstrumentsData.Count > 0 Then
                 Dim dummyAllInstruments As List(Of IInstrument) = allInstruments.ToList
+                Dim addedStocks As New List(Of String)
                 For Each instrument In userInputs.InstrumentsData
                     _cts.Token.ThrowIfCancellationRequested()
                     Dim pairStocks As List(Of IInstrument) = New List(Of IInstrument)
@@ -75,13 +75,22 @@ Public Class NFOStrategy
                                 Dim stk2Contract As IInstrument = stock2FutInstrument.Find(Function(x)
                                                                                                Return x.Expiry.Value.Date = runningContract.Expiry.Value.Date
                                                                                            End Function)
-                                If stk2Contract IsNot Nothing Then pairStocks.Add(stk2Contract)
+                                If stk2Contract IsNot Nothing Then
+                                    pairStocks.Add(stk2Contract)
+                                End If
                             Next
 
                             _cts.Token.ThrowIfCancellationRequested()
 
-                            If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
-                            retTradableInstrumentsAsPerStrategy.AddRange(pairStocks)
+                            For Each runningStock In pairStocks
+                                If Not addedStocks.Contains(runningStock.TradingSymbol) Then
+                                    addedStocks.Add(runningStock.TradingSymbol)
+
+                                    If retTradableInstrumentsAsPerStrategy Is Nothing Then retTradableInstrumentsAsPerStrategy = New List(Of IInstrument)
+                                    retTradableInstrumentsAsPerStrategy.Add(runningStock)
+                                End If
+                            Next
+
 
                             If retTradablePairInstrumentsAsPerStrategy Is Nothing Then retTradablePairInstrumentsAsPerStrategy = New Dictionary(Of String, List(Of IInstrument))
                             retTradablePairInstrumentsAsPerStrategy.Add(instrument.Value.PairName, pairStocks)
@@ -139,7 +148,7 @@ Public Class NFOStrategy
                 Next
 
                 If retTradablePairInstruments Is Nothing Then retTradablePairInstruments = New List(Of NFOPairInstrument)
-                Dim runningPairInstrument As New NFOPairInstrument(dependentStrategyInstruments, Me, runningTradablePairInstrument.Key, _cts)
+                Dim runningPairInstrument As New NFOPairInstrument(runningTradablePairInstrument.Key, dependentStrategyInstruments, Me, _cts)
                 AddHandler runningPairInstrument.Heartbeat, AddressOf OnHeartbeat
                 AddHandler runningPairInstrument.WaitingFor, AddressOf OnWaitingFor
                 AddHandler runningPairInstrument.DocumentRetryStatus, AddressOf OnDocumentRetryStatus

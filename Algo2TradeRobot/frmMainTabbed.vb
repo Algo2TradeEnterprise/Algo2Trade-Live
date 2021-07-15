@@ -301,7 +301,7 @@ Public Class frmMainTabbed
     Private _nfoStrategyRunning As Boolean = False
     Private _nfoUserInputs As NFOUserInputs = Nothing
     Private _nfoDashboadList As BindingList(Of ActivityDashboard) = Nothing
-    Private _nfoTradableInstruments As IEnumerable(Of NFOStrategyInstrument) = Nothing
+    Private _nfoTradablePairInstruments As IEnumerable(Of NFOPairInstrument) = Nothing
     Private _nfoStrategyToExecute As NFOStrategy = Nothing
     Private Sub sfdgvNFOMainDashboard_FilterPopupShowing(sender As Object, e As FilterPopupShowingEventArgs) Handles sfdgvNFOMainDashboard.FilterPopupShowing
         ManipulateGridEx(GridMode.TouchupPopupFilter, e, GetType(NFOStrategy))
@@ -459,8 +459,8 @@ Public Class frmMainTabbed
             Await _commonController.SubscribeStrategyAsync(_nfoStrategyToExecute).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
 
-            _nfoTradableInstruments = _nfoStrategyToExecute.TradableStrategyInstruments
-            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Instruments: {0}", _nfoTradableInstruments.Count))
+            _nfoTradablePairInstruments = _nfoStrategyToExecute.TradablePairInstruments
+            SetObjectText_ThreadSafe(linklblNFOTradableInstruments, String.Format("Tradable Pair: {0}", _nfoTradablePairInstruments.Count))
             SetObjectEnableDisable_ThreadSafe(linklblNFOTradableInstruments, True)
             _cts.Token.ThrowIfCancellationRequested()
 
@@ -573,7 +573,7 @@ Public Class frmMainTabbed
         newForm.ShowDialog()
     End Sub
     Private Sub linklblNFOTradableInstrument_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles linklblNFOTradableInstruments.LinkClicked
-        Dim newForm As New frmNFOTradableInstrumentList(_nfoTradableInstruments)
+        Dim newForm As New frmNFOTradableInstrumentList(_nfoTradablePairInstruments)
         newForm.ShowDialog()
     End Sub
 #End Region

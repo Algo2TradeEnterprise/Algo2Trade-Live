@@ -37,12 +37,20 @@ Public Class frmNFOSettings
     Private Sub LoadSettings()
         If File.Exists(_settingsFilename) Then
             _settings = Utilities.Strings.DeserializeToCollection(Of NFOUserInputs)(_settingsFilename)
+            txtNoOfParallelPair.Text = _settings.NoOfParallelPair
+            txtMinimumStockPrice.Text = _settings.MinimumStockPrice
+            txtMaximumStockPrice.Text = _settings.MaximumStockPrice
+            txtMaximumBlankCandlePercentage.Text = _settings.MaximumBlankCandlePercentage
             txtInstrumentDetalis.Text = _settings.InstrumentDetailsFilePath
         End If
     End Sub
 
     Private Sub SaveSettings()
         _settings.SignalTimeFrame = 1
+        _settings.NoOfParallelPair = txtNoOfParallelPair.Text
+        _settings.MinimumStockPrice = txtMinimumStockPrice.Text
+        _settings.MaximumStockPrice = txtMaximumStockPrice.Text
+        _settings.MaximumBlankCandlePercentage = txtMaximumBlankCandlePercentage.Text
         _settings.InstrumentDetailsFilePath = txtInstrumentDetalis.Text
 
         Utilities.Strings.SerializeFromCollection(Of NFOUserInputs)(_settingsFilename, _settings)
@@ -74,6 +82,10 @@ Public Class frmNFOSettings
         _settings.FillInstrumentDetails(txtInstrumentDetalis.Text, _cts)
     End Sub
     Private Sub ValidateInputs()
+        ValidateNumbers(1, Integer.MaxValue, txtNoOfParallelPair, True)
+        ValidateNumbers(1, Decimal.MaxValue, txtMinimumStockPrice)
+        ValidateNumbers(1, Decimal.MaxValue, txtMaximumStockPrice)
+        ValidateNumbers(0, 100, txtMaximumBlankCandlePercentage)
         ValidateFile()
     End Sub
 

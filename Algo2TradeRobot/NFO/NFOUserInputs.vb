@@ -9,6 +9,11 @@ Public Class NFOUserInputs
 
     Public Shared Property SettingsFileName As String = Path.Combine(My.Application.Info.DirectoryPath, "PairOnBoolinger.Strategy.a2t")
 
+    Public Property MinimumStockPrice As Decimal
+    Public Property MaximumStockPrice As Decimal
+    Public Property MaximumBlankCandlePercentage As Decimal
+    Public Property NoOfParallelPair As Integer
+
     Public Property InstrumentDetailsFilePath As String
     Public Property InstrumentsData As Dictionary(Of String, InstrumentDetails)
 
@@ -60,7 +65,7 @@ Public Class NFOUserInputs
                                 If columnCtr = 0 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        stock1 = instrumentDetails(rowCtr, columnCtr)
+                                        stock1 = instrumentDetails(rowCtr, columnCtr).ToString.Trim.ToUpper
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
                                             Throw New ApplicationException(String.Format("Stock 1 Missing or Blank Row. RowNumber: {0}", rowCtr))
@@ -69,7 +74,7 @@ Public Class NFOUserInputs
                                 ElseIf columnCtr = 1 Then
                                     If instrumentDetails(rowCtr, columnCtr) IsNot Nothing AndAlso
                                         Not Trim(instrumentDetails(rowCtr, columnCtr).ToString) = "" Then
-                                        stock2 = instrumentDetails(rowCtr, columnCtr)
+                                        stock2 = instrumentDetails(rowCtr, columnCtr).ToString.Trim.ToUpper
                                     Else
                                         If Not rowCtr = instrumentDetails.GetLength(0) Then
                                             Throw New ApplicationException(String.Format("Stock 3 Missing or Blank Row. RowNumber: {0}", rowCtr))

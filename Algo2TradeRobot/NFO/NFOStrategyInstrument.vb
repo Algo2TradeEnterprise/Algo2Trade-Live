@@ -229,11 +229,12 @@ Public Class NFOStrategyInstrument
                     logger.Debug("PlaceOrder-> ************************************************ {0}", Me.TradableInstrument.TradingSymbol)
                     logger.Debug("PlaceOrder Parameters-> {0},{1}", parameters.ToString, Me.TradableInstrument.TradingSymbol)
 
-                    OnHeartbeat(String.Format("***** Place Order ***** Direction:{0}, Order Type:{1}, Price:{2}, Quantity:{3}",
+                    OnHeartbeat(String.Format("***** Place Order ***** Direction:{0}, Order Type:{1}, Price:{2}, Quantity:{3}, LTP:{4}",
                                               parameters.EntryDirection.ToString,
                                               parameters.OrderType.ToString,
                                               If(parameters.Price <> Decimal.MinValue, parameters.Price, 0),
-                                              parameters.Quantity))
+                                              parameters.Quantity,
+                                              currentTick.LastPrice))
                 End If
             Catch ex As Exception
                 logger.Error(ex)

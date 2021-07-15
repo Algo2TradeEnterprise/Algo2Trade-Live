@@ -47,7 +47,11 @@ Public Class NFOPairInstrument
         Public Property SD As Decimal
         Public ReadOnly Property ZScore As Decimal
             Get
-                Return (Me.Ratio - Me.Mean) / Me.SD
+                If Me.Mean <> 0 Then
+                    Return (Me.Ratio - Me.Mean) / Me.SD
+                Else
+                    Return 0
+                End If
             End Get
         End Property
     End Class
@@ -56,20 +60,22 @@ Public Class NFOPairInstrument
     Private _lastPrevPayloadTime As Date = Now.Date
 
     Public ReadOnly Property PairName As String
+    Public ReadOnly Property ParentStrategy As NFOStrategy
     Public ReadOnly Property DependentInstruments As List(Of NFOStrategyInstrument)
+    Public ReadOnly Property PairRunning As Boolean
+
     Public ReadOnly Property MyOnePairExitDone As Boolean
 
     Private ReadOnly _tradesFilename As String
-    Private ReadOnly _ParentStrategy As NFOStrategy
     Private ReadOnly _cts As CancellationTokenSource
 
-    Public Sub New(ByVal dependentInstruments As List(Of NFOStrategyInstrument),
+    Public Sub New(ByVal pairName As String,
+                   ByVal dependentInstruments As List(Of NFOStrategyInstrument),
                    ByVal associatedParentStrategy As NFOStrategy,
-                   ByVal pairName As String,
                    ByVal canceller As CancellationTokenSource)
-        Me.DependentInstruments = dependentInstruments
-        _ParentStrategy = associatedParentStrategy
         Me.PairName = pairName
+        Me.DependentInstruments = dependentInstruments
+        Me.ParentStrategy = associatedParentStrategy
         _cts = canceller
         _tradesFilename = Path.Combine(My.Application.Info.DirectoryPath, String.Format("{0} Trades.a2t", Me.PairName))
     End Sub
@@ -80,151 +86,180 @@ Public Class NFOPairInstrument
 
     Public Async Function MonitorPairAsync() As Task
         Try
+            _PairRunning = True
             If DependentInstruments IsNot Nothing AndAlso DependentInstruments.Count > 0 Then
-                Dim userSettings As NFOUserInputs = Me._ParentStrategy.UserSettings
+                Dim userSettings As NFOUserInputs = Me.ParentStrategy.UserSettings
                 Dim pairSettings As NFOUserInputs.InstrumentDetails = userSettings.InstrumentsData(Me.PairName)
                 If DependentInstruments IsNot Nothing AndAlso DependentInstruments.Count = 2 Then
                     Dim signalCheckingInstrument1 As NFOStrategyInstrument = DependentInstruments.FirstOrDefault
                     Dim signalCheckingInstrument2 As NFOStrategyInstrument = DependentInstruments.LastOrDefault
 
+                    Dim preprocessPass As Boolean = False
                     Dim tradedSignal As SignalDetails = Nothing
-                    'Dim rolloverTime As Date = New Date(Now.Year, Now.Month, Now.Day, 15, 28, 0)
-                    While True
-                        If _ParentStrategy.ParentController.OrphanException IsNot Nothing Then
-                            Throw _ParentStrategy.ParentController.OrphanException
-                        End If
-                        _cts.Token.ThrowIfCancellationRequested()
-
-                        If tradedSignal Is Nothing AndAlso File.Exists(_tradesFilename) Then
-                            tradedSignal = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(_tradesFilename)
-                            If Not Me._ParentStrategy.ParallelRunningPairs.Contains(Me.PairName) Then
-                                Me._ParentStrategy.ParallelRunningPairs.Add(Me.PairName)
+                    If File.Exists(_tradesFilename) Then
+                        tradedSignal = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(_tradesFilename)
+                        Interlocked.Increment(Me.ParentStrategy.ParallelPairCount)
+                        preprocessPass = True
+                        OnHeartbeat(String.Format("{0} : ***** Pair will monitor today as it is active", Me.PairName))
+                        SendTelegramMessageAsync(String.Format("{0} : Pair will monitor today as it is active", Me.PairName))
+                    Else
+                        Dim blankCandlePercentage As Tuple(Of Decimal, Decimal) = Await GetPreviousDayBlankCandlePercentageAsync(signalCheckingInstrument1, signalCheckingInstrument2).ConfigureAwait(False)
+                        If blankCandlePercentage IsNot Nothing Then
+                            If blankCandlePercentage.Item1 <= userSettings.MaximumBlankCandlePercentage AndAlso
+                                blankCandlePercentage.Item2 <= userSettings.MaximumBlankCandlePercentage Then
+                                preprocessPass = True
+                                OnHeartbeat(String.Format("{0} : ***** Pair will monitor today as blank candle % with in allowed range. {1} Blank Candle:{2}%, {3} Blank Candle:{4}%",
+                                                          Me.PairName, signalCheckingInstrument1.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item1, 2),
+                                                          signalCheckingInstrument2.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item2, 2)))
+                                SendTelegramMessageAsync(String.Format("{0} : Pair will monitor today as blank candle % with in allowed range. {1} Blank Candle:{2}%, {3} Blank Candle:{4}%",
+                                                          Me.PairName, signalCheckingInstrument1.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item1, 2),
+                                                          signalCheckingInstrument2.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item2, 2)))
+                            Else
+                                OnHeartbeat(String.Format("{0} : Pair will not monitor today as blank candle % outside allowed range. {1} Blank Candle:{2}%, {3} Blank Candle:{4}%",
+                                                          Me.PairName, signalCheckingInstrument1.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item1, 2),
+                                                          signalCheckingInstrument2.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item2, 2)))
+                                SendTelegramMessageAsync(String.Format("{0} : Pair will not monitor today as blank candle % outside allowed range. {1} Blank Candle:{2}%, {3} Blank Candle:{4}%",
+                                                          Me.PairName, signalCheckingInstrument1.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item1, 2),
+                                                          signalCheckingInstrument2.TradableInstrument.TradingSymbol, Math.Round(blankCandlePercentage.Item2, 2)))
                             End If
                         Else
-                            Me._ParentStrategy.ParallelRunningPairs.TryTake(Me.PairName)
+                            OnHeartbeat(String.Format("{0} : Pair will not monitor today as unable to fetch blank candle information", Me.PairName))
+                            SendTelegramMessageAsync(String.Format("{0} : Pair will not monitor today as unable to fetch blank candle information", Me.PairName))
                         End If
-                        Dim pairRatioCorrelMeanSD As RatioCorrelMeanSD = CalculateRatioMeanSD(signalCheckingInstrument1, signalCheckingInstrument2)
-                        If pairRatioCorrelMeanSD IsNot Nothing Then
-                            Dim log As Boolean = False
-                            If pairRatioCorrelMeanSD.SnapshotDateTime <> _lastPrevPayloadTime Then
-                                _lastPrevPayloadTime = pairRatioCorrelMeanSD.SnapshotDateTime
-                                log = True
+                    End If
+
+                    If preprocessPass Then
+                        While True
+                            If ParentStrategy.ParentController.OrphanException IsNot Nothing Then
+                                Throw ParentStrategy.ParentController.OrphanException
                             End If
-                            Dim message As String = Nothing
-                            If tradedSignal IsNot Nothing Then
-                                Dim exitTrade As Boolean = False
-                                If tradedSignal.EntryZScore > 0 Then
-                                    exitTrade = pairRatioCorrelMeanSD.ZScore <= pairSettings.ExitSD
-                                    message = String.Format("{0} -> [{4}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, ZScore({2})<=Exit SD({3})[{4}], Close1:{5}, Close2:{6}, Ratio:{7}, Mean:{8}, SD:{9}",
-                                                            Me.PairName,
-                                                            pairRatioCorrelMeanSD.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                            Math.Round(pairRatioCorrelMeanSD.ZScore, 4),
-                                                            Math.Round(pairSettings.ExitSD, 4),
-                                                            exitTrade,
-                                                            pairRatioCorrelMeanSD.Close1,
-                                                            pairRatioCorrelMeanSD.Close2,
-                                                            Math.Round(pairRatioCorrelMeanSD.Ratio, 4),
-                                                            Math.Round(pairRatioCorrelMeanSD.Mean, 4),
-                                                            Math.Round(pairRatioCorrelMeanSD.SD, 4))
-                                ElseIf tradedSignal.EntryZScore < 0 Then
-                                    exitTrade = pairRatioCorrelMeanSD.ZScore >= pairSettings.ExitSD * -1
-                                    message = String.Format("{0} -> [{4}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, ZScore({2})>=Exit SD({3})[{4}], Close1:{5}, Close2:{6}, Ratio:{7}, Mean:{8}, SD:{9}",
-                                                            Me.PairName,
-                                                            pairRatioCorrelMeanSD.SnapshotDateTime.ToString("HH:mm:ss"),
-                                                            Math.Round(pairRatioCorrelMeanSD.ZScore, 4),
-                                                            Math.Round(pairSettings.ExitSD, 4),
-                                                            exitTrade,
-                                                            pairRatioCorrelMeanSD.Close1,
-                                                            pairRatioCorrelMeanSD.Close2,
-                                                            Math.Round(pairRatioCorrelMeanSD.Ratio, 4),
-                                                            Math.Round(pairRatioCorrelMeanSD.Mean, 4),
-                                                            Math.Round(pairRatioCorrelMeanSD.SD, 4))
+                            _cts.Token.ThrowIfCancellationRequested()
+
+                            Dim pairRatioCorrelMeanSD As RatioCorrelMeanSD = CalculateRatioMeanSD(signalCheckingInstrument1, signalCheckingInstrument2)
+                            If pairRatioCorrelMeanSD IsNot Nothing Then
+                                Dim log As Boolean = False
+                                If pairRatioCorrelMeanSD.SnapshotDateTime <> _lastPrevPayloadTime Then
+                                    _lastPrevPayloadTime = pairRatioCorrelMeanSD.SnapshotDateTime
+                                    log = True
                                 End If
+                                Dim message As String = Nothing
+                                If tradedSignal IsNot Nothing Then
+                                    Dim exitTrade As Boolean = False
+                                    If tradedSignal.EntryZScore > 0 Then
+                                        exitTrade = pairRatioCorrelMeanSD.ZScore <= pairSettings.ExitSD
+                                        message = String.Format("{0} -> [{4}]Exit Signal, Traded Signal: SELL, Signal Time:{1}, ZScore({2})<=Exit SD({3})[{4}], Close1:{5}, Close2:{6}, Ratio:{7}, Mean:{8}, SD:{9}",
+                                                            Me.PairName,
+                                                            pairRatioCorrelMeanSD.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                            Math.Round(pairRatioCorrelMeanSD.ZScore, 4),
+                                                            Math.Round(pairSettings.ExitSD, 4),
+                                                            exitTrade,
+                                                            pairRatioCorrelMeanSD.Close1,
+                                                            pairRatioCorrelMeanSD.Close2,
+                                                            Math.Round(pairRatioCorrelMeanSD.Ratio, 4),
+                                                            Math.Round(pairRatioCorrelMeanSD.Mean, 4),
+                                                            Math.Round(pairRatioCorrelMeanSD.SD, 4))
+                                    ElseIf tradedSignal.EntryZScore < 0 Then
+                                        exitTrade = pairRatioCorrelMeanSD.ZScore >= pairSettings.ExitSD * -1
+                                        message = String.Format("{0} -> [{4}]Exit Signal, Traded Signal: BUY, Signal Time:{1}, ZScore({2})>=Exit SD({3})[{4}], Close1:{5}, Close2:{6}, Ratio:{7}, Mean:{8}, SD:{9}",
+                                                            Me.PairName,
+                                                            pairRatioCorrelMeanSD.SnapshotDateTime.ToString("HH:mm:ss"),
+                                                            Math.Round(pairRatioCorrelMeanSD.ZScore, 4),
+                                                            Math.Round(pairSettings.ExitSD, 4),
+                                                            exitTrade,
+                                                            pairRatioCorrelMeanSD.Close1,
+                                                            pairRatioCorrelMeanSD.Close2,
+                                                            Math.Round(pairRatioCorrelMeanSD.Ratio, 4),
+                                                            Math.Round(pairRatioCorrelMeanSD.Mean, 4),
+                                                            Math.Round(pairRatioCorrelMeanSD.SD, 4))
+                                    End If
 
-                                'Dim rollover As Boolean = False
-                                'If Now >= rolloverTime Then
-                                '    Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
-                                '    Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
-                                '    If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) OrElse
-                                '        Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
-                                '        exitTrade = True
-                                '        rollover = True
-                                '    End If
-                                'End If
-                                If exitTrade Then
-                                    OnHeartbeat(message)
-                                    log = False
+                                    'Dim rollover As Boolean = False
+                                    'If Now >= rolloverTime Then
+                                    '    Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.TradingSymbol)
+                                    '    Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.TradingSymbol)
+                                    '    If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) OrElse
+                                    '        Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
+                                    '        exitTrade = True
+                                    '        rollover = True
+                                    '    End If
+                                    'End If
+                                    If exitTrade Then
+                                        OnHeartbeat(message)
+                                        SendTelegramMessageAsync(message)
+                                        log = False
 
-                                    Dim tradeToExit As New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
-                                    For Each ruuningInstrument In tradedSignal.InstrumentsData
-                                        Dim ins As NFOStrategyInstrument =
+                                        Dim tradeToExit As New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
+                                        For Each ruuningInstrument In tradedSignal.InstrumentsData
+                                            Dim ins As NFOStrategyInstrument =
                                                 DependentInstruments.Find(Function(x)
                                                                               Return x.TradableInstrument.TradingSymbol.ToUpper = ruuningInstrument.Key.ToUpper
                                                                           End Function)
-                                        tradeToExit.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins, IOrder.TypeOfOrder.Limit, ruuningInstrument.Value * -1))
-                                    Next
-                                    If tradeToExit IsNot Nothing AndAlso tradeToExit.Count > 0 Then
-                                        _MyOnePairExitDone = False
-                                        Dim tasks As IEnumerable(Of Task(Of Boolean)) = Nothing
-                                        tasks = tradeToExit.Select(Async Function(x)
-                                                                       If Await x.Item1.TakeTradeAsync(x.Item2, x.Item3, Me).ConfigureAwait(False) Then
-                                                                           _MyOnePairExitDone = True
-                                                                           tradedSignal.InstrumentsData.TryRemove(x.Item1.TradableInstrument.TradingSymbol, Nothing)
-                                                                       End If
-                                                                       Return True
-                                                                   End Function)
+                                            tradeToExit.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins, IOrder.TypeOfOrder.Limit, ruuningInstrument.Value * -1))
+                                        Next
+                                        If tradeToExit IsNot Nothing AndAlso tradeToExit.Count > 0 Then
+                                            _MyOnePairExitDone = False
+                                            Dim tasks As IEnumerable(Of Task(Of Boolean)) = Nothing
+                                            tasks = tradeToExit.Select(Async Function(x)
+                                                                           If Await x.Item1.TakeTradeAsync(x.Item2, x.Item3, Me).ConfigureAwait(False) Then
+                                                                               _MyOnePairExitDone = True
+                                                                               tradedSignal.InstrumentsData.TryRemove(x.Item1.TradableInstrument.TradingSymbol, Nothing)
+                                                                           End If
+                                                                           Return True
+                                                                       End Function)
 
-                                        Await Task.WhenAll(tasks).ConfigureAwait(False)
-                                        If tradedSignal.InstrumentsData.Count = 0 Then
-                                            tradedSignal = Nothing
-                                            File.Delete(_tradesFilename)
-                                        Else
-                                            For Each runningInstrument In tradeToExit
-                                                If tradedSignal.InstrumentsData.ContainsKey(runningInstrument.Item1.TradableInstrument.TradingSymbol) Then
-                                                    Await runningInstrument.Item1.TakeTradeAsync(IOrder.TypeOfOrder.Market, runningInstrument.Item3, Me).ConfigureAwait(False)
-                                                    tradedSignal = Nothing
-                                                    File.Delete(_tradesFilename)
+                                            Await Task.WhenAll(tasks).ConfigureAwait(False)
+                                            If tradedSignal.InstrumentsData.Count = 0 Then
+                                                tradedSignal = Nothing
+                                                File.Delete(_tradesFilename)
+                                                Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
+                                            Else
+                                                For Each runningInstrument In tradeToExit
+                                                    If tradedSignal.InstrumentsData.ContainsKey(runningInstrument.Item1.TradableInstrument.TradingSymbol) Then
+                                                        Await runningInstrument.Item1.TakeTradeAsync(IOrder.TypeOfOrder.Market, runningInstrument.Item3, Me).ConfigureAwait(False)
+                                                        tradedSignal = Nothing
+                                                        File.Delete(_tradesFilename)
+                                                        Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
+                                                    End If
+                                                Next
+                                            End If
+                                        End If
+                                    Else
+                                        If tradedSignal.InstrumentsData.Count = 1 Then
+                                            'Single Entry
+                                            Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
+                                            Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
+                                            If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
+                                                Dim tradeToTake As Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer) = Nothing
+                                                If tradedSignal.EntryZScore > 0 Then
+                                                    'Stock 1 SELL, Stock 2 BUY
+                                                    If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) Then
+                                                        tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize * -1)
+                                                    ElseIf Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
+                                                        tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize)
+                                                    End If
+                                                ElseIf tradedSignal.EntryZScore < 0 Then
+                                                    'Stock 1 BUY, Stock 2 SELL
+                                                    If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) Then
+                                                        tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize)
+                                                    ElseIf Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
+                                                        tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize * -1)
+                                                    End If
                                                 End If
-                                            Next
+                                                If tradeToTake IsNot Nothing AndAlso tradeToTake.Item1 IsNot Nothing Then
+                                                    _MyOnePairExitDone = False
+                                                    If Await tradeToTake.Item1.TakeTradeAsync(tradeToTake.Item2, tradeToTake.Item3, Me).ConfigureAwait(False) Then
+                                                        tradedSignal.InstrumentsData.TryAdd(tradeToTake.Item1.TradableInstrument.TradingSymbol, tradeToTake.Item3)
+                                                        Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_tradesFilename, tradedSignal)
+                                                    End If
+                                                End If
+                                            Else
+                                                Throw New ApplicationException("Unable to get future instrument to trade")
+                                            End If
                                         End If
                                     End If
                                 Else
-                                    If tradedSignal.InstrumentsData.Count = 1 Then
-                                        'Single Entry
-                                        Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
-                                        Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
-                                        If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
-                                            Dim tradeToTake As Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer) = Nothing
-                                            If tradedSignal.EntryZScore > 0 Then
-                                                'Stock 1 SELL, Stock 2 BUY
-                                                If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) Then
-                                                    tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize * -1)
-                                                ElseIf Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
-                                                    tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize)
-                                                End If
-                                            ElseIf tradedSignal.EntryZScore < 0 Then
-                                                'Stock 1 BUY, Stock 2 SELL
-                                                If Not tradedSignal.InstrumentsData.ContainsKey(ins1Future.TradableInstrument.TradingSymbol) Then
-                                                    tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize)
-                                                ElseIf Not tradedSignal.InstrumentsData.ContainsKey(ins2Future.TradableInstrument.TradingSymbol) Then
-                                                    tradeToTake = New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize * -1)
-                                                End If
-                                            End If
-                                            If tradeToTake IsNot Nothing AndAlso tradeToTake.Item1 IsNot Nothing Then
-                                                _MyOnePairExitDone = False
-                                                If Await tradeToTake.Item1.TakeTradeAsync(tradeToTake.Item2, tradeToTake.Item3, Me).ConfigureAwait(False) Then
-                                                    tradedSignal.InstrumentsData.TryAdd(tradeToTake.Item1.TradableInstrument.TradingSymbol, tradeToTake.Item3)
-                                                    Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_tradesFilename, tradedSignal)
-                                                End If
-                                            End If
-                                        Else
-                                            Throw New ApplicationException("Unable to get future instrument to trade")
-                                        End If
-                                    End If
-                                End If
-                            Else
-                                'Entry
-                                message = String.Format("{0} -> [STATUS]Entry Signal, Signal Time({1})=Current Day({2})[{3}], Correl({4})>=Entry Correl({5})[{6}], ZScore({7})>=Entry SD({8})[{9}], ZScore({7})<=Entry SD({10})[{11}], Close1:{12}, Close2:{13}, Ratio:{14}, Mean:{15}, SD:{16}",
+                                    'Entry
+                                    message = String.Format("{0} -> [STATUS]Entry Signal, Signal Time({1})=Current Day({2})[{3}], Correl({4})>=Entry Correl({5})[{6}], ZScore({7})>=Entry SD({8})[{9}], ZScore({7})<=Entry SD({10})[{11}], Minimum Stock Price({12})<=Close1({14})<=Maximum Stock Price({13})[{15}], Minimum Stock Price({12})<=Close2({16})<=Maximum Stock Price({13})[{17}], No. Parallel Pair Running({18})<Allowed Parallel Running({19})[{20}], Ratio:{21}, Mean:{22}, SD:{23}",
                                                         Me.PairName,
                                                         pairRatioCorrelMeanSD.SnapshotDateTime.ToString("dd-MM-yyyy HH:mm:ss"),
                                                         Now.ToString("dd-MM-yyyy"),
@@ -237,78 +272,95 @@ Public Class NFOPairInstrument
                                                         pairRatioCorrelMeanSD.ZScore >= pairSettings.EntrySD,
                                                         Math.Round(pairSettings.EntrySD * -1, 4),
                                                         pairRatioCorrelMeanSD.ZScore <= pairSettings.EntrySD * -1,
+                                                        userSettings.MinimumStockPrice,
+                                                        userSettings.MaximumStockPrice,
                                                         pairRatioCorrelMeanSD.Close1,
+                                                        pairRatioCorrelMeanSD.Close1 >= userSettings.MinimumStockPrice AndAlso pairRatioCorrelMeanSD.Close1 <= userSettings.MaximumStockPrice,
                                                         pairRatioCorrelMeanSD.Close2,
+                                                        pairRatioCorrelMeanSD.Close2 >= userSettings.MinimumStockPrice AndAlso pairRatioCorrelMeanSD.Close2 <= userSettings.MaximumStockPrice,
+                                                        Me.ParentStrategy.ParallelPairCount,
+                                                        userSettings.NoOfParallelPair,
+                                                        Me.ParentStrategy.ParallelPairCount < userSettings.NoOfParallelPair,
                                                         Math.Round(pairRatioCorrelMeanSD.Ratio, 4),
                                                         Math.Round(pairRatioCorrelMeanSD.Mean, 4),
                                                         Math.Round(pairRatioCorrelMeanSD.SD, 4))
 
-                                If pairRatioCorrelMeanSD.Correl >= pairSettings.Correl AndAlso pairRatioCorrelMeanSD.SnapshotDateTime.Date = Now.Date Then
-                                    Dim tradeToTake As List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)) = Nothing
-                                    If pairRatioCorrelMeanSD.ZScore >= pairSettings.EntrySD Then
-                                        'Stock 1 SELL, Stock 2 BUY
-                                        Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
-                                        Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
-                                        If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
-                                            tradeToTake = New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
-                                            tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize * -1))
-                                            tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize))
+                                    If pairRatioCorrelMeanSD.Correl >= pairSettings.Correl AndAlso pairRatioCorrelMeanSD.SnapshotDateTime.Date = Now.Date AndAlso
+                                    pairRatioCorrelMeanSD.Close1 >= userSettings.MinimumStockPrice AndAlso pairRatioCorrelMeanSD.Close1 <= userSettings.MaximumStockPrice AndAlso
+                                    pairRatioCorrelMeanSD.Close2 >= userSettings.MinimumStockPrice AndAlso pairRatioCorrelMeanSD.Close2 <= userSettings.MaximumStockPrice Then
+                                        Dim tradeToTake As List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)) = Nothing
+                                        If pairRatioCorrelMeanSD.ZScore >= pairSettings.EntrySD Then
+                                            'Stock 1 SELL, Stock 2 BUY
+                                            Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
+                                            Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
+                                            If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
+                                                tradeToTake = New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
+                                                tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize * -1))
+                                                tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize))
+                                            Else
+                                                Throw New ApplicationException("Unable to get future instrument to trade")
+                                            End If
+                                        ElseIf pairRatioCorrelMeanSD.ZScore <= pairSettings.EntrySD * -1 Then
+                                            'Stock 1 BUY, Stock 2 SELL
+                                            Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
+                                            Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
+                                            If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
+                                                tradeToTake = New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
+                                                tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize))
+                                                tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize * -1))
+                                            Else
+                                                Throw New ApplicationException("Unable to get future instrument to trade")
+                                            End If
                                         Else
-                                            Throw New ApplicationException("Unable to get future instrument to trade")
+                                            message = message.Replace("STATUS", "False")
                                         End If
-                                    ElseIf pairRatioCorrelMeanSD.ZScore <= pairSettings.EntrySD * -1 Then
-                                        'Stock 1 BUY, Stock 2 SELL
-                                        Dim ins1Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument1.TradableInstrument.Name)
-                                        Dim ins2Future As NFOStrategyInstrument = GetFutureInstrumentToTrade(signalCheckingInstrument2.TradableInstrument.Name)
-                                        If ins1Future IsNot Nothing AndAlso ins2Future IsNot Nothing Then
-                                            tradeToTake = New List(Of Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer))
-                                            tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins1Future, IOrder.TypeOfOrder.Limit, ins1Future.TradableInstrument.LotSize))
-                                            tradeToTake.Add(New Tuple(Of NFOStrategyInstrument, IOrder.TypeOfOrder, Integer)(ins2Future, IOrder.TypeOfOrder.Limit, ins2Future.TradableInstrument.LotSize * -1))
-                                        Else
-                                            Throw New ApplicationException("Unable to get future instrument to trade")
+                                        If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
+                                            If Me.ParentStrategy.ParallelPairCount < userSettings.NoOfParallelPair Then
+                                                Interlocked.Increment(Me.ParentStrategy.ParallelPairCount)
+
+                                                message = message.Replace("STATUS", "True")
+                                                OnHeartbeat(message)
+                                                SendTelegramMessageAsync(message)
+                                                log = False
+
+                                                Dim signal As New SignalDetails With {.SignalTime = pairRatioCorrelMeanSD.SnapshotDateTime, .EntryZScore = pairRatioCorrelMeanSD.ZScore, .InstrumentsData = New Concurrent.ConcurrentDictionary(Of String, Integer)}
+                                                _MyOnePairExitDone = False
+                                                Dim tasks As IEnumerable(Of Task(Of Boolean)) = Nothing
+                                                tasks = tradeToTake.Select(Async Function(x)
+                                                                               If Await x.Item1.TakeTradeAsync(x.Item2, x.Item3, Me).ConfigureAwait(False) Then
+                                                                                   signal.InstrumentsData.TryAdd(x.Item1.TradableInstrument.TradingSymbol, x.Item3)
+                                                                               End If
+                                                                               Return True
+                                                                           End Function)
+
+                                                Await Task.WhenAll(tasks).ConfigureAwait(False)
+                                                If signal.InstrumentsData.Count > 0 Then
+                                                    Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_tradesFilename, signal)
+                                                Else
+                                                    Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
+                                                End If
+                                            End If
                                         End If
                                     Else
                                         message = message.Replace("STATUS", "False")
                                     End If
-                                    If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
-                                        If Me._ParentStrategy.ParallelRunningPairs.Count = 0 Then
-                                            message = message.Replace("STATUS", "True")
-                                            OnHeartbeat(message)
-                                            log = False
-
-                                            Dim signal As New SignalDetails With {.SignalTime = pairRatioCorrelMeanSD.SnapshotDateTime, .EntryZScore = pairRatioCorrelMeanSD.ZScore, .InstrumentsData = New Concurrent.ConcurrentDictionary(Of String, Integer)}
-                                            _MyOnePairExitDone = False
-                                            Dim tasks As IEnumerable(Of Task(Of Boolean)) = Nothing
-                                            tasks = tradeToTake.Select(Async Function(x)
-                                                                           If Await x.Item1.TakeTradeAsync(x.Item2, x.Item3, Me).ConfigureAwait(False) Then
-                                                                               signal.InstrumentsData.TryAdd(x.Item1.TradableInstrument.TradingSymbol, x.Item3)
-                                                                           End If
-                                                                           Return True
-                                                                       End Function)
-
-                                            Await Task.WhenAll(tasks).ConfigureAwait(False)
-                                            If signal.InstrumentsData.Count > 0 Then
-                                                Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_tradesFilename, signal)
-                                            End If
-                                        End If
-                                    End If
-                                Else
-                                    message = message.Replace("STATUS", "False")
+                                End If
+                                If log AndAlso message IsNot Nothing Then
+                                    OnHeartbeat(message)
+                                    'SendTelegramMessageAsync(message)
                                 End If
                             End If
-                            If log AndAlso message IsNot Nothing Then
-                                OnHeartbeat(message)
-                                SendTradeAlertMessageAsync(message)
-                            End If
-                        End If
 
-                        Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
-                    End While
+                            Await Task.Delay(1000, _cts.Token).ConfigureAwait(False)
+                        End While
+                    End If
                 End If
             End If
         Catch ex As Exception
             logger.Error("Pair Instrument:{0}, error:{1}", Me.ToString, ex.ToString)
             Throw ex
+        Finally
+            _PairRunning = False
         End Try
     End Function
 
@@ -329,19 +381,59 @@ Public Class NFOPairInstrument
         Return ret
     End Function
 
+    Private Async Function GetPreviousDayBlankCandlePercentageAsync(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As Task(Of Tuple(Of Decimal, Decimal))
+        Dim ret As Tuple(Of Decimal, Decimal) = Nothing
+        While True
+            If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
+                Dim ins1Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins1.GetXMinutePayload(ParentStrategy.UserSettings.SignalTimeFrame)
+                Dim ins2Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins2.GetXMinutePayload(ParentStrategy.UserSettings.SignalTimeFrame)
+                If ins1Payload IsNot Nothing AndAlso ins2Payload IsNot Nothing Then
+                    Dim maxAvailableDate As Date = ins1Payload.Keys.Max(Function(x)
+                                                                            If x < Now.Date Then
+                                                                                Return x
+                                                                            Else
+                                                                                Return Date.MinValue
+                                                                            End If
+                                                                        End Function)
+                    maxAvailableDate = Now
+                    Dim ins1BlankCandlesCount As Integer = 0
+                    Dim ins2BlankCandlesCount As Integer = 0
+                    If maxAvailableDate <> Date.MinValue Then
+                        Dim ins1BlankCandles = ins1Payload.Where(Function(x)
+                                                                     Return x.Key.Date = maxAvailableDate.Date AndAlso
+                                                                        CType(x.Value, OHLCPayload).HighPrice.Value = CType(x.Value, OHLCPayload).LowPrice.Value
+                                                                 End Function)
+                        If ins1BlankCandles IsNot Nothing Then ins1BlankCandlesCount = ins1BlankCandles.Count
+
+                        Dim ins2BlankCandles = ins2Payload.Where(Function(x)
+                                                                     Return x.Key.Date = maxAvailableDate.Date AndAlso
+                                                                        CType(x.Value, OHLCPayload).HighPrice.Value = CType(x.Value, OHLCPayload).LowPrice.Value
+                                                                 End Function)
+                        If ins2BlankCandles IsNot Nothing Then ins2BlankCandlesCount = ins2BlankCandles.Count
+                    End If
+                    ret = New Tuple(Of Decimal, Decimal)((ins1BlankCandlesCount / 375) * 100, (ins2BlankCandlesCount / 375) * 100)
+                    Exit While
+                End If
+            End If
+
+            Await Task.Delay(30000, _cts.Token).ConfigureAwait(False)
+        End While
+        Return ret
+    End Function
+
     Private Function CalculateRatioMeanSD(ByVal ins1 As NFOStrategyInstrument, ByVal ins2 As NFOStrategyInstrument) As RatioCorrelMeanSD
         Dim ret As RatioCorrelMeanSD = Nothing
         If ins1.TradableInstrument.IsHistoricalCompleted AndAlso ins2.TradableInstrument.IsHistoricalCompleted Then
             'ins1.TradableInstrument.FetchHistorical = False
             'ins2.TradableInstrument.FetchHistorical = False
-            Dim pairSettings As NFOUserInputs.InstrumentDetails = CType(_ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.PairName)
+            Dim pairSettings As NFOUserInputs.InstrumentDetails = CType(ParentStrategy.UserSettings, NFOUserInputs).InstrumentsData(Me.PairName)
 
-            Dim ins1Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins1.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
-            Dim ins2Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins2.GetXMinutePayload(_ParentStrategy.UserSettings.SignalTimeFrame)
+            Dim ins1Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins1.GetXMinutePayload(ParentStrategy.UserSettings.SignalTimeFrame)
+            Dim ins2Payload As Concurrent.ConcurrentDictionary(Of Date, IPayload) = ins2.GetXMinutePayload(ParentStrategy.UserSettings.SignalTimeFrame)
             If ins1Payload IsNot Nothing AndAlso ins1Payload.Count >= pairSettings.LoopBackPeriod AndAlso
                 ins2Payload IsNot Nothing AndAlso ins2Payload.Count >= pairSettings.LoopBackPeriod Then
-                Dim ins1CurrentCandle As OHLCPayload = ins1.GetXMinuteCurrentCandle(_ParentStrategy.UserSettings.SignalTimeFrame)
-                Dim ins2CurrentCandle As OHLCPayload = ins2.GetXMinuteCurrentCandle(_ParentStrategy.UserSettings.SignalTimeFrame)
+                Dim ins1CurrentCandle As OHLCPayload = ins1.GetXMinuteCurrentCandle(ParentStrategy.UserSettings.SignalTimeFrame)
+                Dim ins2CurrentCandle As OHLCPayload = ins2.GetXMinuteCurrentCandle(ParentStrategy.UserSettings.SignalTimeFrame)
                 If ins1CurrentCandle IsNot Nothing AndAlso ins2CurrentCandle IsNot Nothing Then
                     Dim currentCandleTime As Date = ins1CurrentCandle.SnapshotDateTime
                     If ins1CurrentCandle.SnapshotDateTime < ins2CurrentCandle.SnapshotDateTime Then
@@ -463,18 +555,19 @@ Public Class NFOPairInstrument
         End If
     End Function
 
-    Private Async Function SendTradeAlertMessageAsync(ByVal message As String) As Task
+    Private Async Function SendTelegramMessageAsync(ByVal message As String) As Task
         Try
             Await Task.Delay(1, _cts.Token).ConfigureAwait(False)
             _cts.Token.ThrowIfCancellationRequested()
-            'Dim userInputs As NFOUserInputs = _ParentStrategy.UserSettings
-            'If userInputs.TelegramBotAPIKey IsNot Nothing AndAlso Not userInputs.TelegramBotAPIKey.Trim = "" AndAlso
-            '    userInputs.TelegramTradeChatID IsNot Nothing AndAlso Not userInputs.TelegramTradeChatID.Trim = "" Then
-            '    Using tSender As New Utilities.Notification.Telegram(userInputs.TelegramBotAPIKey.Trim, userInputs.TelegramTradeChatID.Trim, _cts)
-            '        Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
-            '        Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
-            '    End Using
-            'End If
+            If Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey IsNot Nothing AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim <> "" AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID IsNot Nothing AndAlso
+                Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim <> "" Then
+                Using tSender As New Utilities.Notification.Telegram(Me.ParentStrategy.ParentController.UserInputs.TelegramAPIKey.Trim, Me.ParentStrategy.ParentController.UserInputs.TelegramChatID.Trim, _cts)
+                    Dim encodedString As String = Utilities.Strings.UrlEncodeString(message)
+                    Await tSender.SendMessageGetAsync(encodedString).ConfigureAwait(False)
+                End Using
+            End If
             logger.Fatal(message)
         Catch ex As Exception
             logger.Warn(ex.ToString)
