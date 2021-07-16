@@ -164,7 +164,7 @@ Public Class NFOPairInstrument
                                                             Me.PairName,
                                                             pairRatioCorrelMeanSD.SnapshotDateTime.ToString("HH:mm:ss"),
                                                             Math.Round(pairRatioCorrelMeanSD.ZScore, 4),
-                                                            Math.Round(pairSettings.ExitSD, 4),
+                                                            Math.Round(pairSettings.ExitSD * -1, 4),
                                                             exitTrade,
                                                             pairRatioCorrelMeanSD.Close1,
                                                             pairRatioCorrelMeanSD.Close2,
@@ -335,6 +335,7 @@ Public Class NFOPairInstrument
 
                                                 Await Task.WhenAll(tasks).ConfigureAwait(False)
                                                 If signal.InstrumentsData.Count > 0 Then
+                                                    tradedSignal = signal
                                                     Utilities.Strings.SerializeFromCollection(Of SignalDetails)(_tradesFilename, signal)
                                                 Else
                                                     Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
