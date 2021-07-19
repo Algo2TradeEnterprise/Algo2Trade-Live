@@ -215,10 +215,16 @@ Public Class NFOPairInstrument
                                             Else
                                                 For Each runningInstrument In tradeToExit
                                                     If tradedSignal.InstrumentsData.ContainsKey(runningInstrument.Item1.TradableInstrument.TradingSymbol) Then
-                                                        Await runningInstrument.Item1.TakeTradeAsync(IOrder.TypeOfOrder.Market, runningInstrument.Item3, Me).ConfigureAwait(False)
-                                                        tradedSignal = Nothing
-                                                        File.Delete(_tradesFilename)
-                                                        Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
+                                                        While True
+                                                            If Await runningInstrument.Item1.TakeTradeAsync(IOrder.TypeOfOrder.Market, runningInstrument.Item3, Me).ConfigureAwait(False) Then
+                                                                tradedSignal = Nothing
+                                                                File.Delete(_tradesFilename)
+                                                                Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
+                                                                Exit While
+                                                            End If
+
+                                                            Await Task.Delay(1000).ConfigureAwait(False)
+                                                        End While
                                                     End If
                                                 Next
                                             End If

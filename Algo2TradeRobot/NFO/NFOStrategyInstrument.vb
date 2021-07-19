@@ -17,6 +17,7 @@ Public Class NFOStrategyInstrument
 
     Private _quantityToTrade As Integer
     Private _orderType As IOrder.TypeOfOrder
+    Private _cancelReason As String
 
     Public Sub New(ByVal associatedInstrument As IInstrument,
                    ByVal associatedParentStrategy As Strategy,
@@ -131,6 +132,8 @@ Public Class NFOStrategyInstrument
                 If _orderType = IOrder.TypeOfOrder.Limit Then
                     If Now >= _entryTime.AddMinutes(Me.ParentStrategy.UserSettings.SignalTimeFrame) OrElse myparentPairInstrument.MyOnePairExitDone Then
                         _cts.Token.ThrowIfCancellationRequested()
+                        _cancelReason = "Time Over"
+                        If myparentPairInstrument.MyOnePairExitDone Then _cancelReason = "Another Pair Exit Done"
                         Dim cancelOrderTrigger As List(Of Tuple(Of ExecuteCommandAction, IOrder, String)) = Await IsTriggerReceivedForExitOrderAsync(False).ConfigureAwait(False)
                         If cancelOrderTrigger IsNot Nothing AndAlso cancelOrderTrigger.Count > 0 Then
                             Dim orderResponse = Await ExecuteCommandAsync(ExecuteCommands.CancelRegularOrder, Nothing).ConfigureAwait(False)
@@ -323,7 +326,7 @@ Public Class NFOStrategyInstrument
                         End If
                     End If
                     If ret Is Nothing Then ret = New List(Of Tuple(Of ExecuteCommandAction, IOrder, String))
-                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, parentBussinessOrder.ParentOrder, "Time over"))
+                    ret.Add(New Tuple(Of ExecuteCommandAction, IOrder, String)(ExecuteCommandAction.Take, parentBussinessOrder.ParentOrder, _cancelReason))
                 End If
             Next
         End If
