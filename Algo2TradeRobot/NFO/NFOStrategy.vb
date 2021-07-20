@@ -14,6 +14,7 @@ Public Class NFOStrategy
     Public Property TradablePairInstruments As IEnumerable(Of NFOPairInstrument)
 
     Public ParallelPairCount As Integer = 0
+    Public ReadOnly Mutex As New Object
 
     Public Sub New(ByVal associatedParentController As APIStrategyController,
                    ByVal strategyIdentifier As String,

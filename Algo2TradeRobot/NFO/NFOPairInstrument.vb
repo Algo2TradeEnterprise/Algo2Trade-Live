@@ -98,6 +98,7 @@ Public Class NFOPairInstrument
                     Dim tradedSignal As SignalDetails = Nothing
                     If File.Exists(_tradesFilename) Then
                         tradedSignal = Utilities.Strings.DeserializeToCollection(Of SignalDetails)(_tradesFilename)
+
                         Interlocked.Increment(Me.ParentStrategy.ParallelPairCount)
                         preprocessPass = True
                         OnHeartbeat(String.Format("{0} : ***** Pair will monitor today as it is active", Me.PairName))
@@ -321,7 +322,8 @@ Public Class NFOPairInstrument
                                             message = message.Replace("STATUS", "False")
                                         End If
                                         If tradeToTake IsNot Nothing AndAlso tradeToTake.Count > 0 Then
-                                            If Me.ParentStrategy.ParallelPairCount < userSettings.NoOfParallelPair Then
+                                            'SyncLock Me.ParentStrategy.Mutex
+                                            If Interlocked.Read(Me.ParentStrategy.ParallelPairCount) < userSettings.NoOfParallelPair Then
                                                 Interlocked.Increment(Me.ParentStrategy.ParallelPairCount)
 
                                                 message = message.Replace("STATUS", "True")
@@ -347,6 +349,7 @@ Public Class NFOPairInstrument
                                                     Interlocked.Decrement(Me.ParentStrategy.ParallelPairCount)
                                                 End If
                                             End If
+                                            'End SyncLock
                                         End If
                                     Else
                                         message = message.Replace("STATUS", "False")

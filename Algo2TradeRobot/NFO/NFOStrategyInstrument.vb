@@ -243,12 +243,11 @@ Public Class NFOStrategyInstrument
                 logger.Error(ex)
             End Try
 
-            Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetActiveSignalActivities(Me.TradableInstrument.InstrumentIdentifier)
+            Dim currentSignalActivities As IEnumerable(Of ActivityDashboard) = Me.ParentStrategy.SignalManager.GetSignalActivities(parameters.SignalCandle.SnapshotDateTime, Me.TradableInstrument.InstrumentIdentifier)
             If currentSignalActivities IsNot Nothing AndAlso currentSignalActivities.Count > 0 Then
-                'Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
-                '                                                                                              Return x.EntryActivity.RequestRemarks = parameters.ToString
-                '                                                                                          End Function)
-                Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities
+                Dim placedActivities As IEnumerable(Of ActivityDashboard) = currentSignalActivities.Where(Function(x)
+                                                                                                              Return x.EntryActivity.RequestRemarks = parameters.ToString
+                                                                                                          End Function)
                 If placedActivities IsNot Nothing AndAlso placedActivities.Count > 0 Then
                     Dim lastPlacedActivity As ActivityDashboard = placedActivities.OrderBy(Function(x)
                                                                                                Return x.EntryActivity.RequestTime
